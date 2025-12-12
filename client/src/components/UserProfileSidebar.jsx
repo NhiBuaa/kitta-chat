@@ -199,7 +199,6 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
                             {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
                         </button>
                     </div>
-
                 </div>
             </div>
         </div>

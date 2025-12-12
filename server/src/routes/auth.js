@@ -1,10 +1,8 @@
 const router = require('express').Router();
-const { register, login, changePassword, forgotPassword, resetPassword } = require('../controllers/authController');
-const verifyToken = require('../middlewares/auth');
+const { register, login, forgotPassword, resetPassword } = require('../controllers/authController');
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/change-password', verifyToken, changePassword);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 
