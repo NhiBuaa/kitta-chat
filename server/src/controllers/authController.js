@@ -91,5 +91,27 @@ exports.forgotPassword = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-    // Logic verify token và update password mới (tương tự đổi mật khẩu)
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.id;
+
+        const user = await User.findById(userId);
+
+        // Check pass cũ
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) return res.status(400).json({ msg: 'Mật khẩu hiện tại không đúng' });
+
+        // Hash pass mới
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.json({ msg: 'Đổi mật khẩu thành công' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
+
+exports.logout = async (req, res) => {
+    
+}

@@ -14,7 +14,8 @@ axiosInstance.interceptors.request.use((config) => {
     return config;
 });
 
-export const register = (data) => axiosInstance.post(`${API_URL}/register`, data);
-export const login = (data) => axiosInstance.post(`${API_URL}/login`, data);
-export const changePassword = (data) => axiosInstance.post(`${API_URL}/change-password`, data);
-// Forgot password sẽ làm ở phần sau
+export const register = (data) => axios.post(`${API_URL}/register`, data);
+export const login = (data) => axios.post(`${API_URL}/login`, data);
+export const changePassword = (data) => axios.post(`${API_URL}/change-password`, data);
+export const forgotPassword = (data) => axios.post(`${API_URL}/forgot-password`, data);
+export const resetPassword = (token, newPassword) => axios.post(`${API_URL}/reset-password`, { token, newPassword });
