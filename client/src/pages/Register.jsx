@@ -27,17 +27,17 @@ const Register = () => {
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                    {/* Username Input */}
+                    {/* Display Name Input */}
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <FaUser className="text-gray-400" />
                         </div>
                         <input
-                            {...register("username", { required: "Tên hiển thị là bắt buộc" })}
+                            {...register("displayName", { required: "Tên hiển thị là bắt buộc" })}
                             className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
                             placeholder="Tên hiển thị"
                         />
-                        {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
+                        {errors.displayName && <p className="text-red-500 text-xs mt-1">{errors.displayName.message}</p>}
                     </div>
 
                     {/* Email Input */}

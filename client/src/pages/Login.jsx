@@ -13,7 +13,7 @@ const Login = () => {
             const res = await login(data);
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
-            toast.success(`Chào mừng ${res.data.user.username} quay trở lại!`);
+            toast.success(`Chào mừng ${res.data.user.displayName} quay trở lại!`);
             navigate("/");
         } catch (err) {
             toast.error(err.response?.data?.msg || "Đăng nhập thất bại");
@@ -71,7 +71,7 @@ const Login = () => {
                             </div>
                             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                             <div className="flex justify-between items-center mb-1">
-                                <Link to="/forgot-password" class="text-xs text-blue-600 hover:underline">Quên mật khẩu?</Link>
+                                <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">Quên mật khẩu?</Link>
                             </div>
                         </div>
 
