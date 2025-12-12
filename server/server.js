@@ -84,6 +84,23 @@ io.on('connection', async (socket) => {
             });
         }
     });
+
+    // Lắng nghe sự kiện đang gõ
+    socket.on("typing", ({ receiverId }) => {
+        const userSocketId = onlineUsers.get(receiverId);
+        if (userSocketId) {
+            // Báo cho người nhận biết: "senderId đang gõ đấy"
+            io.to(userSocketId).emit("getTyping", socket.handshake.query.userId);
+        }
+    });
+
+    // Lắng nghe sự kiện ngưng gõ
+    socket.on("stopTyping", ({ receiverId }) => {
+        const userSocketId = onlineUsers.get(receiverId);
+        if (userSocketId) {
+            io.to(userSocketId).emit("getStopTyping", socket.handshake.query.userId);
+        }
+    });
 });
 
 // Routes

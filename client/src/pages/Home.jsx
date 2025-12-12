@@ -18,6 +18,8 @@ const Home = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const scrollRef = useRef();
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef(null);
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL
@@ -179,6 +181,52 @@ const Home = () => {
         }
     };
 
+    // LẮNG NGHE SỰ KIỆN TYPING TỪ NGƯỜI KHÁC
+    useEffect(() => {
+        if (!socket.current) return;
+
+        // Khi nhận tin hiệu đang gõ
+        socket.current.on("getTyping", (senderId) => {
+            // Chỉ hiện nếu đúng là người mình đang chat gửi tín hiệu
+            if (activeChat && senderId === activeChat._id) {
+                setIsTyping(true);
+            }
+        });
+
+        // Khi nhận tín hiệu ngừng gõ
+        socket.current.on("getStopTyping", (senderId) => {
+            if (activeChat && senderId === activeChat._id) {
+                setIsTyping(false);
+            }
+        });
+
+    }, [activeChat]);
+
+    // Reset trạng thái typing khi chuyển chat sang người khác
+    useEffect(() => {
+        setIsTyping(false);
+    }, [activeChat]);
+
+
+    // HÀM XỬ LÝ KHI MÌNH GÕ PHÍM
+    const handleInputChange = (e) => {
+        setNewMessage(e.target.value);
+
+        if (!socket.current || !activeChat) return;
+
+        // Nếu chưa gửi tín hiệu typing thì gửi đi
+        // (Logic này giúp không spam socket liên tục mỗi lần gõ 1 ký tự)
+        socket.current.emit("typing", { receiverId: activeChat._id });
+
+        // Xóa timeout cũ nếu người dùng vẫn đang gõ liên tục
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+        // Set timeout mới: Nếu sau 2 giây không gõ gì thêm -> Gửi stopTyping
+        typingTimeoutRef.current = setTimeout(() => {
+            socket.current.emit("stopTyping", { receiverId: activeChat._id });
+        }, 2000);
+    };
+
     if (isLoading) {
         return <div className="h-screen flex items-center justify-center">Loading...</div>;
     }
@@ -330,6 +378,23 @@ const Home = () => {
                                     Hãy bắt đầu cuộc trò chuyện với {activeChat.displayName}
                                 </p>
                             )}
+
+                            {/* HIỂN THỊ ANIMATION TYPING */}
+                            {isTyping && (
+                                <div className="flex items-center ml-2 mt-2" ref={scrollRef}>
+                                    <img
+                                        src={getAvatarUrl(activeChat.avatar)}
+                                        className="w-6 h-6 rounded-full mr-2 object-cover"
+                                        alt="typing-avt"
+                                    />
+                                    <div className="bg-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center space-x-1 w-16 h-9">
+                                        {/* 3 dấu chấm nhảy múa dùng Tailwind animate-bounce */}
+                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Input Area */}
@@ -342,7 +407,7 @@ const Home = () => {
                                     placeholder="Nhập tin nhắn..."
                                     className="flex-1 bg-transparent focus:outline-none"
                                     value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onChange={handleInputChange}
                                 />
 
                                 <button type="submit" className="text-green-600 hover:text-green-800 ml-3">
