@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSearch, FaPaperPlane, FaPhone, FaVideo, FaInfoCircle, FaSmile, FaCommentDots } from "react-icons/fa";
+import { FaSearch, FaPaperPlane, FaPhone, FaVideo, FaInfoCircle, FaSmile, FaCheck, FaCheckDouble } from "react-icons/fa";
 import UserProfileSidebar from "../components/UserProfileSidebar";
 import { io } from "socket.io-client";
 import axios from "axios";
@@ -227,6 +227,37 @@ const Home = () => {
         }, 2000);
     };
 
+    //  LẮNG NGHE SỰ KIỆN ĐỌC TIN NHẮN
+    useEffect(() => {
+        if (!socket.current) return;
+
+        socket.current.on("userReadMessages", ({ readerId }) => {
+            // Nếu người vừa đọc là người mình đang chat cùng
+            if (activeChat && readerId === activeChat._id) {
+                // Cập nhật tất cả tin nhắn trong state thành "đã đọc"
+                setMessages(prev => prev.map(msg => ({ ...msg, isRead: true })));
+            }
+        });
+    }, [activeChat]);
+
+    // ĐÁNH DẤU ĐÃ ĐỌC
+    useEffect(() => {
+        if (activeChat && currentUser && messages.length > 0) {
+            // Kiểm tra xem tin nhắn cuối cùng có phải của đối phương gửi không?
+            const lastMessage = messages[messages.length - 1];
+
+            // Nếu tin nhắn cuối là của người kia gửi VÀ chưa đọc
+            if (lastMessage.sender === activeChat._id) { // && !lastMessage.isRead (có thể check thêm ở client)
+
+                // Gửi socket báo server
+                socket.current.emit("markRead", {
+                    senderId: activeChat._id,
+                    receiverId: currentUser._id
+                });
+            }
+        }
+    }, [activeChat, messages, currentUser]);
+
     if (isLoading) {
         return <div className="h-screen flex items-center justify-center">Loading...</div>;
     }
@@ -363,6 +394,18 @@ const Home = () => {
                                                 : 'bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl'
                                                 }`}>
                                                 {m.text}
+
+                                                {isMe && (
+                                                    <div className="self-end mt-1">
+                                                        {m.isRead ? (
+                                                            // Đã đọc: dấu tích (Màu xanh nhạt hoặc trắng)
+                                                            <FaCheckDouble className="text-xs text-blue-200" title="Đã xem" />
+                                                        ) : (
+                                                            // Đã gửi: 1 dấu tích
+                                                            <FaCheck className="text-xs text-gray-300" title="Đã gửi" />
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className={`text-[10px] text-gray-400 mt-1 ${isMe ? 'text-right' : 'text-left ml-10'}`}>

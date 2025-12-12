@@ -9,6 +9,7 @@ const path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
 const User = require('./src/models/User');
+const Message = require('./src/models/Message');
 
 dotenv.config();
 
@@ -99,6 +100,21 @@ io.on('connection', async (socket) => {
         const userSocketId = onlineUsers.get(receiverId);
         if (userSocketId) {
             io.to(userSocketId).emit("getStopTyping", socket.handshake.query.userId);
+        }
+    });
+
+    // Sự kiện đã đọc tin nhắn hay chưa
+    socket.on("markRead", async ({ senderId, receiverId }) => {
+        await Message.updateMany(
+            { sender: senderId, conversationId: [senderId, receiverId].sort().join("_"), isRead: false },
+            { $set: { isRead: true } }
+        );
+
+        const senderSocketId = onlineUsers.get(senderId);
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("userReadMessages", {
+                readerId: receiverId
+            });
         }
     });
 });
