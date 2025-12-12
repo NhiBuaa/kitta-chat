@@ -7,7 +7,7 @@ export const formatTimeAgo = (dateString) => {
 
     // Xử lý các mốc thời gian
     if (diffInSeconds < 60) {
-        return 'Vừa xong';
+        return '';
     }
 
     const diffInMinutes = Math.floor(diffInSeconds / 60);

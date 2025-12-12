@@ -4,6 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const authRoutes = require("./src/routes/auth");
 const userRoutes = require("./src/routes/user");
+const messageRoutes = require("./src/routes/messages");
 const path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
@@ -69,12 +70,27 @@ io.on('connection', async (socket) => {
             io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
         }
     });
+
+    // Lắng nghe sự kiện 'sendMessage' từ Client
+    socket.on("sendMessage", ({ senderId, receiverId, text }) => {
+        const userSocketId = onlineUsers.get(receiverId);
+
+        if (userSocketId) {
+            // Gửi tin nhắn riêng cho người đó
+            io.to(userSocketId).emit("getMessage", {
+                senderId,
+                text,
+                createdAt: Date.now()
+            });
+        }
+    });
 });
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/messages', messageRoutes);
 
 // Start Server
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

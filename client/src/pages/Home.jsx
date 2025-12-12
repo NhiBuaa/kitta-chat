@@ -4,6 +4,7 @@ import UserProfileSidebar from "../components/UserProfileSidebar";
 import { io } from "socket.io-client";
 import axios from "axios";
 import UserStatus from "../components/UserStatus";
+import { formatTimeAgo } from "../utils/formatTime";
 
 const Home = () => {
     // STATE
@@ -14,6 +15,9 @@ const Home = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [onlineUserIds, setOnlineUserIds] = useState([]);
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState("");
+    const scrollRef = useRef();
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL
@@ -111,6 +115,70 @@ const Home = () => {
         return false;
     };
 
+    // LẮNG NGHE TIN NHẮN ĐẾN
+    useEffect(() => {
+        if (!socket.current) return;
+
+        socket.current.on("getMessage", (data) => {
+            // Chỉ hiện tin nhắn nếu nó đến từ người mình đang chat (activeChat)
+            if (activeChat && data.senderId === activeChat._id) {
+                setMessages((prev) => [...prev, {
+                    sender: data.senderId,
+                    text: data.text,
+                    createdAt: data.createdAt
+                }]);
+            }
+        });
+    }, [activeChat]);
+
+    // LẤY TIN NHẮN TỪ DB KHI CHỌN NGƯỜI CHAT
+    useEffect(() => {
+        const getMessages = async () => {
+            if (!activeChat || !currentUser) return;
+            try {
+                const res = await axios.get(`${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`);
+                setMessages(res.data);
+            } catch (err) {
+                console.log(err);
+            }
+        };
+        getMessages();
+    }, [activeChat, currentUser]);
+
+    // TỰ ĐỘNG CUỘN XUỐNG DƯỚI
+    useEffect(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    // HÀM GỬI TIN NHẮN
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return;
+
+        const messageData = {
+            sender: currentUser._id,
+            receiver: activeChat._id,
+            text: newMessage
+        };
+
+        // Gửi qua Socket để bên kia nhận ngay lập tức
+        socket.current.emit("sendMessage", {
+            senderId: currentUser._id,
+            receiverId: activeChat._id,
+            text: newMessage
+        });
+
+        try {
+            // Lưu vào DB
+            const res = await axios.post(`${API_URL}/api/messages`, messageData);
+            // Cập nhật UI của mình
+            setMessages([...messages, res.data]);
+            setNewMessage(""); // Xóa ô nhập
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
     if (isLoading) {
         return <div className="h-screen flex items-center justify-center">Loading...</div>;
     }
@@ -152,35 +220,46 @@ const Home = () => {
 
                 {/* User List */}
                 <div className="flex-1 overflow-y-auto">
-                    {filteredUsers.map((user) => {
-                        // Hàm check Socket Realtime (đã làm ở bước trước)
-                        const isOnline = checkIsOnline(user);
+                    {filteredUsers.length > 0 ? (
+                        // TRƯỜNG HỢP CÓ DỮ LIỆU
+                        filteredUsers.map((user) => {
+                            const isOnline = checkIsOnline(user);
 
-                        return (
-                            <div
-                                key={user._id}
-                                onClick={() => setActiveChat(user)}
-                                className="p-4 flex items-center border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition"
-                            >
-                                {/* Phần Avatar */}
-                                <div className="relative">
-                                    <img src={getAvatarUrl(user.avatar)} alt="Avt" className="w-12 h-12 rounded-full object-cover" />
-                                    {isOnline && (
-                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                                    )}
-                                </div>
-
-                                {/* Phần Info */}
-                                <div className="ml-3 flex-1 overflow-hidden">
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="font-semibold text-gray-800 text-sm truncate">{user.displayName}</h3>
+                            return (
+                                <div
+                                    key={user._id}
+                                    onClick={() => setActiveChat(user)}
+                                    className="p-4 flex items-center border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition"
+                                >
+                                    {/* Phần Avatar */}
+                                    <div className="relative">
+                                        <img src={getAvatarUrl(user.avatar)} alt="Avt" className="w-12 h-12 rounded-full object-cover" />
+                                        {isOnline && (
+                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                        )}
                                     </div>
 
-                                    <UserStatus user={user} isOnline={isOnline} />
+                                    {/* Phần Info */}
+                                    <div className="ml-3 flex-1 overflow-hidden">
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="font-semibold text-gray-800 text-sm truncate">{user.displayName}</h3>
+                                        </div>
+
+                                        <UserStatus user={user} isOnline={isOnline} />
+                                    </div>
                                 </div>
+                            );
+                        })
+                    ) : (
+                        // TRƯỜNG HỢP KHÔNG CÓ DỮ LIỆU (Empty State)
+                        <div className="flex flex-col items-center justify-center mt-10 text-gray-400">
+                            <div className="bg-gray-100 p-4 rounded-full mb-3">
+                                <FaSearch size={24} className="text-gray-300" />
                             </div>
-                        );
-                    })}
+                            <p className="text-sm">Không tìm thấy người dùng nào</p>
+                            {searchTerm && <p className="text-xs mt-1">Kết quả cho: "{searchTerm}"</p>}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -191,10 +270,13 @@ const Home = () => {
                         {/* Chat Header */}
                         <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
                             <div className="flex items-center">
-                                <img src={activeChat.avatar} className="w-10 h-10 rounded-full mr-3 object-cover" />
+                                <img
+                                    src={getAvatarUrl(activeChat.avatar)}
+                                    className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200"
+                                    alt="avatar"
+                                />
                                 <div>
                                     <h3 className="font-bold text-gray-800">{activeChat.displayName}</h3>
-
                                     <div>
                                         <UserStatus
                                             user={activeChat}
@@ -212,29 +294,61 @@ const Home = () => {
 
                         {/* Messages Area */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {/* Tin nhắn người khác */}
-                            <div className="flex">
-                                <img src={activeChat.avatar} className="w-8 h-8 rounded-full mr-2 mt-1" />
-                                <div className="bg-white p-3 rounded-r-2xl rounded-bl-2xl shadow-sm max-w-xs text-gray-800 border border-gray-100">
-                                    Chào bạn, lâu rồi không gặp!
-                                </div>
-                            </div>
+                            {messages.map((m, index) => {
+                                const isMe = m.sender === currentUser._id;
 
-                            {/* Tin nhắn của mình */}
-                            <div className="flex justify-end">
-                                <div className="bg-blue-600 text-white p-3 rounded-l-2xl rounded-br-2xl shadow-md max-w-xs">
-                                    Hi! Mình vẫn khỏe. Dạo này thế nào?
-                                </div>
-                            </div>
+                                return (
+                                    <div key={index} ref={scrollRef}>
+                                        <div className={`flex ${isMe ? 'justify-end' : ''}`}>
+
+                                            {/* Avatar của người khác (chỉ hiện khi không phải là mình) */}
+                                            {!isMe && (
+                                                <img
+                                                    src={getAvatarUrl(activeChat.avatar)}
+                                                    className="w-8 h-8 rounded-full mr-2 mt-1 object-cover"
+                                                    alt="avt"
+                                                />
+                                            )}
+
+                                            <div className={`p-3 max-w-xs shadow-sm text-sm ${isMe
+                                                ? 'bg-green-600 text-white rounded-l-2xl rounded-br-2xl'
+                                                : 'bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl'
+                                                }`}>
+                                                {m.text}
+                                            </div>
+                                        </div>
+                                        <div className={`text-[10px] text-gray-400 mt-1 ${isMe ? 'text-right' : 'text-left ml-10'}`}>
+                                            {formatTimeAgo(m.createdAt)}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            {/* Dòng này giúp tin nhắn mới không bị che khi mới vào */}
+                            {messages.length === 0 && (
+                                <p className="text-center text-gray-400 text-sm mt-10">
+                                    Hãy bắt đầu cuộc trò chuyện với {activeChat.displayName}
+                                </p>
+                            )}
                         </div>
 
                         {/* Input Area */}
                         <div className="bg-white p-4 border-t border-gray-200">
-                            <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
-                                <button className="text-gray-500 hover:text-blue-600 mr-3"><FaSmile size={20} /></button>
-                                <input type="text" placeholder="Nhập tin nhắn..." className="flex-1 bg-transparent focus:outline-none" />
-                                <button className="text-blue-600 hover:text-blue-800 ml-3"><FaPaperPlane size={20} /></button>
-                            </div>
+                            <form onSubmit={handleSendMessage} className="flex items-center bg-gray-100 rounded-full px-4 py-2">
+                                <button type="button" className="text-gray-500 hover:text-green-600 mr-3"><FaSmile size={20} /></button>
+
+                                <input
+                                    type="text"
+                                    placeholder="Nhập tin nhắn..."
+                                    className="flex-1 bg-transparent focus:outline-none"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                />
+
+                                <button type="submit" className="text-green-600 hover:text-green-800 ml-3">
+                                    <FaPaperPlane size={20} />
+                                </button>
+                            </form>
                         </div>
                     </>
                 ) : (
