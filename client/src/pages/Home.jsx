@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSearch, FaPaperPlane, FaPhone, FaVideo, FaInfoCircle, FaSmile, FaCheck, FaCheckDouble, FaImage, FaTimesCircle } from "react-icons/fa";
+import { FaSearch, FaPaperPlane, FaPhone, FaUsers, FaVideo, FaInfoCircle, FaSmile, FaCheck, FaCheckDouble, FaImage, FaTimesCircle } from "react-icons/fa";
 import UserProfileSidebar from "../components/UserProfileSidebar";
 import { io } from "socket.io-client";
 import axios from "axios";
@@ -7,6 +7,7 @@ import UserStatus from "../components/UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { toast } from "react-toastify";
 import EmojiPicker from 'emoji-picker-react';
+import CreateGroupModal from "../components/CreateGroupModal";
 
 const Home = () => {
     // STATE
@@ -27,6 +28,8 @@ const Home = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const fileInputRef = useRef();
+    const [groups, setGroups] = useState([]);
+    const [showCreateGroup, setShowCreateGroup] = useState(false);
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL
@@ -127,12 +130,15 @@ const Home = () => {
     useEffect(() => {
         const fetchMessages = async () => {
             if (!activeChat || !currentUser) return;
-
+            setMessages([]);
             try {
-                // Reset message cũ trước khi load cái mới để tránh hiện nhầm
-                setMessages([]);
+                const isGroup = activeChat.members ? true : false;
 
-                const res = await axios.get(`${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`, {
+                const url = isGroup
+                    ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true` // userId1 là 'none' hoặc gì cũng được
+                    : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
+
+                const res = await axios.get(url, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 setMessages(res.data);
@@ -157,7 +163,11 @@ const Home = () => {
         if (!socket.current) return;
 
         const handleIncomingMessage = (data) => {
-            if (activeChat && data.senderId === activeChat._id) {
+            const isCurrentChat = activeChat && (
+                (data.isGroup && data.receiverId === activeChat._id) ||
+                (!data.isGroup && data.senderId === activeChat._id)
+            );
+            if (isCurrentChat) {
 
                 setMessages((prev) => [...prev, {
                     sender: data.senderId,
@@ -249,12 +259,15 @@ const Home = () => {
                 imageUrl = uploadRes.data.imageUrl;
             }
 
+            const isGroup = activeChat.members ? true : false;
+
             // Gửi tin nhắn (kèm text và imageUrl)
             const messagePayload = {
                 sender: currentUser._id,
                 receiver: activeChat._id,
                 text: newMessage,
-                image: imageUrl
+                image: imageUrl,
+                isGroup: isGroup
             };
 
             // Lưu DB
@@ -265,11 +278,12 @@ const Home = () => {
 
             // Gửi Socket
             socket.current.emit("sendMessage", {
+                ...messagePayload,
+                createdAt: savedMessage.createdAt,
                 senderId: currentUser._id,
                 receiverId: activeChat._id,
                 text: savedMessage.text,
                 image: savedMessage.image,
-                createdAt: savedMessage.createdAt
             });
 
             // Update UI
@@ -389,6 +403,20 @@ const Home = () => {
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
+    // FETCH GROUPS
+    useEffect(() => {
+        const fetchGroups = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${API_URL}/api/groups`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.data.success) setGroups(res.data.groups);
+            } catch (error) { console.error(error); }
+        };
+        fetchGroups();
+    }, []);
+
     if (isLoading) {
         return <div className="h-screen flex items-center justify-center">Loading...</div>;
     }
@@ -411,6 +439,11 @@ const Home = () => {
 
                         <h1 className="text-xl font-bold hidden md:block">Chat App</h1>
                     </div>
+
+                    {/* Button tạo nhóm */}
+                    <button onClick={() => setShowCreateGroup(true)} className="ml-2 text-white hover:text-blue-200">
+                        <FaUsers size={20} title="Tạo nhóm" />
+                    </button>
                     <button onClick={handleLogout} className="text-xs bg-blue-800 px-3 py-2 rounded hover:bg-blue-900 transition-colors shadow-sm font-semibold"> Logout </button>
                 </div>
 
@@ -428,6 +461,21 @@ const Home = () => {
                     </div>
                 </div>
 
+                <div className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase">Nhóm chat</div>
+                {groups.map(group => (
+                    <div key={group._id} onClick={() => setActiveChat(group)} className="...">
+                        {/* Render Avatar Group và Tên Group */}
+                        <div className="relative">
+                            <img src={group.avatar} className="w-12 h-12 rounded-full" />
+                        </div>
+                        <div className="ml-3">
+                            <h3 className="font-bold">{group.name}</h3>
+                            <p className="text-xs text-gray-500">{group.members.length} thành viên</p>
+                        </div>
+                    </div>
+                ))}
+
+                <div className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase">Tin nhắn riêng</div>
                 {/* User List */}
                 <div className="flex-1 overflow-y-auto">
                     {filteredUsers.length > 0 ? (
@@ -674,6 +722,13 @@ const Home = () => {
                     onUpdateSuccess={handleUpdateSuccess}
                 />
             )}
+
+            <CreateGroupModal
+                isOpen={showCreateGroup}
+                onClose={() => setShowCreateGroup(false)}
+                users={users} // Truyền danh sách user để chọn
+                onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])}
+            />
         </div>
     );
 };

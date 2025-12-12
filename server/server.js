@@ -10,6 +10,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 const User = require('./src/models/User');
 const Message = require('./src/models/Message');
+const Group = require('./src/models/Group');
 
 dotenv.config();
 
@@ -73,16 +74,41 @@ io.on('connection', async (socket) => {
     });
 
     // Lắng nghe sự kiện 'sendMessage' từ Client
-    socket.on("sendMessage", ({ senderId, receiverId, text }) => {
-        const userSocketId = onlineUsers.get(receiverId);
+    socket.on("sendMessage", async ({ senderId, receiverId, text, image, isGroup }) => {
 
-        if (userSocketId) {
-            // Gửi tin nhắn riêng cho người đó
-            io.to(userSocketId).emit("getMessage", {
-                senderId,
-                text,
-                createdAt: Date.now()
-            });
+        if (isGroup) {
+            // LOGIC GỬI CHO NHÓM
+            // Tìm thông tin nhóm để lấy danh sách members
+            const group = await Group.findById(receiverId);
+            if (group) {
+                // Gửi cho tất cả member
+                group.members.forEach(memberId => {
+                    if (memberId.toString() === senderId) return;
+
+                    const memberSocketId = onlineUsers.get(memberId.toString());
+                    if (memberSocketId) {
+                        io.to(memberSocketId).emit("getMessage", {
+                            senderId,
+                            receiverId,
+                            text,
+                            image,
+                            createdAt: Date.now(),
+                            isGroup: true
+                        });
+                    }
+                });
+            }
+        } else {
+            // LOGIC GỬI 1-1
+            const userSocketId = onlineUsers.get(receiverId);
+            if (userSocketId) {
+                io.to(userSocketId).emit("getMessage", {
+                    senderId,
+                    text,
+                    image,
+                    createdAt: Date.now()
+                });
+            }
         }
     });
 
@@ -124,6 +150,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/messages', messageRoutes);
+app.use('/api/groups', require('./src/routes/group'));
 
 // Start Server
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

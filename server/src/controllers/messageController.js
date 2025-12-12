@@ -3,9 +3,17 @@ const Message = require('../models/Message');
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
     try {
-        const { sender, receiver, text, image } = req.body;
+        const { sender, receiver, text, image, isGroup } = req.body;
         // Tạo conversationId duy nhất cho 2 người này
-        const conversationId = [sender, receiver].sort().join("_");
+        let conversationId;
+
+        if (isGroup) {
+            // Nếu là nhóm, conversationId chính là ID của nhóm (receiver)
+            conversationId = receiver;
+        } else {
+            // Nếu là 1-1, gộp ID như cũ
+            conversationId = [sender, receiver].sort().join("_");
+        }
 
         const newMessage = new Message({
             conversationId,
@@ -25,7 +33,12 @@ exports.createMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
     try {
         const { userId1, userId2 } = req.params;
-        const conversationId = [userId1, userId2].sort().join("_");
+        let conversationId;
+        if (req.query.isGroup === 'true') {
+            conversationId = userId2;
+        } else {
+            conversationId = [userId1, userId2].sort().join("_");
+        }
 
         const messages = await Message.find({
             conversationId: conversationId
