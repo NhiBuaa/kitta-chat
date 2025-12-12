@@ -5,6 +5,7 @@ import { io } from "socket.io-client";
 import axios from "axios";
 import UserStatus from "../components/UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
+import { toast } from "react-toastify";
 
 const Home = () => {
     // STATE
@@ -20,6 +21,7 @@ const Home = () => {
     const scrollRef = useRef();
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef(null);
+    const [unreadUsers, setUnreadUsers] = useState([]);
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL
@@ -109,6 +111,27 @@ const Home = () => {
         };
     }, [currentUser]);
 
+    // FETCH TIN NHẮN TỪ DB
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (!activeChat || !currentUser) return;
+
+            try {
+                // Reset message cũ trước khi load cái mới để tránh hiện nhầm
+                setMessages([]);
+
+                const res = await axios.get(`${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+                setMessages(res.data);
+            } catch (err) {
+                console.error("Lỗi fetch tin nhắn:", err);
+            }
+        };
+
+        fetchMessages();
+    }, [activeChat, currentUser]);
+
     // Kết hợp dữ liệu từ DB (khi mới load) và Socket (realtime)
     const checkIsOnline = (user) => {
         //  Nếu ID có trong danh sách socket -> Chắc chắn đang Online
@@ -121,31 +144,68 @@ const Home = () => {
     useEffect(() => {
         if (!socket.current) return;
 
-        socket.current.on("getMessage", (data) => {
-            // Chỉ hiện tin nhắn nếu nó đến từ người mình đang chat (activeChat)
+        const handleIncomingMessage = (data) => {
             if (activeChat && data.senderId === activeChat._id) {
+
                 setMessages((prev) => [...prev, {
                     sender: data.senderId,
                     text: data.text,
-                    createdAt: data.createdAt
+                    createdAt: data.createdAt,
+                    isRead: true
                 }]);
-            }
-        });
-    }, [activeChat]);
 
-    // LẤY TIN NHẮN TỪ DB KHI CHỌN NGƯỜI CHAT
-    useEffect(() => {
-        const getMessages = async () => {
-            if (!activeChat || !currentUser) return;
-            try {
-                const res = await axios.get(`${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`);
-                setMessages(res.data);
-            } catch (err) {
-                console.log(err);
+                // Gửi lại sự kiện "Đã đọc" ngay lập tức vì đang mở chat
+                socket.current.emit("markRead", {
+                    senderId: data.senderId,
+                    receiverId: currentUser._id
+                });
+
+                scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+            } else {
+                // Thêm vào danh sách chưa đọc
+                setUnreadUsers((prev) => {
+                    // Nếu ID chưa có trong mảng thì thêm vào
+                    if (!prev.includes(data.senderId)) {
+                        return [...prev, data.senderId];
+                    }
+                    return prev;
+                });
+
+                // Tìm tên người gửi
+                const sender = users.find(u => u._id === data.senderId);
+                const senderName = sender ? sender.displayName : "Ai đó";
+
+                // Hiện thông báo nhỏ góc màn hình
+                toast.info(`Tin nhắn mới từ ${senderName}: "${data.text.substring(0, 20)}..."`, {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: true,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    theme: "light",
+                });
             }
         };
-        getMessages();
-    }, [activeChat, currentUser]);
+
+        // Đăng ký sự kiện
+        socket.current.on("getMessage", handleIncomingMessage);
+
+        // Cleanup: Hủy sự kiện cũ khi activeChat thay đổi để tránh memory leak và duplicate tin nhắn
+        return () => {
+            socket.current.off("getMessage", handleIncomingMessage);
+        };
+
+    }, [activeChat, users, currentUser]);
+
+    // HÀM CHỌN NGƯỜI CHAT (Sửa lại để xóa thông báo chưa đọc)
+    const handleSelectUser = (user) => {
+        // Set người đang chat
+        setActiveChat(user);
+
+        // Xóa thông báo chưa đọc của người này
+        setUnreadUsers((prev) => prev.filter(id => id !== user._id));
+    };
 
     // TỰ ĐỘNG CUỘN XUỐNG DƯỚI
     useEffect(() => {
@@ -155,29 +215,38 @@ const Home = () => {
     // HÀM GỬI TIN NHẮN
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || !activeChat) return;
 
-        const messageData = {
+        // Dữ liệu gửi lên API
+        const messagePayload = {
             sender: currentUser._id,
             receiver: activeChat._id,
             text: newMessage
         };
 
-        // Gửi qua Socket để bên kia nhận ngay lập tức
-        socket.current.emit("sendMessage", {
-            senderId: currentUser._id,
-            receiverId: activeChat._id,
-            text: newMessage
-        });
-
         try {
-            // Lưu vào DB
-            const res = await axios.post(`${API_URL}/api/messages`, messageData);
+            // Lưu vào DB trước
+            const res = await axios.post(`${API_URL}/api/messages`, messagePayload, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+
+            const savedMessage = res.data;
+
+            //  Gửi qua Socket cho người kia
+            socket.current.emit("sendMessage", {
+                senderId: currentUser._id,
+                receiverId: activeChat._id,
+                text: savedMessage.text,
+                createdAt: savedMessage.createdAt
+            });
+
             // Cập nhật UI của mình
-            setMessages([...messages, res.data]);
-            setNewMessage(""); // Xóa ô nhập
+            setMessages((prev) => [...prev, savedMessage]);
+            setNewMessage("");
+
         } catch (err) {
-            console.log(err);
+            console.error("Lỗi gửi tin nhắn:", err);
+            toast.error("Không thể gửi tin nhắn");
         }
     };
 
@@ -185,21 +254,26 @@ const Home = () => {
     useEffect(() => {
         if (!socket.current) return;
 
-        // Khi nhận tin hiệu đang gõ
-        socket.current.on("getTyping", (senderId) => {
-            // Chỉ hiện nếu đúng là người mình đang chat gửi tín hiệu
+        const handleTyping = (senderId) => {
+            // QUAN TRỌNG: Chỉ hiện typing nếu người gửi LÀ người đang chat
             if (activeChat && senderId === activeChat._id) {
                 setIsTyping(true);
             }
-        });
+        };
 
-        // Khi nhận tín hiệu ngừng gõ
-        socket.current.on("getStopTyping", (senderId) => {
+        const handleStopTyping = (senderId) => {
             if (activeChat && senderId === activeChat._id) {
                 setIsTyping(false);
             }
-        });
+        };
 
+        socket.current.on("getTyping", handleTyping);
+        socket.current.on("getStopTyping", handleStopTyping);
+
+        return () => {
+            socket.current.off("getTyping", handleTyping);
+            socket.current.off("getStopTyping", handleStopTyping);
+        };
     }, [activeChat]);
 
     // Reset trạng thái typing khi chuyển chat sang người khác
@@ -303,11 +377,13 @@ const Home = () => {
                         // TRƯỜNG HỢP CÓ DỮ LIỆU
                         filteredUsers.map((user) => {
                             const isOnline = checkIsOnline(user);
+                            // Kiểm tra xem user này có tin nhắn mới không
+                            const hasUnread = unreadUsers.includes(user._id);
 
                             return (
                                 <div
                                     key={user._id}
-                                    onClick={() => setActiveChat(user)}
+                                    onClick={() => handleSelectUser(user)}
                                     className="p-4 flex items-center border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition"
                                 >
                                     {/* Phần Avatar */}
@@ -322,6 +398,14 @@ const Home = () => {
                                     <div className="ml-3 flex-1 overflow-hidden">
                                         <div className="flex justify-between items-center">
                                             <h3 className="font-semibold text-gray-800 text-sm truncate">{user.displayName}</h3>
+                                            {hasUnread && (
+                                                <div className="flex flex-col items-end">
+                                                    {/* Chấm đỏ số lượng (hoặc chữ New) */}
+                                                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                                                        Mới
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <UserStatus user={user} isOnline={isOnline} />
