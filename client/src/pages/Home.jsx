@@ -52,7 +52,14 @@ const Home = () => {
 
                 // Xử lý List Users
                 if (usersRes.data.success) {
-                    setUsers(usersRes.data.users);
+                    const fetchedUsers = usersRes.data.users;
+                    setUsers(fetchedUsers);
+
+                    const initialUnreadUsers = fetchedUsers
+                        .filter(user => user.hasUnread)
+                        .map(user => user._id);
+
+                    setUnreadUsers(initialUnreadUsers);
                 }
 
             } catch (error) {
@@ -164,7 +171,7 @@ const Home = () => {
             } else {
                 // Thêm vào danh sách chưa đọc
                 setUnreadUsers((prev) => {
-                    // Nếu ID chưa có trong mảng thì thêm vào
+                    // Nếu ID chưa có thì thêm vào
                     if (!prev.includes(data.senderId)) {
                         return [...prev, data.senderId];
                     }
@@ -397,10 +404,11 @@ const Home = () => {
                                     {/* Phần Info */}
                                     <div className="ml-3 flex-1 overflow-hidden">
                                         <div className="flex justify-between items-center">
-                                            <h3 className="font-semibold text-gray-800 text-sm truncate">{user.displayName}</h3>
+                                            <h3 className={`text-sm truncate ${hasUnread ? 'font-bold text-black' : 'font-semibold text-gray-800'}`}>
+                                                {user.displayName}
+                                            </h3>
                                             {hasUnread && (
-                                                <div className="flex flex-col items-end">
-                                                    {/* Chấm đỏ số lượng (hoặc chữ New) */}
+                                                <div className="flex flex-col items-end ml-2">
                                                     <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
                                                         Mới
                                                     </span>
@@ -408,13 +416,17 @@ const Home = () => {
                                             )}
                                         </div>
 
-                                        <UserStatus user={user} isOnline={isOnline} />
+                                        <div className="flex justify-between items-center mt-1">
+                                            <div className="flex-1">
+                                                <UserStatus user={user} isOnline={isOnline} />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             );
                         })
                     ) : (
-                        // TRƯỜNG HỢP KHÔNG CÓ DỮ LIỆU (Empty State)
+                        // TRƯỜNG HỢP KHÔNG CÓ DỮ LIỆU
                         <div className="flex flex-col items-center justify-center mt-10 text-gray-400">
                             <div className="bg-gray-100 p-4 rounded-full mb-3">
                                 <FaSearch size={24} className="text-gray-300" />

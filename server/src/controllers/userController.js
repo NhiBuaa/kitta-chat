@@ -1,5 +1,5 @@
-// controllers/userController.js
 const User = require('../models/User');
+const Message = require('../models/Message');
 
 // [GET] /api/users/profile
 const getUserProfile = async (req, res) => {
@@ -79,11 +79,23 @@ const updateUserProfile = async (req, res) => {
 const getAllUsers = async (req, res) => {
     try {
         const currentUserId = req.user.id;
+        const users = await User.find({ _id: { $ne: currentUserId } }).select('-password').lean();
 
-        // Tìm tất cả user có _id KHÁC ($ne) currentUserId
-        const users = await User.find({ _id: { $ne: currentUserId } }).select('-password');
+        const usersWithUnreadInfo = await Promise.all(users.map(async (user) => {
+            const unreadExist = await Message.exists({
+                sender: user._id,
+                receiver: currentUserId,
+                isRead: false
+            });
 
-        res.json({ success: true, users });
+            return {
+                ...user,
+                hasUnread: !!unreadExist
+            };
+        }));
+
+        res.json({ success: true, users: usersWithUnreadInfo });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Lỗi server" });
