@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSearch, FaPaperPlane, FaPhone, FaVideo, FaInfoCircle, FaSmile, FaCheck, FaCheckDouble } from "react-icons/fa";
+import { FaSearch, FaPaperPlane, FaPhone, FaVideo, FaInfoCircle, FaSmile, FaCheck, FaCheckDouble, FaImage, FaTimesCircle } from "react-icons/fa";
 import UserProfileSidebar from "../components/UserProfileSidebar";
 import { io } from "socket.io-client";
 import axios from "axios";
 import UserStatus from "../components/UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { toast } from "react-toastify";
+import EmojiPicker from 'emoji-picker-react';
 
 const Home = () => {
     // STATE
@@ -22,6 +23,10 @@ const Home = () => {
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef(null);
     const [unreadUsers, setUnreadUsers] = useState([]);
+    const [showEmoji, setShowEmoji] = useState(false);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [imageFile, setImageFile] = useState(null);
+    const fileInputRef = useRef();
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL
@@ -220,40 +225,64 @@ const Home = () => {
     }, [messages]);
 
     // HÀM GỬI TIN NHẮN
+    // SỬA HÀM GỬI TIN NHẮN
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim() || !activeChat) return;
 
-        // Dữ liệu gửi lên API
-        const messagePayload = {
-            sender: currentUser._id,
-            receiver: activeChat._id,
-            text: newMessage
-        };
+        // Chỉ gửi nếu có text HOẶC có ảnh
+        if (!newMessage.trim() && !imageFile) return;
+
+        let imageUrl = "";
 
         try {
-            // Lưu vào DB trước
+            // Nếu có ảnh -> Upload trước để lấy URL
+            if (imageFile) {
+                const formData = new FormData();
+                formData.append('image', imageFile);
+
+                const uploadRes = await axios.post(`${API_URL}/api/messages/upload`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                imageUrl = uploadRes.data.imageUrl;
+            }
+
+            // Gửi tin nhắn (kèm text và imageUrl)
+            const messagePayload = {
+                sender: currentUser._id,
+                receiver: activeChat._id,
+                text: newMessage,
+                image: imageUrl
+            };
+
+            // Lưu DB
             const res = await axios.post(`${API_URL}/api/messages`, messagePayload, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
-
             const savedMessage = res.data;
 
-            //  Gửi qua Socket cho người kia
+            // Gửi Socket
             socket.current.emit("sendMessage", {
                 senderId: currentUser._id,
                 receiverId: activeChat._id,
                 text: savedMessage.text,
+                image: savedMessage.image,
                 createdAt: savedMessage.createdAt
             });
 
-            // Cập nhật UI của mình
+            // Update UI
             setMessages((prev) => [...prev, savedMessage]);
+
+            // Reset form
             setNewMessage("");
+            clearImage();
+            setShowEmoji(false);
 
         } catch (err) {
-            console.error("Lỗi gửi tin nhắn:", err);
-            toast.error("Không thể gửi tin nhắn");
+            console.error(err);
+            toast.error("Lỗi gửi tin nhắn");
         }
     };
 
@@ -338,6 +367,27 @@ const Home = () => {
             }
         }
     }, [activeChat, messages, currentUser]);
+
+    const onEmojiClick = (emojiObject) => {
+        setNewMessage((prev) => prev + emojiObject.emoji);
+        // Không tắt bảng vội để người dùng có thể chọn nhiều icon
+    };
+
+    // XỬ LÝ CHỌN ẢNH
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file)); // Tạo link xem trước
+        }
+    };
+
+    // XÓA ẢNH ĐANG CHỌN
+    const clearImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     if (isLoading) {
         return <div className="h-screen flex items-center justify-center">Loading...</div>;
@@ -489,7 +539,16 @@ const Home = () => {
                                                 ? 'bg-green-600 text-white rounded-l-2xl rounded-br-2xl'
                                                 : 'bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl'
                                                 }`}>
-                                                {m.text}
+                                                {m.image && (
+                                                    <img
+                                                        src={getAvatarUrl(m.image)}
+                                                        alt="msg-img"
+                                                        className="w-full h-auto rounded-lg mb-2 cursor-pointer hover:opacity-90"
+                                                        onClick={() => window.open(getAvatarUrl(m.image), '_blank')}
+                                                    />
+                                                )}
+
+                                                {m.text && <span>{m.text}</span>}
 
                                                 {isMe && (
                                                     <div className="self-end mt-1">
@@ -538,8 +597,48 @@ const Home = () => {
 
                         {/* Input Area */}
                         <div className="bg-white p-4 border-t border-gray-200">
+
+                            {/* HIỂN THỊ ẢNH PREVIEW TRƯỚC KHI GỬI */}
+                            {imagePreview && (
+                                <div className="absolute bottom-20 left-4 bg-white p-2 rounded-lg shadow-lg border border-gray-200">
+                                    <div className="relative">
+                                        <img src={imagePreview} alt="preview" className="w-24 h-24 object-cover rounded-md" />
+                                        <button
+                                            onClick={clearImage}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                        >
+                                            <FaTimesCircle size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bảng Emoji */}
+                            {showEmoji && (
+                                <div className="absolute bottom-20 left-4 z-10">
+                                    <EmojiPicker onEmojiClick={onEmojiClick} />
+                                </div>
+                            )}
+
                             <form onSubmit={handleSendMessage} className="flex items-center bg-gray-100 rounded-full px-4 py-2">
-                                <button type="button" className="text-gray-500 hover:text-green-600 mr-3"><FaSmile size={20} /></button>
+                                {/* Nút chọn ảnh */}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    ref={fileInputRef}
+                                    onChange={handleImageChange}
+                                />
+                                <button
+                                    type="button"
+                                    className="text-gray-500 hover:text-green-600 mr-3"
+                                    onClick={() => fileInputRef.current.click()}
+                                >
+                                    <FaImage size={20} />
+                                </button>
+
+                                {/* Nút chọn emoji */}
+                                <button type="button" onClick={() => setShowEmoji(!showEmoji)} className="text-gray-500 hover:text-green-600 mr-3"><FaSmile size={20} /></button>
 
                                 <input
                                     type="text"

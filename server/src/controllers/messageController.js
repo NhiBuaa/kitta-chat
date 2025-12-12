@@ -3,17 +3,15 @@ const Message = require('../models/Message');
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
     try {
-        // conversationId ở đây mình sẽ dùng mẹo: gộp ID 2 người lại để làm mã cuộc trò chuyện
-        // Ví dụ: UserA_UserB (sắp xếp theo alphabet để A chat với B giống B chat với A)
-        const { sender, receiver, text } = req.body;
-
+        const { sender, receiver, text, image } = req.body;
         // Tạo conversationId duy nhất cho 2 người này
         const conversationId = [sender, receiver].sort().join("_");
 
         const newMessage = new Message({
             conversationId,
             sender,
-            text
+            text,
+            image
         });
 
         const savedMessage = await newMessage.save();
@@ -36,5 +34,17 @@ exports.getMessages = async (req, res) => {
         res.status(200).json(messages);
     } catch (err) {
         res.status(500).json(err);
+    }
+};
+
+exports.uploadImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "Chưa chọn file" });
+        }
+        const imageUrl = `/uploads/${req.file.filename}`;
+        res.json({ imageUrl });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi upload" });
     }
 };
