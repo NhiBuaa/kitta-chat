@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSearch, FaPaperPlane, FaPhone, FaUsers, FaVideo, FaInfoCircle, FaSmile, FaCheck, FaCheckDouble, FaImage, FaTimesCircle } from "react-icons/fa";
+import { FaBell, FaSearch, FaPaperPlane, FaPhone, FaUsers, FaVideo, FaInfoCircle, FaSmile, FaCheck, FaCheckDouble, FaImage, FaTimesCircle } from "react-icons/fa";
 import UserProfileSidebar from "../components/UserProfileSidebar";
 import { io } from "socket.io-client";
 import axios from "axios";
@@ -8,11 +8,14 @@ import { formatTimeAgo } from "../utils/formatTime";
 import { toast } from "react-toastify";
 import EmojiPicker from 'emoji-picker-react';
 import CreateGroupModal from "../components/CreateGroupModal";
+import FriendRequestModal from "../components/FriendRequestModal";
+import { getFriends } from "../services/userService";
 
 const Home = () => {
     // STATE
     const [activeChat, setActiveChat] = useState(null);
     const [showProfile, setShowProfile] = useState(false);
+    const [showRequestModal, setShowRequestModal] = useState(false);
     const [users, setUsers] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -35,52 +38,53 @@ const Home = () => {
     const API_URL = import.meta.env.VITE_API_URL
     const socket = useRef();
 
+    const fetchData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            // Gọi song song 2 API: Lấy Profile mình & Lấy list Users
+            const [profileRes, sidebarRes] = await Promise.all([
+                axios.get(`${API_URL}/api/users/profile`, config),
+                axios.get(`${API_URL}/api/users/sidebar-list`, config)
+            ]);
+
+            // Xử lý Profile
+            if (profileRes.data.success) {
+                setCurrentUser(profileRes.data.user);
+            }
+
+            // Xử lý List Users
+            if (sidebarRes.data.success) {
+                const fetchedList = sidebarRes.data.users || sidebarRes.data.friends || [];
+
+                setUsers(fetchedList);
+
+                const initialUnreadUsers = fetchedList
+                    .filter(user => user.hasUnread)
+                    .map(user => user._id);
+
+                setUnreadUsers(initialUnreadUsers);
+            }
+
+        } catch (error) {
+            console.error("Lỗi tải dữ liệu:", error);
+            if (error.response?.status === 401) {
+                localStorage.removeItem("token");
+                window.location.href = '/login';
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     // Lấy dữ liệu users từ DB
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    window.location.href = '/login';
-                    return;
-                }
-
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-
-                // Gọi song song 2 API: Lấy Profile mình & Lấy list Users
-                const [profileRes, usersRes] = await Promise.all([
-                    axios.get(`${API_URL}/api/users/profile`, config),
-                    axios.get(`${API_URL}/api/users`, config)
-                ]);
-
-                // Xử lý Profile
-                if (profileRes.data.success) {
-                    setCurrentUser(profileRes.data.user);
-                }
-
-                // Xử lý List Users
-                if (usersRes.data.success) {
-                    const fetchedUsers = usersRes.data.users;
-                    setUsers(fetchedUsers);
-
-                    const initialUnreadUsers = fetchedUsers
-                        .filter(user => user.hasUnread)
-                        .map(user => user._id);
-
-                    setUnreadUsers(initialUnreadUsers);
-                }
-
-            } catch (error) {
-                console.error("Lỗi tải dữ liệu:", error);
-                if (error.response?.status === 401) {
-                    localStorage.removeItem("token");
-                    window.location.href = '/login';
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchData();
     }, []);
 
@@ -444,6 +448,9 @@ const Home = () => {
                     <button onClick={() => setShowCreateGroup(true)} className="ml-2 text-white hover:text-blue-200">
                         <FaUsers size={20} title="Tạo nhóm" />
                     </button>
+                    <button onClick={() => setShowRequestModal(true)} title="Lời mời kết bạn">
+                        <FaBell size={20} className="ml-4 text-white hover:text-blue-200" />
+                    </button>
                     <button onClick={handleLogout} className="text-xs bg-blue-800 px-3 py-2 rounded hover:bg-blue-900 transition-colors shadow-sm font-semibold"> Logout </button>
                 </div>
 
@@ -476,61 +483,78 @@ const Home = () => {
                 ))}
 
                 <div className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase">Tin nhắn riêng</div>
-                {/* User List */}
+                {/* User List Container */}
                 <div className="flex-1 overflow-y-auto">
                     {filteredUsers.length > 0 ? (
-                        // TRƯỜNG HỢP CÓ DỮ LIỆU
                         filteredUsers.map((user) => {
                             const isOnline = checkIsOnline(user);
-                            // Kiểm tra xem user này có tin nhắn mới không
                             const hasUnread = unreadUsers.includes(user._id);
 
                             return (
                                 <div
                                     key={user._id}
                                     onClick={() => handleSelectUser(user)}
-                                    className="p-4 flex items-center border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition"
+                                    className={`p-4 flex items-center border-b border-gray-50 cursor-pointer transition
+                        ${hasUnread ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}
+                    `}
                                 >
-                                    {/* Phần Avatar */}
+                                    {/* --- Avatar & Online Status --- */}
                                     <div className="relative">
-                                        <img src={getAvatarUrl(user.avatar)} alt="Avt" className="w-12 h-12 rounded-full object-cover" />
+                                        <img
+                                            src={getAvatarUrl(user.avatar)}
+                                            alt={user.displayName}
+                                            className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                                        />
                                         {isOnline && (
-                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>
                                         )}
                                     </div>
 
-                                    {/* Phần Info */}
+                                    {/* --- User Info & Preview --- */}
                                     <div className="ml-3 flex-1 overflow-hidden">
                                         <div className="flex justify-between items-center">
-                                            <h3 className={`text-sm truncate ${hasUnread ? 'font-bold text-black' : 'font-semibold text-gray-800'}`}>
+                                            <h3 className={`text-sm truncate max-w-[140px] ${hasUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
                                                 {user.displayName}
                                             </h3>
-                                            {hasUnread && (
-                                                <div className="flex flex-col items-end ml-2">
-                                                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
-                                                        Mới
-                                                    </span>
-                                                </div>
-                                            )}
+                                            {/* Thời gian tin nhắn cuối (Nếu bạn có trả về từ API) */}
+                                            {/* <span className="text-xs text-gray-400">12:30</span> */}
                                         </div>
 
                                         <div className="flex justify-between items-center mt-1">
-                                            <div className="flex-1">
-                                                <UserStatus user={user} isOnline={isOnline} />
+                                            <div className="flex-1 text-xs text-gray-500 truncate">
+                                                {/* Thay vì hiện UserStatus, Zalo thường hiện tin nhắn cuối cùng */}
+                                                {hasUnread ? (
+                                                    <span className="text-blue-600 font-semibold">Bạn có tin nhắn mới</span>
+                                                ) : (
+                                                    <span className="text-gray-400">Nhấn để bắt đầu trò chuyện</span>
+                                                )}
                                             </div>
+
+                                            {/* Badge số lượng tin chưa đọc */}
+                                            {hasUnread && (
+                                                <div className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                                                    N
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             );
                         })
                     ) : (
-                        // TRƯỜNG HỢP KHÔNG CÓ DỮ LIỆU
-                        <div className="flex flex-col items-center justify-center mt-10 text-gray-400">
-                            <div className="bg-gray-100 p-4 rounded-full mb-3">
-                                <FaSearch size={24} className="text-gray-300" />
+                        <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                            <div className="bg-blue-50 p-4 rounded-full mb-4">
+                                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
                             </div>
-                            <p className="text-sm">Không tìm thấy người dùng nào</p>
-                            {searchTerm && <p className="text-xs mt-1">Kết quả cho: "{searchTerm}"</p>}
+                            <h3 className="text-gray-600 font-medium mb-1">Chưa có cuộc trò chuyện nào</h3>
+                            <p className="text-gray-400 text-xs mb-4 max-w-[200px]">
+                                Kết nối với bạn bè để bắt đầu nhắn tin ngay bây giờ.
+                            </p>
+                            <button className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition shadow-sm">
+                                Tìm bạn bè mới
+                            </button>
                         </div>
                     )}
                 </div>
@@ -729,6 +753,13 @@ const Home = () => {
                 users={users} // Truyền danh sách user để chọn
                 onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])}
             />
+
+            {showRequestModal && (
+                <FriendRequestModal
+                    onClose={() => setShowRequestModal(false)}
+                    onAcceptSuccess={fetchFriends} // Reload lại list bạn sau khi đồng ý
+                />
+            )}
         </div>
     );
 };

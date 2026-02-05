@@ -102,8 +102,124 @@ const getAllUsers = async (req, res) => {
     }
 };
 
+// Tìm kiếm người dùng
+const searchUsers = async (req, res) => {
+    try {
+        const { keyword } = req.query;
+        const currentUserId = req.user.id;
+
+        const users = await User.find({
+            $or: [
+                { displayName: { $regex: keyword, $options: 'i' } },
+                { email: { $regex: keyword, $options: 'i' } }
+            ],
+            _id: { $ne: currentUserId }
+        }).select('displayName email avatar');
+
+        res.json({ success: true, users });
+
+    } catch (error) {
+        console.error("Lỗi tìm kiếm người dùng:", error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
+// Lấy danh sách bạn bè
+const getFriends = async (req, res) => {
+    try {
+        const currentUser = await User.findById(req.user.id).populate('friends', 'displayName email avatar status activityStatus');
+        res.json({ success: true, friends: currentUser.friends });
+    } catch (error) {
+        console.error("Lỗi lấy danh sách bạn bè:", error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
+// Lấy danh sách lời mời kết bạn đang chờ
+const getFriendRequests = async (req, res) => {
+    try {
+        const currentUser = await User.findById(req.user.id)
+            .populate('friendRequests', 'displayName avatar email');
+
+        res.json({ success: true, requests: currentUser.friendRequests });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Chấp nhận lời mời kết bạn
+const accceptFriendRequest = async (req, res) => {
+    try {
+        const { senderId } = req.body;
+        const receiverId = req.user.id;
+
+        const receiver = await User.findById(receiverId);
+
+        // Kiểm tra có lời mời này hay không
+        if (!receiver.friendRequests.includes(senderId)) {
+            return res.status(400).json({ success: false, message: "Không có lời mời kết bạn này" });
+        }
+
+        // Thêm vào danh sách bạn bè và xoá khỏi lời mời
+        await User.findByIdAndUpdate(receiverId, {
+            $push: { friends: senderId },
+            $pull: { friendRequests: senderId }
+        })
+
+        await User.findByIdAndUpdate(senderId, {
+            $push: { friends: receiverId }
+        })
+
+        res.json({ success: true, message: "Đã chấp nhận lời mời kết bạn." });
+
+    } catch (error) {
+        console.error("Lỗi chấp nhận lời mời kết bạn:", error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
+const getSidebarUsers = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+
+        // Lấy danh sách bạn bè hiện tại
+        const currentUser = await User.findById(currentUserId);
+        const friendsIds = currentUser.friends.map(f => f._id.toString());
+
+        // Lấy danh sách các người lạ từng nhắn tin không phải bạn bè
+        const messages = await Message.find({
+            $or: [
+                { sender: currentUserId },
+                { receiver: currentUserId }
+            ]
+        }).select('sender receiver').lean();
+
+        const chattedUserIds = new Set();
+        messages.forEach(msg => {
+            if (msg.senderId.toString() !== currentUserId) chattedUserIds.add(msg.senderId.toString());
+            if (msg.receiverId.toString() !== currentUserId) chattedUserIds.add(msg.receiverId.toString());
+        })
+
+        // Gộp 2 danh sách lại với nhau
+        const allUserIdsToShow = Array.from(new Set([...friendsIds, ...chattedUserIds]));
+
+        // Truy cập lại vào DB để lấy những thông tin cần thiết
+        const users = await User.find({ _id: { $in: allUserIdsToShow } }).select('displayName avatar status activityStatus');
+        res.json({ success: true, users });
+
+    } catch (error) {
+        console.error("Get Sidebar Users Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
-    getAllUsers
+    getAllUsers,
+    searchUsers,
+    getFriends,
+    getFriendRequests,
+    accceptFriendRequest,
+    getSidebarUsers
 };
