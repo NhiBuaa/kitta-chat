@@ -9,7 +9,6 @@ import { toast } from "react-toastify";
 import EmojiPicker from 'emoji-picker-react';
 import CreateGroupModal from "../components/CreateGroupModal";
 import FriendRequestModal from "../components/FriendRequestModal";
-import { getFriends } from "../services/userService";
 
 const Home = () => {
     // STATE
@@ -33,10 +32,46 @@ const Home = () => {
     const fileInputRef = useRef();
     const [groups, setGroups] = useState([]);
     const [showCreateGroup, setShowCreateGroup] = useState(false);
+    const [searchResult, setSearchResult] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [requestCount, setRequestCount] = useState(0);
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL
     const socket = useRef();
+
+    useEffect(() => {
+        // Nếu ô tìm kiếm rỗng, dọn dẹp kết quả để hiện lại list bạn bè cũ
+        if (!searchTerm.trim()) {
+            setSearchResult([]);
+            return;
+        }
+
+        // Đặt một bộ hẹn giờ (Debounce 500ms)
+        const delayDebounceFn = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const token = localStorage.getItem('token');
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+
+                // Gọi API tìm kiếm toàn cục (Global Search)
+                const res = await axios.get(`${API_URL}/api/users/search?keyword=${searchTerm}`, config);
+
+                if (res.data.success) {
+                    setSearchResult(res.data.users);
+                }
+            } catch (error) {
+                console.error("Lỗi tìm kiếm:", error);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 500); // Chờ 500ms sau khi ngừng gõ mới gọi API
+
+        // Cleanup function: Hủy bộ hẹn giờ cũ nếu người dùng gõ tiếp
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm]);
+
+    const usersToDisplay = searchTerm.trim() ? searchResult : users;
 
     const fetchData = async () => {
         try {
@@ -49,9 +84,10 @@ const Home = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             // Gọi song song 2 API: Lấy Profile mình & Lấy list Users
-            const [profileRes, sidebarRes] = await Promise.all([
+            const [profileRes, sidebarRes, requestRes] = await Promise.all([
                 axios.get(`${API_URL}/api/users/profile`, config),
-                axios.get(`${API_URL}/api/users/sidebar-list`, config)
+                axios.get(`${API_URL}/api/users/sidebar-list`, config),
+                axios.get(`${API_URL}/api/users/friend-requests`, config)
             ]);
 
             // Xử lý Profile
@@ -70,6 +106,10 @@ const Home = () => {
                     .map(user => user._id);
 
                 setUnreadUsers(initialUnreadUsers);
+            }
+
+            if (requestRes.data.success) {
+                setRequestCount(requestRes.data.requests.length);
             }
 
         } catch (error) {
@@ -102,11 +142,6 @@ const Home = () => {
     const handleUpdateSuccess = (updatedUser) => {
         setCurrentUser(updatedUser);
     };
-
-    //Lọc theo displayName
-    const filteredUsers = users.filter(user =>
-        (user.displayName || user.email).toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     // Kết nối socket.io
     useEffect(() => {
@@ -224,11 +259,10 @@ const Home = () => {
 
     }, [activeChat, users, currentUser]);
 
-    // HÀM CHỌN NGƯỜI CHAT (Sửa lại để xóa thông báo chưa đọc)
+    // HÀM CHỌN NGƯỜI CHAT
     const handleSelectUser = (user) => {
         // Set người đang chat
         setActiveChat(user);
-
         // Xóa thông báo chưa đọc của người này
         setUnreadUsers((prev) => prev.filter(id => id !== user._id));
     };
@@ -448,9 +482,24 @@ const Home = () => {
                     <button onClick={() => setShowCreateGroup(true)} className="ml-2 text-white hover:text-blue-200">
                         <FaUsers size={20} title="Tạo nhóm" />
                     </button>
-                    <button onClick={() => setShowRequestModal(true)} title="Lời mời kết bạn">
-                        <FaBell size={20} className="ml-4 text-white hover:text-blue-200" />
+
+                    {/* Nút thông báo */}
+                    <button
+                        onClick={() => setShowRequestModal(true)}
+                        className="relative focus:outline-none"
+                        title="Lời mời kết bạn"
+                    >
+                        <FaBell size={20} className="ml-4 text-white hover:text-blue-200 transition" />
+
+                        {/* Chỉ hiển thị Badge nếu số lượng > 0 */}
+                        {requestCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white animate-pulse">
+                                {/* Nếu lớn hơn 9 thì hiện 9+ cho gọn */}
+                                {requestCount > 9 ? '9+' : requestCount}
+                            </span>
+                        )}
                     </button>
+
                     <button onClick={handleLogout} className="text-xs bg-blue-800 px-3 py-2 rounded hover:bg-blue-900 transition-colors shadow-sm font-semibold"> Logout </button>
                 </div>
 
@@ -465,6 +514,9 @@ const Home = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                        {isSearching && (
+                            <div className="absolute top-3 right-3 animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                        )}
                     </div>
                 </div>
 
@@ -483,78 +535,57 @@ const Home = () => {
                 ))}
 
                 <div className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase">Tin nhắn riêng</div>
-                {/* User List Container */}
+                {/* User List Area */}
                 <div className="flex-1 overflow-y-auto">
-                    {filteredUsers.length > 0 ? (
-                        filteredUsers.map((user) => {
-                            const isOnline = checkIsOnline(user);
-                            const hasUnread = unreadUsers.includes(user._id);
+                    {/* Tiêu đề danh sách thay đổi theo ngữ cảnh */}
+                    {searchTerm && (
+                        <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Kết quả tìm kiếm
+                        </div>
+                    )}
+
+                    {usersToDisplay.length > 0 ? (
+                        usersToDisplay.map((user) => {
+                            const isFriend = users.some(u => u._id === user._id);
+                            const hasUnread = isFriend && unreadUsers.includes(user._id);
 
                             return (
                                 <div
                                     key={user._id}
                                     onClick={() => handleSelectUser(user)}
-                                    className={`p-4 flex items-center border-b border-gray-50 cursor-pointer transition
-                        ${hasUnread ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}
-                    `}
+                                    className="p-4 flex items-center border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition"
                                 >
-                                    {/* --- Avatar & Online Status --- */}
                                     <div className="relative">
                                         <img
-                                            src={getAvatarUrl(user.avatar)}
-                                            alt={user.displayName}
-                                            className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                                            src={user.avatar || "default-avatar-url"}
+                                            alt="Avt"
+                                            className="w-12 h-12 rounded-full object-cover"
                                         />
-                                        {isOnline && (
-                                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>
+                                        {/* Chỉ hiện chấm xanh nếu là bạn bè */}
+                                        {isFriend && checkIsOnline(user) && (
+                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                                         )}
                                     </div>
 
-                                    {/* --- User Info & Preview --- */}
                                     <div className="ml-3 flex-1 overflow-hidden">
-                                        <div className="flex justify-between items-center">
-                                            <h3 className={`text-sm truncate max-w-[140px] ${hasUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                                                {user.displayName}
-                                            </h3>
-                                            {/* Thời gian tin nhắn cuối (Nếu bạn có trả về từ API) */}
-                                            {/* <span className="text-xs text-gray-400">12:30</span> */}
-                                        </div>
-
-                                        <div className="flex justify-between items-center mt-1">
-                                            <div className="flex-1 text-xs text-gray-500 truncate">
-                                                {/* Thay vì hiện UserStatus, Zalo thường hiện tin nhắn cuối cùng */}
-                                                {hasUnread ? (
-                                                    <span className="text-blue-600 font-semibold">Bạn có tin nhắn mới</span>
-                                                ) : (
-                                                    <span className="text-gray-400">Nhấn để bắt đầu trò chuyện</span>
-                                                )}
-                                            </div>
-
-                                            {/* Badge số lượng tin chưa đọc */}
-                                            {hasUnread && (
-                                                <div className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
-                                                    N
-                                                </div>
+                                        <h3 className="text-sm font-semibold text-gray-800 truncate">
+                                            {user.displayName}
+                                        </h3>
+                                        <p className="text-xs text-gray-500 truncate">
+                                            {isFriend ? (
+                                                hasUnread ? <span className="text-green-600 font-bold">Tin nhắn mới</span> : user.email
+                                            ) : (
+                                                <span className="text-blue-500">Người lạ • Nhấn để xem</span>
                                             )}
-                                        </div>
+                                        </p>
                                     </div>
                                 </div>
                             );
                         })
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                            <div className="bg-blue-50 p-4 rounded-full mb-4">
-                                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                            </div>
-                            <h3 className="text-gray-600 font-medium mb-1">Chưa có cuộc trò chuyện nào</h3>
-                            <p className="text-gray-400 text-xs mb-4 max-w-[200px]">
-                                Kết nối với bạn bè để bắt đầu nhắn tin ngay bây giờ.
-                            </p>
-                            <button className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition shadow-sm">
-                                Tìm bạn bè mới
-                            </button>
+                        // Trạng thái không tìm thấy
+                        <div className="text-center p-8 text-gray-500 text-sm">
+                            {searchTerm ? "Không tìm thấy người dùng nào." : "Chưa có tin nhắn."}
                         </div>
                     )}
                 </div>
@@ -757,7 +788,7 @@ const Home = () => {
             {showRequestModal && (
                 <FriendRequestModal
                     onClose={() => setShowRequestModal(false)}
-                    onAcceptSuccess={fetchFriends} // Reload lại list bạn sau khi đồng ý
+                    onSuccess={fetchData}
                 />
             )}
         </div>
