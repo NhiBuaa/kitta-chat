@@ -3,25 +3,35 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
+// Hàm helper để validate email
+const validateEmail = (email) => {
+    return String(email)
+        .toLowerCase()
+        .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+};
+
 exports.register = async (req, res) => {
     try {
         const { displayName, email, password } = req.body;
+        const userExists = await User.findOne({ email });
 
+        // Validate thông tin đăng ký
         if (!displayName || !email || !password) {
             return res.status(400).json({ success: false, message: "Vui lòng nhập đủ thông tin" });
         }
-
-        const userExists = await User.findOne({ email });
+        if (!validateEmail(email)) {
+            return res.status(400).json({ success: false, message: "Email không hợp lệ" });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, message: "Mật khẩu phải có ít nhất 6 ký tự." });
+        }
         if (userExists) {
             return res.status(400).json({ success: false, message: "Email đã được sử dụng" });
         }
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Tạo avatar theo tên hiển thị
         const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=22c55e&color=fff&size=128`;
-
         const newUser = new User({
             // KHÔNG CÒN USERNAME
             email,
@@ -32,7 +42,10 @@ exports.register = async (req, res) => {
 
         await newUser.save();
 
-        res.status(201).json({ success: true, message: "Đăng ký thành công", user: newUser });
+        const userResponse = newUser.toObject();
+        delete userResponse.password;
+
+        res.status(201).json({ success: true, message: "Đăng ký thành công", user: userResponse });
 
     } catch (error) {
         console.error("Register Error:", error);
@@ -84,15 +97,20 @@ exports.forgotPassword = async (req, res) => {
         // Kiểm tra email có tồn tại không
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ success: false, message: "Email không tồn tại trong hệ thống" });
+            return res.json({ success: false, message: `Chúng tôi đã gửi hướng dẫn đến email ${email}` });
         }
+
+        const secret = process.env.JWT_SECRET + user.password;
 
         // Tạo token reset
         const resetToken = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '5m' }
+            { id: user._id, email: user.email },
+            secret,
+            { expiresIn: '15m' }
         );
+
+        // Tạo nội dung Email
+        const resetUrl = `${process.env.URL_FRONTEND}/reset-password/${user._id}/${resetToken}`;
 
         // Cấu hình Transporter
         const transporter = nodemailer.createTransport({
@@ -102,9 +120,6 @@ exports.forgotPassword = async (req, res) => {
                 pass: process.env.EMAIL_PASS
             }
         });
-
-        // Tạo nội dung Email
-        const resetUrl = `${process.env.URL_FRONTEND}/reset-password/${resetToken}`;
 
         const mailOptions = {
             from: `"Chat App Support" <${process.env.EMAIL_USER}>`,
@@ -144,32 +159,36 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     try {
         // Lấy token từ URL
-        const { token } = req.params;
+        const { id, token } = req.params;
         const { newPassword, confirmPassword } = req.body;
 
         // Validate cơ bản
         if (newPassword !== confirmPassword) {
             return res.status(400).json({ success: false, message: 'Mật khẩu xác nhận không khớp' });
         }
-
-        // Giải mã Token để lấy User ID
-        // Nếu token hết hạn hoặc sai, jwt.verify sẽ ném lỗi
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.id;
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: "Mật khẩu phải có ít nhất 6 ký tự" });
+        }
 
         // Tìm user trong DB
-        const user = await User.findById(userId);
+        const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({ success: false, message: 'Người dùng không tồn tại' });
         }
 
-        // Hash password mới
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
+        const secret = process.env.JWT_SECRET + user.password;
 
-        await user.save();
+        try {
+            const payload = jwt.verify(token, secret);
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(newPassword, salt);
 
-        res.json({ success: true, message: 'Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay.' });
+            await user.save();
+            res.json({ success: true, message: 'Mật khẩu đã được thay đổi thành công!' });
+
+        } catch (err) {
+            return res.status(400).json({ success: false, message: 'Link không hợp lệ hoặc đã hết hạn.' });
+        }
 
     } catch (err) {
         console.error("Reset Password Error:", err);

@@ -6,7 +6,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaLock, FaEye, FaEyeSlash, FaKey } from "react-icons/fa";
 
 const ResetPassword = () => {
-    const { token } = useParams();
+    const { id, token } = useParams();
     const navigate = useNavigate();
     const { register, handleSubmit, watch, formState: { errors } } = useForm();
 
@@ -21,7 +21,7 @@ const ResetPassword = () => {
     const onSubmit = async (data) => {
         setIsLoading(true);
         try {
-            await resetPassword(token, data.newPassword);
+            await resetPassword(id, token, data.newPassword);
             toast.success("Đổi mật khẩu thành công! Hãy đăng nhập.");
 
             // Chờ 1 chút để user đọc thông báo rồi chuyển trang
