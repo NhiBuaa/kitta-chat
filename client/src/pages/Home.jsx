@@ -36,7 +36,7 @@ const Home = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [requestCount, setRequestCount] = useState(0);
     const [sentRequests, setSentRequests] = useState([]);
-
+    
     // REF QUAN TRỌNG
     const activeChatRef = useRef(null);
     const socket = useRef();
@@ -161,7 +161,7 @@ const Home = () => {
         const fetchGroups = async () => {
             try {
                 const token = localStorage.getItem('token');
-                if (!token) return;
+                if(!token) return;
                 const res = await axios.get(`${API_URL}/api/groups`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -251,7 +251,7 @@ const Home = () => {
                     updatedUsers.splice(index, 1);
                     updatedUsers.unshift(updatedUser);
                     return updatedUsers;
-                }
+                } 
                 // Case B: Chưa có trong list (Người lạ/Nhóm mới)
                 else {
                     fetchNewConversation(targetId, data.isGroup, data);
@@ -261,7 +261,7 @@ const Home = () => {
 
             // --- 2. CẬP NHẬT MESSAGES (Nếu đang mở chat) ---
             const isViewingChat = (data.isGroup && currentActiveChat?._id === data.receiverId) ||
-                (!data.isGroup && currentActiveChat?._id === data.senderId);
+                                  (!data.isGroup && currentActiveChat?._id === data.senderId);
 
             if (isViewingChat) {
                 setMessages((prev) => [...prev, {
@@ -277,7 +277,7 @@ const Home = () => {
                     senderId: data.senderId,
                     receiverId: currentUser._id
                 });
-
+                
                 // Scroll
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             } else {
@@ -534,7 +534,7 @@ const Home = () => {
                         usersToDisplay.map((user) => {
                             const isMe = user._id === currentUser?._id;
                             if (isMe) return null;
-
+                            
                             const isFriend = user.isFriend || (users.some(u => u._id === user._id));
                             const isSent = user.isSent || sentRequests.includes(user._id);
                             const hasUnread = isFriend && user.hasUnread;
@@ -542,7 +542,7 @@ const Home = () => {
                             return (
                                 <div key={user._id} onClick={() => handleSelectUser(user)}
                                     className={`group p-4 flex items-center border-b border-gray-50 transition cursor-pointer ${hasUnread ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}`}>
-
+                                    
                                     <div className="relative flex-shrink-0">
                                         <img src={getAvatarUrl(user.avatar)} alt="Avt" className="w-12 h-12 rounded-full object-cover border border-gray-200" />
                                         {isFriend && checkIsOnline(user) && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>}
@@ -623,7 +623,7 @@ const Home = () => {
                                     </div>
                                 );
                             })}
-
+                            
                             {isTyping && (
                                 <div className="flex items-center ml-2 mt-2" ref={scrollRef}>
                                     <img src={getAvatarUrl(activeChat.avatar)} className="w-6 h-6 rounded-full mr-2 object-cover" />
@@ -662,7 +662,7 @@ const Home = () => {
                     </div>
                 )}
             </div>
-
+            
             {showProfile && <UserProfileSidebar isOpen={showProfile} user={{ ...currentUser, avatar: getAvatarUrl(currentUser?.avatar) }} onClose={() => setShowProfile(false)} onUpdateSuccess={handleUpdateSuccess} />}
             <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])} />
             {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} />}
