@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL_USERS = import.meta.env.VITE_API_URL_USER;
+const API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 
 const axiosInstance = axios.create({
     baseURL: API_URL_USERS,
