@@ -4,27 +4,29 @@ const Message = require('../models/Message');
 exports.createMessage = async (req, res) => {
     try {
         const { sender, receiver, text, image, isGroup } = req.body;
-        // Tạo conversationId duy nhất cho 2 người này
-        let conversationId;
 
+        let conversationId;
         if (isGroup) {
-            // Nếu là nhóm, conversationId chính là ID của nhóm (receiver)
             conversationId = receiver;
         } else {
-            // Nếu là 1-1, gộp ID như cũ
             conversationId = [sender, receiver].sort().join("_");
         }
 
+        // Tạo Message mới
         const newMessage = new Message({
             conversationId,
             sender,
+            receiver,
             text,
             image
         });
 
+        // 3. Lưu và trả về
         const savedMessage = await newMessage.save();
         res.status(200).json(savedMessage);
+
     } catch (err) {
+        console.error("Create Message Error:", err);
         res.status(500).json(err);
     }
 };

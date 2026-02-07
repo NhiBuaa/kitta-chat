@@ -73,7 +73,7 @@ io.on('connection', async (socket) => {
         }
     });
 
-    // Lắng nghe sự kiện 'sendMessage' từ Client
+    // Lắng nghe sự kiện sendMessage
     socket.on("sendMessage", async ({ senderId, receiverId, text, image, isGroup }) => {
 
         if (isGroup) {
@@ -104,8 +104,10 @@ io.on('connection', async (socket) => {
             if (userSocketId) {
                 io.to(userSocketId).emit("getMessage", {
                     senderId,
+                    receiverId,
                     text,
                     image,
+                    isGroup: false,
                     createdAt: Date.now()
                 });
             }

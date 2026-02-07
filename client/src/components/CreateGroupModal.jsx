@@ -56,7 +56,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
             <div className="bg-white rounded-lg w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
                 <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white">
                     <h3 className="font-bold">Tạo nhóm mới</h3>
-                    <button onClick={onClose}><FaTimes /></button>
+                    <button onClick={onClose} className='text-white hover:text-red-500 transition'><FaTimes /></button>
                 </div>
 
                 <div className="p-4 space-y-4 flex-1 overflow-y-auto">

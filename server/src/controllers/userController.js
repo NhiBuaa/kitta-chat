@@ -102,8 +102,225 @@ const getAllUsers = async (req, res) => {
     }
 };
 
+// Tìm kiếm người dùng
+const searchUsers = async (req, res) => {
+    try {
+        const { keyword } = req.query;
+        const currentUserId = req.user.id;
+        const currentUserFull = await User.findById(currentUserId);
+
+        if (!keyword) return res.json({ success: true, users: [] });
+
+        const users = await User.find({
+            $or: [
+                { displayName: { $regex: keyword, $options: 'i' } },
+                { email: { $regex: keyword, $options: 'i' } }
+            ],
+            _id: { $ne: currentUserId }
+        }).select('displayName email avatar friendRequests friends status activityStatus');
+
+        const usersWithStatus = users.map(user => {
+            // Kiểm tra xem đã gửi lời mời, đã nhận lời mời hay đã là bạn bè chưa
+            const isSent = (user.friendRequests || []).includes(currentUserId);
+            const isReceived = (currentUserFull.friendRequests || []).includes(user._id);
+            const isFriend = (user.friends || []).includes(currentUserId);
+
+            return {
+                _id: user._id,
+                displayName: user.displayName,
+                email: user.email,
+                avatar: user.avatar,
+                status: user.status,
+                activityStatus: user.activityStatus,
+                isSent,
+                isReceived,
+                isFriend
+            }
+        })
+
+        res.json({ success: true, users: usersWithStatus });
+    } catch (error) {
+        console.error("Lỗi tìm kiếm người dùng:", error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
+// Lấy danh sách bạn bè
+const getFriends = async (req, res) => {
+    try {
+        const currentUser = await User.findById(req.user.id).populate('friends', 'displayName email avatar status activityStatus');
+        res.json({ success: true, friends: currentUser.friends });
+    } catch (error) {
+        console.error("Lỗi lấy danh sách bạn bè:", error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
+// Lấy danh sách lời mời kết bạn đang chờ
+const getFriendRequests = async (req, res) => {
+    try {
+        const currentUser = await User.findById(req.user.id)
+            .populate('friendRequests', 'displayName avatar email');
+
+        res.json({ success: true, requests: currentUser.friendRequests });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Chấp nhận lời mời kết bạn
+const accceptFriendRequest = async (req, res) => {
+    try {
+        const { senderId } = req.body;
+        const receiverId = req.user.id;
+
+        const receiver = await User.findById(receiverId);
+
+        // Kiểm tra có lời mời này hay không
+        if (!receiver.friendRequests.includes(senderId)) {
+            return res.status(400).json({ success: false, message: "Không có lời mời kết bạn này" });
+        }
+
+        // Thêm vào danh sách bạn bè và xoá khỏi lời mời
+        await User.findByIdAndUpdate(receiverId, {
+            $push: { friends: senderId },
+            $pull: { friendRequests: senderId }
+        })
+
+        await User.findByIdAndUpdate(senderId, {
+            $push: { friends: receiverId }
+        })
+
+        res.json({ success: true, message: "Đã chấp nhận lời mời kết bạn." });
+
+    } catch (error) {
+        console.error("Lỗi chấp nhận lời mời kết bạn:", error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
+const getSidebarUsers = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+
+        const currentUser = await User.findById(currentUserId);
+        // Map friends
+        const friendsIds = currentUser.friends.map(id => id.toString());
+
+        // Tìm người lạ đã chat
+        const messages = await Message.find({
+            $or: [
+                { sender: currentUserId },
+                { receiver: currentUserId }
+            ]
+        }).select('sender receiver').lean();
+
+        const chattedUserIds = new Set();
+        messages.forEach(msg => {
+            if (msg.sender && msg.sender.toString() !== currentUserId) {
+                chattedUserIds.add(msg.sender.toString());
+            }
+            if (msg.receiver && msg.receiver.toString() !== currentUserId) {
+                chattedUserIds.add(msg.receiver.toString());
+            }
+        });
+
+        const allUserIdsToShow = Array.from(new Set([...friendsIds, ...chattedUserIds]));
+
+        const users = await User.find({ _id: { $in: allUserIdsToShow } })
+            .select('displayName avatar status activityStatus');
+
+        const usersWithLastMessage = await Promise.all(users.map(async (user) => {
+            const lastMsg = await Message.findOne({
+                $or: [
+                    { sender: currentUserId, receiver: user._id },
+                    { sender: user._id, receiver: currentUserId }
+                ]
+            })
+                .sort({ createdAt: -1 })
+                .select('content text image sender createdAt isRead');
+
+            const userObj = user.toObject();
+
+            if (lastMsg) {
+                let previewContent = lastMsg.content || lastMsg.text || "";
+
+                if (!previewContent && lastMsg.image) {
+                    previewContent = "[Hình ảnh]";
+                }
+
+                userObj.lastMessage = {
+                    content: previewContent || "Tin nhắn",
+                    senderId: lastMsg.sender,
+                    createdAt: lastMsg.createdAt,
+                    isRead: lastMsg.isRead
+                };
+
+                // Logic check unread
+                userObj.hasUnread = lastMsg.sender.toString() !== currentUserId && !lastMsg.isRead;
+            } else {
+                // Nếu là bạn bè nhưng chưa chat bao giờ
+                userObj.lastMessage = null;
+                userObj.hasUnread = false;
+            }
+
+            return userObj;
+        }));
+
+        usersWithLastMessage.sort((a, b) => {
+            const dateA = a.lastMessage ? new Date(a.lastMessage.createdAt) : new Date(0);
+            const dateB = b.lastMessage ? new Date(b.lastMessage.createdAt) : new Date(0);
+            return dateB - dateA;
+        });
+
+        res.json({ success: true, users: usersWithLastMessage });
+
+    } catch (error) {
+        console.error("Get Sidebar Users Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+const sendFriendRequest = async (req, res) => {
+    try {
+        const { receiverId } = req.body;
+        const senderId = req.user.id;
+
+        // Kiểm tra các lỗi cơ bản
+        if (receiverId === senderId) {
+            return res.status(400).json({ success: false, message: "Không thể gửi lời mời kết bạn cho chính mình" });
+        }
+        const receiver = await User.findById(receiverId);
+        if (!receiver) {
+            return res.status(404).json({ success: false, message: "Người dùng không tồn tại" });
+        }
+        if (receiver.friendRequests.includes(senderId)) {
+            return res.status(400).json({ success: false, message: "Đã gửi lời mời kết bạn trước đó" });
+        }
+        if (receiver.friends.includes(senderId)) {
+            return res.status(400).json({ success: false, message: "Đã là bạn bè" });
+        }
+
+        // Thêm lời mời kết bạn
+        await User.findByIdAndUpdate(receiverId, {
+            $push: { friendRequests: senderId }
+        })
+
+        res.json({ success: true, message: "Đã gửi lời mời kết bạn" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
-    getAllUsers
+    getAllUsers,
+    searchUsers,
+    getFriends,
+    getFriendRequests,
+    accceptFriendRequest,
+    getSidebarUsers,
+    sendFriendRequest
 };

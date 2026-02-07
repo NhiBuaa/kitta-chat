@@ -34,7 +34,7 @@ function App() {
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         {/* Route reset password nhận token dynamic */}
-        <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+        <Route path="/reset-password/:id/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
         {/* --- Private Routes (Phải login mới vào được) --- */}
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />

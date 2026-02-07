@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Database Service (MongoDB)
+  # mongo:
+  #   image: mongo:6.0
+  #   container_name: chat_mongo
+  #   restart: always
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   networks:
+  #     - chat-network
+
+  # Caching/PubSub Service Redis
+  redis:
+    image: redis:alpine
+    container_name: chat_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - chat-network
+
+  # Backend Service
+  server:
+    build: ./server
+    container_name: chat_server
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+      - redis
+    env_file:
+      - ./server/.env
+    environment:
+      # LƯU Ý: Trong Docker, host không phải là localhost mà là tên service ('mongo', 'redis')
+      - MONGO_URI=mongodb+srv://student502094:VlJIJgiKVB2wiemD@cluster0.0jxsgws.mongodb.net/web-socket?appName=Cluster0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./server:/app # Mount code để sửa code xong không cần build lại (Hot reload)
+      - /app/node_modules
+    networks:
+      - chat-network
+
+  # Frontend Service (React/Vite)
+  client:
+    build: ./client
+    container_name: chat_client
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app # Hot reload cho React
+      - /app/node_modules
+    networks:
+      - chat-network
+
+# Định nghĩa Network để các container nhìn thấy nhau
+networks:
+  chat-network:
+    driver: bridge
+
+# Định nghĩa Volume để lưu dữ liệu database
+volumes:
+  mongo_data:
