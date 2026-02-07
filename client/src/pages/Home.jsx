@@ -50,6 +50,11 @@ const Home = () => {
             : (users.find(u => u._id === activeChat._id) || activeChat))
         : null;
 
+    const isFriend = currentChatUser && !currentChatUser.members && (
+        currentChatUser.isFriend ||
+        users.some(u => u._id === currentChatUser._id)
+    );
+
     // Cập nhật ref mỗi khi activeChat thay đổi
     useEffect(() => {
         activeChatRef.current = activeChat;
@@ -635,7 +640,17 @@ const Home = () => {
                                 <img src={getAvatarUrl(currentChatUser.avatar)} className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200" alt="avatar" />
                                 <div>
                                     <h3 className="font-bold text-gray-800">{currentChatUser.displayName || currentChatUser.name}</h3>
-                                    {!currentChatUser.members && <UserStatus user={currentChatUser} isOnline={checkIsOnline(currentChatUser)} />}
+                                    {!currentChatUser.members && (
+                                        isFriend ? (
+                                            <UserStatus
+                                                user={currentChatUser}
+                                                isOnline={checkIsOnline(currentChatUser)}
+                                            />
+                                        ) : (
+                                            <></>
+                                        )
+                                    )}
+
                                     {currentChatUser.members && (
                                         <span className="text-xs text-gray-500">
                                             {currentChatUser.members.length} thành viên

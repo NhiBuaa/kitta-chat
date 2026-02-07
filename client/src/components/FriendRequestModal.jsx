@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaTimes, FaUserCheck, FaUserTimes } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL_USERS || 'http://localhost:3000/api/users';
 
@@ -37,21 +38,35 @@ const FriendRequestModal = ({ onClose, onSuccess }) => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // Cập nhật UI: Xóa người vừa đồng ý khỏi danh sách
+            // Xóa người vừa đồng ý khỏi danh sách
             setRequests((prev) => prev.filter((req) => req._id !== senderId));
 
-            // Báo cho Home.jsx biết để load lại Sidebar
             if (onSuccess) onSuccess();
 
         } catch (error) {
-            alert(error.response?.data?.message || "Lỗi kết nối");
+            console.error("Lỗi đồng ý lời mời:", error);
+            toast.error(error.response?.data?.message || "Lỗi kết nối");
         }
     };
 
-    // 3. Xử lý Từ chối (Nếu backend có API reject thì gọi, không thì chỉ ẩn UI)
-    const handleReject = (senderId) => {
-        // Tạm thời chỉ ẩn khỏi giao diện
-        setRequests((prev) => prev.filter((req) => req._id !== senderId));
+    // Xử lý Từ chối
+    const handleReject = async (senderId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/reject-friend`,
+                { senderId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Xoá nguời vừa từ chối khỏi danh sách
+            setRequests((prev) => prev.filter((req) => req._id !== senderId));
+
+            if (onSuccess) onSuccess();
+
+        } catch (error) {
+            console.error("Lỗi từ chối lời mời:", error);
+            toast.error(error.response?.data?.message || "Lỗi kết nối");
+        }
     };
 
     return (

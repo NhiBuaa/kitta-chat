@@ -313,6 +313,27 @@ const sendFriendRequest = async (req, res) => {
     }
 }
 
+const rejectFriendRequest = async (req, res) => {
+    try {
+        const { senderId } = req.body;
+        const receiverId = req.user.id;
+
+        // Xoá lời mời kết bạn
+        await User.findByIdAndUpdate(receiverId, {
+            $pull: { friendRequests: senderId }
+        })
+
+        // await User.findByIdAndUpdate(senderId, {
+        //     $pull: { sentRequests: receiverId }
+        // })
+
+        res.status(200).json({ success: true, message: "Đã từ chối lời mời" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+}
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
@@ -322,5 +343,6 @@ module.exports = {
     getFriendRequests,
     accceptFriendRequest,
     getSidebarUsers,
-    sendFriendRequest
+    sendFriendRequest,
+    rejectFriendRequest
 };

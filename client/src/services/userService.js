@@ -24,3 +24,4 @@ export const getFriendRequests = () => axiosInstance.get('/friend-requests');
 export const sendFriendRequest = (receiverId) => axiosInstance.post('/friend-request', { receiverId });
 export const acceptFriendRequest = (senderId) => axiosInstance.post('/accept-friend', { senderId });
 export const searchUsers = (keyword) => axiosInstance.get(`/search?keyword=${keyword}`);
+export const rejectFriendRequest = (senderId) => axiosInstance.post('/reject-friend', { senderId });
