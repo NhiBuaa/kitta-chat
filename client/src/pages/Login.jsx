@@ -27,7 +27,7 @@ const Login = () => {
                 {/* Cột trái: Hình ảnh/Intro (Ẩn trên mobile) */}
                 <div className="hidden md:flex w-1/2 bg-blue-600 text-white flex-col justify-center items-center p-12 relative">
                     <div className="z-10 text-center">
-                        <h2 className="text-4xl font-bold mb-4">Chat App</h2>
+                        <h2 className="text-4xl font-bold mb-4">KittaChat</h2>
                         <p className="text-indigo-200">Kết nối bạn bè, trò chuyện không giới hạn.</p>
                     </div>
                     {/* Họa tiết trang trí */}
