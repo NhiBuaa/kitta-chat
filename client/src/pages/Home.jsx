@@ -356,6 +356,71 @@ const Home = () => {
         };
     }, [currentUser, API_URL]);
 
+        // Socket-level read receipts listeners (registered after socket init)
+        useEffect(() => {
+            if (!socket.current) return;
+
+            const handleUserRead = (data) => {
+                const { readerId } = data;
+                // Update sidebar: mark conversation with readerId as read
+                setUsers(prev => prev.map(u => {
+                    if (u._id === readerId) {
+                        const lm = u.lastMessage ? { ...u.lastMessage, isRead: true } : u.lastMessage;
+                        return { ...u, hasUnread: false, lastMessage: lm };
+                    }
+                    return u;
+                }));
+
+                // If we are viewing 1-1 chat with reader, mark messages sent by me as read
+                if (activeChat && !activeChat.members && activeChat._id === readerId) {
+                    setMessages(prev => prev.map(m => {
+                        const senderId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
+                        if (senderId === currentUser._id) {
+                            return { ...m, isRead: true };
+                        }
+                        return m;
+                    }));
+                }
+            };
+
+            const handleGroupUserRead = (data) => {
+                const { groupId, readerId } = data;
+                // Update messages readBy for group if viewing
+                if (activeChat && activeChat.members && activeChat._id === groupId) {
+                    setMessages(prev => prev.map(m => {
+                        // Ensure readBy array exists
+                        const readBy = m.readBy ? Array.from(new Set(m.readBy)) : [];
+                        if (!readBy.includes(readerId)) {
+                            return { ...m, readBy: [...readBy, readerId] };
+                        }
+                        return m;
+                    }));
+                }
+
+                // Also update groups list lastMessage state (if present) to reflect reads
+                setGroups(prev => prev.map(g => {
+                    if (g._id === groupId) {
+                        // if lastMessage exists, add/ensure readBy
+                        if (g.lastMessage) {
+                            const readBy = g.lastMessage.readBy ? Array.from(new Set(g.lastMessage.readBy)) : [];
+                            if (!readBy.includes(readerId)) {
+                                return { ...g, lastMessage: { ...g.lastMessage, readBy: [...readBy, readerId] } };
+                            }
+                        }
+                    }
+                    return g;
+                }));
+            };
+
+            socket.current.on('userReadMessages', handleUserRead);
+            socket.current.on('groupUserRead', handleGroupUserRead);
+
+            return () => {
+                socket.current.off('userReadMessages', handleUserRead);
+                socket.current.off('groupUserRead', handleGroupUserRead);
+            };
+        }, [activeChat, currentUser]);
+
 
     //  USE EFFECT ĐỂ XỬ LÝ TIN NHẮN ĐẾN
     useEffect(() => {
@@ -406,6 +471,12 @@ const Home = () => {
                 (!data.isGroup && (currentActiveChat?._id === data.senderId || currentActiveChat?._id === data.receiverId));
 
             if (isViewingChat) {
+                const isMeSender = data.senderId === currentUser._id;
+                // For 1-1: messages sent by me should not be marked read until the other user reads them.
+                // For 1-1: messages received from other should be marked read when viewing.
+                // For groups: keep existing behavior (mark received messages as read locally)
+                const computedIsRead = data.isGroup ? true : (!isMeSender);
+
                 setMessages((prev) => [...prev, {
                     sender: data.sender || {
                         _id: data.senderId,
@@ -416,14 +487,24 @@ const Home = () => {
                     image: data.image,
                     type: data.type,
                     createdAt: data.createdAt,
-                    isRead: true
+                    isRead: computedIsRead
                 }]);
 
-                // Emit đã đọc
-                socket.current.emit("markRead", {
-                    senderId: data.senderId,
-                    receiverId: currentUser._id
-                });
+                // Emit đã đọc (phân biệt group/1-1) - chỉ khi message không phải do chính mình gửi
+                if (data.senderId !== currentUser._id) {
+                    if (data.isGroup) {
+                        socket.current.emit("markRead", {
+                            isGroup: true,
+                            groupId: data.receiverId,
+                            readerId: currentUser._id
+                        });
+                    } else {
+                        socket.current.emit("markRead", {
+                            senderId: data.senderId,
+                            receiverId: currentUser._id
+                        });
+                    }
+                }
 
                 // Scroll
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -461,6 +542,14 @@ const Home = () => {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 setMessages(res.data);
+                // Khi mở cuộc chat, đánh dấu đã đọc (1-1 hoặc group)
+                if (socket.current) {
+                    if (isGroup) {
+                        socket.current.emit('markRead', { isGroup: true, groupId: activeChat._id, readerId: currentUser._id });
+                    } else {
+                        socket.current.emit('markRead', { senderId: activeChat._id, receiverId: currentUser._id });
+                    }
+                }
             } catch (err) {
                 console.error("Lỗi fetch tin nhắn:", err);
             }
@@ -481,8 +570,10 @@ const Home = () => {
                 console.log("❌ No active chat");
                 return;
             }
-            
-            const { chatId, isGroup, senderName, senderAvatar } = data;
+            const { chatId, isGroup, senderId, senderName, senderAvatar } = data;
+
+            // Ignore typing events emitted by ourselves
+            if (senderId === currentUser?._id) return;
             
             // Check xem typing có phải từ chat đang xem không
             if (activeChatRef.current._id === chatId) {
@@ -502,8 +593,10 @@ const Home = () => {
             // console.log("⏹️  Received getStopTyping:", data);
             
             if (!activeChatRef.current) return;
-            
-            const { chatId } = data;
+            const { chatId, senderId } = data;
+
+            // Ignore stopTyping events emitted by ourselves
+            if (senderId === currentUser?._id) return;
             
             // Check xem stop typing có phải từ chat đang xem không
             if (activeChatRef.current._id === chatId) {
@@ -623,12 +716,14 @@ const Home = () => {
         // Set người dùng đang chat để mở đoạn chat
         setActiveChat(user);
 
-        // Đánh dấu tin nhắn là đã đọc
+        // Đánh dấu tin nhắn là đã đọc (sidebar)
         setUsers(prev => prev.map((u) => {
             if (u._id === user._id) {
+                const lm = u.lastMessage ? { ...u.lastMessage, isRead: true } : u.lastMessage;
                 return {
                     ...u,
-                    hasUnread: false
+                    hasUnread: false,
+                    lastMessage: lm
                 }
             }
             return u;
@@ -1008,9 +1103,30 @@ const Home = () => {
                                                 {m.image && <img src={getAvatarUrl(m.image)} className="w-full h-auto rounded-lg mb-2 cursor-pointer hover:opacity-90" onClick={() => window.open(getAvatarUrl(m.image), '_blank')} />}
                                                 {m.text && <span>{m.text}</span>}
                                                 {isMe && (
-                                                    <div className="self-end mt-1">
-                                                        {m.isRead ? <FaCheckDouble className="text-xs text-blue-200" /> : <FaCheck className="text-xs text-gray-300" />}
+                                                    <div className="self-end mt-1 text-right">
+                                                        {/* 1-1: use isRead flag. Group: consider readBy array length */}
+                                                        {(!isGroup) ? (
+                                                            m.isRead ? <FaCheckDouble className="text-xs text-blue-200 inline-block" /> : <FaCheck className="text-xs text-gray-300 inline-block" />
+                                                        ) : (
+                                                            (m.readBy && m.readBy.length > 0) ? <FaCheckDouble className="text-xs text-blue-200 inline-block" /> : <FaCheck className="text-xs text-gray-300 inline-block" />
+                                                        )}
                                                     </div>
+                                                )}
+
+                                                {/* For group messages sent by me, show the list of reader names when available */}
+                                                {isMe && isGroup && m.readBy && m.readBy.length > 0 && (
+                                                    (() => {
+                                                        const readerIds = m.readBy.map(r => (typeof r === 'object' ? r._id : r));
+                                                        const readerNames = readerIds.map(id => {
+                                                            const member = activeChat?.members?.find(mm => mm._id === id) || users.find(u => u._id === id);
+                                                            return member?.displayName || member?.name || 'Người dùng';
+                                                        });
+                                                        return (
+                                                            <div className="text-[11px] mt-1 text-gray-200/90">
+                                                                <span className="text-white/70">Đã xem:</span> <span className="font-medium">{readerNames.join(', ')}</span>
+                                                            </div>
+                                                        );
+                                                    })()
                                                 )}
                                             </div>
                                         </div>

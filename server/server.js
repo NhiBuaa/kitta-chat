@@ -183,17 +183,45 @@ io.on('connection', async (socket) => {
     });
 
     // Sự kiện đã đọc tin nhắn hay chưa
-    socket.on("markRead", async ({ senderId, receiverId }) => {
-        await Message.updateMany(
-            { sender: senderId, conversationId: [senderId, receiverId].sort().join("_"), isRead: false },
-            { $set: { isRead: true } }
-        );
+    // Hỗ trợ cả 1-1 và group read receipts
+    socket.on("markRead", async (data) => {
+        try {
+            if (data?.isGroup) {
+                const { groupId, readerId } = data;
+                if (!groupId || !readerId) return;
 
-        const senderSocketId = onlineUsers.get(senderId);
-        if (senderSocketId) {
-            io.to(senderSocketId).emit("userReadMessages", {
-                readerId: receiverId
-            });
+                // Thêm readerId vào readBy cho tất cả message trong nhóm nếu chưa có
+                await Message.updateMany(
+                    { conversationId: groupId, type: { $ne: 'system' }, readBy: { $ne: readerId } },
+                    { $push: { readBy: readerId } }
+                );
+
+                // Emit tới cả group room để mọi thành viên biết ai đã đọc
+                io.to(groupId).emit('groupUserRead', {
+                    groupId,
+                    readerId
+                });
+            } else {
+                const { senderId, receiverId } = data;
+                if (!senderId || !receiverId) return;
+
+                // Ghi nhận đã đọc cho conversation 1-1
+                const convId = [senderId, receiverId].sort().join("_");
+                await Message.updateMany(
+                    { sender: senderId, conversationId: convId, isRead: false },
+                    { $set: { isRead: true } }
+                );
+
+                // Thông báo cho sender (nếu online)
+                const senderSocketId = onlineUsers.get(senderId);
+                if (senderSocketId) {
+                    io.to(senderSocketId).emit("userReadMessages", {
+                        readerId: receiverId
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('markRead handler error', err);
         }
     });
 });
