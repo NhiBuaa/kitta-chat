@@ -129,19 +129,85 @@ io.on('connection', async (socket) => {
     });
 
     // Lắng nghe sự kiện đang gõ
-    socket.on("typing", ({ receiverId }) => {
-        const userSocketId = onlineUsers.get(receiverId);
-        if (userSocketId) {
-            // Báo cho người nhận biết: "senderId đang gõ đấy"
-            io.to(userSocketId).emit("getTyping", socket.handshake.query.userId);
+    socket.on("typing", async ({ receiverId, isGroup, senderId, senderName, senderAvatar }) => {
+        console.log(`⌨️  Typing event: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}, senderName=${senderName}`);
+        
+        if (isGroup) {
+            // LOGIC TYPING TRONG NHÓM
+            try {
+                const group = await Group.findById(receiverId).select('members');
+                console.log(`Group found: ${group ? group._id : 'NOT FOUND'}, members: ${group?.members?.length || 0}`);
+                
+                if (group && group.members) {
+                    // Gửi cho tất cả members (trừ người gõ)
+                    group.members.forEach(memberId => {
+                        if (memberId.toString() === senderId) return;
+                        
+                        const memberSocketId = onlineUsers.get(memberId.toString());
+                        console.log(`Sending typing to member ${memberId.toString()}, socketId: ${memberSocketId ? 'FOUND' : 'NOT ONLINE'}`);
+                        
+                        if (memberSocketId) {
+                            io.to(memberSocketId).emit("getTyping", {
+                                chatId: receiverId, // ID nhóm
+                                isGroup: true,
+                                senderName: senderName,
+                                senderAvatar: senderAvatar
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error in typing group:', error);
+            }
+        } else {
+            // LOGIC TYPING 1-1
+            const userSocketId = onlineUsers.get(receiverId);
+            console.log(`1-1 typing: receiver ${receiverId} socketId: ${userSocketId ? 'FOUND' : 'NOT ONLINE'}`);
+            
+            if (userSocketId) {
+                io.to(userSocketId).emit("getTyping", {
+                    chatId: senderId, // ID người gõ (user)
+                    isGroup: false,
+                    senderAvatar: senderAvatar
+                });
+            }
         }
     });
 
     // Lắng nghe sự kiện ngưng gõ
-    socket.on("stopTyping", ({ receiverId }) => {
-        const userSocketId = onlineUsers.get(receiverId);
-        if (userSocketId) {
-            io.to(userSocketId).emit("getStopTyping", socket.handshake.query.userId);
+    socket.on("stopTyping", async ({ receiverId, isGroup, senderId }) => {
+        console.log(`⏹️  Stop typing: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}`);
+        
+        if (isGroup) {
+            // LOGIC STOP TYPING TRONG NHÓM
+            try {
+                const group = await Group.findById(receiverId).select('members');
+                if (group && group.members) {
+                    // Gửi cho tất cả members (trừ người gõ)
+                    group.members.forEach(memberId => {
+                        if (memberId.toString() === senderId) return;
+                        
+                        const memberSocketId = onlineUsers.get(memberId.toString());
+                        if (memberSocketId) {
+                            io.to(memberSocketId).emit("getStopTyping", {
+                                chatId: receiverId, // ID nhóm
+                                isGroup: true
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error in stop typing group:', error);
+            }
+        } else {
+            // LOGIC STOP TYPING 1-1
+            const userSocketId = onlineUsers.get(receiverId);
+            if (userSocketId) {
+                io.to(userSocketId).emit("getStopTyping", {
+                    chatId: senderId, // ID người gõ (user)
+                    isGroup: false
+                });
+            }
         }
     });
 

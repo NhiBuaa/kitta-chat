@@ -24,6 +24,8 @@ const Home = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [isTyping, setIsTyping] = useState(false);
+    const [typingUserName, setTypingUserName] = useState("");
+    const [typingUserAvatar, setTypingUserAvatar] = useState(null);
     const [showEmoji, setShowEmoji] = useState(false);
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
@@ -40,7 +42,6 @@ const Home = () => {
     const scrollRef = useRef();
     const fileInputRef = useRef();
     const typingTimeoutRef = useRef(null);
-    const isChatMounted = useRef(false);
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL;
@@ -56,20 +57,15 @@ const Home = () => {
         users.some(u => u._id === currentChatUser._id)
     );
 
+    // Auto-scroll xuống cuối chat container khi có tin nhắn mới
     useEffect(() => {
-        isChatMounted.current = true;
-    }, [activeChat?._id]);
-
-    // Tự động kéo xuống cuối đoạn chat khi ấn vào
-    useEffect(() => {
-        const lastMessage = messages[messages.length - 1];
-
-        const isMe = lastMessage?.sender === currentUser?._id;
-        if (isChatMounted.current || isMe) {
-            scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-            isChatMounted.current = false;
+        if (scrollRef.current) {
+            // Scroll xuống cuối khi có tin nhắn mới
+            setTimeout(() => {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, 100);
         }
-    }, [messages, currentUser]);
+    }, [messages, activeChat]);
 
     // Cập nhật ref mỗi khi activeChat thay đổi
     useEffect(() => {
@@ -227,6 +223,10 @@ const Home = () => {
         if (currentUser && !socket.current) {
             socket.current = io(API_URL, {
                 query: { userId: currentUser._id }
+            });
+
+            socket.current.on('connect', () => {
+                console.log('🔌 Socket connected, id =', socket.current.id);
             });
 
             // Lấy nghe danh sách người dùng online
@@ -424,7 +424,7 @@ const Home = () => {
         return () => {
             socket.current.off("getMessage", handleUnifiedMessage);
         };
-    }, [socket, users, currentUser]);
+    }, [currentUser, users]);
 
     // FETCH MESSAGE KHI CHỌN USER
     useEffect(() => {
@@ -451,12 +451,47 @@ const Home = () => {
     // TYPING LOGIC
     useEffect(() => {
         if (!socket.current) return;
-        const handleTyping = (senderId) => {
+        
+        const handleTyping = (data) => {
+            console.log("📝 Received getTyping:", data);
+            console.log("🔍 activeChatRef._id:", activeChatRef.current?._id);
+            
             // Dùng activeChatRef để check cho chắc chắn
-            if (activeChatRef.current && senderId === activeChatRef.current._id) setIsTyping(true);
+            if (!activeChatRef.current) {
+                console.log("❌ No active chat");
+                return;
+            }
+            
+            const { chatId, isGroup, senderName, senderAvatar } = data;
+            
+            // Check xem typing có phải từ chat đang xem không
+            if (activeChatRef.current._id === chatId) {
+                console.log("✅ Typing match! Setting isTyping = true");
+                setIsTyping(true);
+                if (isGroup && senderName) {
+                    console.log("👤 Group typing from:", senderName);
+                    setTypingUserName(senderName);
+                    setTypingUserAvatar(senderAvatar);
+                }
+            } else {
+                console.log("❌ Typing not for current chat", { currentChatId: activeChatRef.current._id, incomingChatId: chatId });
+            }
         };
-        const handleStopTyping = (senderId) => {
-            if (activeChatRef.current && senderId === activeChatRef.current._id) setIsTyping(false);
+        
+        const handleStopTyping = (data) => {
+            console.log("⏹️  Received getStopTyping:", data);
+            
+            if (!activeChatRef.current) return;
+            
+            const { chatId } = data;
+            
+            // Check xem stop typing có phải từ chat đang xem không
+            if (activeChatRef.current._id === chatId) {
+                console.log("✅ Stop typing match!");
+                setIsTyping(false);
+                setTypingUserName("");
+                setTypingUserAvatar(null);
+            }
         };
 
         socket.current.on("getTyping", handleTyping);
@@ -466,13 +501,20 @@ const Home = () => {
             socket.current.off("getTyping", handleTyping);
             socket.current.off("getStopTyping", handleStopTyping);
         };
-    }, [socket]);
+    }, [currentUser]);
 
     useEffect(() => {
         setIsTyping(false);
+        setTypingUserName("");
+        setTypingUserAvatar(null);
     }, [activeChat]);
 
     // --- HANDLERS ---
+    const handleScrollToBottom = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    };
     const handleSelectUser = (user) => {
         // Set người dùng đang chat để mở đoạn chat
         setActiveChat(user);
@@ -499,10 +541,35 @@ const Home = () => {
     const handleInputChange = (e) => {
         setNewMessage(e.target.value);
         if (!socket.current || !activeChat) return;
-        socket.current.emit("typing", { receiverId: activeChat._id });
+        
+        const isGroup = activeChat.members ? true : false;
+        
+        console.log("📤 Emitting typing:", {
+            receiverId: activeChat._id,
+            isGroup: isGroup,
+            senderId: currentUser._id,
+            senderName: currentUser.displayName
+        });
+        
+        socket.current.emit("typing", { 
+            receiverId: activeChat._id,
+            isGroup: isGroup,
+            senderId: currentUser._id,
+            senderName: currentUser.displayName,
+            senderAvatar: currentUser.avatar
+        });
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-            socket.current.emit("stopTyping", { receiverId: activeChat._id });
+            console.log("📤 Emitting stopTyping:", {
+                receiverId: activeChat._id,
+                isGroup: isGroup,
+                senderId: currentUser._id
+            });
+            socket.current.emit("stopTyping", { 
+                receiverId: activeChat._id,
+                isGroup: isGroup,
+                senderId: currentUser._id
+            });
         }, 2000);
     };
 
@@ -777,7 +844,7 @@ const Home = () => {
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4" ref={scrollRef} onClick={handleScrollToBottom}>
                             {messages.map((m, index) => {
                                 const senderId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
                                 const isMe = senderId === currentUser._id;
@@ -787,10 +854,9 @@ const Home = () => {
                                 const senderAvatar = senderInfo?.avatar || activeChat.avatar;
                                 const isSystemMessage = m.type === 'system';
                                 
-                                // System message rendering
                                 if (isSystemMessage) {
                                     return (
-                                        <div key={index} className="flex justify-center py-2" ref={scrollRef}>
+                                        <div key={index} className="flex justify-center py-2">
                                             <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
                                                 {m.text}
                                             </span>
@@ -800,7 +866,7 @@ const Home = () => {
 
                                 // Regular message rendering
                                 return (
-                                    <div key={index} ref={scrollRef}>
+                                    <div key={index}>
                                         {/* Nhóm: Hiển thị tên người gửi nếu không phải tin nhắn của mình */}
                                         {isGroup && !isMe && senderInfo && (
                                             <div className="flex items-center ml-2 mb-1">
@@ -835,12 +901,17 @@ const Home = () => {
                             })}
 
                             {isTyping && (
-                                <div className="flex items-center ml-2 mt-2" ref={scrollRef}>
-                                    <img src={getAvatarUrl(activeChat.avatar)} className="w-6 h-6 rounded-full mr-2 object-cover" />
-                                    <div className="bg-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center space-x-1 w-16 h-9">
-                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                                <div className="flex items-center ml-2 mt-2">
+                                    <img src={getAvatarUrl(activeChat.members ? typingUserAvatar : activeChat.avatar)} className="w-6 h-6 rounded-full mr-2 object-cover" />
+                                    <div>
+                                        {typingUserName && activeChat.members && (
+                                            <div className="text-xs text-gray-500 ml-1 mb-1">{typingUserName} đang gõ...</div>
+                                        )}
+                                        <div className="bg-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center space-x-1 w-16 h-9">
+                                            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
