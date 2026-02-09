@@ -57,15 +57,15 @@ const Home = () => {
         users.some(u => u._id === currentChatUser._id)
     );
 
-    // Auto-scroll xuống cuối chat container khi có tin nhắn mới
+    // Auto-scroll xuống cuối chat container khi có tin nhắn mới hoặc typing indicator xuất hiện
     useEffect(() => {
         if (scrollRef.current) {
-            // Scroll xuống cuối khi có tin nhắn mới
+            // Scroll xuống cuối khi có tin nhắn mới hoặc typing indicator xuất hiện
             setTimeout(() => {
                 scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
             }, 100);
         }
-    }, [messages, activeChat]);
+    }, [messages, activeChat, isTyping]);
 
     // Cập nhật ref mỗi khi activeChat thay đổi
     useEffect(() => {

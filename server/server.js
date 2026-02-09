@@ -136,14 +136,14 @@ io.on('connection', async (socket) => {
         console.log(`⌨️  Typing event: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}, senderName=${senderName}`);
         
         if (isGroup) {
-            // LOGIC TYPING TRONG NHÓM - Dùng Room
-            io.to(receiverId).emit("getTyping", {
+            // LOGIC TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
+            socket.broadcast.to(receiverId).emit("getTyping", {
                 chatId: receiverId, // ID nhóm
                 isGroup: true,
                 senderName: senderName,
                 senderAvatar: senderAvatar
             });
-            console.log(`⌨️  Typing broadcast to group room ${receiverId}`);
+            console.log(`⌨️  Typing broadcast to group room ${receiverId} (excluding sender)`);
         } else {
             // LOGIC TYPING 1-1 - Dùng User Room
             io.to(receiverId).emit("getTyping", {
@@ -160,12 +160,12 @@ io.on('connection', async (socket) => {
         console.log(`⏹️  Stop typing: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}`);
         
         if (isGroup) {
-            // LOGIC STOP TYPING TRONG NHÓM - Dùng Room
-            io.to(receiverId).emit("getStopTyping", {
+            // LOGIC STOP TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
+            socket.broadcast.to(receiverId).emit("getStopTyping", {
                 chatId: receiverId, // ID nhóm
                 isGroup: true
             });
-            console.log(`⏹️  Stop typing broadcast to group room ${receiverId}`);
+            console.log(`⏹️  Stop typing broadcast to group room ${receiverId} (excluding sender)`);
         } else {
             // LOGIC STOP TYPING 1-1 - Dùng User Room
             io.to(receiverId).emit("getStopTyping", {
