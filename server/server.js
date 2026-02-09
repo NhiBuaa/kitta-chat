@@ -117,8 +117,8 @@ io.on('connection', async (socket) => {
             });
             console.log(`💬 Group message sent to room ${receiverId}`);
         } else {
-            // LOGIC GỬI 1-1 - Dùng User Room
-            io.to(receiverId).emit("getMessage", {
+            // LOGIC GỬI 1-1 - Emit cho cả Sender lẫn Receiver
+            const messageData = {
                 senderId,
                 sender: senderInfo,
                 receiverId,
@@ -126,8 +126,14 @@ io.on('connection', async (socket) => {
                 image,
                 isGroup: false,
                 createdAt: Date.now()
-            });
-            console.log(`💬 1-1 message sent to room ${receiverId}`);
+            };
+            
+            // Gửi cho receiver
+            io.to(receiverId).emit("getMessage", messageData);
+            // Gửi cho sender để sender thấy tin nhắn của mình
+            io.to(senderId).emit("getMessage", messageData);
+            
+            console.log(`💬 1-1 message sent to ${senderId} and ${receiverId}`);
         }
     });
 
