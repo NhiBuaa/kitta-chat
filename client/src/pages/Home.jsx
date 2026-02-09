@@ -72,6 +72,23 @@ const Home = () => {
         activeChatRef.current = activeChat;
     }, [activeChat]);
 
+    // Join/Leave group rooms
+    useEffect(() => {
+        if (!socket.current) return;
+
+        const isGroup = activeChat?.members ? true : false;
+
+        if (isGroup) {
+            // Join group room
+            socket.current.emit('joinGroup', activeChat._id);
+            console.log(`📍 Client joined group room: ${activeChat._id}`);
+        } else if (activeChatRef.current?.members) {
+            // Leave previous group room
+            socket.current.emit('leaveGroup', activeChatRef.current._id);
+            console.log(`📍 Client left group room: ${activeChatRef.current._id}`);
+        }
+    }, [activeChat]);
+
     // --- CÁC HÀM HELPER & API ---
     // Hàm load conversation mới nếu chưa có trong list
     const fetchNewConversation = async (targetId, isGroup, messageData) => {
@@ -453,8 +470,8 @@ const Home = () => {
         if (!socket.current) return;
         
         const handleTyping = (data) => {
-            console.log("📝 Received getTyping:", data);
-            console.log("🔍 activeChatRef._id:", activeChatRef.current?._id);
+            // console.log("📝 Received getTyping:", data);
+            // console.log("🔍 activeChatRef._id:", activeChatRef.current?._id);
             
             // Dùng activeChatRef để check cho chắc chắn
             if (!activeChatRef.current) {
@@ -466,20 +483,20 @@ const Home = () => {
             
             // Check xem typing có phải từ chat đang xem không
             if (activeChatRef.current._id === chatId) {
-                console.log("✅ Typing match! Setting isTyping = true");
+                // console.log("✅ Typing match! Setting isTyping = true");
                 setIsTyping(true);
                 if (isGroup && senderName) {
-                    console.log("👤 Group typing from:", senderName);
+                    // console.log("👤 Group typing from:", senderName);
                     setTypingUserName(senderName);
                     setTypingUserAvatar(senderAvatar);
                 }
             } else {
-                console.log("❌ Typing not for current chat", { currentChatId: activeChatRef.current._id, incomingChatId: chatId });
+                // console.log("❌ Typing not for current chat", { currentChatId: activeChatRef.current._id, incomingChatId: chatId });
             }
         };
         
         const handleStopTyping = (data) => {
-            console.log("⏹️  Received getStopTyping:", data);
+            // console.log("⏹️  Received getStopTyping:", data);
             
             if (!activeChatRef.current) return;
             
@@ -487,7 +504,7 @@ const Home = () => {
             
             // Check xem stop typing có phải từ chat đang xem không
             if (activeChatRef.current._id === chatId) {
-                console.log("✅ Stop typing match!");
+                // console.log("✅ Stop typing match!");
                 setIsTyping(false);
                 setTypingUserName("");
                 setTypingUserAvatar(null);
@@ -544,12 +561,12 @@ const Home = () => {
         
         const isGroup = activeChat.members ? true : false;
         
-        console.log("📤 Emitting typing:", {
-            receiverId: activeChat._id,
-            isGroup: isGroup,
-            senderId: currentUser._id,
-            senderName: currentUser.displayName
-        });
+        // console.log("📤 Emitting typing:", {
+        //     receiverId: activeChat._id,
+        //     isGroup: isGroup,
+        //     senderId: currentUser._id,
+        //     senderName: currentUser.displayName
+        // });
         
         socket.current.emit("typing", { 
             receiverId: activeChat._id,

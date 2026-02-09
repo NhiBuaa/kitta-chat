@@ -52,6 +52,10 @@ io.on('connection', async (socket) => {
         // Lưu vào Map Online
         onlineUsers.set(userId, socket.id);
 
+        // Join user vào userId room (để nhận tin nhắn 1-1)
+        socket.join(userId);
+        console.log(`📍 User ${userId} joined room ${userId}`);
+
         // Cập nhật DB thành ACTIVE
         await User.findByIdAndUpdate(userId, {
             activityStatus: { state: 'active', lastSeen: new Date() }
@@ -59,6 +63,18 @@ io.on('connection', async (socket) => {
 
         io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
     }
+
+    // Lắng nghe sự kiện joinGroup
+    socket.on('joinGroup', (groupId) => {
+        socket.join(groupId);
+        console.log(`📍 User ${userId} joined group room ${groupId}`);
+    });
+
+    // Lắng nghe sự kiện leaveGroup
+    socket.on('leaveGroup', (groupId) => {
+        socket.leave(groupId);
+        console.log(`📍 User ${userId} left group room ${groupId}`);
+    });
 
     // Khi User ngắt kết nối
     socket.on('disconnect', async () => {
@@ -89,42 +105,29 @@ io.on('connection', async (socket) => {
         };
 
         if (isGroup) {
-            // LOGIC GỬI CHO NHÓM
-            // Tìm thông tin nhóm để lấy danh sách members
-            const group = await Group.findById(receiverId);
-            if (group) {
-                // Gửi cho tất cả member
-                group.members.forEach(memberId => {
-                    if (memberId.toString() === senderId) return;
-
-                    const memberSocketId = onlineUsers.get(memberId.toString());
-                    if (memberSocketId) {
-                        io.to(memberSocketId).emit("getMessage", {
-                            senderId,
-                            sender: senderInfo,
-                            receiverId,
-                            text,
-                            image,
-                            createdAt: Date.now(),
-                            isGroup: true
-                        });
-                    }
-                });
-            }
+            // LOGIC GỬI CHO NHÓM - Dùng Room
+            io.to(receiverId).emit("getMessage", {
+                senderId,
+                sender: senderInfo,
+                receiverId,
+                text,
+                image,
+                createdAt: Date.now(),
+                isGroup: true
+            });
+            console.log(`💬 Group message sent to room ${receiverId}`);
         } else {
-            // LOGIC GỬI 1-1
-            const userSocketId = onlineUsers.get(receiverId);
-            if (userSocketId) {
-                io.to(userSocketId).emit("getMessage", {
-                    senderId,
-                    sender: senderInfo,
-                    receiverId,
-                    text,
-                    image,
-                    isGroup: false,
-                    createdAt: Date.now()
-                });
-            }
+            // LOGIC GỬI 1-1 - Dùng User Room
+            io.to(receiverId).emit("getMessage", {
+                senderId,
+                sender: senderInfo,
+                receiverId,
+                text,
+                image,
+                isGroup: false,
+                createdAt: Date.now()
+            });
+            console.log(`💬 1-1 message sent to room ${receiverId}`);
         }
     });
 
@@ -133,44 +136,22 @@ io.on('connection', async (socket) => {
         console.log(`⌨️  Typing event: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}, senderName=${senderName}`);
         
         if (isGroup) {
-            // LOGIC TYPING TRONG NHÓM
-            try {
-                const group = await Group.findById(receiverId).select('members');
-                console.log(`Group found: ${group ? group._id : 'NOT FOUND'}, members: ${group?.members?.length || 0}`);
-                
-                if (group && group.members) {
-                    // Gửi cho tất cả members (trừ người gõ)
-                    group.members.forEach(memberId => {
-                        if (memberId.toString() === senderId) return;
-                        
-                        const memberSocketId = onlineUsers.get(memberId.toString());
-                        console.log(`Sending typing to member ${memberId.toString()}, socketId: ${memberSocketId ? 'FOUND' : 'NOT ONLINE'}`);
-                        
-                        if (memberSocketId) {
-                            io.to(memberSocketId).emit("getTyping", {
-                                chatId: receiverId, // ID nhóm
-                                isGroup: true,
-                                senderName: senderName,
-                                senderAvatar: senderAvatar
-                            });
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Error in typing group:', error);
-            }
+            // LOGIC TYPING TRONG NHÓM - Dùng Room
+            io.to(receiverId).emit("getTyping", {
+                chatId: receiverId, // ID nhóm
+                isGroup: true,
+                senderName: senderName,
+                senderAvatar: senderAvatar
+            });
+            console.log(`⌨️  Typing broadcast to group room ${receiverId}`);
         } else {
-            // LOGIC TYPING 1-1
-            const userSocketId = onlineUsers.get(receiverId);
-            console.log(`1-1 typing: receiver ${receiverId} socketId: ${userSocketId ? 'FOUND' : 'NOT ONLINE'}`);
-            
-            if (userSocketId) {
-                io.to(userSocketId).emit("getTyping", {
-                    chatId: senderId, // ID người gõ (user)
-                    isGroup: false,
-                    senderAvatar: senderAvatar
-                });
-            }
+            // LOGIC TYPING 1-1 - Dùng User Room
+            io.to(receiverId).emit("getTyping", {
+                chatId: senderId, // ID người gõ (user)
+                isGroup: false,
+                senderAvatar: senderAvatar
+            });
+            console.log(`⌨️  Typing sent to user room ${receiverId}`);
         }
     });
 
@@ -179,35 +160,19 @@ io.on('connection', async (socket) => {
         console.log(`⏹️  Stop typing: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}`);
         
         if (isGroup) {
-            // LOGIC STOP TYPING TRONG NHÓM
-            try {
-                const group = await Group.findById(receiverId).select('members');
-                if (group && group.members) {
-                    // Gửi cho tất cả members (trừ người gõ)
-                    group.members.forEach(memberId => {
-                        if (memberId.toString() === senderId) return;
-                        
-                        const memberSocketId = onlineUsers.get(memberId.toString());
-                        if (memberSocketId) {
-                            io.to(memberSocketId).emit("getStopTyping", {
-                                chatId: receiverId, // ID nhóm
-                                isGroup: true
-                            });
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Error in stop typing group:', error);
-            }
+            // LOGIC STOP TYPING TRONG NHÓM - Dùng Room
+            io.to(receiverId).emit("getStopTyping", {
+                chatId: receiverId, // ID nhóm
+                isGroup: true
+            });
+            console.log(`⏹️  Stop typing broadcast to group room ${receiverId}`);
         } else {
-            // LOGIC STOP TYPING 1-1
-            const userSocketId = onlineUsers.get(receiverId);
-            if (userSocketId) {
-                io.to(userSocketId).emit("getStopTyping", {
-                    chatId: senderId, // ID người gõ (user)
-                    isGroup: false
-                });
-            }
+            // LOGIC STOP TYPING 1-1 - Dùng User Room
+            io.to(receiverId).emit("getStopTyping", {
+                chatId: senderId, // ID người gõ (user)
+                isGroup: false
+            });
+            console.log(`⏹️  Stop typing sent to user room ${receiverId}`);
         }
     });
 
