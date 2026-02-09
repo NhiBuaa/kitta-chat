@@ -510,13 +510,16 @@ const Home = () => {
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             } else {
                 // TOAST THÔNG BÁO KHI KHÔNG XEM CHAT
-                const sender = users.find(u => u._id === data.senderId);
-                const senderName = sender ? sender.displayName : "Ai đó";
-                toast.info(`Tin nhắn mới từ ${senderName}`, {
-                    position: "top-right",
-                    autoClose: 3000,
-                    hideProgressBar: true
-                });
+                // Skip toast for system messages (they may duplicate other UX notifications)
+                if (data.type !== 'system') {
+                    const sender = users.find(u => u._id === data.senderId);
+                    const senderName = sender ? sender.displayName : "Ai đó";
+                    toast.info(`Tin nhắn mới từ ${senderName}`, {
+                        position: "top-right",
+                        autoClose: 3000,
+                        hideProgressBar: true
+                    });
+                }
             }
         };
 
@@ -669,13 +672,27 @@ const Home = () => {
 
     // Xử lý khi thành viên được thêm/xóa
     const handleGroupMemberUpdated = (data) => {
-        const { groupId, updatedGroup, removedMemberId } = data;
+        const { groupId, updatedGroup, removedMemberId, isVoluntaryLeave } = data;
         
-        // Nếu chính mình bị xóa khỏi nhóm
-        if (removedMemberId === currentUser._id && activeChat?._id === groupId) {
-            setShowGroupMembers(false);
-            setActiveChat(null);
-            toast.info("Bạn đã bị xóa khỏi nhóm");
+        // Nếu chính mình được xóa hoặc rời khỏi nhóm
+        if (removedMemberId === currentUser._id) {
+            // Ensure client leaves the group room so it no longer receives events for this group
+            try {
+                socket.current?.emit('leaveGroup', groupId);
+            } catch (err) {
+                console.error('Error leaving group room', err);
+            }
+
+            // Nếu đang xem nhóm này thì đóng modal và reset activeChat
+            if (activeChat?._id === groupId) {
+                setShowGroupMembers(false);
+                setActiveChat(null);
+            }
+
+            // Use appropriate message based on whether it was voluntary leave or removal
+            const message = isVoluntaryLeave ? "Bạn đã rời khỏi nhóm" : "Bạn đã bị xóa khỏi nhóm";
+            toast.info(message);
+
             // Xóa khỏi group list
             setGroups(prevGroups => prevGroups.filter(g => g._id !== groupId));
             return;
@@ -695,14 +712,39 @@ const Home = () => {
         }
     };
 
+    // Xử lý khi nhóm bị giải tsan
+    const handleGroupDeleted = (data) => {
+        const { groupId } = data;
+        
+        // Nếu đang xem nhóm bị xóa, đóng nó
+        if (activeChat?._id === groupId) {
+            setShowGroupMembers(false);
+            setActiveChat(null);
+        }
+
+        // Xóa khỏi group list
+        setGroups(prevGroups => prevGroups.filter(g => g._id !== groupId));
+        
+        // Rời group room
+        try {
+            socket.current?.emit('leaveGroup', groupId);
+        } catch (err) {
+            console.error('Error leaving group room', err);
+        }
+
+        toast.info("Nhóm đã bị giải tsan");
+    };
+
     socket.current.on("groupAdminChanged", handleGroupAdminChanged);
     socket.current.on("groupRenamed", handleGroupRenamed);
     socket.current.on("groupMemberUpdated", handleGroupMemberUpdated);
+    socket.current.on("groupDeleted", handleGroupDeleted);
 
     return () => {
         socket.current.off("groupAdminChanged", handleGroupAdminChanged);
         socket.current.off("groupRenamed", handleGroupRenamed);
         socket.current.off("groupMemberUpdated", handleGroupMemberUpdated);
+        socket.current.off("groupDeleted", handleGroupDeleted);
     };
 }, [activeChat]);
 
@@ -1196,7 +1238,8 @@ const Home = () => {
                         if (!updatedGroup.members.some(m => m._id === currentUser._id)) {
                             setShowGroupMembers(false);
                             setActiveChat(null);
-                            toast.info("Bạn đã rời khỏi nhóm");
+                            // Do server will emit groupMemberUpdated which triggers the leave notification,
+                            // avoid showing a duplicate toast here.
                         }
                     }}
                 />

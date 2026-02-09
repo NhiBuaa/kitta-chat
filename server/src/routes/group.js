@@ -8,5 +8,6 @@ router.post('/:groupId/add-member', authMiddleware, groupController.addMember);
 router.post('/:groupId/remove-member', authMiddleware, groupController.removeMember);
 router.post('/:groupId/transfer-admin', authMiddleware, groupController.transferAdmin);
 router.put('/:groupId/rename', authMiddleware, groupController.renameGroup);
+router.delete('/:groupId', authMiddleware, groupController.deleteGroup);
 
 module.exports = router;

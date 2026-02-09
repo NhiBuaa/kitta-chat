@@ -193,10 +193,13 @@ const removeMember = async (req, res) => {
         const updatedGroup = await Group.findById(groupId).populate('members', '-password');
 
         // Emit event để cập nhật members list + thông báo ai bị remove
+        // isVoluntaryLeave: true nếu user tự rời, false nếu bị admin xóa
+        const isVoluntaryLeave = memberId === adminId;
         io.to(groupId).emit('groupMemberUpdated', {
             groupId: groupId,
             updatedGroup: updatedGroup,
-            removedMemberId: memberId
+            removedMemberId: memberId,
+            isVoluntaryLeave: isVoluntaryLeave
         });
 
         res.json({ success: true, message: "Xóa thành viên thành công" });
@@ -334,4 +337,57 @@ const transferAdmin = async (req, res) => {
     }
 };
 
-module.exports = { createGroup, getMyGroups, addMember, removeMember, renameGroup, transferAdmin };
+// [DELETE] /api/groups/:groupId (Giải tán nhóm - chỉ admin)
+const deleteGroup = async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const adminId = req.user.id;
+        const io = req.app.get('socketio');
+
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).json({ success: false, message: "Nhóm không tồn tại" });
+        }
+
+        // Kiểm tra quyền (chỉ admin được giải tán nhóm)
+        if (group.admin.toString() !== adminId) {
+            return res.status(403).json({ success: false, message: "Chỉ admin mới có thể giải tán nhóm" });
+        }
+
+        // Tạo system message trước khi xóa
+        const admin = await User.findById(adminId);
+        const systemMessage = await createSystemMessage(
+            groupId,
+            `${admin.displayName || admin.email.split('@')[0]} đã giải tán nhóm`
+        );
+
+        // Emit system message tới tất cả trong group room
+        io.to(groupId).emit('getMessage', {
+            senderId: null,
+            sender: null,
+            receiverId: groupId,
+            text: systemMessage.text,
+            type: 'system',
+            createdAt: systemMessage.createdAt,
+            isGroup: true
+        });
+
+        // Xóa nhóm
+        await Group.findByIdAndDelete(groupId);
+        
+        // Xóa tất cả messages của nhóm
+        await Message.deleteMany({ conversationId: groupId });
+
+        // Emit event để thông báo nhóm đã bị xóa
+        io.to(groupId).emit('groupDeleted', {
+            groupId: groupId
+        });
+
+        res.json({ success: true, message: "Giải tsan nhóm thành công" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
+module.exports = { createGroup, getMyGroups, addMember, removeMember, renameGroup, transferAdmin, deleteGroup };
