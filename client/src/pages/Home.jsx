@@ -408,7 +408,26 @@ const Home = () => {
 
     // --- HANDLERS ---
     const handleSelectUser = (user) => {
+        // Set người dùng đang chat để mở đoạn chat
         setActiveChat(user);
+
+        // Đánh dấu tin nhắn là đã đọc
+        setUsers(prev => prev.map((u) => {
+            if (u._id === user._id) {
+                return {
+                    ...u,
+                    hasUnread: false
+                }
+            }
+            return u;
+        }))
+
+        if (socket.current) {
+            socket.current.emit("markRead", {
+                senderId: user._id,
+                receiverId: currentUser._id
+            });
+        }
     };
 
     const handleInputChange = (e) => {
