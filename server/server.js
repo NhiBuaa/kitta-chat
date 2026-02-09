@@ -36,6 +36,11 @@ const io = new Server(server, {
 
 // Lưu danh sách user đang online vào RAM để truy xuất nhanh
 let onlineUsers = new Map();
+global.onlineUsers = onlineUsers;
+
+// Set io vào app để controller có thể access
+app.set('socketio', io);
+app.set('onlineUsers', onlineUsers);
 
 io.on('connection', async (socket) => {
     // Lấy userId từ client gửi lên

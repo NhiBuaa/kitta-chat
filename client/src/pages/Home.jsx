@@ -264,10 +264,72 @@ const Home = () => {
                 }));
             })
         }
+
+        // Lắng nghe sự kiện gửi kết bạn
+        socket.current?.on("newFriendRequest", (data) => {
+            // Tăng số lượng lời mời kết bạn
+            setRequestCount((prev) => prev + 1);
+
+            // Hiển thị thông báo toast
+            toast.info(`${data.senderName} đã gửi lời mời kết bạn`, {
+                position: "top-right",
+                autoClose: 5000,
+            })
+
+            // Cập nhật trạng thái nút bấm ở thanh sidebar
+            setUsers(prev => prev.map(user => {
+                if (user._id === data.senderId) {
+                    return {
+                        ...user,
+                        isIncomingRequest: true
+                    }
+                }
+                return user;
+            }))
+        })
+
+        // Lắng nghe sự kiện lời mời bạn bè được chấp nhận
+        socket.current?.on("friendRequestAccepted", (data) => {
+            // Cập nhật user từ người lạ thành bạn bè
+            setUsers(prev => {
+                const updatedUsers = prev.map(user => {
+                    if (user._id === data.newFriendId) {
+                        return {
+                            ...user,
+                            isFriend: true,
+                            isIncomingRequest: false
+                        };
+                    }
+                    return user;
+                });
+                
+                // Nếu user chưa trong danh sách, thêm vào
+                const userExists = updatedUsers.some(u => u._id === data.newFriendId);
+                if (!userExists) {
+                    updatedUsers.push({
+                        _id: data.newFriendId,
+                        displayName: data.newFriendName,
+                        avatar: data.newFriendAvatar,
+                        isFriend: true,
+                        lastMessage: null,
+                        hasUnread: false
+                    });
+                }
+                
+                return updatedUsers;
+            });
+
+            toast.success(`${data.newFriendName} đã chấp nhận lời mời kết bạn`, {
+                position: "top-right",
+                autoClose: 3000,
+            });
+        })
         return () => {
             // Không disconnect socket ở đây để tránh mất kết nối khi re-render nhẹ
             // Chỉ disconnect khi logout hoặc unmount hẳn component App
             if (socket.current) {
+                socket.current.off("newFriendRequest");
+                socket.current.off("friendRequestAccepted");
                 socket.current.off("getOnlineUsers");
                 socket.current.off("userConnected");
                 socket.current.off("userDisconnected");
@@ -565,11 +627,23 @@ const Home = () => {
                     </div>
                     <div className="flex items-center">
                         <button onClick={() => setShowCreateGroup(true)} className="ml-2 text-white hover:text-blue-200"><FaUsers size={20} /></button>
-                        <button onClick={() => setShowRequestModal(true)} className="relative ml-4 focus:outline-none">
-                            <FaBell size={20} className="hover:text-blue-200" />
+                        <button
+                            onClick={() => setShowRequestModal(true)}
+                            className="relative ml-4 focus:outline-none group transition-transform active:scale-95"
+                            title="Thông báo kết bạn"
+                        >
+                            <FaBell
+                                size={20}
+                                className={`transition-all duration-300 ${requestCount > 0 ? 'text-yellow-300 animate-pulse' : 'hover:text-blue-200'}`}
+                            />
+
                             {requestCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white animate-pulse">
-                                    {requestCount > 9 ? '9+' : requestCount}
+                                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+
+                                    <span className="relative inline-flex rounded-full h-5 w-5 bg-red-600 border-2 border-blue-600 text-white text-[10px] font-bold items-center justify-center">
+                                        {requestCount > 9 ? '9+' : requestCount}
+                                    </span>
                                 </span>
                             )}
                         </button>
@@ -762,7 +836,7 @@ const Home = () => {
 
             {showProfile && <UserProfileSidebar isOpen={showProfile} user={{ ...currentUser, avatar: getAvatarUrl(currentUser?.avatar) }} onClose={() => setShowProfile(false)} onUpdateSuccess={handleUpdateSuccess} />}
             <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])} />
-            {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} />}
+            {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} setRequestCount={setRequestCount} />}
         </div>
     );
 };

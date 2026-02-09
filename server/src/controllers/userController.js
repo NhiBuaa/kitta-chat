@@ -173,6 +173,8 @@ const accceptFriendRequest = async (req, res) => {
     try {
         const { senderId } = req.body;
         const receiverId = req.user.id;
+        const io = req.app.get('socketio');
+        const onlineUsers = req.app.get('onlineUsers');
 
         const receiver = await User.findById(receiverId);
 
@@ -187,9 +189,19 @@ const accceptFriendRequest = async (req, res) => {
             $pull: { friendRequests: senderId }
         })
 
-        await User.findByIdAndUpdate(senderId, {
+        const sender = await User.findByIdAndUpdate(senderId, {
             $push: { friends: receiverId }
-        })
+        }, { new: true });
+
+        // Emit event cho người gửi (sender) để cập nhật sidebar
+        const senderSocketId = onlineUsers.get(senderId.toString());
+        if (senderSocketId) {
+            io.to(senderSocketId).emit('friendRequestAccepted', {
+                newFriendId: receiverId,
+                newFriendName: receiver.displayName || receiver.email.split('@')[0],
+                newFriendAvatar: receiver.avatar
+            });
+        }
 
         res.json({ success: true, message: "Đã chấp nhận lời mời kết bạn." });
 
@@ -285,6 +297,8 @@ const sendFriendRequest = async (req, res) => {
     try {
         const { receiverId } = req.body;
         const senderId = req.user.id;
+        const io = req.app.get('socketio');
+        const onlineUsers = req.app.get('onlineUsers');
 
         // Kiểm tra các lỗi cơ bản
         if (receiverId === senderId) {
@@ -302,11 +316,23 @@ const sendFriendRequest = async (req, res) => {
         }
 
         // Thêm lời mời kết bạn
+        const sender = await User.findById(senderId);
         await User.findByIdAndUpdate(receiverId, {
             $push: { friendRequests: senderId }
         })
 
-        res.json({ success: true, message: "Đã gửi lời mời kết bạn" });
+        // Gửi thông báo real-time nếu người nhận đang online
+        const receiverSocketId = onlineUsers.get(receiverId.toString());
+        console.log("Receiver Socket ID:", receiverSocketId);
+        if(receiverSocketId) {
+            io.to(receiverSocketId).emit('newFriendRequest', {
+                senderId: senderId,
+                senderName: sender.displayName || sender.email.split('@')[0],
+                avatar: sender.avatar
+            });
+        }
+
+        res.status(200).json({ success: true, message: "Đã gửi lời mời" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Lỗi server" });
