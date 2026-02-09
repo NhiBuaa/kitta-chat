@@ -80,6 +80,13 @@ io.on('connection', async (socket) => {
 
     // Lắng nghe sự kiện sendMessage
     socket.on("sendMessage", async ({ senderId, receiverId, text, image, isGroup }) => {
+        // Fetch thông tin người gửi
+        const sender = await User.findById(senderId).select('displayName avatar email');
+        const senderInfo = {
+            _id: senderId,
+            displayName: sender?.displayName || sender?.email?.split('@')[0],
+            avatar: sender?.avatar
+        };
 
         if (isGroup) {
             // LOGIC GỬI CHO NHÓM
@@ -94,6 +101,7 @@ io.on('connection', async (socket) => {
                     if (memberSocketId) {
                         io.to(memberSocketId).emit("getMessage", {
                             senderId,
+                            sender: senderInfo,
                             receiverId,
                             text,
                             image,
@@ -109,6 +117,7 @@ io.on('connection', async (socket) => {
             if (userSocketId) {
                 io.to(userSocketId).emit("getMessage", {
                     senderId,
+                    sender: senderInfo,
                     receiverId,
                     text,
                     image,

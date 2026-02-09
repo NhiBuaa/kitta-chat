@@ -302,7 +302,7 @@ const Home = () => {
                     }
                     return user;
                 });
-                
+
                 // Nếu user chưa trong danh sách, thêm vào
                 const userExists = updatedUsers.some(u => u._id === data.newFriendId);
                 if (!userExists) {
@@ -315,7 +315,7 @@ const Home = () => {
                         hasUnread: false
                     });
                 }
-                
+
                 return updatedUsers;
             });
 
@@ -388,7 +388,11 @@ const Home = () => {
 
             if (isViewingChat) {
                 setMessages((prev) => [...prev, {
-                    sender: data.senderId,
+                    sender: data.sender || {
+                        _id: data.senderId,
+                        displayName: 'Người dùng',
+                        avatar: null
+                    },
                     text: data.text,
                     image: data.image,
                     createdAt: data.createdAt,
@@ -775,11 +779,33 @@ const Home = () => {
 
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
                             {messages.map((m, index) => {
-                                const isMe = m.sender === currentUser._id;
+                                const senderId = typeof m.sender === 'object' ? m.sender._id : m.sender;
+                                const isMe = senderId === currentUser._id;
+                                const isGroup = activeChat.members ? true : false;
+                                const senderInfo = typeof m.sender === 'object' ? m.sender : null;
+                                const senderName = senderInfo?.displayName || senderInfo?.email?.split('@')[0] || 'Người dùng';
+                                const senderAvatar = senderInfo?.avatar || activeChat.avatar;
+                                
                                 return (
                                     <div key={index} ref={scrollRef}>
+                                        {/* Nhóm: Hiển thị tên người gửi nếu không phải tin nhắn của mình */}
+                                        {isGroup && !isMe && senderInfo && (
+                                            <div className="flex items-center ml-2 mb-1">
+                                                <span className="text-xs font-semibold text-gray-600">{senderName}</span>
+                                            </div>
+                                        )}
+                                        
                                         <div className={`flex ${isMe ? 'justify-end' : ''}`}>
-                                            {!isMe && <img src={getAvatarUrl(activeChat.avatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />}
+                                            {/* Chat 1-1: Chỉ hiển thị avatar cho tin nhắn người khác */}
+                                            {!isMe && !isGroup && (
+                                                <img src={getAvatarUrl(activeChat.avatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />
+                                            )}
+                                            
+                                            {/* Nhóm: Hiển thị avatar nhỏ cho tin nhắn người khác */}
+                                            {!isMe && isGroup && (
+                                                <img src={getAvatarUrl(senderAvatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />
+                                            )}
+
                                             <div className={`p-3 max-w-xs shadow-sm text-sm ${isMe ? 'bg-green-600 text-white rounded-l-2xl rounded-br-2xl' : 'bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl'}`}>
                                                 {m.image && <img src={getAvatarUrl(m.image)} className="w-full h-auto rounded-lg mb-2 cursor-pointer hover:opacity-90" onClick={() => window.open(getAvatarUrl(m.image), '_blank')} />}
                                                 {m.text && <span>{m.text}</span>}

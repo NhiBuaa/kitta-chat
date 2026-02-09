@@ -44,7 +44,7 @@ exports.getMessages = async (req, res) => {
 
         const messages = await Message.find({
             conversationId: conversationId
-        });
+        }).populate('sender', 'displayName avatar email');
 
         res.status(200).json(messages);
     } catch (err) {
