@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sendFriendRequest ,accceptFriendRequest, getUserProfile, updateUserProfile, getAllUsers, searchUsers, getFriends, getFriendRequests, getSidebarUsers } = require('../controllers/userController');
+const {  sendFriendRequest, accceptFriendRequest, getUserProfile, updateUserProfile, getAllUsers, searchUsers, getFriends, getFriendRequests, getSidebarUsers, rejectFriendRequest } = require('../controllers/userController');
 const authMiddleware = require('../middlewares/auth');
 const upload = require('../middlewares/upload');
 
@@ -11,6 +11,7 @@ router.get('/friend-requests', authMiddleware, getFriendRequests);
 router.post('/accept-friend', authMiddleware, accceptFriendRequest);
 router.get('/sidebar-list', authMiddleware, getSidebarUsers);
 router.post('/friend-request', authMiddleware, sendFriendRequest);
+router.post('/reject-friend', authMiddleware, rejectFriendRequest);
 router.get('/search', authMiddleware, searchUsers);
 router.get('/', authMiddleware, getAllUsers);
 

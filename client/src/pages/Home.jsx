@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import EmojiPicker from 'emoji-picker-react';
 import CreateGroupModal from "../components/CreateGroupModal";
 import FriendRequestModal from "../components/FriendRequestModal";
+import GroupMembersModal from "../components/GroupMembersModal";
 import { sendFriendRequest } from "../services/userService";
 
 const Home = () => {
@@ -23,23 +24,26 @@ const Home = () => {
     const [onlineUserIds, setOnlineUserIds] = useState([]);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
-    const scrollRef = useRef();
     const [isTyping, setIsTyping] = useState(false);
-    const typingTimeoutRef = useRef(null);
+    const [typingUserName, setTypingUserName] = useState("");
+    const [typingUserAvatar, setTypingUserAvatar] = useState(null);
     const [showEmoji, setShowEmoji] = useState(false);
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
-    const fileInputRef = useRef();
     const [groups, setGroups] = useState([]);
     const [showCreateGroup, setShowCreateGroup] = useState(false);
+    const [showGroupMembers, setShowGroupMembers] = useState(false);
     const [searchResult, setSearchResult] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [requestCount, setRequestCount] = useState(0);
     const [sentRequests, setSentRequests] = useState([]);
 
-    // REF QUAN TRỌNG
+    // REF
     const activeChatRef = useRef(null);
     const socket = useRef();
+    const scrollRef = useRef();
+    const fileInputRef = useRef();
+    const typingTimeoutRef = useRef(null);
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL;
@@ -50,13 +54,44 @@ const Home = () => {
             : (users.find(u => u._id === activeChat._id) || activeChat))
         : null;
 
+    const isFriend = currentChatUser && !currentChatUser.members && (
+        currentChatUser.isFriend ||
+        users.some(u => u._id === currentChatUser._id)
+    );
+
+    // Auto-scroll xuống cuối chat container khi có tin nhắn mới hoặc typing indicator xuất hiện
+    useEffect(() => {
+        if (scrollRef.current) {
+            // Scroll xuống cuối khi có tin nhắn mới hoặc typing indicator xuất hiện
+            setTimeout(() => {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, 100);
+        }
+    }, [messages, activeChat, isTyping]);
+
     // Cập nhật ref mỗi khi activeChat thay đổi
     useEffect(() => {
         activeChatRef.current = activeChat;
     }, [activeChat]);
 
-    // --- CÁC HÀM HELPER & API ---
+    // Join/Leave group rooms
+    useEffect(() => {
+        if (!socket.current) return;
 
+        const isGroup = activeChat?.members ? true : false;
+
+        if (isGroup) {
+            // Join group room
+            socket.current.emit('joinGroup', activeChat._id);
+            console.log(`📍 Client joined group room: ${activeChat._id}`);
+        } else if (activeChatRef.current?.members) {
+            // Leave previous group room
+            socket.current.emit('leaveGroup', activeChatRef.current._id);
+            console.log(`📍 Client left group room: ${activeChatRef.current._id}`);
+        }
+    }, [activeChat]);
+
+    // --- CÁC HÀM HELPER & API ---
     // Hàm load conversation mới nếu chưa có trong list
     const fetchNewConversation = async (targetId, isGroup, messageData) => {
         try {
@@ -209,6 +244,10 @@ const Home = () => {
                 query: { userId: currentUser._id }
             });
 
+            socket.current.on('connect', () => {
+                console.log('🔌 Socket connected, id =', socket.current.id);
+            });
+
             // Lấy nghe danh sách người dùng online
             socket.current.on("getOnlineUsers", (userIds) => {
                 setOnlineUserIds(userIds);
@@ -244,16 +283,143 @@ const Home = () => {
                 }));
             })
         }
+
+        // Lắng nghe sự kiện gửi kết bạn
+        socket.current?.on("newFriendRequest", (data) => {
+            // Tăng số lượng lời mời kết bạn
+            setRequestCount((prev) => prev + 1);
+
+            // Hiển thị thông báo toast
+            toast.info(`${data.senderName} đã gửi lời mời kết bạn`, {
+                position: "top-right",
+                autoClose: 5000,
+            })
+
+            // Cập nhật trạng thái nút bấm ở thanh sidebar
+            setUsers(prev => prev.map(user => {
+                if (user._id === data.senderId) {
+                    return {
+                        ...user,
+                        isIncomingRequest: true
+                    }
+                }
+                return user;
+            }))
+        })
+
+        // Lắng nghe sự kiện lời mời bạn bè được chấp nhận
+        socket.current?.on("friendRequestAccepted", (data) => {
+            // Cập nhật user từ người lạ thành bạn bè
+            setUsers(prev => {
+                const updatedUsers = prev.map(user => {
+                    if (user._id === data.newFriendId) {
+                        return {
+                            ...user,
+                            isFriend: true,
+                            isIncomingRequest: false
+                        };
+                    }
+                    return user;
+                });
+
+                // Nếu user chưa trong danh sách, thêm vào
+                const userExists = updatedUsers.some(u => u._id === data.newFriendId);
+                if (!userExists) {
+                    updatedUsers.push({
+                        _id: data.newFriendId,
+                        displayName: data.newFriendName,
+                        avatar: data.newFriendAvatar,
+                        isFriend: true,
+                        lastMessage: null,
+                        hasUnread: false
+                    });
+                }
+
+                return updatedUsers;
+            });
+
+            toast.success(`${data.newFriendName} đã chấp nhận lời mời kết bạn`, {
+                position: "top-right",
+                autoClose: 3000,
+            });
+        })
         return () => {
             // Không disconnect socket ở đây để tránh mất kết nối khi re-render nhẹ
             // Chỉ disconnect khi logout hoặc unmount hẳn component App
             if (socket.current) {
+                socket.current.off("newFriendRequest");
+                socket.current.off("friendRequestAccepted");
                 socket.current.off("getOnlineUsers");
                 socket.current.off("userConnected");
                 socket.current.off("userDisconnected");
             }
         };
     }, [currentUser, API_URL]);
+
+        // Socket-level read receipts listeners (registered after socket init)
+        useEffect(() => {
+            if (!socket.current) return;
+
+            const handleUserRead = (data) => {
+                const { readerId } = data;
+                // Update sidebar: mark conversation with readerId as read
+                setUsers(prev => prev.map(u => {
+                    if (u._id === readerId) {
+                        const lm = u.lastMessage ? { ...u.lastMessage, isRead: true } : u.lastMessage;
+                        return { ...u, hasUnread: false, lastMessage: lm };
+                    }
+                    return u;
+                }));
+
+                // If we are viewing 1-1 chat with reader, mark messages sent by me as read
+                if (activeChat && !activeChat.members && activeChat._id === readerId) {
+                    setMessages(prev => prev.map(m => {
+                        const senderId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
+                        if (senderId === currentUser._id) {
+                            return { ...m, isRead: true };
+                        }
+                        return m;
+                    }));
+                }
+            };
+
+            const handleGroupUserRead = (data) => {
+                const { groupId, readerId } = data;
+                // Update messages readBy for group if viewing
+                if (activeChat && activeChat.members && activeChat._id === groupId) {
+                    setMessages(prev => prev.map(m => {
+                        // Ensure readBy array exists
+                        const readBy = m.readBy ? Array.from(new Set(m.readBy)) : [];
+                        if (!readBy.includes(readerId)) {
+                            return { ...m, readBy: [...readBy, readerId] };
+                        }
+                        return m;
+                    }));
+                }
+
+                // Also update groups list lastMessage state (if present) to reflect reads
+                setGroups(prev => prev.map(g => {
+                    if (g._id === groupId) {
+                        // if lastMessage exists, add/ensure readBy
+                        if (g.lastMessage) {
+                            const readBy = g.lastMessage.readBy ? Array.from(new Set(g.lastMessage.readBy)) : [];
+                            if (!readBy.includes(readerId)) {
+                                return { ...g, lastMessage: { ...g.lastMessage, readBy: [...readBy, readerId] } };
+                            }
+                        }
+                    }
+                    return g;
+                }));
+            };
+
+            socket.current.on('userReadMessages', handleUserRead);
+            socket.current.on('groupUserRead', handleGroupUserRead);
+
+            return () => {
+                socket.current.off('userReadMessages', handleUserRead);
+                socket.current.off('groupUserRead', handleGroupUserRead);
+            };
+        }, [activeChat, currentUser]);
 
 
     //  USE EFFECT ĐỂ XỬ LÝ TIN NHẮN ĐẾN
@@ -302,22 +468,43 @@ const Home = () => {
 
             // CẬP NHẬT MESSAGES
             const isViewingChat = (data.isGroup && currentActiveChat?._id === data.receiverId) ||
-                (!data.isGroup && currentActiveChat?._id === data.senderId);
+                (!data.isGroup && (currentActiveChat?._id === data.senderId || currentActiveChat?._id === data.receiverId));
 
             if (isViewingChat) {
+                const isMeSender = data.senderId === currentUser._id;
+                // For 1-1: messages sent by me should not be marked read until the other user reads them.
+                // For 1-1: messages received from other should be marked read when viewing.
+                // For groups: keep existing behavior (mark received messages as read locally)
+                const computedIsRead = data.isGroup ? true : (!isMeSender);
+
                 setMessages((prev) => [...prev, {
-                    sender: data.senderId,
+                    sender: data.sender || {
+                        _id: data.senderId,
+                        displayName: 'Người dùng',
+                        avatar: null
+                    },
                     text: data.text,
                     image: data.image,
+                    type: data.type,
                     createdAt: data.createdAt,
-                    isRead: true
+                    isRead: computedIsRead
                 }]);
 
-                // Emit đã đọc
-                socket.current.emit("markRead", {
-                    senderId: data.senderId,
-                    receiverId: currentUser._id
-                });
+                // Emit đã đọc (phân biệt group/1-1) - chỉ khi message không phải do chính mình gửi
+                if (data.senderId !== currentUser._id) {
+                    if (data.isGroup) {
+                        socket.current.emit("markRead", {
+                            isGroup: true,
+                            groupId: data.receiverId,
+                            readerId: currentUser._id
+                        });
+                    } else {
+                        socket.current.emit("markRead", {
+                            senderId: data.senderId,
+                            receiverId: currentUser._id
+                        });
+                    }
+                }
 
                 // Scroll
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -338,7 +525,7 @@ const Home = () => {
         return () => {
             socket.current.off("getMessage", handleUnifiedMessage);
         };
-    }, [socket, users, currentUser]);
+    }, [currentUser]);
 
     // FETCH MESSAGE KHI CHỌN USER
     useEffect(() => {
@@ -355,6 +542,14 @@ const Home = () => {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 setMessages(res.data);
+                // Khi mở cuộc chat, đánh dấu đã đọc (1-1 hoặc group)
+                if (socket.current) {
+                    if (isGroup) {
+                        socket.current.emit('markRead', { isGroup: true, groupId: activeChat._id, readerId: currentUser._id });
+                    } else {
+                        socket.current.emit('markRead', { senderId: activeChat._id, receiverId: currentUser._id });
+                    }
+                }
             } catch (err) {
                 console.error("Lỗi fetch tin nhắn:", err);
             }
@@ -365,12 +560,51 @@ const Home = () => {
     // TYPING LOGIC
     useEffect(() => {
         if (!socket.current) return;
-        const handleTyping = (senderId) => {
+        
+        const handleTyping = (data) => {
+            // console.log("📝 Received getTyping:", data);
+            // console.log("🔍 activeChatRef._id:", activeChatRef.current?._id);
+            
             // Dùng activeChatRef để check cho chắc chắn
-            if (activeChatRef.current && senderId === activeChatRef.current._id) setIsTyping(true);
+            if (!activeChatRef.current) {
+                console.log("❌ No active chat");
+                return;
+            }
+            const { chatId, isGroup, senderId, senderName, senderAvatar } = data;
+
+            // Ignore typing events emitted by ourselves
+            if (senderId === currentUser?._id) return;
+            
+            // Check xem typing có phải từ chat đang xem không
+            if (activeChatRef.current._id === chatId) {
+                // console.log("✅ Typing match! Setting isTyping = true");
+                setIsTyping(true);
+                if (isGroup && senderName) {
+                    // console.log("👤 Group typing from:", senderName);
+                    setTypingUserName(senderName);
+                    setTypingUserAvatar(senderAvatar);
+                }
+            } else {
+                // console.log("❌ Typing not for current chat", { currentChatId: activeChatRef.current._id, incomingChatId: chatId });
+            }
         };
-        const handleStopTyping = (senderId) => {
-            if (activeChatRef.current && senderId === activeChatRef.current._id) setIsTyping(false);
+        
+        const handleStopTyping = (data) => {
+            // console.log("⏹️  Received getStopTyping:", data);
+            
+            if (!activeChatRef.current) return;
+            const { chatId, senderId } = data;
+
+            // Ignore stopTyping events emitted by ourselves
+            if (senderId === currentUser?._id) return;
+            
+            // Check xem stop typing có phải từ chat đang xem không
+            if (activeChatRef.current._id === chatId) {
+                // console.log("✅ Stop typing match!");
+                setIsTyping(false);
+                setTypingUserName("");
+                setTypingUserAvatar(null);
+            }
         };
 
         socket.current.on("getTyping", handleTyping);
@@ -380,30 +614,177 @@ const Home = () => {
             socket.current.off("getTyping", handleTyping);
             socket.current.off("getStopTyping", handleStopTyping);
         };
-    }, [socket]);
+    }, [currentUser]);
 
     useEffect(() => {
         setIsTyping(false);
+        setTypingUserName("");
+        setTypingUserAvatar(null);
     }, [activeChat]);
 
+    // Socket listener cho cập nhật nhóm (admin thay đổi, tên thay đổi, v.v.)
+    useEffect(() => {
+    if (!socket.current) return;
+
+    // Xử lý khi Admin thay đổi
+    const handleGroupAdminChanged = (data) => {
+        const { groupId, newAdminId } = data;
+
+        // Cập nhật Sidebar
+        setGroups(prevGroups =>
+            prevGroups.map(g =>
+                g._id === groupId ? { ...g, admin: newAdminId } : g
+            )
+        );
+
+        // Cập nhật ActiveChat (CHỈ CHẠY nếu đang xem nhóm đó)
+        if (activeChat?._id === groupId) {
+            setActiveChat(prev => ({
+                ...prev,
+                admin: newAdminId
+            }));
+        }
+    };
+
+    // Xử lý khi Đổi tên/Avatar
+    const handleGroupRenamed = (data) => {
+        const { groupId, newName, newAvatar } = data;
+
+        // Cập nhật Sidebar
+        setGroups(prevGroups =>
+            prevGroups.map(g =>
+                g._id === groupId ? { ...g, name: newName, avatar: newAvatar } : g
+            )
+        );
+
+        // Cập nhật ActiveChat
+        if (activeChat?._id === groupId) {
+            setActiveChat(prev => ({
+                ...prev,
+                name: newName,
+                avatar: newAvatar
+            }));
+        }
+    };
+
+    // Xử lý khi thành viên được thêm/xóa
+    const handleGroupMemberUpdated = (data) => {
+        const { groupId, updatedGroup, removedMemberId } = data;
+        
+        // Nếu chính mình bị xóa khỏi nhóm
+        if (removedMemberId === currentUser._id && activeChat?._id === groupId) {
+            setShowGroupMembers(false);
+            setActiveChat(null);
+            toast.info("Bạn đã bị xóa khỏi nhóm");
+            // Xóa khỏi group list
+            setGroups(prevGroups => prevGroups.filter(g => g._id !== groupId));
+            return;
+        }
+
+        // Cập nhật members list nếu đang xem group này
+        if (activeChat?._id === groupId && updatedGroup) {
+            setActiveChat(prev => ({
+                ...prev,
+                members: updatedGroup.members
+            }));
+            setGroups(prevGroups =>
+                prevGroups.map(g =>
+                    g._id === groupId ? { ...g, members: updatedGroup.members } : g
+                )
+            );
+        }
+    };
+
+    socket.current.on("groupAdminChanged", handleGroupAdminChanged);
+    socket.current.on("groupRenamed", handleGroupRenamed);
+    socket.current.on("groupMemberUpdated", handleGroupMemberUpdated);
+
+    return () => {
+        socket.current.off("groupAdminChanged", handleGroupAdminChanged);
+        socket.current.off("groupRenamed", handleGroupRenamed);
+        socket.current.off("groupMemberUpdated", handleGroupMemberUpdated);
+    };
+}, [activeChat]);
+
     // --- HANDLERS ---
+    const handleScrollToBottom = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    };
     const handleSelectUser = (user) => {
+        // Set người dùng đang chat để mở đoạn chat
         setActiveChat(user);
+
+        // Đánh dấu tin nhắn là đã đọc (sidebar)
+        setUsers(prev => prev.map((u) => {
+            if (u._id === user._id) {
+                const lm = u.lastMessage ? { ...u.lastMessage, isRead: true } : u.lastMessage;
+                return {
+                    ...u,
+                    hasUnread: false,
+                    lastMessage: lm
+                }
+            }
+            return u;
+        }))
+
+        if (socket.current) {
+            socket.current.emit("markRead", {
+                senderId: user._id,
+                receiverId: currentUser._id
+            });
+        }
     };
 
     const handleInputChange = (e) => {
         setNewMessage(e.target.value);
         if (!socket.current || !activeChat) return;
-        socket.current.emit("typing", { receiverId: activeChat._id });
+        
+        const isGroup = activeChat.members ? true : false;
+        
+        // console.log("📤 Emitting typing:", {
+        //     receiverId: activeChat._id,
+        //     isGroup: isGroup,
+        //     senderId: currentUser._id,
+        //     senderName: currentUser.displayName
+        // });
+        
+        socket.current.emit("typing", { 
+            receiverId: activeChat._id,
+            isGroup: isGroup,
+            senderId: currentUser._id,
+            senderName: currentUser.displayName,
+            senderAvatar: currentUser.avatar
+        });
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-            socket.current.emit("stopTyping", { receiverId: activeChat._id });
+            console.log("📤 Emitting stopTyping:", {
+                receiverId: activeChat._id,
+                isGroup: isGroup,
+                senderId: currentUser._id
+            });
+            socket.current.emit("stopTyping", { 
+                receiverId: activeChat._id,
+                isGroup: isGroup,
+                senderId: currentUser._id
+            });
         }, 2000);
     };
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.trim() && !imageFile) return;
+
+        // Kiểm tra xem user còn trong group hay không (nếu là group)
+        if (activeChat?.members) {
+            const isStillMember = activeChat.members.some(m => m._id === currentUser._id);
+            if (!isStillMember) {
+                toast.error("Bạn đã bị xóa khỏi nhóm này");
+                setActiveChat(null);
+                return;
+            }
+        }
 
         let imageUrl = "";
         try {
@@ -444,10 +825,7 @@ const Home = () => {
                 image: savedMessage.image,
             });
 
-            // 3. Update UI Messages (Optimistic update)
-            setMessages((prev) => [...prev, savedMessage]);
-
-            // 4. Update UI Sidebar (Đưa lên đầu)
+            // 3. Update UI Sidebar (Đưa lên đầu)
             setUsers((prevUsers) => {
                 const updatedUsers = [...prevUsers];
                 const index = updatedUsers.findIndex((u) => u._id === activeChat._id);
@@ -526,11 +904,23 @@ const Home = () => {
                     </div>
                     <div className="flex items-center">
                         <button onClick={() => setShowCreateGroup(true)} className="ml-2 text-white hover:text-blue-200"><FaUsers size={20} /></button>
-                        <button onClick={() => setShowRequestModal(true)} className="relative ml-4 focus:outline-none">
-                            <FaBell size={20} className="hover:text-blue-200" />
+                        <button
+                            onClick={() => setShowRequestModal(true)}
+                            className="relative ml-4 focus:outline-none group transition-transform active:scale-95"
+                            title="Thông báo kết bạn"
+                        >
+                            <FaBell
+                                size={20}
+                                className={`transition-all duration-300 ${requestCount > 0 ? 'text-yellow-300 animate-pulse' : 'hover:text-blue-200'}`}
+                            />
+
                             {requestCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white animate-pulse">
-                                    {requestCount > 9 ? '9+' : requestCount}
+                                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+
+                                    <span className="relative inline-flex rounded-full h-5 w-5 bg-red-600 border-2 border-blue-600 text-white text-[10px] font-bold items-center justify-center">
+                                        {requestCount > 9 ? '9+' : requestCount}
+                                    </span>
                                 </span>
                             )}
                         </button>
@@ -635,7 +1025,17 @@ const Home = () => {
                                 <img src={getAvatarUrl(currentChatUser.avatar)} className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200" alt="avatar" />
                                 <div>
                                     <h3 className="font-bold text-gray-800">{currentChatUser.displayName || currentChatUser.name}</h3>
-                                    {!currentChatUser.members && <UserStatus user={currentChatUser} isOnline={checkIsOnline(currentChatUser)} />}
+                                    {!currentChatUser.members && (
+                                        isFriend ? (
+                                            <UserStatus
+                                                user={currentChatUser}
+                                                isOnline={checkIsOnline(currentChatUser)}
+                                            />
+                                        ) : (
+                                            <></>
+                                        )
+                                    )}
+
                                     {currentChatUser.members && (
                                         <span className="text-xs text-gray-500">
                                             {currentChatUser.members.length} thành viên
@@ -646,24 +1046,87 @@ const Home = () => {
                             <div className="flex space-x-4 text-blue-600">
                                 <button className="hover:bg-gray-100 p-2 rounded-full"><FaPhone /></button>
                                 <button className="hover:bg-gray-100 p-2 rounded-full"><FaVideo /></button>
-                                <button className="hover:bg-gray-100 p-2 rounded-full"><FaInfoCircle /></button>
+                                {activeChat?.members && (
+                                    <button 
+                                        onClick={() => setShowGroupMembers(true)}
+                                        className="hover:bg-gray-100 p-2 rounded-full"
+                                        title="Quản lý thành viên"
+                                    >
+                                        <FaInfoCircle />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4" ref={scrollRef} onClick={handleScrollToBottom}>
                             {messages.map((m, index) => {
-                                const isMe = m.sender === currentUser._id;
+                                const senderId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
+                                const isMe = senderId === currentUser._id;
+                                const isGroup = activeChat.members ? true : false;
+                                const senderInfo = typeof m.sender === 'object' ? m.sender : null;
+                                const senderName = senderInfo?.displayName || senderInfo?.email?.split('@')[0] || 'Người dùng';
+                                const senderAvatar = senderInfo?.avatar || activeChat.avatar;
+                                const isSystemMessage = m.type === 'system';
+                                
+                                if (isSystemMessage) {
+                                    return (
+                                        <div key={index} className="flex justify-center py-2">
+                                            <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                                                {m.text}
+                                            </span>
+                                        </div>
+                                    );
+                                }
+
+                                // Regular message rendering
                                 return (
-                                    <div key={index} ref={scrollRef}>
+                                    <div key={index}>
+                                        {/* Nhóm: Hiển thị tên người gửi nếu không phải tin nhắn của mình */}
+                                        {isGroup && !isMe && senderInfo && (
+                                            <div className="flex items-center ml-2 mb-1">
+                                                <span className="text-xs font-semibold text-gray-600">{senderName}</span>
+                                            </div>
+                                        )}
+                                        
                                         <div className={`flex ${isMe ? 'justify-end' : ''}`}>
-                                            {!isMe && <img src={getAvatarUrl(activeChat.avatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />}
+                                            {/* Chat 1-1: Chỉ hiển thị avatar cho tin nhắn người khác */}
+                                            {!isMe && !isGroup && (
+                                                <img src={getAvatarUrl(activeChat.avatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />
+                                            )}
+                                            
+                                            {/* Nhóm: Hiển thị avatar nhỏ cho tin nhắn người khác */}
+                                            {!isMe && isGroup && (
+                                                <img src={getAvatarUrl(senderAvatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />
+                                            )}
+
                                             <div className={`p-3 max-w-xs shadow-sm text-sm ${isMe ? 'bg-green-600 text-white rounded-l-2xl rounded-br-2xl' : 'bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl'}`}>
                                                 {m.image && <img src={getAvatarUrl(m.image)} className="w-full h-auto rounded-lg mb-2 cursor-pointer hover:opacity-90" onClick={() => window.open(getAvatarUrl(m.image), '_blank')} />}
                                                 {m.text && <span>{m.text}</span>}
                                                 {isMe && (
-                                                    <div className="self-end mt-1">
-                                                        {m.isRead ? <FaCheckDouble className="text-xs text-blue-200" /> : <FaCheck className="text-xs text-gray-300" />}
+                                                    <div className="self-end mt-1 text-right">
+                                                        {/* 1-1: use isRead flag. Group: consider readBy array length */}
+                                                        {(!isGroup) ? (
+                                                            m.isRead ? <FaCheckDouble className="text-xs text-blue-200 inline-block" /> : <FaCheck className="text-xs text-gray-300 inline-block" />
+                                                        ) : (
+                                                            (m.readBy && m.readBy.length > 0) ? <FaCheckDouble className="text-xs text-blue-200 inline-block" /> : <FaCheck className="text-xs text-gray-300 inline-block" />
+                                                        )}
                                                     </div>
+                                                )}
+
+                                                {/* For group messages sent by me, show the list of reader names when available */}
+                                                {isMe && isGroup && m.readBy && m.readBy.length > 0 && (
+                                                    (() => {
+                                                        const readerIds = m.readBy.map(r => (typeof r === 'object' ? r._id : r));
+                                                        const readerNames = readerIds.map(id => {
+                                                            const member = activeChat?.members?.find(mm => mm._id === id) || users.find(u => u._id === id);
+                                                            return member?.displayName || member?.name || 'Người dùng';
+                                                        });
+                                                        return (
+                                                            <div className="text-[11px] mt-1 text-gray-200/90">
+                                                                <span className="text-white/70">Đã xem:</span> <span className="font-medium">{readerNames.join(', ')}</span>
+                                                            </div>
+                                                        );
+                                                    })()
                                                 )}
                                             </div>
                                         </div>
@@ -673,12 +1136,17 @@ const Home = () => {
                             })}
 
                             {isTyping && (
-                                <div className="flex items-center ml-2 mt-2" ref={scrollRef}>
-                                    <img src={getAvatarUrl(activeChat.avatar)} className="w-6 h-6 rounded-full mr-2 object-cover" />
-                                    <div className="bg-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center space-x-1 w-16 h-9">
-                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                                <div className="flex items-center ml-2 mt-2">
+                                    <img src={getAvatarUrl(activeChat.members ? typingUserAvatar : activeChat.avatar)} className="w-6 h-6 rounded-full mr-2 object-cover" />
+                                    <div>
+                                        {typingUserName && activeChat.members && (
+                                            <div className="text-xs text-gray-500 ml-1 mb-1">{typingUserName} đang gõ...</div>
+                                        )}
+                                        <div className="bg-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center space-x-1 w-16 h-9">
+                                            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -713,7 +1181,26 @@ const Home = () => {
 
             {showProfile && <UserProfileSidebar isOpen={showProfile} user={{ ...currentUser, avatar: getAvatarUrl(currentUser?.avatar) }} onClose={() => setShowProfile(false)} onUpdateSuccess={handleUpdateSuccess} />}
             <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])} />
-            {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} />}
+            {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} setRequestCount={setRequestCount} />}
+            {showGroupMembers && activeChat?.members && currentUser && (
+                <GroupMembersModal 
+                    group={activeChat} 
+                    currentUser={currentUser}
+                    onClose={() => setShowGroupMembers(false)}
+                    onGroupUpdated={(updatedGroup) => {
+                        // Cập nhật activeChat
+                        setActiveChat(updatedGroup);
+                        // Cập nhật lại danh sách groups
+                        setGroups(groups.map(g => g._id === updatedGroup._id ? updatedGroup : g));
+                        // Nếu user rời nhóm thì đóng modal và reset activeChat
+                        if (!updatedGroup.members.some(m => m._id === currentUser._id)) {
+                            setShowGroupMembers(false);
+                            setActiveChat(null);
+                            toast.info("Bạn đã rời khỏi nhóm");
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };
