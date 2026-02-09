@@ -3,7 +3,7 @@ const Message = require('../models/Message');
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
     try {
-        const { sender, receiver, text, image, isGroup } = req.body;
+        const { sender, receiver, text, image, isGroup, type = 'text' } = req.body;
 
         let conversationId;
         if (isGroup) {
@@ -15,6 +15,7 @@ exports.createMessage = async (req, res) => {
         // Tạo Message mới
         const newMessage = new Message({
             conversationId,
+            type,
             sender,
             receiver,
             text,
@@ -61,5 +62,23 @@ exports.uploadImage = async (req, res) => {
         res.json({ imageUrl });
     } catch (error) {
         res.status(500).json({ message: "Lỗi upload" });
+    }
+};
+
+// Helper function: Tạo system message
+exports.createSystemMessage = async (groupId, text) => {
+    try {
+        const systemMessage = new Message({
+            conversationId: groupId,
+            type: 'system',
+            sender: null,
+            receiver: null,
+            text: text
+        });
+        await systemMessage.save();
+        return systemMessage;
+    } catch (error) {
+        console.error("Lỗi tạo system message:", error);
+        return null;
     }
 };

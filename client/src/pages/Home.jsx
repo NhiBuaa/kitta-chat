@@ -779,13 +779,26 @@ const Home = () => {
 
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
                             {messages.map((m, index) => {
-                                const senderId = typeof m.sender === 'object' ? m.sender._id : m.sender;
+                                const senderId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
                                 const isMe = senderId === currentUser._id;
                                 const isGroup = activeChat.members ? true : false;
                                 const senderInfo = typeof m.sender === 'object' ? m.sender : null;
                                 const senderName = senderInfo?.displayName || senderInfo?.email?.split('@')[0] || 'Người dùng';
                                 const senderAvatar = senderInfo?.avatar || activeChat.avatar;
+                                const isSystemMessage = m.type === 'system';
                                 
+                                // System message rendering
+                                if (isSystemMessage) {
+                                    return (
+                                        <div key={index} className="flex justify-center py-2" ref={scrollRef}>
+                                            <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                                                {m.text}
+                                            </span>
+                                        </div>
+                                    );
+                                }
+
+                                // Regular message rendering
                                 return (
                                     <div key={index} ref={scrollRef}>
                                         {/* Nhóm: Hiển thị tên người gửi nếu không phải tin nhắn của mình */}
