@@ -23,13 +23,10 @@ const Home = () => {
     const [onlineUserIds, setOnlineUserIds] = useState([]);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
-    const scrollRef = useRef();
     const [isTyping, setIsTyping] = useState(false);
-    const typingTimeoutRef = useRef(null);
     const [showEmoji, setShowEmoji] = useState(false);
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
-    const fileInputRef = useRef();
     const [groups, setGroups] = useState([]);
     const [showCreateGroup, setShowCreateGroup] = useState(false);
     const [searchResult, setSearchResult] = useState([]);
@@ -37,9 +34,13 @@ const Home = () => {
     const [requestCount, setRequestCount] = useState(0);
     const [sentRequests, setSentRequests] = useState([]);
 
-    // REF QUAN TRỌNG
+    // REF
     const activeChatRef = useRef(null);
     const socket = useRef();
+    const scrollRef = useRef();
+    const fileInputRef = useRef();
+    const typingTimeoutRef = useRef(null);
+    const isChatMounted = useRef(false);
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL;
@@ -55,13 +56,27 @@ const Home = () => {
         users.some(u => u._id === currentChatUser._id)
     );
 
+    useEffect(() => {
+        isChatMounted.current = true;
+    }, [activeChat?._id]);
+
+    // Tự động kéo xuống cuối đoạn chat khi ấn vào
+    useEffect(() => {
+        const lastMessage = messages[messages.length - 1];
+
+        const isMe = lastMessage?.sender === currentUser?._id;
+        if (isChatMounted.current || isMe) {
+            scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+            isChatMounted.current = false;
+        }
+    }, [messages, currentUser]);
+
     // Cập nhật ref mỗi khi activeChat thay đổi
     useEffect(() => {
         activeChatRef.current = activeChat;
     }, [activeChat]);
 
     // --- CÁC HÀM HELPER & API ---
-
     // Hàm load conversation mới nếu chưa có trong list
     const fetchNewConversation = async (targetId, isGroup, messageData) => {
         try {
