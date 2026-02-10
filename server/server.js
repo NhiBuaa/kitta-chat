@@ -21,7 +21,7 @@ app.use(express.json());
 // Middlewares
 app.use(express.json());
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: process.env.URL_FRONTEND,
     credentials: true
 }));
 
@@ -29,7 +29,7 @@ app.use(cors({
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173",
+        origin: process.env.URL_FRONTEND,
         methods: ["GET", "POST"]
     }
 });
@@ -61,7 +61,11 @@ io.on('connection', async (socket) => {
             activityStatus: { state: 'active', lastSeen: new Date() }
         });
 
-        io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
+        const usersArray = Array.from(onlineUsers, ([uid, sid]) => ({
+            userId: uid,
+            socketId: sid
+        }));
+        io.emit('getOnlineUsers', usersArray);
     }
 
     // Lắng nghe sự kiện joinGroup
@@ -90,7 +94,11 @@ io.on('connection', async (socket) => {
             });
 
             // Báo cho tất cả: Danh sách online mới
-            io.emit('getOnlineUsers', Array.from(onlineUsers.keys()));
+            const usersArray = Array.from(onlineUsers, ([uid, sid]) => ({
+                userId: uid,
+                socketId: sid
+            }));
+            io.emit('getOnlineUsers', usersArray);
         }
     });
 
@@ -127,12 +135,12 @@ io.on('connection', async (socket) => {
                 isGroup: false,
                 createdAt: Date.now()
             };
-            
+
             // Gửi cho receiver
             io.to(receiverId).emit("getMessage", messageData);
             // Gửi cho sender để sender thấy tin nhắn của mình
             io.to(senderId).emit("getMessage", messageData);
-            
+
             console.log(`💬 1-1 message sent to ${senderId} and ${receiverId}`);
         }
     });
@@ -140,7 +148,7 @@ io.on('connection', async (socket) => {
     // Lắng nghe sự kiện đang gõ
     socket.on("typing", async ({ receiverId, isGroup, senderId, senderName, senderAvatar }) => {
         console.log(`⌨️  Typing event: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}, senderName=${senderName}`);
-        
+
         if (isGroup) {
             // LOGIC TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
             socket.broadcast.to(receiverId).emit("getTyping", {
@@ -164,7 +172,7 @@ io.on('connection', async (socket) => {
     // Lắng nghe sự kiện ngưng gõ
     socket.on("stopTyping", async ({ receiverId, isGroup, senderId }) => {
         console.log(`⏹️  Stop typing: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}`);
-        
+
         if (isGroup) {
             // LOGIC STOP TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
             socket.broadcast.to(receiverId).emit("getStopTyping", {
@@ -224,6 +232,48 @@ io.on('connection', async (socket) => {
             console.error('markRead handler error', err);
         }
     });
+
+    // Sự kiện bắt đầu gọi video/audio
+    socket.emit("me", socket.id);
+
+    // Gọi cho người dùng khác
+    socket.on("callUser", ({ userToCall, signalData, from, name }) => {
+        // userToCall: Socket ID của người nhận
+        // signalData: Dữ liệu mã hóa WebRTC của người gọi
+        // from: Socket ID người gọi
+
+        console.log(`📞 [SERVER] Nhận lệnh callUser từ ${from} gọi tới ${userToCall}`);
+
+        // Kiểm tra xem người nhận có trong phòng không
+        const room = io.sockets.adapter.rooms.get(userToCall);
+        if (room) {
+            console.log(`✅ [SERVER] Tìm thấy người nhận ${userToCall}, đang chuyển tiếp...`);
+            io.to(userToCall).emit("callUser", {
+                signal: signalData,
+                from,
+                name
+            });
+        } else {
+            console.log(`⚠️ [SERVER] Không tìm thấy socketId ${userToCall} (Người dùng có thể đã offline hoặc sai ID)`);
+        }
+        
+        io.to(userToCall).emit("callUser", {
+            signal: signalData,
+            from,
+            name
+        });
+    });
+
+    // Người dùng trả lời cuộc gọi
+    socket.on("answerCall", (data) => {
+        // data: { to: socketId người gọi, signal: Dữ liệu mã hóa WebRTC của người trả lời }
+        io.to(data.to).emit("callAccepted", data.signal);
+    })
+
+    // Khi kết thúc cuộc gọi
+    socket.on("endCall", (data) => {
+        io.to(data.to).emit("callEnded");
+    })
 });
 
 // Routes

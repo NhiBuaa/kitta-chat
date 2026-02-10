@@ -11,6 +11,9 @@ import CreateGroupModal from "../components/CreateGroupModal";
 import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
 import { sendFriendRequest } from "../services/userService";
+import { useContext } from 'react';
+import { CallContext } from '../context/CallContext';
+import { useSocket } from '../context/SocketContext';
 
 const Home = () => {
     // STATE
@@ -21,7 +24,7 @@ const Home = () => {
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [onlineUserIds, setOnlineUserIds] = useState([]);
+    const [, setOnlineUserIds] = useState([]);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [isTyping, setIsTyping] = useState(false);
@@ -37,6 +40,8 @@ const Home = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [requestCount, setRequestCount] = useState(0);
     const [sentRequests, setSentRequests] = useState([]);
+    const { callUser } = useContext(CallContext);
+    const { onlineUsers } = useSocket();
 
     // REF
     const activeChatRef = useRef(null);
@@ -47,6 +52,46 @@ const Home = () => {
 
     // BIẾN
     const API_URL = import.meta.env.VITE_API_URL;
+    // Trong Home.jsx
+    const handleVideoCall = () => {
+        if (!currentChatUser) return;
+
+        // --- BẮT ĐẦU DEBUG ---
+        console.log("🔍 --- DEBUG GỌI VIDEO ---");
+        console.log("1. Danh sách Online (onlineUsers):", onlineUsers);
+        console.log("2. Người đang chat (currentChatUser):", currentChatUser);
+
+        // Kiểm tra xem ID nằm ở trường nào? (_id hay id?)
+        const chatUserId = currentChatUser._id || currentChatUser.id;
+        console.log("3. ID người nhận:", chatUserId);
+        // ---------------------
+
+        if (currentChatUser.members || currentChatUser.isGroup) {
+            alert("Chưa hỗ trợ gọi nhóm!");
+            return;
+        }
+
+        // Tìm người dùng (Thêm log trong lúc tìm)
+        const receiver = onlineUsers.find(user => {
+            // So sánh và log ra nếu tìm thấy
+            const isMatch = user.userId === chatUserId;
+            if (isMatch) console.log("✅ Đã tìm thấy khớp:", user);
+            return isMatch;
+        });
+
+        console.log("4. Kết quả tìm kiếm (receiver):", receiver);
+
+        if (receiver) {
+            callUser(receiver.socketId);
+        } else {
+            // In ra danh sách ID đang có để so sánh
+            const onlineIds = onlineUsers.map(u => u.userId);
+            console.warn(`❌ Không tìm thấy! ID cần tìm: ${chatUserId}`);
+            console.warn(`📋 Các ID đang online:`, onlineIds);
+
+            alert(`Người dùng ${currentChatUser.displayName} đang ngoại tuyến.`);
+        }
+    };
 
     const currentChatUser = activeChat
         ? (activeChat.members
@@ -159,8 +204,10 @@ const Home = () => {
     };
 
     const checkIsOnline = (user) => {
-        if (onlineUserIds.includes(user._id)) return true;
-        return false;
+        if (!user || !onlineUsers) return false;
+
+        // Dùng hàm .some() để tìm xem có object nào chứa userId này không
+        return onlineUsers.some(u => u.userId === user._id);
     };
 
     // --- FETCH DATA INITIAL ---
@@ -510,7 +557,6 @@ const Home = () => {
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             } else {
                 // TOAST THÔNG BÁO KHI KHÔNG XEM CHAT
-                // Skip toast for system messages (they may duplicate other UX notifications)
                 if (data.type !== 'system') {
                     const sender = users.find(u => u._id === data.senderId);
                     const senderName = sender ? sender.displayName : "Ai đó";
@@ -932,6 +978,8 @@ const Home = () => {
         setCurrentUser(updatedUser);
     };
 
+
+
     if (isLoading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
 
     return (
@@ -1087,13 +1135,29 @@ const Home = () => {
                                     )}
                                 </div>
                             </div>
+
                             <div className="flex space-x-4 text-blue-600">
-                                <button className="hover:bg-gray-100 p-2 rounded-full"><FaPhone /></button>
-                                <button className="hover:bg-gray-100 p-2 rounded-full"><FaVideo /></button>
+                                {/* Nút Gọi Thoại */}
+                                <button
+                                    className="hover:bg-gray-100 p-2 rounded-full transition-colors"
+                                    onClick={() => alert("Tính năng gọi thoại đang phát triển")}
+                                >
+                                    <FaPhone />
+                                </button>
+
+                                <button
+                                    onClick={handleVideoCall}
+                                    className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
+                                    title="Gọi Video"
+                                    disabled={currentChatUser.members}
+                                >
+                                    <FaVideo />
+                                </button>
+
                                 {activeChat?.members && (
                                     <button
                                         onClick={() => setShowGroupMembers(true)}
-                                        className="hover:bg-gray-100 p-2 rounded-full"
+                                        className="hover:bg-gray-100 p-2 rounded-full transition-colors"
                                         title="Quản lý thành viên"
                                     >
                                         <FaInfoCircle />
