@@ -3,16 +3,23 @@ import { login } from "../services/authService";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 import { FaEnvelope, FaLock } from "react-icons/fa";
+import { useSocket } from "../context/SocketContext";
 
 const Login = () => {
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
     const navigate = useNavigate();
+    const { socket } = useSocket();
 
     const onSubmit = async (data) => {
         try {
             const res = await login(data);
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
+            // Emit addNewUser để server biết user này online
+            if (socket) {
+                console.log(`📤 Login: Emitting addNewUser với userId: ${res.data.user._id}`);
+                socket.emit("addNewUser", res.data.user._id);
+            }
             toast.success(`Chào mừng ${res.data.user.displayName} quay trở lại!`);
             navigate("/");
         } catch (err) {
