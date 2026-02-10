@@ -64,7 +64,7 @@ const VideoCallWidget = () => {
     return (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end space-y-4 font-sans">
 
-            {/* 1. KHUNG VIDEO */}
+            {/* KHUNG VIDEO */}
             <div className={`transition-all duration-300 relative ${callAccepted && !callEnded ? 'w-80 h-60' : 'w-48 h-36'}`}>
 
                 {/* Video người khác (Lớp nền - Lớn) */}
@@ -104,7 +104,7 @@ const VideoCallWidget = () => {
                 )}
             </div>
 
-            {/* 2. POPUP CUỘC GỌI ĐẾN */}
+            {/* POPUP CUỘC GỌI ĐẾN */}
             {call.isReceivingCall && !callAccepted && (
                 <div className="bg-white p-4 rounded-xl shadow-2xl border border-blue-100 animate-bounce w-72">
                     <div className="flex items-center gap-3 mb-4">
@@ -134,7 +134,7 @@ const VideoCallWidget = () => {
                 </div>
             )}
 
-            {/* 3. THANH ĐIỀU KHIỂN */}
+            {/* THANH ĐIỀU KHIỂN */}
             {stream && (
                 <div className="bg-gray-900/90 p-3 rounded-full flex gap-4 backdrop-blur-md shadow-2xl border border-gray-700">
                     {/* Nút Mic */}

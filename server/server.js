@@ -231,7 +231,6 @@ io.on('connection', async (socket) => {
     });
 
     // Sự kiện đã đọc tin nhắn hay chưa
-    // Hỗ trợ cả 1-1 và group read receipts
     socket.on("markRead", async (data) => {
         try {
             if (data?.isGroup) {
