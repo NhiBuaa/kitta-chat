@@ -737,47 +737,18 @@ const Home = () => {
             }
         };
 
-        // Xử lý khi có nhóm mới được tạo mà mình là thành viên
-        const handleGroupCreated = (data) => {
-            const { group } = data;
-            if (!group) return;
-
-            setGroups(prev => {
-                const exists = prev.some(g => g._id === group._id);
-                if (exists) return prev;
-                return [group, ...prev];
-            });
-
-            // Nếu mình là thành viên của nhóm mới thì join room để nhận tin nhắn nhóm
-            try {
-                const isMember = Array.isArray(group.members) && group.members.some(m => {
-                    const id = (typeof m === 'object' && m !== null) ? (m._id || m) : m;
-                    return id === currentUser?._id;
-                });
-                if (isMember) {
-                    socket.current?.emit('joinGroup', group._id);
-                }
-            } catch (err) {
-                console.error('Error joining new group room', err);
-            }
-
-            toast.info(`Nhóm "${group.name}" đã được tạo`, { position: 'top-right', autoClose: 3000 });
-        };
-
         socket.current.on("groupAdminChanged", handleGroupAdminChanged);
         socket.current.on("groupRenamed", handleGroupRenamed);
         socket.current.on("groupMemberUpdated", handleGroupMemberUpdated);
         socket.current.on("groupDeleted", handleGroupDeleted);
-        socket.current.on("groupCreated", handleGroupCreated);
 
         return () => {
             socket.current.off("groupAdminChanged", handleGroupAdminChanged);
             socket.current.off("groupRenamed", handleGroupRenamed);
             socket.current.off("groupMemberUpdated", handleGroupMemberUpdated);
             socket.current.off("groupDeleted", handleGroupDeleted);
-            socket.current.off("groupCreated", handleGroupCreated);
         };
-    }, [activeChat, currentUser]);
+    }, [activeChat]);
 
     // --- HANDLERS ---
     const handleScrollToBottom = () => {
@@ -1253,7 +1224,7 @@ const Home = () => {
             </div>
 
             {showProfile && <UserProfileSidebar isOpen={showProfile} user={{ ...currentUser, avatar: getAvatarUrl(currentUser?.avatar) }} onClose={() => setShowProfile(false)} onUpdateSuccess={handleUpdateSuccess} />}
-            <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups(prev => [newGroup, ...prev])} />
+            <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])} />
             {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} setRequestCount={setRequestCount} />}
             {showGroupMembers && activeChat?.members && currentUser && (
                 <GroupMembersModal
