@@ -42,6 +42,11 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
             if (res.data.success) {
                 toast.success("Tạo nhóm thành công!");
                 onCreateSuccess(res.data.group);
+                
+                // Reset form fields
+                setGroupName('');
+                setSelectedMembers([]);
+                
                 onClose();
             }
         } catch (error) {

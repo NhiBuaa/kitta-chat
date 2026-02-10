@@ -344,7 +344,7 @@ const Home = () => {
             });
         })
         return () => {
-            // Không disconnect socket ở đây để tránh mất kết nối khi re-render nhẹ
+            // Không disconnect socket ở đây để tránh mất kết nối khi re-render
             // Chỉ disconnect khi logout hoặc unmount hẳn component App
             if (socket.current) {
                 socket.current.off("newFriendRequest");
@@ -356,70 +356,70 @@ const Home = () => {
         };
     }, [currentUser, API_URL]);
 
-        // Socket-level read receipts listeners (registered after socket init)
-        useEffect(() => {
-            if (!socket.current) return;
+    // Socket-level read receipts listeners (registered after socket init)
+    useEffect(() => {
+        if (!socket.current) return;
 
-            const handleUserRead = (data) => {
-                const { readerId } = data;
-                // Update sidebar: mark conversation with readerId as read
-                setUsers(prev => prev.map(u => {
-                    if (u._id === readerId) {
-                        const lm = u.lastMessage ? { ...u.lastMessage, isRead: true } : u.lastMessage;
-                        return { ...u, hasUnread: false, lastMessage: lm };
-                    }
-                    return u;
-                }));
-
-                // If we are viewing 1-1 chat with reader, mark messages sent by me as read
-                if (activeChat && !activeChat.members && activeChat._id === readerId) {
-                    setMessages(prev => prev.map(m => {
-                        const senderId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
-                        if (senderId === currentUser._id) {
-                            return { ...m, isRead: true };
-                        }
-                        return m;
-                    }));
+        const handleUserRead = (data) => {
+            const { readerId } = data;
+            // Update sidebar: mark conversation with readerId as read
+            setUsers(prev => prev.map(u => {
+                if (u._id === readerId) {
+                    const lm = u.lastMessage ? { ...u.lastMessage, isRead: true } : u.lastMessage;
+                    return { ...u, hasUnread: false, lastMessage: lm };
                 }
-            };
+                return u;
+            }));
 
-            const handleGroupUserRead = (data) => {
-                const { groupId, readerId } = data;
-                // Update messages readBy for group if viewing
-                if (activeChat && activeChat.members && activeChat._id === groupId) {
-                    setMessages(prev => prev.map(m => {
-                        // Ensure readBy array exists
-                        const readBy = m.readBy ? Array.from(new Set(m.readBy)) : [];
+            // If we are viewing 1-1 chat with reader, mark messages sent by me as read
+            if (activeChat && !activeChat.members && activeChat._id === readerId) {
+                setMessages(prev => prev.map(m => {
+                    const senderId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
+                    if (senderId === currentUser._id) {
+                        return { ...m, isRead: true };
+                    }
+                    return m;
+                }));
+            }
+        };
+
+        const handleGroupUserRead = (data) => {
+            const { groupId, readerId } = data;
+            // Update messages readBy for group if viewing
+            if (activeChat && activeChat.members && activeChat._id === groupId) {
+                setMessages(prev => prev.map(m => {
+                    // Ensure readBy array exists
+                    const readBy = m.readBy ? Array.from(new Set(m.readBy)) : [];
+                    if (!readBy.includes(readerId)) {
+                        return { ...m, readBy: [...readBy, readerId] };
+                    }
+                    return m;
+                }));
+            }
+
+            // Also update groups list lastMessage state (if present) to reflect reads
+            setGroups(prev => prev.map(g => {
+                if (g._id === groupId) {
+                    // if lastMessage exists, add/ensure readBy
+                    if (g.lastMessage) {
+                        const readBy = g.lastMessage.readBy ? Array.from(new Set(g.lastMessage.readBy)) : [];
                         if (!readBy.includes(readerId)) {
-                            return { ...m, readBy: [...readBy, readerId] };
-                        }
-                        return m;
-                    }));
-                }
-
-                // Also update groups list lastMessage state (if present) to reflect reads
-                setGroups(prev => prev.map(g => {
-                    if (g._id === groupId) {
-                        // if lastMessage exists, add/ensure readBy
-                        if (g.lastMessage) {
-                            const readBy = g.lastMessage.readBy ? Array.from(new Set(g.lastMessage.readBy)) : [];
-                            if (!readBy.includes(readerId)) {
-                                return { ...g, lastMessage: { ...g.lastMessage, readBy: [...readBy, readerId] } };
-                            }
+                            return { ...g, lastMessage: { ...g.lastMessage, readBy: [...readBy, readerId] } };
                         }
                     }
-                    return g;
-                }));
-            };
+                }
+                return g;
+            }));
+        };
 
-            socket.current.on('userReadMessages', handleUserRead);
-            socket.current.on('groupUserRead', handleGroupUserRead);
+        socket.current.on('userReadMessages', handleUserRead);
+        socket.current.on('groupUserRead', handleGroupUserRead);
 
-            return () => {
-                socket.current.off('userReadMessages', handleUserRead);
-                socket.current.off('groupUserRead', handleGroupUserRead);
-            };
-        }, [activeChat, currentUser]);
+        return () => {
+            socket.current.off('userReadMessages', handleUserRead);
+            socket.current.off('groupUserRead', handleGroupUserRead);
+        };
+    }, [activeChat, currentUser]);
 
 
     //  USE EFFECT ĐỂ XỬ LÝ TIN NHẮN ĐẾN
@@ -510,13 +510,16 @@ const Home = () => {
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             } else {
                 // TOAST THÔNG BÁO KHI KHÔNG XEM CHAT
-                const sender = users.find(u => u._id === data.senderId);
-                const senderName = sender ? sender.displayName : "Ai đó";
-                toast.info(`Tin nhắn mới từ ${senderName}`, {
-                    position: "top-right",
-                    autoClose: 3000,
-                    hideProgressBar: true
-                });
+                // Skip toast for system messages (they may duplicate other UX notifications)
+                if (data.type !== 'system') {
+                    const sender = users.find(u => u._id === data.senderId);
+                    const senderName = sender ? sender.displayName : "Ai đó";
+                    toast.info(`Tin nhắn mới từ ${senderName}`, {
+                        position: "top-right",
+                        autoClose: 3000,
+                        hideProgressBar: true
+                    });
+                }
             }
         };
 
@@ -560,11 +563,11 @@ const Home = () => {
     // TYPING LOGIC
     useEffect(() => {
         if (!socket.current) return;
-        
+
         const handleTyping = (data) => {
             // console.log("📝 Received getTyping:", data);
             // console.log("🔍 activeChatRef._id:", activeChatRef.current?._id);
-            
+
             // Dùng activeChatRef để check cho chắc chắn
             if (!activeChatRef.current) {
                 console.log("❌ No active chat");
@@ -574,7 +577,7 @@ const Home = () => {
 
             // Ignore typing events emitted by ourselves
             if (senderId === currentUser?._id) return;
-            
+
             // Check xem typing có phải từ chat đang xem không
             if (activeChatRef.current._id === chatId) {
                 // console.log("✅ Typing match! Setting isTyping = true");
@@ -588,16 +591,16 @@ const Home = () => {
                 // console.log("❌ Typing not for current chat", { currentChatId: activeChatRef.current._id, incomingChatId: chatId });
             }
         };
-        
+
         const handleStopTyping = (data) => {
             // console.log("⏹️  Received getStopTyping:", data);
-            
+
             if (!activeChatRef.current) return;
             const { chatId, senderId } = data;
 
             // Ignore stopTyping events emitted by ourselves
             if (senderId === currentUser?._id) return;
-            
+
             // Check xem stop typing có phải từ chat đang xem không
             if (activeChatRef.current._id === chatId) {
                 // console.log("✅ Stop typing match!");
@@ -622,89 +625,159 @@ const Home = () => {
         setTypingUserAvatar(null);
     }, [activeChat]);
 
-    // Socket listener cho cập nhật nhóm (admin thay đổi, tên thay đổi, v.v.)
+    // Socket listener cho cập nhật nhóm
     useEffect(() => {
-    if (!socket.current) return;
+        if (!socket.current) return;
 
-    // Xử lý khi Admin thay đổi
-    const handleGroupAdminChanged = (data) => {
-        const { groupId, newAdminId } = data;
+        // Xử lý khi Admin thay đổi
+        const handleGroupAdminChanged = (data) => {
+            const { groupId, newAdminId } = data;
 
-        // Cập nhật Sidebar
-        setGroups(prevGroups =>
-            prevGroups.map(g =>
-                g._id === groupId ? { ...g, admin: newAdminId } : g
-            )
-        );
-
-        // Cập nhật ActiveChat (CHỈ CHẠY nếu đang xem nhóm đó)
-        if (activeChat?._id === groupId) {
-            setActiveChat(prev => ({
-                ...prev,
-                admin: newAdminId
-            }));
-        }
-    };
-
-    // Xử lý khi Đổi tên/Avatar
-    const handleGroupRenamed = (data) => {
-        const { groupId, newName, newAvatar } = data;
-
-        // Cập nhật Sidebar
-        setGroups(prevGroups =>
-            prevGroups.map(g =>
-                g._id === groupId ? { ...g, name: newName, avatar: newAvatar } : g
-            )
-        );
-
-        // Cập nhật ActiveChat
-        if (activeChat?._id === groupId) {
-            setActiveChat(prev => ({
-                ...prev,
-                name: newName,
-                avatar: newAvatar
-            }));
-        }
-    };
-
-    // Xử lý khi thành viên được thêm/xóa
-    const handleGroupMemberUpdated = (data) => {
-        const { groupId, updatedGroup, removedMemberId } = data;
-        
-        // Nếu chính mình bị xóa khỏi nhóm
-        if (removedMemberId === currentUser._id && activeChat?._id === groupId) {
-            setShowGroupMembers(false);
-            setActiveChat(null);
-            toast.info("Bạn đã bị xóa khỏi nhóm");
-            // Xóa khỏi group list
-            setGroups(prevGroups => prevGroups.filter(g => g._id !== groupId));
-            return;
-        }
-
-        // Cập nhật members list nếu đang xem group này
-        if (activeChat?._id === groupId && updatedGroup) {
-            setActiveChat(prev => ({
-                ...prev,
-                members: updatedGroup.members
-            }));
+            // Cập nhật Sidebar
             setGroups(prevGroups =>
                 prevGroups.map(g =>
-                    g._id === groupId ? { ...g, members: updatedGroup.members } : g
+                    g._id === groupId ? { ...g, admin: newAdminId } : g
                 )
             );
-        }
-    };
 
-    socket.current.on("groupAdminChanged", handleGroupAdminChanged);
-    socket.current.on("groupRenamed", handleGroupRenamed);
-    socket.current.on("groupMemberUpdated", handleGroupMemberUpdated);
+            // Cập nhật ActiveChat (CHỈ CHẠY nếu đang xem nhóm đó)
+            if (activeChat?._id === groupId) {
+                setActiveChat(prev => ({
+                    ...prev,
+                    admin: newAdminId
+                }));
+            }
+        };
 
-    return () => {
-        socket.current.off("groupAdminChanged", handleGroupAdminChanged);
-        socket.current.off("groupRenamed", handleGroupRenamed);
-        socket.current.off("groupMemberUpdated", handleGroupMemberUpdated);
-    };
-}, [activeChat]);
+        // Xử lý khi Đổi tên/Avatar
+        const handleGroupRenamed = (data) => {
+            const { groupId, newName, newAvatar } = data;
+
+            // Cập nhật Sidebar
+            setGroups(prevGroups =>
+                prevGroups.map(g =>
+                    g._id === groupId ? { ...g, name: newName, avatar: newAvatar } : g
+                )
+            );
+
+            // Cập nhật ActiveChat
+            if (activeChat?._id === groupId) {
+                setActiveChat(prev => ({
+                    ...prev,
+                    name: newName,
+                    avatar: newAvatar
+                }));
+            }
+        };
+
+        // Xử lý khi thành viên được thêm/xóa
+        const handleGroupMemberUpdated = (data) => {
+            const { groupId, updatedGroup, removedMemberId, isVoluntaryLeave } = data;
+
+            // Nếu chính mình được xóa hoặc rời khỏi nhóm
+            if (removedMemberId === currentUser._id) {
+                // Ensure client leaves the group room so it no longer receives events for this group
+                try {
+                    socket.current?.emit('leaveGroup', groupId);
+                } catch (err) {
+                    console.error('Error leaving group room', err);
+                }
+
+                // Nếu đang xem nhóm này thì đóng modal và reset activeChat
+                if (activeChat?._id === groupId) {
+                    setShowGroupMembers(false);
+                    setActiveChat(null);
+                }
+
+                // Use appropriate message based on whether it was voluntary leave or removal
+                const message = isVoluntaryLeave ? "Bạn đã rời khỏi nhóm" : "Bạn đã bị xóa khỏi nhóm";
+                toast.info(message);
+
+                // Xóa khỏi group list
+                setGroups(prevGroups => prevGroups.filter(g => g._id !== groupId));
+                return;
+            }
+
+            // Luôn cập nhật groups list bất kể đang xem group hay không (để sidebar update realtime)
+            if (updatedGroup) {
+                setGroups(prevGroups =>
+                    prevGroups.map(g =>
+                        g._id === groupId ? { ...g, members: updatedGroup.members } : g
+                    )
+                );
+            }
+
+            // Cập nhật activeChat nếu đang xem group này
+            if (activeChat?._id === groupId && updatedGroup) {
+                setActiveChat(prev => ({
+                    ...prev,
+                    members: updatedGroup.members
+                }));
+            }
+        };
+
+        // Xử lý khi nhóm bị giải tán
+        const handleGroupDeleted = (data) => {
+            const { groupId } = data;
+
+            // Nếu đang xem nhóm bị xóa, đóng nó
+            if (activeChat?._id === groupId) {
+                setShowGroupMembers(false);
+                setActiveChat(null);
+            }
+
+            // Xóa khỏi group list
+            setGroups(prevGroups => prevGroups.filter(g => g._id !== groupId));
+
+            // Rời group room
+            try {
+                socket.current?.emit('leaveGroup', groupId);
+            } catch (err) {
+                console.error('Error leaving group room', err);
+            }
+        };
+
+        // Xử lý khi có nhóm mới được tạo mà mình là thành viên
+        const handleGroupCreated = (data) => {
+            const { group } = data;
+            if (!group) return;
+
+            setGroups(prev => {
+                const exists = prev.some(g => g._id === group._id);
+                if (exists) return prev;
+                return [group, ...prev];
+            });
+
+            // Nếu mình là thành viên của nhóm mới thì join room để nhận tin nhắn nhóm
+            try {
+                const isMember = Array.isArray(group.members) && group.members.some(m => {
+                    const id = (typeof m === 'object' && m !== null) ? (m._id || m) : m;
+                    return id === currentUser?._id;
+                });
+                if (isMember) {
+                    socket.current?.emit('joinGroup', group._id);
+                }
+            } catch (err) {
+                console.error('Error joining new group room', err);
+            }
+
+            toast.info(`Nhóm "${group.name}" đã được tạo`, { position: 'top-right', autoClose: 3000 });
+        };
+
+        socket.current.on("groupAdminChanged", handleGroupAdminChanged);
+        socket.current.on("groupRenamed", handleGroupRenamed);
+        socket.current.on("groupMemberUpdated", handleGroupMemberUpdated);
+        socket.current.on("groupDeleted", handleGroupDeleted);
+        socket.current.on("groupCreated", handleGroupCreated);
+
+        return () => {
+            socket.current.off("groupAdminChanged", handleGroupAdminChanged);
+            socket.current.off("groupRenamed", handleGroupRenamed);
+            socket.current.off("groupMemberUpdated", handleGroupMemberUpdated);
+            socket.current.off("groupDeleted", handleGroupDeleted);
+            socket.current.off("groupCreated", handleGroupCreated);
+        };
+    }, [activeChat, currentUser]);
 
     // --- HANDLERS ---
     const handleScrollToBottom = () => {
@@ -740,17 +813,17 @@ const Home = () => {
     const handleInputChange = (e) => {
         setNewMessage(e.target.value);
         if (!socket.current || !activeChat) return;
-        
+
         const isGroup = activeChat.members ? true : false;
-        
+
         // console.log("📤 Emitting typing:", {
         //     receiverId: activeChat._id,
         //     isGroup: isGroup,
         //     senderId: currentUser._id,
         //     senderName: currentUser.displayName
         // });
-        
-        socket.current.emit("typing", { 
+
+        socket.current.emit("typing", {
             receiverId: activeChat._id,
             isGroup: isGroup,
             senderId: currentUser._id,
@@ -764,7 +837,7 @@ const Home = () => {
                 isGroup: isGroup,
                 senderId: currentUser._id
             });
-            socket.current.emit("stopTyping", { 
+            socket.current.emit("stopTyping", {
                 receiverId: activeChat._id,
                 isGroup: isGroup,
                 senderId: currentUser._id
@@ -1047,7 +1120,7 @@ const Home = () => {
                                 <button className="hover:bg-gray-100 p-2 rounded-full"><FaPhone /></button>
                                 <button className="hover:bg-gray-100 p-2 rounded-full"><FaVideo /></button>
                                 {activeChat?.members && (
-                                    <button 
+                                    <button
                                         onClick={() => setShowGroupMembers(true)}
                                         className="hover:bg-gray-100 p-2 rounded-full"
                                         title="Quản lý thành viên"
@@ -1067,7 +1140,7 @@ const Home = () => {
                                 const senderName = senderInfo?.displayName || senderInfo?.email?.split('@')[0] || 'Người dùng';
                                 const senderAvatar = senderInfo?.avatar || activeChat.avatar;
                                 const isSystemMessage = m.type === 'system';
-                                
+
                                 if (isSystemMessage) {
                                     return (
                                         <div key={index} className="flex justify-center py-2">
@@ -1087,13 +1160,13 @@ const Home = () => {
                                                 <span className="text-xs font-semibold text-gray-600">{senderName}</span>
                                             </div>
                                         )}
-                                        
+
                                         <div className={`flex ${isMe ? 'justify-end' : ''}`}>
                                             {/* Chat 1-1: Chỉ hiển thị avatar cho tin nhắn người khác */}
                                             {!isMe && !isGroup && (
                                                 <img src={getAvatarUrl(activeChat.avatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />
                                             )}
-                                            
+
                                             {/* Nhóm: Hiển thị avatar nhỏ cho tin nhắn người khác */}
                                             {!isMe && isGroup && (
                                                 <img src={getAvatarUrl(senderAvatar)} className="w-8 h-8 rounded-full mr-2 mt-1 object-cover" alt="avt" />
@@ -1180,11 +1253,11 @@ const Home = () => {
             </div>
 
             {showProfile && <UserProfileSidebar isOpen={showProfile} user={{ ...currentUser, avatar: getAvatarUrl(currentUser?.avatar) }} onClose={() => setShowProfile(false)} onUpdateSuccess={handleUpdateSuccess} />}
-            <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])} />
+            <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups(prev => [newGroup, ...prev])} />
             {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} setRequestCount={setRequestCount} />}
             {showGroupMembers && activeChat?.members && currentUser && (
-                <GroupMembersModal 
-                    group={activeChat} 
+                <GroupMembersModal
+                    group={activeChat}
                     currentUser={currentUser}
                     onClose={() => setShowGroupMembers(false)}
                     onGroupUpdated={(updatedGroup) => {
@@ -1196,7 +1269,8 @@ const Home = () => {
                         if (!updatedGroup.members.some(m => m._id === currentUser._id)) {
                             setShowGroupMembers(false);
                             setActiveChat(null);
-                            toast.info("Bạn đã rời khỏi nhóm");
+                            // Do server will emit groupMemberUpdated which triggers the leave notification,
+                            // avoid showing a duplicate toast here.
                         }
                     }}
                 />
