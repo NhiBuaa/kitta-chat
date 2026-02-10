@@ -42,31 +42,71 @@ global.onlineUsers = onlineUsers;
 app.set('socketio', io);
 app.set('onlineUsers', onlineUsers);
 
-io.on('connection', async (socket) => {
-    // Lấy userId từ client gửi lên
-    const userId = socket.handshake.query.userId;
+// Helper function để xử lý khi user connect
+const handleUserConnected = async (socket, userId, socketId) => {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+        console.warn(`⚠️ Ignoring invalid userId on connect: ${userId}`);
+        return;
+    }
 
-    if (userId && userId !== "undefined") {
-        console.log(`⚡ User Connected: ${userId}`);
+    console.log(`⚡ User Connected: ${userId}`);
 
-        // Lưu vào Map Online
-        onlineUsers.set(userId, socket.id);
+    // Lưu vào Map Online
+    onlineUsers.set(userId, socketId);
 
-        // Join user vào userId room (để nhận tin nhắn 1-1)
+    // Join user vào room với userId (để nhận tin nhắn 1-1)
+    try {
         socket.join(userId);
         console.log(`📍 User ${userId} joined room ${userId}`);
+    } catch (err) {
+        console.error(`❌ Lỗi khi join room cho user ${userId}:`, err);
+    }
 
-        // Cập nhật DB thành ACTIVE
+    // Cập nhật DB thành ACTIVE (only if valid ObjectId)
+    try {
         await User.findByIdAndUpdate(userId, {
             activityStatus: { state: 'active', lastSeen: new Date() }
         });
-
-        const usersArray = Array.from(onlineUsers, ([uid, sid]) => ({
-            userId: uid,
-            socketId: sid
-        }));
-        io.emit('getOnlineUsers', usersArray);
+    } catch (err) {
+        console.error(`❌ Lỗi cập nhật activityStatus cho user ${userId}:`, err.message || err);
     }
+
+    const usersArray = Array.from(onlineUsers, ([uid, sid]) => ({
+        userId: uid,
+        socketId: sid
+    })).filter(u => u.userId && typeof u.userId === 'string' && u.userId.trim() !== '');
+
+    io.emit('getOnlineUsers', usersArray);
+};
+
+io.on('connection', async (socket) => {
+    // Lấy userId từ client gửi lên (từ query string hoặc event)
+    let userId = socket.handshake.query.userId;
+
+    console.log(`🔌 [Socket Connection] ID: ${socket.id}, Query userId: ${userId}`);
+
+    if (!userId || userId === "undefined") {
+        console.log(`⚠️ userId không hợp lệ từ query string, đợi event addNewUser`);
+        // Fallback: lắng nghe event addNewUser từ client
+            socket.once("addNewUser", async (id) => {
+                userId = id;
+                if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+                    console.warn(`⚠️ Received addNewUser with invalid id: ${userId}`);
+                    return;
+                }
+                console.log(`📤 Nhận event addNewUser: ${userId}`);
+                await handleUserConnected(socket, userId, socket.id);
+            });
+    }
+
+    // IIFE để đảm bảo user được connected trước khi setup listeners
+    (async () => {
+        try {
+                    await handleUserConnected(socket, userId, socket.id);
+        } catch (error) {
+            console.error(`❌ Lỗi khi connect user ${userId}:`, error);
+        }
+    })();
 
     // Lắng nghe sự kiện joinGroup
     socket.on('joinGroup', (groupId) => {
@@ -256,7 +296,7 @@ io.on('connection', async (socket) => {
         } else {
             console.log(`⚠️ [SERVER] Không tìm thấy socketId ${userToCall} (Người dùng có thể đã offline hoặc sai ID)`);
         }
-        
+
         io.to(userToCall).emit("callUser", {
             signal: signalData,
             from,
