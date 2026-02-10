@@ -28,7 +28,6 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
-      {/* KHU VỰC ĐỊNH TUYẾN */}
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
