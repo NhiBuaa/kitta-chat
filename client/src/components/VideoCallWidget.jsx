@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { CallContext } from '../context/CallContext.jsx';
 
-// 1. IMPORT ICONS
+// IMPORT ICONS
 import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhoneSlash, FaPhone, FaTimes } from "react-icons/fa";
 import { MdCallEnd, MdCall } from "react-icons/md";
 
@@ -10,27 +10,29 @@ const VideoCallWidget = () => {
         callAccepted,
         callEnded,
         stream,
-        remoteStream, // Đã đổi tên đúng theo logic Context mới sửa
+        remoteStream,
         call,
         answerCall,
         leaveCall,
+        rejectCall
     } = useContext(CallContext);
 
-    // --- TẠO REF TẠI ĐÂY (LOCAL REFS) ---
+    // REF
     const myVideo = useRef();
     const userVideo = useRef();
 
+    // STATE
     const [isMicOn, setIsMicOn] = useState(true);
     const [isCamOn, setIsCamOn] = useState(true);
 
-    // 1. Gắn stream của MÌNH vào thẻ video
+    // Gắn stream của MÌNH vào thẻ video
     useEffect(() => {
         if (stream && myVideo.current) {
             myVideo.current.srcObject = stream;
         }
     }, [stream]);
 
-    // 2. Gắn stream của ĐỐI PHƯƠNG vào thẻ video
+    // Gắn stream của ĐỐI PHƯƠNG vào thẻ video
     useEffect(() => {
         if (remoteStream && userVideo.current) {
             userVideo.current.srcObject = remoteStream;
@@ -125,7 +127,7 @@ const VideoCallWidget = () => {
                             <FaPhone /> Nghe
                         </button>
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={rejectCall}
                             className="flex-1 bg-red-100 hover:bg-red-200 text-red-600 py-2 rounded-lg font-bold transition transform active:scale-95 flex items-center justify-center gap-2"
                         >
                             <FaTimes /> Từ chối
@@ -146,7 +148,7 @@ const VideoCallWidget = () => {
                         {isMicOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
                     </button>
 
-                    {/* Nút Camẻa */}
+                    {/* Nút Camera */}
                     <button
                         onClick={toggleCam}
                         className={`w-10 h-10 rounded-full flex items-center justify-center transition text-lg ${isCamOn ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-red-500 text-white'}`}
@@ -155,16 +157,13 @@ const VideoCallWidget = () => {
                         {isCamOn ? <FaVideo /> : <FaVideoSlash />}
                     </button>
 
-                    {/* Nút Kết thúc (Chỉ hiện khi đã kết nối hoặc đang gọi) */}
-                    {(callAccepted && !callEnded) && (
-                        <button
-                            onClick={leaveCall}
-                            className="bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition transform hover:scale-110 text-xl"
-                            title="Kết thúc"
-                        >
-                            <MdCallEnd />
-                        </button>
-                    )}
+                    <button
+                        onClick={leaveCall}
+                        className="bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition transform hover:scale-110 text-xl"
+                        title="Kết thúc"
+                    >
+                        <MdCallEnd />
+                    </button>
                 </div>
             )}
         </div>

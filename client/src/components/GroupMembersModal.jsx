@@ -129,7 +129,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
         });
     };
 
-    // Giải tán nhóm (chỉ admin)
+    // Giải tán nhóm
     const handleDeleteGroup = async () => {
         setConfirmModal({
             isOpen: true,
@@ -211,9 +211,8 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
                                 </div>
                             </div>
 
-                            {/* Các nút hành động (Action Buttons) */}
+                            {/* Các nút hành động */}
                             <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-                                {/* Admin Actions: Chuyển quyền hoặc xóa người khác */}
                                 {isAdmin && member._id !== adminId && (
                                     <>
                                         <button

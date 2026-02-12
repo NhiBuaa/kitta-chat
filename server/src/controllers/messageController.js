@@ -3,27 +3,46 @@ const Message = require('../models/Message');
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
     try {
-        const { sender, receiver, text, image, isGroup, type = 'text' } = req.body;
+        // Lấy type từ frontend gửi lên
+        const { sender, receiver, text, image, isGroup, type } = req.body;
+        console.log("📥 Dữ liệu nhận từ FE:", req.body);
 
         let conversationId;
-        if (isGroup) {
+        const isGroupChat = isGroup === true || isGroup === "true";
+
+        if (isGroupChat) {
             conversationId = receiver;
         } else {
+            if (!sender || !receiver) {
+                return res.status(400).json({ message: "Thiếu thông tin người gửi/nhận" });
+            }
             conversationId = [sender, receiver].sort().join("_");
         }
 
-        // Tạo Message mới
+        // NẾU LÀ SYSTEM MESSAGE
+        if (type === 'system') {
+            const savedSystemMsg = await exports.createSystemMessage(conversationId, text);
+
+            if (savedSystemMsg) {
+                return res.status(200).json(savedSystemMsg);
+            } else {
+                return res.status(500).json({ message: "Lỗi tạo tin nhắn hệ thống" });
+            }
+        }
+
+        // NẾU LÀ TIN NHẮN THƯỜNG -> XỬ LÝ NHƯ CŨ
         const newMessage = new Message({
             conversationId,
-            type,
+            type: 'text',
             sender,
             receiver,
             text,
             image
         });
 
-        // 3. Lưu và trả về
+        
         const savedMessage = await newMessage.save();
+        console.log("✅ Đã lưu thành công:", savedMessage);
         res.status(200).json(savedMessage);
 
     } catch (err) {
