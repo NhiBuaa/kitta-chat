@@ -2,14 +2,67 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaTimes, FaUserCheck, FaUserTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { useSocket } from '../context/SocketContext';
 
 const API_URL = import.meta.env.VITE_API_URL_USERS || 'http://localhost:3000/api/users';
 
-const FriendRequestModal = ({ onClose, onSuccess, setRequestCount }) => {
+const FriendRequestModal = ({ onClose, onSuccess, setRequestCount, currentUser }) => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { socket } = useSocket();
 
-    // 1. Lấy danh sách lời mời khi mở Modal
+    // Xử lý Đồng ý kết bạn
+    const handleAccept = async (senderId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/accept-friend`,
+                { senderId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            toast.success("Đã đồng ý lời mời kết bạn!");
+
+            // Xóa người vừa đồng ý khỏi danh sách
+            setRequests((prev) => prev.filter((req) => req._id !== senderId));
+
+            if (onSuccess) onSuccess();
+
+            if (socket) {
+                socket.emit("acceptFriendRequest", {
+                    senderId: senderId,
+                    receiverId: currentUser._id,
+                    receiverName: currentUser.displayName,
+                    receiverAvatar: currentUser.avatar
+                })
+            }
+
+        } catch (error) {
+            console.error("Lỗi đồng ý lời mời:", error);
+            toast.error(error.response?.data?.message || "Lỗi kết nối");
+        }
+    };
+
+    // Xử lý Từ chối
+    const handleReject = async (senderId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/reject-friend`,
+                { senderId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Xoá nguời vừa từ chối khỏi danh sách
+            setRequests((prev) => prev.filter((req) => req._id !== senderId));
+
+            if (onSuccess) onSuccess();
+
+        } catch (error) {
+            console.error("Lỗi từ chối lời mời:", error);
+            toast.error(error.response?.data?.message || "Lỗi kết nối");
+        }
+    };
+
+    // Lấy danh sách lời mời khi mở Modal
     useEffect(() => {
         const fetchRequests = async () => {
             try {
@@ -48,46 +101,6 @@ const FriendRequestModal = ({ onClose, onSuccess, setRequestCount }) => {
             setRequestCount(requests.length);
         }
     }, [requests, setRequestCount]);
-
-    // 2. Xử lý Đồng ý kết bạn
-    const handleAccept = async (senderId) => {
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/accept-friend`,
-                { senderId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            // Xóa người vừa đồng ý khỏi danh sách
-            setRequests((prev) => prev.filter((req) => req._id !== senderId));
-
-            if (onSuccess) onSuccess();
-
-        } catch (error) {
-            console.error("Lỗi đồng ý lời mời:", error);
-            toast.error(error.response?.data?.message || "Lỗi kết nối");
-        }
-    };
-
-    // Xử lý Từ chối
-    const handleReject = async (senderId) => {
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/reject-friend`,
-                { senderId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            // Xoá nguời vừa từ chối khỏi danh sách
-            setRequests((prev) => prev.filter((req) => req._id !== senderId));
-
-            if (onSuccess) onSuccess();
-
-        } catch (error) {
-            console.error("Lỗi từ chối lời mời:", error);
-            toast.error(error.response?.data?.message || "Lỗi kết nối");
-        }
-    };
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

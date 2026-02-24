@@ -98,6 +98,19 @@ const Home = () => {
 
     // --- USE EFFECTS ---
 
+    useEffect(() => {
+        // Đọc lại user tươi nhất từ LocalStorage
+        const userStr = localStorage.getItem('user');
+
+        if (socket && userStr) {
+            const user = JSON.parse(userStr);
+            if (user && user._id) {
+                console.log("📤 Đã vào Home, gửi tín hiệu Online cho user:", user._id);
+                socket.emit("addNewUser", user._id);
+            }
+        }
+    }, [socket]);
+
     // Auto-scroll
     useEffect(() => {
         if (scrollRef.current) {
@@ -288,10 +301,10 @@ const Home = () => {
         if (!socket || !currentUser) return;
 
         // -- LOGIC CẬP NHẬT TRẠNG THÁI ONLINE --
-        // (Lưu ý: Context đã tự handle 'getOnlineUsers' để cập nhật onlineUsers)
 
-        // có người vừa offline
-        socket.on("userDisconnected", (userId) => {
+        // ĐỊNH NGHĨA CÁC HÀM XỬ LÝ SỰ KIỆN
+
+        const handleUserDisconnected = (userId) => {
             setUsers(prevUsers => prevUsers.map(user => {
                 if (user._id === userId) {
                     return {
@@ -304,25 +317,36 @@ const Home = () => {
                 }
                 return user;
             }));
-        });
+        };
 
-        // Lắng nghe sự kiện gửi kết bạn
-        socket.on("newFriendRequest", (data) => {
-            setRequestCount((prev) => prev + 1);
+        const handleNewFriendRequest = (data) => {
+            console.log("Có lời mời kết bạn mới từ:", data.senderName);
+
+            setRequestCount(prevCount => prevCount + 1);
+
             toast.info(`${data.senderName} đã gửi lời mời kết bạn`, {
+                toastId: `new-req-${data.senderId}`, // Mẹo: Chống trùng toast
                 position: "top-right",
                 autoClose: 5000,
-            })
-            setUsers(prev => prev.map(user => {
-                if (user._id === data.senderId) {
-                    return { ...user, isIncomingRequest: true }
-                }
-                return user;
-            }))
-        });
+            });
 
-        // Lắng nghe chấp nhận kết bạn
-        socket.on("friendRequestAccepted", (data) => {
+            setUsers(prevUsers => prevUsers.map(u => {
+                if (u._id === data.senderId) {
+                    return { ...u, isIncomingRequest: true };
+                }
+                return u;
+            }));
+        };
+
+        const handleFriendRequestAccepted = (data) => {
+            console.log("Lời mời kết bạn đã được chấp nhận bởi:", data.newFriendName);
+
+            toast.success(`${data.newFriendName} đã chấp nhận lời mời kết bạn`, {
+                toastId: `accept-req-${data.newFriendId}`, // Mẹo: Chống trùng toast
+                position: "top-right",
+                autoClose: 3000,
+            });
+
             setUsers(prev => {
                 const updatedUsers = prev.map(user => {
                     if (user._id === data.newFriendId) {
@@ -348,23 +372,27 @@ const Home = () => {
                 }
                 return updatedUsers;
             });
-
-            toast.success(`${data.newFriendName} đã chấp nhận lời mời kết bạn`, {
-                position: "top-right",
-                autoClose: 3000,
-            });
-        });
-
-        // CLEANUP
-        return () => {
-            socket.off("userConnected");
-            socket.off("userDisconnected");
-            socket.off("newFriendRequest");
-            socket.off("friendRequestAccepted");
         };
-    }, [socket, currentUser, API_URL]);
 
-    // ✅ SỬA: READ RECEIPTS LISTENER
+        // GỠ BỎ TẤT CẢ LISTENER CŨ TRƯỚC KHI ĐĂNG KÝ MỚI
+        socket.off("userDisconnected");
+        socket.off("newFriendRequest");
+        socket.off("friendRequestAccepted");
+
+        // ĐĂNG KÝ LẮNG NGHE SỰ KIỆN
+        socket.on("userDisconnected", handleUserDisconnected);
+        socket.on("newFriendRequest", handleNewFriendRequest);
+        socket.on("friendRequestAccepted", handleFriendRequestAccepted);
+
+        // 4. CLEANUP (Chỉ gỡ đúng những hàm mà useEffect này đã gắn)
+        return () => {
+            socket.off("userDisconnected", handleUserDisconnected);
+            socket.off("newFriendRequest", handleNewFriendRequest);
+            socket.off("friendRequestAccepted", handleFriendRequestAccepted);
+        };
+    }, [socket, currentUser]);
+
+    // READ RECEIPTS LISTENER
     useEffect(() => {
         if (!socket) return;
 
@@ -423,7 +451,7 @@ const Home = () => {
     }, [socket, activeChat, currentUser]);
 
 
-    // ✅ SỬA: MESSAGE LISTENER
+    // MESSAGE LISTENER
     useEffect(() => {
         if (!socket) return;
 
@@ -548,7 +576,7 @@ const Home = () => {
         fetchMessages();
     }, [activeChat, currentUser, API_URL, socket]);
 
-    // ✅ SỬA: TYPING LOGIC (Dùng socket từ Context)
+    // TYPING LOGIC
     useEffect(() => {
         if (!socket) return;
 
@@ -1156,7 +1184,7 @@ const Home = () => {
 
             {showProfile && <UserProfileSidebar isOpen={showProfile} user={{ ...currentUser, avatar: getAvatarUrl(currentUser?.avatar) }} onClose={() => setShowProfile(false)} onUpdateSuccess={handleUpdateSuccess} />}
             <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} users={users} onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])} />
-            {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} setRequestCount={setRequestCount} />}
+            {showRequestModal && <FriendRequestModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} setRequestCount={setRequestCount} currentUser={currentUser} />}
             {showGroupMembers && activeChat?.members && currentUser && (
                 <GroupMembersModal
                     group={activeChat}

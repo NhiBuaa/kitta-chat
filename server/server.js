@@ -16,7 +16,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
-app.use(express.json());
 
 // Middlewares
 app.use(express.json());
@@ -88,25 +87,57 @@ io.on('connection', async (socket) => {
     if (!userId || userId === "undefined") {
         console.log(`userId không hợp lệ từ query string, đợi event addNewUser`);
         // Fallback: lắng nghe event addNewUser từ client
-            socket.once("addNewUser", async (id) => {
-                userId = id;
-                if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-                    console.warn(`Received addNewUser with invalid id: ${userId}`);
-                    return;
-                }
-                console.log(`Nhận event addNewUser: ${userId}`);
-                await handleUserConnected(socket, userId, socket.id);
-            });
+        socket.on("addNewUser", async (id) => {
+            userId = id;
+            if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+                console.warn(`Received addNewUser with invalid id: ${userId}`);
+                return;
+            }
+            console.log(`Nhận event addNewUser: ${userId}`);
+            await handleUserConnected(socket, userId, socket.id);
+        });
     }
 
     // IIFE để đảm bảo user được connected trước khi setup listeners
     (async () => {
         try {
-                    await handleUserConnected(socket, userId, socket.id);
+            await handleUserConnected(socket, userId, socket.id);
         } catch (error) {
             console.error(`Lỗi khi connect user ${userId}:`, error);
         }
     })();
+
+    socket.on("sendFriendRequest", async ({ senderId, receiverId, senderName }) => {
+        console.log(`Received sendFriendRequest from ${senderId} to ${receiverId}`);
+
+        const receiverSocketId = onlineUsers.get(receiverId);
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("newFriendRequest", {
+                senderId,
+                senderName
+            });
+            console.log(`Đã báo lời mời kết bạn tới socket: ${receiverSocketId}`);
+        } else {
+            console.log(`Người nhận ${receiverId} hiện không online.`);
+        }
+    });
+
+    // Lắng nghe sự kiện chấp nhận lời mời kết bạn
+    socket.on("acceptFriendRequest", async ({ senderId, receiverId, receiverName, receiverAvatar }) => {
+
+        const senderSocketId = onlineUsers.get(senderId);
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("friendRequestAccepted", {
+                newFriendId: receiverId,
+                newFriendName: receiverName,
+                newFriendAvatar: receiverAvatar
+            });
+        } else {
+            console.log(`Không tìm thấy người gửi có ID ${senderId} đang online để báo kết bạn.`);
+        }
+    });
 
     // Lắng nghe sự kiện joinGroup
     socket.on('joinGroup', (groupId) => {
@@ -295,12 +326,6 @@ io.on('connection', async (socket) => {
         } else {
             console.log(`[SERVER] Không tìm thấy socketId ${userToCall} (Người dùng có thể đã offline hoặc sai ID)`);
         }
-
-        io.to(userToCall).emit("callUser", {
-            signal: signalData,
-            from,
-            name
-        });
     });
 
     // Người dùng trả lời cuộc gọi
