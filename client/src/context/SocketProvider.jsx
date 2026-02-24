@@ -3,6 +3,8 @@ import io from "socket.io-client";
 import { SocketContext } from "./SocketContext.js";
 
 export const SocketProvider = ({ children }) => {
+     // STATE
+    const [onlineUsers, setOnlineUsers] = useState([]);
     const [socket] = useState(() => {
         const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
         
@@ -28,9 +30,6 @@ export const SocketProvider = ({ children }) => {
 
         return newSocket;
     });
-
-    // State lưu danh sách online
-    const [onlineUsers, setOnlineUsers] = useState([]);
 
     useEffect(() => {
         return () => {

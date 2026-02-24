@@ -10,7 +10,7 @@ const ConfirmationModal = ({
     onConfirm, 
     onCancel,
     isLoading = false,
-    isDangerous = false // Nếu true, nút confirm sẽ là màu đỏ
+    isDangerous = false
 }) => {
     if (!isOpen) return null;
 

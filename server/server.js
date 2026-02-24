@@ -16,7 +16,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
-app.use(express.json());
 
 // Middlewares
 app.use(express.json());
@@ -45,11 +44,11 @@ app.set('onlineUsers', onlineUsers);
 // Helper function để xử lý khi user connect
 const handleUserConnected = async (socket, userId, socketId) => {
     if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-        console.warn(`⚠️ Ignoring invalid userId on connect: ${userId}`);
+        console.warn(`Ignoring invalid userId on connect: ${userId}`);
         return;
     }
 
-    console.log(`⚡ User Connected: ${userId}`);
+    console.log(`User Connected: ${userId}`);
 
     // Lưu vào Map Online
     onlineUsers.set(userId, socketId);
@@ -57,9 +56,9 @@ const handleUserConnected = async (socket, userId, socketId) => {
     // Join user vào room với userId (để nhận tin nhắn 1-1)
     try {
         socket.join(userId);
-        console.log(`📍 User ${userId} joined room ${userId}`);
+        console.log(`User ${userId} joined room ${userId}`);
     } catch (err) {
-        console.error(`❌ Lỗi khi join room cho user ${userId}:`, err);
+        console.error(`Lỗi khi join room cho user ${userId}:`, err);
     }
 
     // Cập nhật DB thành ACTIVE (only if valid ObjectId)
@@ -68,7 +67,7 @@ const handleUserConnected = async (socket, userId, socketId) => {
             activityStatus: { state: 'active', lastSeen: new Date() }
         });
     } catch (err) {
-        console.error(`❌ Lỗi cập nhật activityStatus cho user ${userId}:`, err.message || err);
+        console.error(`Lỗi cập nhật activityStatus cho user ${userId}:`, err.message || err);
     }
 
     const usersArray = Array.from(onlineUsers, ([uid, sid]) => ({
@@ -83,46 +82,90 @@ io.on('connection', async (socket) => {
     // Lấy userId từ client gửi lên (từ query string hoặc event)
     let userId = socket.handshake.query.userId;
 
-    console.log(`🔌 [Socket Connection] ID: ${socket.id}, Query userId: ${userId}`);
+    console.log(`[Socket Connection] ID: ${socket.id}, Query userId: ${userId}`);
 
     if (!userId || userId === "undefined") {
-        console.log(`⚠️ userId không hợp lệ từ query string, đợi event addNewUser`);
+        console.log(`userId không hợp lệ từ query string, đợi event addNewUser`);
         // Fallback: lắng nghe event addNewUser từ client
-            socket.once("addNewUser", async (id) => {
-                userId = id;
-                if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-                    console.warn(`⚠️ Received addNewUser with invalid id: ${userId}`);
-                    return;
-                }
-                console.log(`📤 Nhận event addNewUser: ${userId}`);
-                await handleUserConnected(socket, userId, socket.id);
-            });
+        socket.on("addNewUser", async (id) => {
+            userId = id;
+            if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+                console.warn(`Received addNewUser with invalid id: ${userId}`);
+                return;
+            }
+            console.log(`Nhận event addNewUser: ${userId}`);
+            await handleUserConnected(socket, userId, socket.id);
+        });
     }
 
     // IIFE để đảm bảo user được connected trước khi setup listeners
     (async () => {
         try {
-                    await handleUserConnected(socket, userId, socket.id);
+            await handleUserConnected(socket, userId, socket.id);
         } catch (error) {
-            console.error(`❌ Lỗi khi connect user ${userId}:`, error);
+            console.error(`Lỗi khi connect user ${userId}:`, error);
         }
     })();
+
+    socket.on("sendFriendRequest", async ({ senderId, receiverId, senderName }) => {
+        console.log(`Received sendFriendRequest from ${senderId} to ${receiverId}`);
+
+        const receiverSocketId = onlineUsers.get(receiverId);
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("newFriendRequest", {
+                senderId,
+                senderName
+            });
+            console.log(`Đã báo lời mời kết bạn tới socket: ${receiverSocketId}`);
+        } else {
+            console.log(`Người nhận ${receiverId} hiện không online.`);
+        }
+    });
+
+    // Lắng nghe sự kiện chấp nhận lời mời kết bạn
+    socket.on("acceptFriendRequest", async ({ senderId, receiverId, receiverName, receiverAvatar }) => {
+
+        const senderSocketId = onlineUsers.get(senderId);
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("friendRequestAccepted", {
+                newFriendId: receiverId,
+                newFriendName: receiverName,
+                newFriendAvatar: receiverAvatar
+            });
+        } else {
+            console.log(`Không tìm thấy người gửi có ID ${senderId} đang online để báo kết bạn.`);
+        }
+    });
+
+    // Lắng nghe sự kiện từ chối lời mời kết bạn
+    socket.on("rejectFriendRequest", async ({senderId, receiverId}) => {
+        const senderSocketId = onlineUsers.get(senderId);
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("friendRequestRejected", {
+                rejecterId: receiverId
+            });
+            console.log(`Đã báo từ chối lời mời kết bạn tới socket: ${senderSocketId}`);
+        }
+    })
 
     // Lắng nghe sự kiện joinGroup
     socket.on('joinGroup', (groupId) => {
         socket.join(groupId);
-        console.log(`📍 User ${userId} joined group room ${groupId}`);
+        console.log(`User ${userId} joined group room ${groupId}`);
     });
 
     // Lắng nghe sự kiện leaveGroup
     socket.on('leaveGroup', (groupId) => {
         socket.leave(groupId);
-        console.log(`📍 User ${userId} left group room ${groupId}`);
+        console.log(`User ${userId} left group room ${groupId}`);
     });
 
     // Khi User ngắt kết nối
     socket.on('disconnect', async () => {
-        console.log(`❌ User Disconnected: ${userId}`);
+        console.log(`User Disconnected: ${userId}`);
 
         if (userId) {
             // Xóa khỏi Map Online
@@ -163,7 +206,7 @@ io.on('connection', async (socket) => {
                 createdAt: Date.now(),
                 isGroup: true
             });
-            console.log(`💬 Group message sent to room ${receiverId}`);
+            console.log(`Group message sent to room ${receiverId}`);
         } else {
             // LOGIC GỬI 1-1 - Emit cho cả Sender lẫn Receiver
             const messageData = {
@@ -181,13 +224,13 @@ io.on('connection', async (socket) => {
             // Gửi cho sender để sender thấy tin nhắn của mình
             io.to(senderId).emit("getMessage", messageData);
 
-            console.log(`💬 1-1 message sent to ${senderId} and ${receiverId}`);
+            console.log(`1-1 message sent to ${senderId} and ${receiverId}`);
         }
     });
 
     // Lắng nghe sự kiện đang gõ
     socket.on("typing", async ({ receiverId, isGroup, senderId, senderName, senderAvatar }) => {
-        console.log(`⌨️  Typing event: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}, senderName=${senderName}`);
+        console.log(`Typing event: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}, senderName=${senderName}`);
 
         if (isGroup) {
             // LOGIC TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
@@ -197,7 +240,7 @@ io.on('connection', async (socket) => {
                 senderName: senderName,
                 senderAvatar: senderAvatar
             });
-            console.log(`⌨️  Typing broadcast to group room ${receiverId} (excluding sender)`);
+            console.log(`Typing broadcast to group room ${receiverId} (excluding sender)`);
         } else {
             // LOGIC TYPING 1-1 - Dùng User Room
             io.to(receiverId).emit("getTyping", {
@@ -205,13 +248,13 @@ io.on('connection', async (socket) => {
                 isGroup: false,
                 senderAvatar: senderAvatar
             });
-            console.log(`⌨️  Typing sent to user room ${receiverId}`);
+            console.log(`Typing sent to user room ${receiverId}`);
         }
     });
 
     // Lắng nghe sự kiện ngưng gõ
     socket.on("stopTyping", async ({ receiverId, isGroup, senderId }) => {
-        console.log(`⏹️  Stop typing: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}`);
+        console.log(`Stop typing: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}`);
 
         if (isGroup) {
             // LOGIC STOP TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
@@ -219,14 +262,14 @@ io.on('connection', async (socket) => {
                 chatId: receiverId, // ID nhóm
                 isGroup: true
             });
-            console.log(`⏹️  Stop typing broadcast to group room ${receiverId} (excluding sender)`);
+            console.log(`Stop typing broadcast to group room ${receiverId} (excluding sender)`);
         } else {
             // LOGIC STOP TYPING 1-1 - Dùng User Room
             io.to(receiverId).emit("getStopTyping", {
                 chatId: senderId, // ID người gõ (user)
                 isGroup: false
             });
-            console.log(`⏹️  Stop typing sent to user room ${receiverId}`);
+            console.log(`Stop typing sent to user room ${receiverId}`);
         }
     });
 
@@ -272,7 +315,7 @@ io.on('connection', async (socket) => {
         }
     });
 
-    // Sự kiện bắt đầu gọi video/audio
+    // --- Sự kiện bắt đầu gọi video/audio ---
     socket.emit("me", socket.id);
 
     // Gọi cho người dùng khác
@@ -281,26 +324,20 @@ io.on('connection', async (socket) => {
         // signalData: Dữ liệu mã hóa WebRTC của người gọi
         // from: Socket ID người gọi
 
-        console.log(`📞 [SERVER] Nhận lệnh callUser từ ${from} gọi tới ${userToCall}`);
+        console.log(`[SERVER] Nhận lệnh callUser từ ${from} gọi tới ${userToCall}`);
 
         // Kiểm tra xem người nhận có trong phòng không
         const room = io.sockets.adapter.rooms.get(userToCall);
         if (room) {
-            console.log(`✅ [SERVER] Tìm thấy người nhận ${userToCall}, đang chuyển tiếp...`);
+            console.log(`[SERVER] Tìm thấy người nhận ${userToCall}, đang chuyển tiếp...`);
             io.to(userToCall).emit("callUser", {
                 signal: signalData,
                 from,
                 name
             });
         } else {
-            console.log(`⚠️ [SERVER] Không tìm thấy socketId ${userToCall} (Người dùng có thể đã offline hoặc sai ID)`);
+            console.log(`[SERVER] Không tìm thấy socketId ${userToCall} (Người dùng có thể đã offline hoặc sai ID)`);
         }
-
-        io.to(userToCall).emit("callUser", {
-            signal: signalData,
-            from,
-            name
-        });
     });
 
     // Người dùng trả lời cuộc gọi
@@ -311,7 +348,13 @@ io.on('connection', async (socket) => {
 
     // Khi kết thúc cuộc gọi
     socket.on("endCall", (data) => {
+        console.log(`[SERVER] Kết thúc cuộc gọi từ ${socket.id} tới ${data.to}`);
         io.to(data.to).emit("callEnded");
+    })
+
+    // Từ chối cuộc gọi
+    socket.on("rejectCall", (data) => {
+        io.to(data.to).emit("callRejected");
     })
 });
 
