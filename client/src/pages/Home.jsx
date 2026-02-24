@@ -374,21 +374,41 @@ const Home = () => {
             });
         };
 
+        const handleFriendRequestRejected = (data) => {
+            console.log("Lời mời kết bạn đã bị từ chối bởi ID:", data.rejecterId);
+
+            setSentRequests(prev => prev.filter(id => id !== data.rejecterId));
+
+            setUsers(prevUsers => prevUsers.map(user => {
+                if (user._id === data.rejecterId) {
+                    return {
+                        ...user,
+                        isSent: false,
+                        isIncomingRequest: false
+                    };
+                }
+                return user;
+            }));
+        }
+
         // GỠ BỎ TẤT CẢ LISTENER CŨ TRƯỚC KHI ĐĂNG KÝ MỚI
         socket.off("userDisconnected");
         socket.off("newFriendRequest");
         socket.off("friendRequestAccepted");
+        socket.off("friendRequestRejected");
 
         // ĐĂNG KÝ LẮNG NGHE SỰ KIỆN
         socket.on("userDisconnected", handleUserDisconnected);
         socket.on("newFriendRequest", handleNewFriendRequest);
         socket.on("friendRequestAccepted", handleFriendRequestAccepted);
+        socket.on("friendRequestRejected", handleFriendRequestRejected);
 
-        // 4. CLEANUP (Chỉ gỡ đúng những hàm mà useEffect này đã gắn)
+        // CLEANUP
         return () => {
             socket.off("userDisconnected", handleUserDisconnected);
             socket.off("newFriendRequest", handleNewFriendRequest);
             socket.off("friendRequestAccepted", handleFriendRequestAccepted);
+            socket.off("friendRequestRejected", handleFriendRequestRejected);
         };
     }, [socket, currentUser]);
 

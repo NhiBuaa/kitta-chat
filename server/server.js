@@ -139,6 +139,18 @@ io.on('connection', async (socket) => {
         }
     });
 
+    // Lắng nghe sự kiện từ chối lời mời kết bạn
+    socket.on("rejectFriendRequest", async ({senderId, receiverId}) => {
+        const senderSocketId = onlineUsers.get(senderId);
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("friendRequestRejected", {
+                rejecterId: receiverId
+            });
+            console.log(`Đã báo từ chối lời mời kết bạn tới socket: ${senderSocketId}`);
+        }
+    })
+
     // Lắng nghe sự kiện joinGroup
     socket.on('joinGroup', (groupId) => {
         socket.join(groupId);

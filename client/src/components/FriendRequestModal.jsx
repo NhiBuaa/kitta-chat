@@ -56,6 +56,13 @@ const FriendRequestModal = ({ onClose, onSuccess, setRequestCount, currentUser }
 
             if (onSuccess) onSuccess();
 
+            if (socket) {
+                socket.emit("rejectFriendRequest", {
+                    senderId: senderId,
+                    receiverId: currentUser._id
+                });
+            }
+
         } catch (error) {
             console.error("Lỗi từ chối lời mời:", error);
             toast.error(error.response?.data?.message || "Lỗi kết nối");
