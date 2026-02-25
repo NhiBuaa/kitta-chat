@@ -41,7 +41,7 @@ const UserStatus = ({ user, isOnline }) => {
         if (!timeAgo) {
             return (
                 <span className="text-green-600 font-medium text-xs">
-                    Vừa mới truy cập
+                    Đang hoạt động
                 </span>
             );
         }
@@ -49,7 +49,7 @@ const UserStatus = ({ user, isOnline }) => {
         // Offline lâu hơn 1 phút thì hiển thị truy cập bao lâu trước đó
         return (
             <span className="text-gray-400 text-xs">
-                Truy cập {timeAgo}
+                Hoạt động {timeAgo}
             </span>
         );
     }
