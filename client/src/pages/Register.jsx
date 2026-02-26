@@ -8,6 +8,7 @@ const Register = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm();
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Register = () => {
       toast.success("Đăng ký thành công! Hãy đăng nhập.");
       navigate("/login");
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Lỗi đăng ký");
+      toast.error(err.response?.data?.message || "Lỗi đăng ký");
     }
   };
 
@@ -81,7 +82,10 @@ const Register = () => {
               type="password"
               {...register("password", {
                 required: "Mật khẩu là bắt buộc",
-                minLength: { value: 6, message: "Tối thiểu 6 ký tự" },
+                minLength: {
+                  value: 6,
+                  message: "Tối thiểu 6 ký tự bao gồm chữ và số",
+                },
               })}
               className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
               placeholder="Mật khẩu"
@@ -93,12 +97,35 @@ const Register = () => {
             )}
           </div>
 
+          {/* Nhập lại Password */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaLock className="text-gray-400" />
+            </div>
+            <input
+              type="password"
+              {...register("confirmPassword", {
+                required: "Vui lòng nhập lại mật khẩu",
+                validate: (value) =>
+                  value === watch("password") || "Mật khẩu không khớp",
+              })}
+              className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
+              placeholder="Nhập lại mật khẩu"
+            />
+
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+
           <button
             type="submit"
             disabled={isSubmitting}
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-lg"
           >
-            {isSubmitting ? "Đang tạo..." : "Đăng Ký Ngay"}
+            {isSubmitting ? "Đang tạo..." : "Đăng ký ngay"}
           </button>
         </form>
 
