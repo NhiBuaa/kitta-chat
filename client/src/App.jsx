@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from 'axios';
 
 // Pages
 import Login from "./pages/Login";
@@ -12,6 +13,25 @@ import Home from "./pages/Home";
 
 // Components
 import VideoCallWidget from './components/VideoCallWidget';
+
+// Xử lý token hết hạn
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Nếu Backend trả về lỗi
+    if (error.response && error.response.status === 401) {
+      console.log("Token hết hạn, đang đăng xuất...");
+      // Xóa sạch dữ liệu cũ
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Component bảo vệ Route (Kiểm tra xem đã login chưa)
 const ProtectedRoute = ({ children }) => {
