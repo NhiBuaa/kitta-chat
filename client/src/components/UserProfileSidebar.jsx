@@ -15,7 +15,8 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   });
 
   const [loading, setLoading] = useState(false);
-
+  // dùng để xác nhận trước khi tắt trạng thái hoạt động
+  const [showConfirm, setShowConfirm] = useState(false);
   // Dùng useEffect để fill dữ liệu khi sidebar mở hoặc user thay đổi
   useEffect(() => {
     if (user && isOpen) {
@@ -119,13 +120,19 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
 
           {/* Avatar nằm đè lên ranh giới */}
           <div className="absolute -bottom-10 relative group">
+            {/* Avatar */}
             <img
               src={formData.avatarPreview || defaultAvatar}
               alt="Avatar"
               className="w-24 h-24 rounded-full border-4 border-white object-cover shadow-lg bg-gray-200"
             />
 
-            {/* Label bao quanh input file ẩn */}
+            {/* CHẤM XANH ONLINE */}
+            {formData.isOnline && (
+              <div className="absolute bottom-1 right-3 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+            )}
+
+            {/* Overlay đổi ảnh */}
             <label
               htmlFor="upload-avatar"
               className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
@@ -201,7 +208,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
                   Bật trạng thái hoạt động
                 </button>
                 <button
-                  onClick={() => handleChange("isOnline", false)}
+                  onClick={() => setShowConfirm(true)}
                   className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
                     !formData.isOnline
                       ? "bg-white text-gray-700 shadow-sm"
@@ -226,6 +233,46 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
           </div>
         </div>
       </div>
+      {/* xác nhận tắt trạng thái hoạt động  */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          {/* nền mờ */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowConfirm(false)}
+          />
+
+          {/* box */}
+          <div className="relative bg-white rounded-xl p-6 w-80 shadow-xl">
+            <p className="font-semibold text-gray-800 mb-2">
+              Tắt trạng thái hoạt động?
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              Khi tắt, bạn bè sẽ không thấy bạn hoạt động và bạn sẽ không thể
+              thấy họ hoạt động.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Hủy
+              </button>
+
+              <button
+                onClick={() => {
+                  handleChange("isOnline", false);
+                  setShowConfirm(false);
+                }}
+                className="flex-1 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

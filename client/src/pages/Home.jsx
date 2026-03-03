@@ -27,6 +27,7 @@ import { sendFriendRequest } from "../services/userService";
 import { useContext } from "react";
 import { CallContext } from "../context/CallContext";
 import { useSocket } from "../context/SocketContext";
+import { FiLogOut } from "react-icons/fi";
 
 const Home = () => {
   // STATE
@@ -1004,7 +1005,7 @@ const Home = () => {
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* --- SIDEBAR --- */}
 
-      <div className="w-1/4 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-full md:w-1/4 bg-white border-r border-gray-200 flex flex-col">
         {/* tên app với avt */}
         <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-blue-600 text-white relative z-10 shadow-md h-16">
           <div className="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0 mr-2">
@@ -1025,7 +1026,7 @@ const Home = () => {
             </button>
 
             {/* tên app */}
-            <h1 className="text-base md:text-xl font-bold truncate hidden md:block">
+            <h1 className="text-base md:text-xl font-bold truncate">
               KittaChat
             </h1>
           </div>
@@ -1046,7 +1047,7 @@ const Home = () => {
               title="Thông báo kết bạn"
             >
               <FaBell
-                size={18}
+                size={16}
                 className={`transition-all duration-300 ${requestCount > 0 ? "text-yellow-300 animate-pulse" : "hover:text-blue-200"}`}
               />
 
@@ -1062,11 +1063,15 @@ const Home = () => {
             </button>
             <button
               onClick={handleLogout}
-              className="ml-1 bg-blue-800 hover:bg-blue-900 px-2 py-1.5 rounded text-[10px] font-bold uppercase whitespace-nowrap shadow-sm"
+              className="ml-1 bg-blue-800 hover:bg-blue-900 px-2 py-1.5 rounded text-[10px] font-bold uppercase whitespace-nowrap shadow-sm flex items-center"
             >
-              {/* Trên mobile chỉ hiện chữ Out hoặc Icon, trên máy tính hiện Logout */}
-              <span className="hidden md:inline">Logout</span>
-              <span className="md:hidden">Out</span>
+              {/* Trên màn hình lớn hiện chữ */}
+              <span className="hidden md:inline">Đăng xuất</span>
+
+              {/* Trên màn hình nhỏ hiện icon */}
+              <span className="md:hidden">
+                <FiLogOut size={14} />
+              </span>
             </button>
           </div>
         </div>
