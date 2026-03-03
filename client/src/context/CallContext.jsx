@@ -60,6 +60,19 @@ export const CallProvider = ({ children }) => {
         }
     };
 
+    const getFreshUser = () => {
+        try {
+            const userStr = localStorage.getItem('user');
+
+            if (userStr) {
+                return JSON.parse(userStr);
+            }
+        } catch (error) {
+            console.error("Lỗi đọc user từ storage:", error);
+        }
+        return null;
+    };
+
     // Hàm dọn dẹp media và kết nối
     const resetCallState = () => {
         if (stream) {
@@ -245,40 +258,56 @@ export const CallProvider = ({ children }) => {
     };
 
     // Người gọi thực hiện cuộc gọi
-    const callUser = async (receiverData) => {
-        // id là socketId của người nhận
-        // name là tên hiển thị của người nhận
-        // userId là _id trong db của người nhận
-        const id = receiverData.socketId;
+    const callUser = async (receiverData, existingStream = null) => {
+        // Kiểm tra User Tươi
+        const freshUser = getFreshUser();
+        if (!freshUser) {
+            toast.error("Bạn chưa đăng nhập hoặc phiên làm việc hết hạn.");
+            return;
+        }
+
+        const id = receiverData.socketId; // Socket ID người nhận
         const name = receiverData.displayName;
         const dbId = receiverData._id || receiverData.id;
 
-        // Kiểm tra chắc chắn đã có ID chưa
-        if (!me) {
-            // Thử lấy lại lần cuối từ socket object
-            if (socket?.id) {
-                setMe(socket.id);
-            } else {
-                toast.error("Chưa kết nối xong tới máy chủ gọi điện. Vui lòng đợi 2s và thử lại!");
-                console.error("callUser thất bại: ID của tôi (me) vẫn là undefined");
-                return;
-            }
+        // Kiểm tra Socket ID của người nhận
+        // Lưu ý: Nếu mở Tab mới, bạn cần đảm bảo receiverData có chứa socketId mới nhất của đối phương
+        if (!id) {
+            toast.error("Không tìm thấy người dùng online để gọi.");
+            console.error("Thiếu socketId người nhận", receiverData);
+            return;
         }
 
+        // Kiểm tra Socket ID của mình
+        const mySocketId = me || socket?.id;
+        if (!mySocketId) {
+            toast.error("Chưa kết nối tới máy chủ. Vui lòng thử lại sau giây lát.");
+            return;
+        }
+
+        // XỬ LÝ MEDIA STREAM
+        let currentStream = existingStream;
+        if (!currentStream) {
+            currentStream = await getMediaStream();
+        }
+
+        if (!currentStream) {
+            return;
+        }
+
+        // Cập nhật ngay state Stream để hiển thị video của mình lên màn hình
+        setStream(currentStream);
+
+        // Cập nhật trạng thái cuộc gọi
         setCall({
             isReceivingCall: false,
             userToCall: id,
             partnerDbId: dbId,
             name: name,
-            from: me
-        })
+            from: mySocketId
+        });
 
-        const currentStream = await getMediaStream();
-        if (!currentStream) {
-            setCall({});
-            return;
-        }
-
+        // Khởi tạo Peer (WebRTC)
         const peer = new Peer({
             initiator: true,
             trickle: false,
@@ -286,24 +315,30 @@ export const CallProvider = ({ children }) => {
         });
 
         peer.on("signal", (data) => {
-            // Gửi signal gọi đi
-            const myId = me || socket.id;
+            console.log(`📡 Đang gửi tín hiệu gọi tới ${id} từ ${mySocketId}`);
 
-            console.log(`Đang gọi tới ${id} từ ${myId}`);
-
+            // Gửi qua Socket
             socket.emit("callUser", {
                 userToCall: id,
                 signalData: data,
-                from: myId,
-                name: myAppName,
-                callerDbId: currentUser._id
+                from: mySocketId,
+                name: myAppName || freshUser.displayName,
+                callerDbId: freshUser._id
             });
         });
 
-        peer.on("stream", (currentStream) => {
-            setRemoteStream(currentStream);
+        peer.on("stream", (remoteStream) => {
+            console.log("Đã nhận được stream từ đối phương");
+            setRemoteStream(remoteStream);
         });
 
+        peer.on("error", (err) => {
+            console.error("Peer error:", err);
+            toast.error("Lỗi kết nối WebRTC");
+            leaveCall(); // Tự động ngắt nếu lỗi
+        });
+
+        // Lắng nghe khi bên kia chấp nhận
         socket.on("callAccepted", (signal) => {
             setCallAccepted(true);
             peer.signal(signal);

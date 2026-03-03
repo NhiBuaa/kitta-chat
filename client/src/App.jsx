@@ -10,6 +10,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Home from "./pages/Home";
+import VideoCallPage from './pages/VideoCallPage';
 
 // Components
 import VideoCallWidget from './components/VideoCallWidget';
@@ -56,6 +57,7 @@ function App() {
 
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+        <Route path="/video-call/:partnerId" element={<VideoCallPage />} />
 
         {/* Route không tồn tại thì về trang chủ */}
         <Route path="*" element={<Navigate to="/" />} />

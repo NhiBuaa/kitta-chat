@@ -24,8 +24,6 @@ import CreateGroupModal from "../components/CreateGroupModal";
 import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
 import { sendFriendRequest } from "../services/userService";
-import { useContext } from "react";
-import { CallContext } from "../context/CallContext";
 import { useSocket } from "../context/SocketContext";
 import { FiLogOut } from "react-icons/fi";
 
@@ -57,7 +55,6 @@ const Home = () => {
   const [sentRequests, setSentRequests] = useState([]);
 
   // --- CONTEXT ---
-  const { callUser } = useContext(CallContext);
   const { onlineUsers, socket } = useSocket();
 
   // REF
@@ -70,33 +67,12 @@ const Home = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // --- HÀM XỬ LÝ GỌI VIDEO ---
-  const handleVideoCall = () => {
-    if (!currentChatUser) return;
+  const handleVideoCall = (partner) => {
+    const url = `/video-call/${partner._id}?name=${encodeURIComponent(partner.displayName)}&avatar=${encodeURIComponent(partner.avatar)}`;
 
-    const chatUserId = currentChatUser._id || currentChatUser.id;
+    // Mở cửa sổ popup kích thước lớn hoặc tab mới
+    window.open(url, '_blank', 'noopener,noreferrer');
 
-    if (currentChatUser.members || currentChatUser.isGroup) {
-      toast.warning("Chưa hỗ trợ gọi nhóm!");
-      return;
-    }
-
-    console.log("🔍 Debug - onlineUsers:", onlineUsers);
-    console.log("🔍 Debug - chatUserId:", chatUserId);
-
-    // Tìm người dùng trong danh sách online (Lấy từ Context)
-    const receiver = onlineUsers.find((user) => user.userId === chatUserId);
-
-    console.log("🔍 Debug - receiver:", receiver);
-
-    if (receiver) {
-      callUser({
-        socketId: receiver.socketId,
-        _id: chatUserId,
-        displayName: currentChatUser.displayName,
-      });
-    } else {
-      toast.info(`Người dùng ${currentChatUser.displayName} đang ngoại tuyến.`);
-    }
   };
 
   // --- CÁC BIẾN TÍNH TOÁN ---
@@ -1265,7 +1241,7 @@ const Home = () => {
                 </button>
 
                 <button
-                  onClick={handleVideoCall}
+                  onClick={() => handleVideoCall(currentChatUser)}
                   className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
                   title="Gọi Video"
                   disabled={currentChatUser.members}
