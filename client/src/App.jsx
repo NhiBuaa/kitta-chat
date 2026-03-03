@@ -21,7 +21,7 @@ axios.interceptors.response.use(
   },
   (error) => {
     // Nếu Backend trả về lỗi
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 403) {
       console.log("Token hết hạn, đang đăng xuất...");
       // Xóa sạch dữ liệu cũ
       localStorage.removeItem('token');
