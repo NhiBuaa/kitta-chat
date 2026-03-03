@@ -13,7 +13,7 @@ import Home from "./pages/Home";
 import VideoCallPage from './pages/VideoCallPage';
 
 // Components
-import VideoCallWidget from './components/VideoCallWidget';
+import CallNotification from './components/CallNotification';
 
 // Xử lý token hết hạn
 axios.interceptors.response.use(
@@ -63,7 +63,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 
-      <VideoCallWidget />
+      <CallNotification />
 
       <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
