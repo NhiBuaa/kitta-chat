@@ -6,7 +6,7 @@ import { CallContext } from '../context/CallContext';
 import { toast } from 'react-toastify';
 
 const VideoCallPage = () => {
-    const { partnerId } = useParams(); // đây là DB userId của đối phương
+    const { partnerId } = useParams();
     const [searchParams] = useSearchParams();
 
     const isIncoming = searchParams.get('incoming') === 'true';
@@ -34,6 +34,22 @@ const VideoCallPage = () => {
     const [camOn, setCamOn] = useState(true);
     const [isJoined, setIsJoined] = useState(false);
 
+    const notifyMediaChange = (newCam, newMic) => {
+        const targetId =
+            localStorage.getItem('activePartnerUserId') ||
+            localStorage.getItem('activePartnerSocketId') ||
+            call.from ||
+            localStorage.getItem('tempCallerId');
+
+        console.log('[notifyMediaChange] emit toggleMedia tới:', targetId, { cam: newCam, mic: newMic });
+
+        if (socket && targetId) {
+            socket.emit("toggleMedia", { to: targetId, cam: newCam, mic: newMic });
+        } else {
+            console.warn('[notifyMediaChange] Không tìm được targetId!');
+        }
+    };
+
     const toggleMic = () => {
         if (stream) {
             const newStatus = !micOn;
@@ -52,13 +68,6 @@ const VideoCallPage = () => {
         }
     };
 
-    const notifyMediaChange = (newCam, newMic) => {
-        const targetId = call.from || call.userToCall || localStorage.getItem('tempCallerId');
-        if (socket && targetId) {
-            socket.emit("toggleMedia", { to: targetId, cam: newCam, mic: newMic });
-        }
-    };
-
     const handleJoinCall = () => {
         if (!socket || !stream) {
             toast.warn("Vui lòng đợi kết nối...");
@@ -69,33 +78,26 @@ const VideoCallPage = () => {
             const success = answerCall(stream);
             if (success) setIsJoined(true);
         } else {
-            // ✅ Tìm socket ID hiện tại của partner từ onlineUsers theo DB userId
             let targetSocketId = null;
-            let targetUserId = partnerId; // DB userId từ URL param
+            let targetUserId = partnerId;
 
             if (Array.isArray(onlineUsers)) {
-                // Tìm theo DB userId trước (chính xác nhất)
                 const partner = onlineUsers.find(u => u.userId === partnerId);
                 if (partner) {
                     targetSocketId = partner.socketId;
-                    console.log(`[handleJoinCall] Tìm thấy partner: userId=${partner.userId}, socketId=${partner.socketId}`);
                 }
             }
 
-            // Fallback: nếu partnerId trong URL là socket ID ngắn
             if (!targetSocketId && partnerId.length < 24) {
                 targetSocketId = partnerId;
                 targetUserId = null;
             }
 
             if (targetSocketId) {
-                console.log(`[handleJoinCall] Gọi tới socketId=${targetSocketId}, userId=${targetUserId}`);
-                // ✅ Truyền thêm DB userId để CallContext lưu lại
                 callUser(targetSocketId, stream, targetUserId);
                 setIsJoined(true);
             } else {
                 toast.error("Người dùng không online hoặc chưa sẵn sàng.");
-                console.warn("[handleJoinCall] Không tìm thấy partner trong onlineUsers:", onlineUsers);
             }
         }
     };
@@ -104,7 +106,6 @@ const VideoCallPage = () => {
         leaveCall();
     };
 
-    // Gán video refs khi đang trong cuộc gọi
     useEffect(() => {
         if (isJoined && callAccepted && !callEnded) {
             if (myVideoFull.current && stream) myVideoFull.current.srcObject = stream;
@@ -112,7 +113,6 @@ const VideoCallPage = () => {
         }
     }, [isJoined, callAccepted, callEnded, stream, remoteStream]);
 
-    // Khởi tạo camera
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then((currentStream) => {
@@ -149,7 +149,7 @@ const VideoCallPage = () => {
         };
     }, [socket, currentUser]);
 
-    // --- Cuộc gọi kết thúc ---
+    // --- RENDER: Cuộc gọi kết thúc ---
     if (callEnded) {
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-[#1c1c1c] text-white">
@@ -167,10 +167,11 @@ const VideoCallPage = () => {
         );
     }
 
-    // --- Đang trong cuộc gọi ---
+    // --- RENDER: Đang trong cuộc gọi ---
     if (isJoined && callAccepted && !callEnded) {
         return (
             <div className="relative w-screen h-screen bg-black group overflow-hidden">
+                {/* Màn hình đối phương */}
                 <div className="w-full h-full relative">
                     <video
                         ref={userVideoFull}
@@ -193,6 +194,7 @@ const VideoCallPage = () => {
                     )}
                 </div>
 
+                {/* Màn hình của mình (PiP) */}
                 <div className="absolute top-6 right-6 w-48 md:w-64 aspect-video bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-700 shadow-2xl z-40">
                     <video
                         ref={myVideoFull}
@@ -212,6 +214,7 @@ const VideoCallPage = () => {
                     )}
                 </div>
 
+                {/* Thanh điều khiển */}
                 <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-gray-900/80 px-8 py-4 rounded-full backdrop-blur-md border border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={toggleCam} className={`p-4 rounded-full transition ${camOn ? 'bg-gray-500 hover:bg-gray-200' : 'bg-red-500 animate-pulse'}`}>
                         {camOn ? <FaVideo /> : <FaVideoSlash />}
@@ -227,7 +230,7 @@ const VideoCallPage = () => {
         );
     }
 
-    // --- Màn hình chuẩn bị ---
+    // --- RENDER: Màn hình chuẩn bị ---
     return (
         <div className="flex h-screen w-screen bg-[#1c1c1c] text-white">
             <div className="flex-1 flex flex-col items-center justify-center p-8 border-r border-gray-700">

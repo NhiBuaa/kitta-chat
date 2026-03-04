@@ -31,7 +31,6 @@ export const CallProvider = ({ children }) => {
         setStream(newStream);
     };
 
-    // Không dùng socket ID đã lưu từ trước vì nó thay đổi sau mỗi lần reconnect
     const getPartnerSocketId = () => {
         const savedSocketId = localStorage.getItem('activePartnerSocketId');
 
@@ -127,7 +126,6 @@ export const CallProvider = ({ children }) => {
             return false;
         }
 
-        // ✅ Lưu cả socketId lẫn userId của caller
         localStorage.setItem('activePartnerSocketId', callerId);
         if (callerUserId) {
             localStorage.setItem('activePartnerUserId', callerUserId);
@@ -164,7 +162,6 @@ export const CallProvider = ({ children }) => {
 
     // --- HÀM KẾT THÚC ---
     const leaveCall = () => {
-        // ✅ Luôn tra cứu socket ID mới nhất trước khi emit
         const partnerSocketId = getPartnerSocketId();
 
         if (socket && partnerSocketId) {
