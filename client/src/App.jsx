@@ -10,9 +10,10 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Home from "./pages/Home";
+import VideoCallPage from './pages/VideoCallPage';
 
 // Components
-import VideoCallWidget from './components/VideoCallWidget';
+import CallNotification from './components/CallNotification';
 
 // Xử lý token hết hạn
 axios.interceptors.response.use(
@@ -21,7 +22,7 @@ axios.interceptors.response.use(
   },
   (error) => {
     // Nếu Backend trả về lỗi
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 403) {
       console.log("Token hết hạn, đang đăng xuất...");
       // Xóa sạch dữ liệu cũ
       localStorage.removeItem('token');
@@ -56,12 +57,13 @@ function App() {
 
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+        <Route path="/video-call/:partnerId" element={<VideoCallPage />} />
 
         {/* Route không tồn tại thì về trang chủ */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 
-      <VideoCallWidget />
+      <CallNotification />
 
       <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>

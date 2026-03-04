@@ -33,7 +33,7 @@ const io = new Server(server, {
     }
 });
 
-// Lưu danh sách user đang online vào RAM để truy xuất nhanh
+// Lưu danh sách user đang online vào RAM
 let onlineUsers = new Map();
 global.onlineUsers = onlineUsers;
 
@@ -53,7 +53,7 @@ const handleUserConnected = async (socket, userId, socketId) => {
     // Lưu vào Map Online
     onlineUsers.set(userId, socketId);
 
-    // Join user vào room với userId (để nhận tin nhắn 1-1)
+    // Join user vào room với userId
     try {
         socket.join(userId);
         console.log(`User ${userId} joined room ${userId}`);
@@ -61,7 +61,7 @@ const handleUserConnected = async (socket, userId, socketId) => {
         console.error(`Lỗi khi join room cho user ${userId}:`, err);
     }
 
-    // Cập nhật DB thành ACTIVE (only if valid ObjectId)
+    // Cập nhật DB thành ACTIVE
     try {
         await User.findByIdAndUpdate(userId, {
             activityStatus: { state: 'active', lastSeen: new Date() }
@@ -79,14 +79,13 @@ const handleUserConnected = async (socket, userId, socketId) => {
 };
 
 io.on('connection', async (socket) => {
-    // Lấy userId từ client gửi lên (từ query string hoặc event)
+    // Lấy userId từ client gửi lên
     let userId = socket.handshake.query.userId;
 
     console.log(`[Socket Connection] ID: ${socket.id}, Query userId: ${userId}`);
 
     if (!userId || userId === "undefined") {
         console.log(`userId không hợp lệ từ query string, đợi event addNewUser`);
-        // Fallback: lắng nghe event addNewUser từ client
         socket.on("addNewUser", async (id) => {
             userId = id;
             if (!userId || typeof userId !== 'string' || userId.trim() === '') {
@@ -98,7 +97,6 @@ io.on('connection', async (socket) => {
         });
     }
 
-    // IIFE để đảm bảo user được connected trước khi setup listeners
     (async () => {
         try {
             await handleUserConnected(socket, userId, socket.id);
@@ -140,7 +138,7 @@ io.on('connection', async (socket) => {
     });
 
     // Lắng nghe sự kiện từ chối lời mời kết bạn
-    socket.on("rejectFriendRequest", async ({senderId, receiverId}) => {
+    socket.on("rejectFriendRequest", async ({ senderId, receiverId }) => {
         const senderSocketId = onlineUsers.get(senderId);
 
         if (senderSocketId) {
@@ -208,7 +206,6 @@ io.on('connection', async (socket) => {
             });
             console.log(`Group message sent to room ${receiverId}`);
         } else {
-            // LOGIC GỬI 1-1 - Emit cho cả Sender lẫn Receiver
             const messageData = {
                 senderId,
                 sender: senderInfo,
@@ -233,18 +230,16 @@ io.on('connection', async (socket) => {
         console.log(`Typing event: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}, senderName=${senderName}`);
 
         if (isGroup) {
-            // LOGIC TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
             socket.broadcast.to(receiverId).emit("getTyping", {
-                chatId: receiverId, // ID nhóm
+                chatId: receiverId,
                 isGroup: true,
                 senderName: senderName,
                 senderAvatar: senderAvatar
             });
             console.log(`Typing broadcast to group room ${receiverId} (excluding sender)`);
         } else {
-            // LOGIC TYPING 1-1 - Dùng User Room
             io.to(receiverId).emit("getTyping", {
-                chatId: senderId, // ID người gõ (user)
+                chatId: senderId,
                 isGroup: false,
                 senderAvatar: senderAvatar
             });
@@ -257,16 +252,14 @@ io.on('connection', async (socket) => {
         console.log(`Stop typing: senderId=${senderId}, receiverId=${receiverId}, isGroup=${isGroup}`);
 
         if (isGroup) {
-            // LOGIC STOP TYPING TRONG NHÓM - Dùng Room nhưng EXCLUDE sender
             socket.broadcast.to(receiverId).emit("getStopTyping", {
-                chatId: receiverId, // ID nhóm
+                chatId: receiverId,
                 isGroup: true
             });
             console.log(`Stop typing broadcast to group room ${receiverId} (excluding sender)`);
         } else {
-            // LOGIC STOP TYPING 1-1 - Dùng User Room
             io.to(receiverId).emit("getStopTyping", {
-                chatId: senderId, // ID người gõ (user)
+                chatId: senderId,
                 isGroup: false
             });
             console.log(`Stop typing sent to user room ${receiverId}`);
@@ -280,7 +273,6 @@ io.on('connection', async (socket) => {
                 const { groupId, readerId } = data;
                 if (!groupId || !readerId) return;
 
-                // Thêm readerId vào readBy cho tất cả message trong nhóm nếu chưa có
                 await Message.updateMany(
                     { conversationId: groupId, type: { $ne: 'system' }, readBy: { $ne: readerId } },
                     { $push: { readBy: readerId } }
@@ -315,34 +307,31 @@ io.on('connection', async (socket) => {
         }
     });
 
-    // --- Sự kiện bắt đầu gọi video/audio ---
+    // Sự kiện bắt đầu gọi video
     socket.emit("me", socket.id);
 
     // Gọi cho người dùng khác
-    socket.on("callUser", ({ userToCall, signalData, from, name }) => {
-        // userToCall: Socket ID của người nhận
-        // signalData: Dữ liệu mã hóa WebRTC của người gọi
-        // from: Socket ID người gọi
+    socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId }) => {
+        console.log(`[SERVER] Nhận lệnh callUser từ ${from} (dbId: ${callerDbId}) gọi tới ${userToCall}`);
 
-        console.log(`[SERVER] Nhận lệnh callUser từ ${from} gọi tới ${userToCall}`);
-
-        // Kiểm tra xem người nhận có trong phòng không
         const room = io.sockets.adapter.rooms.get(userToCall);
         if (room) {
             console.log(`[SERVER] Tìm thấy người nhận ${userToCall}, đang chuyển tiếp...`);
             io.to(userToCall).emit("callUser", {
                 signal: signalData,
                 from,
-                name
+                name,
+                callerDbId
             });
         } else {
-            console.log(`[SERVER] Không tìm thấy socketId ${userToCall} (Người dùng có thể đã offline hoặc sai ID)`);
+            console.log(`[SERVER] Không tìm thấy socketId ${userToCall}`);
+            // Báo lại cho người gọi biết người nhận không online
+            socket.emit("callRejected");
         }
     });
 
     // Người dùng trả lời cuộc gọi
     socket.on("answerCall", (data) => {
-        // data: { to: socketId người gọi, signal: Dữ liệu mã hóa WebRTC của người trả lời }
         io.to(data.to).emit("callAccepted", data.signal);
     })
 
@@ -356,6 +345,11 @@ io.on('connection', async (socket) => {
     socket.on("rejectCall", (data) => {
         io.to(data.to).emit("callRejected");
     })
+
+    // Yêu cầu đồng bộ Mic/Cam
+    socket.on("toggleMedia", ({ to, cam, mic }) => {
+        io.to(to).emit("updateMediaStatus", { cam, mic });
+    });
 });
 
 // Routes

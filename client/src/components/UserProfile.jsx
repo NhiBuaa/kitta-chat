@@ -11,15 +11,14 @@ const UserProfile = () => {
     });
     const [loading, setLoading] = useState(false);
 
-    // Giả lập load data user ban đầu (thực tế bạn gọi API get profile ở đây)
+    // Giả lập load data user ban đầu
     useEffect(() => {
         // Ví dụ data lấy từ API
         
-
         const initialData = {
             displayName: 'User Demo',
             status: 'Đang code ReactJS...',
-            avatarPreview: 'https://via.placeholder.com/150' // Avatar mặc định
+            avatarPreview: 'https://via.placeholder.com/150'
         };
         setFormData(prev => ({ ...prev, ...initialData }));
     }, []);
@@ -68,12 +67,12 @@ const UserProfile = () => {
             {/* Card Container */}
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
 
-                {/* Header với Gradient Green -> Teal */}
+                {/* Header */}
                 <div className="h-32 bg-gradient-to-r from-green-500 to-teal-500 relative">
                     {/* Tiêu đề ẩn hoặc nút back có thể đặt ở đây */}
                 </div>
 
-                {/* Phần Avatar (Nằm đè lên header và body) */}
+                {/* Phần Avatar */}
                 <div className="relative -mt-16 flex justify-center">
                     <div className="relative group">
                         <img
@@ -104,7 +103,7 @@ const UserProfile = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
 
-                        {/* Input: Tên hiển thị */}
+                        {/* Tên hiển thị */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Tên hiển thị</label>
                             <input
@@ -116,7 +115,7 @@ const UserProfile = () => {
                             />
                         </div>
 
-                        {/* Input: Trạng thái */}
+                        {/* Trạng thái */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái (Status)</label>
                             <textarea
@@ -128,7 +127,7 @@ const UserProfile = () => {
                             ></textarea>
                         </div>
 
-                        {/* Nút Save - Gradient Green -> Teal */}
+                        {/* Nút Save */}
                         <button
                             type="submit"
                             disabled={loading}
