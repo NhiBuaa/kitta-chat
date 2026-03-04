@@ -138,7 +138,7 @@ io.on('connection', async (socket) => {
     });
 
     // Lắng nghe sự kiện từ chối lời mời kết bạn
-    socket.on("rejectFriendRequest", async ({senderId, receiverId}) => {
+    socket.on("rejectFriendRequest", async ({ senderId, receiverId }) => {
         const senderSocketId = onlineUsers.get(senderId);
 
         if (senderSocketId) {
@@ -311,24 +311,22 @@ io.on('connection', async (socket) => {
     socket.emit("me", socket.id);
 
     // Gọi cho người dùng khác
-    socket.on("callUser", ({ userToCall, signalData, from, name }) => {
-        // userToCall: Socket ID của người nhận
-        // signalData: Dữ liệu mã hóa WebRTC của người gọi
-        // from: Socket ID người gọi
+    socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId }) => {
+        console.log(`[SERVER] Nhận lệnh callUser từ ${from} (dbId: ${callerDbId}) gọi tới ${userToCall}`);
 
-        console.log(`[SERVER] Nhận lệnh callUser từ ${from} gọi tới ${userToCall}`);
-
-        // Kiểm tra xem người nhận có trong phòng không
         const room = io.sockets.adapter.rooms.get(userToCall);
         if (room) {
             console.log(`[SERVER] Tìm thấy người nhận ${userToCall}, đang chuyển tiếp...`);
             io.to(userToCall).emit("callUser", {
                 signal: signalData,
                 from,
-                name
+                name,
+                callerDbId
             });
         } else {
-            console.log(`[SERVER] Không tìm thấy socketId ${userToCall} (Người dùng có thể đã offline hoặc sai ID)`);
+            console.log(`[SERVER] Không tìm thấy socketId ${userToCall}`);
+            // Báo lại cho người gọi biết người nhận không online
+            socket.emit("callRejected");
         }
     });
 
@@ -350,8 +348,8 @@ io.on('connection', async (socket) => {
 
     // Yêu cầu đồng bộ Mic/Cam
     socket.on("toggleMedia", ({ to, cam, mic }) => {
-    io.to(to).emit("updateMediaStatus", { cam, mic });
-});
+        io.to(to).emit("updateMediaStatus", { cam, mic });
+    });
 });
 
 // Routes

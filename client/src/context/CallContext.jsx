@@ -10,9 +10,8 @@ window.Buffer = [];
 const CallContext = createContext();
 
 export const CallProvider = ({ children }) => {
-    const { socket } = useSocket();
+    const { socket, onlineUsers } = useSocket();
 
-    // KHAI BÁO STATE & REF ---
     const [stream, setStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
     const [call, setCall] = useState({});
@@ -25,51 +24,78 @@ export const CallProvider = ({ children }) => {
     const myVideo = useRef();
     const userVideo = useRef();
     const connectionRef = useRef();
+    const streamRef = useRef(null);
 
-    // --- HÀM GỌI ĐI  ---
-    const callUser = async (receiverSocketId, localStream) => {
-        // Kiểm tra User từ LocalStorage
+    const updateStream = (newStream) => {
+        streamRef.current = newStream;
+        setStream(newStream);
+    };
+
+    // Không dùng socket ID đã lưu từ trước vì nó thay đổi sau mỗi lần reconnect
+    const getPartnerSocketId = () => {
+        const savedSocketId = localStorage.getItem('activePartnerSocketId');
+
+        const partnerUserId = localStorage.getItem('activePartnerUserId');
+
+        if (partnerUserId && Array.isArray(onlineUsers)) {
+            const found = onlineUsers.find(u => u.userId === partnerUserId);
+            if (found) {
+                console.log(`[getPartnerSocketId] Tìm thấy socket mới nhất cho userId ${partnerUserId}:`, found.socketId);
+                return found.socketId;
+            }
+        }
+
+        // Fallback: dùng socket ID đã lưu
+        console.log(`[getPartnerSocketId] Dùng savedSocketId:`, savedSocketId);
+        return savedSocketId;
+    };
+
+    const cleanupConnection = () => {
+        if (connectionRef.current) {
+            connectionRef.current.destroy();
+            connectionRef.current = null;
+        }
+
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+
+        setStream(null);
+        setRemoteStream(null);
+        setCallEnded(true);
+        setCallAccepted(false);
+        setIsCalling(false);
+        setCall({});
+    };
+
+    // --- HÀM GỌI ĐI ---
+    const callUser = async (receiverSocketId, localStream, receiverUserId = null) => {
         const userStr = localStorage.getItem('user');
         const freshUser = userStr ? JSON.parse(userStr) : null;
 
-        if (!freshUser) {
-            toast.error("Phiên đăng nhập hết hạn.");
-            return;
-        }
+        if (!freshUser) { toast.error("Phiên đăng nhập hết hạn."); return; }
+        if (!receiverSocketId || !localStream) { console.error("Thiếu thông tin để gọi"); return; }
+        if (!socket?.id) { toast.error("Mất kết nối máy chủ."); return; }
 
-        if (!receiverSocketId || !localStream) {
-            console.error("Thiếu thông tin để gọi:", { receiverSocketId, localStream });
-            return;
-        }
-
-        const mySocketId = socket?.id;
-        if (!mySocketId) {
-            toast.error("Mất kết nối máy chủ.");
-            return;
-        }
-
-        // Cập nhật State
-        setStream(localStream);
+        updateStream(localStream);
         setCallAccepted(false);
         setCallEnded(false);
         setIsCalling(true);
-
-        // Lưu ID đối phương
         setCall(prev => ({ ...prev, userToCall: receiverSocketId }));
-        localStorage.setItem('activePartnerSocketId', receiverSocketId);
 
-        // Tạo Peer
-        const peer = new Peer({
-            initiator: true,
-            trickle: false,
-            stream: localStream
-        });
+        localStorage.setItem('activePartnerSocketId', receiverSocketId);
+        if (receiverUserId) {
+            localStorage.setItem('activePartnerUserId', receiverUserId);
+        }
+
+        const peer = new Peer({ initiator: true, trickle: false, stream: localStream });
 
         peer.on("signal", (data) => {
             socket.emit("callUser", {
                 userToCall: receiverSocketId,
                 signalData: data,
-                from: mySocketId,
+                from: socket.id,
                 name: freshUser.displayName || "Người dùng",
                 callerDbId: freshUser.id
             });
@@ -77,16 +103,10 @@ export const CallProvider = ({ children }) => {
 
         peer.on("stream", (currentRemoteStream) => {
             setRemoteStream(currentRemoteStream);
-
-            if (userVideo.current) {
-                userVideo.current.srcObject = currentRemoteStream;
-            }
+            if (userVideo.current) userVideo.current.srcObject = currentRemoteStream;
         });
 
-        peer.on("error", (err) => {
-            console.error("Peer Error:", err);
-            leaveCall();
-        });
+        peer.on("error", (err) => { console.error("Peer Error:", err); leaveCall(); });
 
         socket.once("callAccepted", (signal) => {
             setCallAccepted(true);
@@ -98,33 +118,26 @@ export const CallProvider = ({ children }) => {
 
     // --- HÀM TRẢ LỜI ---
     const answerCall = (currentStream) => {
-        // Ưu tiên đọc từ LocalStorage
         const callerId = localStorage.getItem('tempCallerId') || call.from;
+        const callerUserId = localStorage.getItem('tempCallerUserId');
         const savedSignal = localStorage.getItem('tempCallSignal');
 
-        // Nếu không có trong LocalStorage thì thử tìm trong State
-        if (!savedSignal || !callerId) {
+        if (!savedSignal || !callerId || savedSignal === "undefined") {
             toast.error("Mất tín hiệu cuộc gọi.");
             return false;
         }
 
+        // ✅ Lưu cả socketId lẫn userId của caller
         localStorage.setItem('activePartnerSocketId', callerId);
-
-        console.log("🔍 Debug AnswerCall:", { callerId, hasSignal: !!savedSignal });
-
-        if (!savedSignal || !callerId || savedSignal === "undefined") {
-            toast.error("Lỗi tín hiệu. Không thể kết nối.");
-            return false;
+        if (callerUserId) {
+            localStorage.setItem('activePartnerUserId', callerUserId);
         }
 
         const signalToUse = JSON.parse(savedSignal);
         setCallAccepted(true);
+        updateStream(currentStream);
 
-        const peer = new Peer({
-            initiator: false,
-            trickle: false,
-            stream: currentStream,
-        });
+        const peer = new Peer({ initiator: false, trickle: false, stream: currentStream });
 
         peer.on("signal", (data) => {
             socket.emit("answerCall", { signal: data, to: callerId });
@@ -132,23 +145,18 @@ export const CallProvider = ({ children }) => {
 
         peer.on("stream", (currentRemoteStream) => {
             setRemoteStream(currentRemoteStream);
-            if (userVideo.current) {
-                userVideo.current.srcObject = currentRemoteStream;
-            }
+            if (userVideo.current) userVideo.current.srcObject = currentRemoteStream;
         });
 
-        peer.on("error", (err) => {
-            console.error("Peer Error:", err);
-            leaveCall();
-        });
+        peer.on("error", (err) => { console.error("Peer Error:", err); leaveCall(); });
 
         peer.signal(signalToUse);
         connectionRef.current = peer;
 
-        // Dọn dẹp LocalStorage
         setTimeout(() => {
             localStorage.removeItem('tempCallSignal');
             localStorage.removeItem('tempCallerId');
+            localStorage.removeItem('tempCallerUserId');
         }, 2000);
 
         return true;
@@ -156,32 +164,23 @@ export const CallProvider = ({ children }) => {
 
     // --- HÀM KẾT THÚC ---
     const leaveCall = () => {
-        const partnerId = localStorage.getItem('activePartnerSocketId');
+        // ✅ Luôn tra cứu socket ID mới nhất trước khi emit
+        const partnerSocketId = getPartnerSocketId();
 
-        if (socket && partnerId) {
-            console.log("Tín hiệu kết thúc gửi tới:", partnerId);
-            socket.emit("endCall", { to: partnerId });
+        if (socket && partnerSocketId) {
+            console.log("[leaveCall] Gửi endCall tới socket:", partnerSocketId);
+            socket.emit("endCall", { to: partnerSocketId });
+        } else {
+            console.warn("[leaveCall] Không tìm được socket ID của đối phương!");
         }
 
-        // Ngắt kết nối Peer
-        if (connectionRef.current) {
-            connectionRef.current.destroy();
-            connectionRef.current = null;
-        }
-
-        // Tắt camera/mic
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-
-        // Dọn dẹp bộ nhớ
-        setCallEnded(true);
         cleanupConnection();
-        localStorage.removeItem('activePartnerSocketId');
-    };
 
-    const cleanupConnection = () => {
-        if (connectionRef.current) connectionRef.current.destroy();
+        localStorage.removeItem('activePartnerSocketId');
+        localStorage.removeItem('activePartnerUserId');
+        localStorage.removeItem('tempCallerId');
+        localStorage.removeItem('tempCallerUserId');
+        localStorage.removeItem('tempCallSignal');
     };
 
     // --- LẮNG NGHE SOCKET ---
@@ -192,8 +191,13 @@ export const CallProvider = ({ children }) => {
 
         socket.on("callUser", (data) => {
             console.log("[Socket] Nhận cuộc gọi:", data);
-
             const validSignal = data.signal || data.signalData;
+
+            localStorage.setItem('tempCallerId', data.from);           // socket ID của caller
+            localStorage.setItem('tempCallSignal', JSON.stringify(validSignal));
+            if (data.callerDbId) {
+                localStorage.setItem('tempCallerUserId', data.callerDbId);
+            }
 
             setCall({
                 isReceivingCall: true,
@@ -205,14 +209,13 @@ export const CallProvider = ({ children }) => {
         });
 
         socket.on("callEnded", () => {
-            setCallEnded(true);
-
-            if (connectionRef.current) {
-                connectionRef.current.destroy();
-            }
-            console.log("Đối phương đã tắt máy");
-            window.localStream?.getTracks().forEach(track => track.stop());
+            console.log("[Socket] Đối phương đã tắt máy, đang cleanup...");
             cleanupConnection();
+            localStorage.removeItem('activePartnerSocketId');
+            localStorage.removeItem('activePartnerUserId');
+            localStorage.removeItem('tempCallerId');
+            localStorage.removeItem('tempCallerUserId');
+            localStorage.removeItem('tempCallSignal');
         });
 
         socket.on("callRejected", () => {
@@ -226,11 +229,12 @@ export const CallProvider = ({ children }) => {
         });
 
         return () => {
+            socket.off("me");
             socket.off("callUser");
             socket.off("callEnded");
             socket.off("callRejected");
             socket.off("updateMediaStatus");
-        }
+        };
     }, [socket]);
 
     return (
@@ -241,7 +245,7 @@ export const CallProvider = ({ children }) => {
                 myVideo,
                 userVideo,
                 stream,
-                setStream,
+                setStream: updateStream,
                 callEnded,
                 me,
                 callUser,
