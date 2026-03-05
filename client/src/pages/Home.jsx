@@ -11,8 +11,9 @@ import {
   FaSmile,
   FaCheck,
   FaCheckDouble,
-  FaImage,
   FaTimesCircle,
+  FaPaperclip,
+  FaImage,
 } from "react-icons/fa";
 import UserProfileSidebar from "../components/UserProfileSidebar";
 import axios from "axios";
@@ -55,6 +56,7 @@ const Home = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
   const [sentRequests, setSentRequests] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   // --- CONTEXT ---
   const { callUser } = useContext(CallContext);
@@ -63,7 +65,8 @@ const Home = () => {
   // REF
   const activeChatRef = useRef(null);
   const scrollRef = useRef();
-  const fileInputRef = useRef();
+  const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
   // BIẾN
@@ -591,6 +594,7 @@ const Home = () => {
             text: data.text,
             image: data.image,
             type: data.type,
+            files: data.files,
             createdAt: data.createdAt,
             isRead: computedIsRead,
           },
@@ -874,7 +878,7 @@ const Home = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() && !imageFile) return;
+    if (!newMessage.trim() && !imageFile && selectedFiles.length === 0) return;
 
     // Kiểm tra xem user còn trong group hay không (nếu là group)
     if (activeChat?.members) {
@@ -889,10 +893,14 @@ const Home = () => {
     }
 
     let imageUrl = "";
+    let fileUrls = [];
+
     try {
+      // Upload 1 ảnh
       if (imageFile) {
         const formData = new FormData();
         formData.append("image", imageFile);
+
         const uploadRes = await axios.post(
           `${API_URL}/api/messages/upload`,
           formData,
@@ -903,7 +911,30 @@ const Home = () => {
             },
           },
         );
+
         imageUrl = uploadRes.data.imageUrl;
+      }
+
+      // 🔥 Upload nhiều file
+      if (selectedFiles.length > 0) {
+        const formData = new FormData();
+
+        selectedFiles.forEach((item) => {
+          formData.append("files", item.file);
+        });
+
+        const uploadRes = await axios.post(
+          `${API_URL}/api/messages/upload-multiple`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          },
+        );
+
+        fileUrls = uploadRes.data.files;
       }
 
       const isGroup = activeChat.members ? true : false;
@@ -912,6 +943,7 @@ const Home = () => {
         receiver: activeChat._id,
         text: newMessage,
         image: imageUrl,
+        files: fileUrls,
         isGroup: isGroup,
       };
 
@@ -929,6 +961,7 @@ const Home = () => {
         receiverId: activeChat._id,
         text: savedMessage.text,
         image: savedMessage.image,
+        files: savedMessage.files,
       });
 
       // 3. Update UI Sidebar (Đưa lên đầu)
@@ -961,6 +994,7 @@ const Home = () => {
       setNewMessage("");
       clearImage();
       setShowEmoji(false);
+      setSelectedFiles([]);
     } catch (err) {
       console.error(err);
       toast.error("Lỗi gửi tin nhắn");
@@ -971,6 +1005,7 @@ const Home = () => {
     setNewMessage((prev) => prev + emojiObject.emoji);
   };
 
+  // xử lý chọn ảnh gửi
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -979,10 +1014,39 @@ const Home = () => {
     }
   };
 
+  // xóa ảnh đã chọn
   const clearImage = () => {
     setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+  // xử lý chọn file gửi
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+
+    const filesWithPreview = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setSelectedFiles((prev) => [...prev, ...filesWithPreview]);
+
+    // reset input để có thể chọn lại cùng file nếu muốn
+    e.target.value = "";
+  };
+
+  // xóa file đã chọn
+  const removeFile = (index) => {
+    setSelectedFiles((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+
+      // nếu xoá hết thì reset input
+      if (updated.length === 0 && fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      return updated;
+    });
   };
 
   const handleLogout = () => {
@@ -1357,6 +1421,22 @@ const Home = () => {
                             }
                           />
                         )}
+                        {/* Render files nếu có */}
+                        {m.files && m.files.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {m.files.map((fileUrl, i) => (
+                              <a
+                                key={i}
+                                href={`${API_URL}${fileUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block text-xs text-blue-600 underline break-all"
+                              >
+                                📎 {fileUrl.split("/").pop()}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                         {m.text && <span>{m.text}</span>}
                         {isMe && (
                           <div className="self-end mt-1 text-right">
@@ -1415,6 +1495,7 @@ const Home = () => {
                 );
               })}
 
+              {/* hiển thị trạng thái đang nhập tin nhắn */}
               {isTyping && (
                 <div className="flex items-center ml-2 mt-2">
                   <img
@@ -1426,7 +1507,7 @@ const Home = () => {
                   <div>
                     {typingUserName && activeChat.members && (
                       <div className="text-xs text-gray-500 ml-1 mb-1">
-                        {typingUserName} đang gõ...
+                        {typingUserName} đang nhập tin nhắn...
                       </div>
                     )}
                     <div className="bg-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center space-x-1 w-16 h-9">
@@ -1440,6 +1521,7 @@ const Home = () => {
             </div>
 
             <div className="bg-white p-4 border-t border-gray-200">
+              {/* xem hình ảnh trước gửi */}
               {imagePreview && (
                 <div className="absolute bottom-20 left-4 bg-white p-2 rounded-lg shadow-lg border border-gray-200">
                   <div className="relative">
@@ -1457,11 +1539,45 @@ const Home = () => {
                   </div>
                 </div>
               )}
+
+              {/* xem file trước khi gửi */}
+
+              {selectedFiles.length > 0 && (
+                <div className="absolute bottom-20 left-4 bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+                  <div className="flex gap-3 flex-wrap max-w-xs">
+                    {selectedFiles.map((item, index) => (
+                      <div key={index} className="relative">
+                        {item.file.type.startsWith("image/") ? (
+                          <img
+                            src={item.preview}
+                            alt="preview"
+                            className="w-24 h-24 object-cover rounded-md"
+                          />
+                        ) : (
+                          <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded-md text-xs text-center p-2">
+                            📄 {item.file.name}
+                          </div>
+                        )}
+
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <FaTimesCircle size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* icon */}
               {showEmoji && (
                 <div className="absolute bottom-20 left-4 z-10">
                   <EmojiPicker onEmojiClick={onEmojiClick} />
                 </div>
               )}
+
+              {/* form gửi tin nhắn  */}
               <form
                 onSubmit={handleSendMessage}
                 className="flex items-center bg-gray-100 rounded-full px-4 py-2"
@@ -1470,23 +1586,50 @@ const Home = () => {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  ref={fileInputRef}
+                  ref={imageInputRef}
                   onChange={handleImageChange}
                 />
-                <button
-                  type="button"
-                  className="text-gray-500 hover:text-green-600 mr-3"
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  <FaImage size={20} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEmoji(!showEmoji)}
-                  className="text-gray-500 hover:text-green-600 mr-3"
-                >
-                  <FaSmile size={20} />
-                </button>
+
+                <input
+                  type="file"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                  multiple
+                />
+                <div className="flex items-center gap-3">
+                  {/* nút gửi ảnh */}
+                  <button
+                    type="button"
+                    title="Chọn ảnh để gửi"
+                    onClick={() => imageInputRef.current.click()}
+                    className="text-gray-500 hover:text-green-600 transition"
+                  >
+                    <FaImage size={18} />
+                  </button>
+
+                  {/* nút gửi file */}
+                  <button
+                    type="button"
+                    title="Chọn file để gửi"
+                    onClick={() => fileInputRef.current.click()}
+                    className="text-gray-500 hover:text-green-600 transition"
+                  >
+                    <FaPaperclip size={18} />
+                  </button>
+
+                  {/* gửi emoji  */}
+                  <button
+                    type="button"
+                    onClick={() => setShowEmoji(!showEmoji)}
+                    className="text-gray-500 hover:text-green-600 mr-3 transition"
+                  >
+                    <FaSmile size={18} />
+                  </button>
+                </div>
+
+                {/* chỗ nhập tin nhắn */}
                 <input
                   type="text"
                   placeholder="Nhập tin nhắn..."
@@ -1498,7 +1641,7 @@ const Home = () => {
                   type="submit"
                   className="text-green-600 hover:text-green-800 ml-3"
                 >
-                  <FaPaperPlane size={20} />
+                  <FaPaperPlane size={18} />
                 </button>
               </form>
             </div>
@@ -1508,9 +1651,7 @@ const Home = () => {
             <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4">
               <FaPaperPlane size={40} className="text-gray-400 ml-2" />
             </div>
-            <p className="text-lg">
-              Chọn một cuộc trò chuyện để bắt đầu cuộc trò chuyện
-            </p>
+            <p className="text-lg">Chọn một cuộc trò chuyện để bắt đầu.</p>
           </div>
         )}
       </div>
