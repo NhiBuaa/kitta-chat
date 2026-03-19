@@ -250,7 +250,7 @@ const renameGroup = async (req, res) => {
             createdAt: systemMessage.createdAt,
             isGroup: true
         });
-        
+
         // Emit event riêng để update group info (tên, avatar)
         io.to(groupId).emit('groupRenamed', {
             groupId: groupId,
@@ -270,7 +270,7 @@ const transferAdmin = async (req, res) => {
     try {
         const { groupId } = req.params;
         const { newAdminId } = req.body;
-        const currentAdminId = req.user.id; // Lưu ý: kiểm tra xem là id hay _id
+        const currentAdminId = req.user.id;
         const io = req.app.get('socketio');
 
         const group = await Group.findById(groupId);
@@ -278,41 +278,40 @@ const transferAdmin = async (req, res) => {
             return res.status(404).json({ success: false, message: "Nhóm không tồn tại" });
         }
 
-        // 1. Kiểm tra quyền (Sửa so sánh .toString() để an toàn)
+        // Kiểm tra quyền
         if (group.admin.toString() !== currentAdminId) {
             return res.status(403).json({ success: false, message: "Chỉ admin mới có thể chuyển quyền" });
         }
 
-        // 2. Kiểm tra thành viên tồn tại
+        // Kiểm tra thành viên tồn tại
         if (!group.members.some(m => m.toString() === newAdminId)) {
             return res.status(400).json({ success: false, message: "Người dùng không phải thành viên nhóm" });
         }
 
-        // 3. Cập nhật DB
+        // Cập nhật DB
         group.admin = newAdminId;
         await group.save();
 
-        // 4. Tạo tin nhắn hệ thống
-        // (Nên query database song song để nhanh hơn dùng await từng cái)
+        // Tạo tin nhắn hệ thống
         const [oldAdmin, newAdmin] = await Promise.all([
             User.findById(currentAdminId),
             User.findById(newAdminId)
         ]);
 
-        const oldName = oldAdmin.displayName || oldAdmin.username; // Dùng username thay vì split email cho an toàn
+        const oldName = oldAdmin.displayName || oldAdmin.username;
         const newName = newAdmin.displayName || newAdmin.username;
-        
+
         const systemMessage = await createSystemMessage(
             groupId,
             `${oldName} đã chuyển quyền trưởng nhóm cho ${newName}`
         );
 
-        // 5. Populate dữ liệu nhóm để trả về cho client (nếu cần cập nhật UI ngay)
-        // const fullGroup = await Group.findById(groupId).populate('members', '-password');
+        // Populate dữ liệu nhóm để trả về cho client (nếu cần cập nhật UI ngay)
+        const updatedGroup = await Group.findById(groupId).populate('members', '-password');
 
-        // --- TỐI ƯU SOCKET (DÙNG ROOM) ---
-        
-        // A. Gửi tin nhắn hệ thống vào phòng
+        // TỐI ƯU SOCKET (DÙNG ROOM)
+
+        // Gửi tin nhắn hệ thống vào phòng
         io.to(groupId).emit('getMessage', {
             senderId: null,
             sender: null,
@@ -323,13 +322,13 @@ const transferAdmin = async (req, res) => {
             isGroup: true
         });
 
-        // B. Gửi sự kiện đổi Admin vào phòng (để client cập nhật UI nút bấm, menu...)
+        // Gửi sự kiện đổi Admin vào phòng
         io.to(groupId).emit('groupAdminChanged', {
             groupId: groupId,
             newAdminId: newAdminId
         });
 
-        res.json({ success: true, message: "Chuyển quyền thành công" });
+        res.json({ success: true, message: "Chuyển quyền thành công", group: updatedGroup });
 
     } catch (error) {
         console.error(error);
@@ -374,7 +373,7 @@ const deleteGroup = async (req, res) => {
 
         // Xóa nhóm
         await Group.findByIdAndDelete(groupId);
-        
+
         // Xóa tất cả messages của nhóm
         await Message.deleteMany({ conversationId: groupId });
 

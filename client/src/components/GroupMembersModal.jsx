@@ -118,14 +118,16 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
 
           if (res.data.success) {
             toast.success("Chuyển quyền trưởng nhóm thành công");
+
             const updatedGroup = res.data.group;
-            setMembers(updatedGroup.members);
-            onGroupUpdated?.(updatedGroup);
-            setTransferringAdmin(false);
-            // Sau khi chuyển quyền, nếu đang trong luồng rời nhóm thì thực hiện rời
-            if (transferringAdmin) {
-              setTimeout(() => handleRemoveMember(currentUser._id), 500);
+            if (updatedGroup) {
+              setMembers(updatedGroup.members);
+              onGroupUpdated?.(updatedGroup);
             }
+
+            setTransferringAdmin(false);
+
+            
           }
           setConfirmModal({ ...confirmModal, isOpen: false });
         } catch (error) {
@@ -248,7 +250,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
                   </>
                 )}
 
-                {/* Admin Actions: Tự rời nhóm (khi đã bấm nút chuyển quyền) */}
+                {/* Khi admin tự rời nhóm  */}
                 {isAdmin &&
                   member._id === currentUser._id &&
                   members.length > 1 && (
@@ -256,8 +258,8 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
                       onClick={() =>
                         transferringAdmin
                           ? toast.info(
-                              "Vui lòng chọn người chuẩn bị nhận quyền",
-                            )
+                            "Vui lòng chọn người chuẩn bị nhận quyền",
+                          )
                           : handleRemoveMember(member._id)
                       }
                       className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors"
@@ -268,7 +270,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
                     </button>
                   )}
 
-                {/* Member Actions: Tự rời nhóm */}
+                {/* Member tự rời nhóm*/}
                 {!isAdmin && member._id === currentUser._id && (
                   <button
                     onClick={() => handleRemoveMember(member._id)}
