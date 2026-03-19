@@ -389,4 +389,25 @@ const deleteGroup = async (req, res) => {
     }
 };
 
-module.exports = { createGroup, getMyGroups, addMember, removeMember, renameGroup, transferAdmin, deleteGroup };
+// [GET] /api/groups/:groupId (Lấy thông tin chi tiết nhóm)
+const getGroupById = async (req, res) => {
+    try {
+        const { groupId } = req.params;
+
+        const group = await Group.findById(groupId).populate(
+            "members",
+            "displayName avatar email username activityStatus"
+        );
+
+        if (!group) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy group" });
+        }
+
+        res.status(200).json(group);
+    } catch (err) {
+        console.log("Error getGroupById groupController: ", err);
+        res.status(500).json({ success: false, message: "Lỗi Server" });
+    }
+}
+
+module.exports = { createGroup, getMyGroups, addMember, removeMember, renameGroup, transferAdmin, deleteGroup, getGroupById };

@@ -9,5 +9,6 @@ router.post('/:groupId/remove-member', authMiddleware, groupController.removeMem
 router.post('/:groupId/transfer-admin', authMiddleware, groupController.transferAdmin);
 router.put('/:groupId/rename', authMiddleware, groupController.renameGroup);
 router.delete('/:groupId', authMiddleware, groupController.deleteGroup);
+router.get("/:groupId", groupController.getGroupById);
 
 module.exports = router;
