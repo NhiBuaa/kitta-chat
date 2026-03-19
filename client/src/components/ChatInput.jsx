@@ -1,79 +1,71 @@
 import React from "react";
-import { FaImage, FaPaperclip, FaSmile, FaPaperPlane } from "react-icons/fa";
+import { FaImage, FaPaperclip, FaSmile, FaPaperPlane, FaTimesCircle } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
+import { UploadItem } from "../components/UploadItem";
+import { FilePicker } from "./FilePicker"
 
 const ChatInput = ({
     showEmoji,
     setShowEmoji,
     onEmojiClick,
     handleSendMessage,
-    imageInputRef,
-    handleImageChange,
-    fileInputRef,
-    handleFileChange,
     newMessage,
     handleInputChange,
+    uploadQueue,
+    addFiles,
+    removeUploadItem
 }) => {
     return (
         <div className="bg-white p-4 border-t border-gray-200 relative shrink-0">
-            {/* --- EMOJI PICKER --- */}
+
+            {/* KHU VỰC HIỂN THỊ FILE ĐANG TẢI LÊN */}
+            {uploadQueue && uploadQueue.length > 0 && (
+                <div className="absolute bottom-20 left-4 bg-white p-3 rounded-lg shadow-xl border border-gray-200 z-50 w-80 max-h-64 overflow-y-auto">
+                    <div className="text-xs font-bold text-gray-500 mb-2 uppercase">Đính kèm:</div>
+                    {uploadQueue.map((item) => (
+                        <div key={item.id} className="relative mb-2 pr-2">
+                            <UploadItem item={item} />
+
+                            {/* Nút Xóa File */}
+                            <button
+                                type="button"
+                                onClick={() => removeUploadItem(item.id)}
+                                className="absolute top-1 right-0 bg-gray-100 text-red-500 rounded-full p-1 hover:bg-red-100 transition"
+                            >
+                                <FaTimesCircle size={14} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* KHU VỰC HIỂN THỊ EMOJI */}
             {showEmoji && (
                 <div className="absolute bottom-20 left-4 z-10 shadow-xl rounded-lg overflow-hidden">
                     <EmojiPicker onEmojiClick={onEmojiClick} />
                 </div>
             )}
 
-            {/* --- FORM NHẬP TIN NHẮN --- */}
-            <form
-                onSubmit={handleSendMessage}
-                className="flex items-center bg-gray-100 rounded-full px-4 py-2"
-            >
-                {/* Input Ẩn (Dùng ref để click từ icon) */}
-                <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    ref={imageInputRef}
-                    onChange={handleImageChange}
-                />
-                <input
-                    type="file"
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    multiple
-                />
-
-                {/* Cụm Nút Đính Kèm */}
+            {/* FORM NHẬP LIỆU */}
+            <form onSubmit={handleSendMessage} className="flex items-center bg-gray-100 rounded-full px-4 py-2">
                 <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        title="Chọn ảnh để gửi"
-                        onClick={() => imageInputRef.current.click()}
-                        className="text-gray-500 hover:text-green-600 transition"
-                    >
-                        <FaImage size={18} />
-                    </button>
+                    <FilePicker onFilesSelected={addFiles} accept="image/*">
+                        <button type="button" title="Gửi ảnh" className="text-gray-500 hover:text-green-500 transition">
+                            <FaImage size={18} />
+                        </button>
+                    </FilePicker>
 
-                    <button
-                        type="button"
-                        title="Chọn file để gửi"
-                        onClick={() => fileInputRef.current.click()}
-                        className="text-gray-500 hover:text-green-600 transition"
-                    >
-                        <FaPaperclip size={18} />
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => setShowEmoji(!showEmoji)}
-                        className="text-gray-500 hover:text-green-600 mr-3 transition"
-                    >
+                    {/* Bọc icon File bằng FilePicker */}
+                    <FilePicker onFilesSelected={addFiles} accept="*/*">
+                        <button type="button" title="Gửi tài liệu" className="text-gray-500 hover:text-green-500 transition">
+                            <FaPaperclip size={18} />
+                        </button>
+                    </FilePicker>
+                    <button type="button" onClick={() => setShowEmoji(!showEmoji)} className="text-gray-500 hover:text-yellow-500 mr-3 transition">
                         <FaSmile size={18} />
                     </button>
                 </div>
 
-                {/* Ô Nhập Text */}
                 <input
                     type="text"
                     placeholder="Nhập tin nhắn..."
@@ -81,12 +73,7 @@ const ChatInput = ({
                     value={newMessage}
                     onChange={handleInputChange}
                 />
-
-                {/* Nút Gửi */}
-                <button
-                    type="submit"
-                    className="text-green-600 hover:text-green-800 ml-3 transition transform hover:scale-110"
-                >
+                <button type="submit" className="text-green-800 hover:text-green-800 ml-3 transition transform hover:scale-110">
                     <FaPaperPlane size={18} />
                 </button>
             </form>

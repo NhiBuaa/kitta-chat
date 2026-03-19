@@ -403,6 +403,7 @@ app.use("/api/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/messages", messageRoutes);
 app.use("/api/groups", require("./src/routes/group"));
+app.use("/api/files", require("./src/routes/file"))
 
 // Start Server
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

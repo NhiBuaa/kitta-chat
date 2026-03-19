@@ -2,18 +2,23 @@ import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-// --- Components ---
+// COMPONENTS
 import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import UserProfileSidebar from "../components/UserProfileSidebar";
 import CreateGroupModal from "../components/CreateGroupModal";
 import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
+import ChatInput from "../components/ChatInput";
+import { FilePicker } from "../components/FilePicker"
 
-// --- Context & Services ---
+// CONTEXT & SERVICE
 import { CallContext } from "../context/CallContext";
 import { useSocket } from "../context/SocketContext";
 import { sendFriendRequest } from "../services/userService";
+
+// HOOK
+import { useUploader } from '../hooks/useUploader'
 
 const Home = () => {
   // STATE
@@ -25,15 +30,13 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // State tin nhắn & chat
+  // STATE TIN NHẮN & CHAT
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserName, setTypingUserName] = useState("");
   const [typingUserAvatar, setTypingUserAvatar] = useState(null);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
   const [groups, setGroups] = useState([]);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showGroupMembers, setShowGroupMembers] = useState(false);
@@ -41,23 +44,23 @@ const Home = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
   const [sentRequests, setSentRequests] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
 
-  // --- CONTEXT ---
+  // CONTEXT
   const { callUser } = useContext(CallContext);
   const { onlineUsers, socket } = useSocket();
 
   // REF
   const activeChatRef = useRef(null);
   const scrollRef = useRef();
-  const fileInputRef = useRef(null);
-  const imageInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
   // BIẾN
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // --- HÀM XỬ LÝ GỌI VIDEO ---
+  // HOOK
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
+
+  // HÀM XỬ LÝ GỌI VIDEO
   const handleVideoCall = () => {
     if (!currentChatUser) return;
     const chatUserId = currentChatUser._id || currentChatUser.id;
@@ -77,7 +80,7 @@ const Home = () => {
     }
   };
 
-  // --- CÁC BIẾN TÍNH TOÁN ---
+  // CÁC BIẾN TÍNH TOÁN
   const currentChatUser = activeChat
     ? activeChat.members
       ? activeChat
@@ -90,7 +93,7 @@ const Home = () => {
     (currentChatUser.isFriend ||
       users.some((u) => u._id === currentChatUser._id));
 
-  // --- USE EFFECTS ---
+  // USE EFFECTS
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (socket && userStr) {
@@ -123,7 +126,7 @@ const Home = () => {
     }
   }, [activeChat, socket]);
 
-  // --- CÁC HÀM HELPER & API ---
+  // CÁC HÀM HELPER & API
   const fetchNewConversation = useCallback(
     async (targetId, isGroup, messageData) => {
       try {
@@ -283,7 +286,7 @@ const Home = () => {
 
   const usersToDisplay = searchTerm.trim() ? searchResult : users;
 
-  // --- SOCKET CONNECTION ---
+  // SOCKET CONNECTION
   useEffect(() => {
     if (!socket || !currentUser) return;
 
@@ -471,13 +474,14 @@ const Home = () => {
       const currentActiveChat = activeChatRef.current;
       setUsers((prevUsers) => {
         const updatedUsers = [...prevUsers];
-        const targetId = data.isGroup ? data.receiverId : data.senderId;
+        const targetId = data.isGroup ? data.receiverId : (data.senderId === currentUser._id ? data.receiverId : data.senderId);
         const index = updatedUsers.findIndex((u) => u._id === targetId);
 
         if (index !== -1) {
           const userToUpdate = updatedUsers[index];
           let previewContent = data.text;
           if (!previewContent && data.image) previewContent = "[Hình ảnh]";
+          if (!previewContent && data.attachments?.length > 0) previewContent = "[Tệp đính kèm]";
 
           const updatedUser = {
             ...userToUpdate,
@@ -521,6 +525,7 @@ const Home = () => {
             image: data.image,
             type: data.type,
             files: data.files,
+            attachments: data.attachments,
             createdAt: data.createdAt,
             isRead: computedIsRead,
           },
@@ -788,12 +793,23 @@ const Home = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() && !imageFile && selectedFiles.length === 0) return;
 
+    const isUploading = uploadQueue.some(item => item.status === 'uploading');
+    if (isUploading) {
+      toast.warning("Vui lòng chờ file tải lên hoàn tất trước khi gửi!");
+      return;
+    }
+
+    const attachmentIds = uploadQueue
+      .filter(item => item.status === 'completed' && item.dbFileId)
+      .map(item => item.dbFileId);
+
+    // Nếu không có text và không có file nào thì dừng
+    if (!newMessage.trim() && attachmentIds.length === 0) return;
+
+    // Kiểm tra quyền trong nhóm
     if (activeChat?.members) {
-      const isStillMember = activeChat.members.some(
-        (m) => m._id === currentUser._id
-      );
+      const isStillMember = activeChat.members.some((m) => m._id === currentUser._id);
       if (!isStillMember) {
         toast.error("Bạn đã bị xóa khỏi nhóm này");
         setActiveChat(null);
@@ -801,143 +817,45 @@ const Home = () => {
       }
     }
 
-    let imageUrl = "";
-    let fileUrls = [];
-
     try {
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append("image", imageFile);
-
-        const uploadRes = await axios.post(
-          `${API_URL}/api/messages/upload`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        imageUrl = uploadRes.data.imageUrl;
-      }
-
-      if (selectedFiles.length > 0) {
-        const formData = new FormData();
-        selectedFiles.forEach((item) => {
-          formData.append("files", item.file);
-        });
-
-        const uploadRes = await axios.post(
-          `${API_URL}/api/messages/upload-multiple`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        fileUrls = uploadRes.data.files;
-      }
-
       const isGroup = activeChat.members ? true : false;
       const messagePayload = {
         sender: currentUser._id,
         receiver: activeChat._id,
         text: newMessage,
-        image: imageUrl,
-        files: fileUrls,
+        attachments: attachmentIds,
         isGroup: isGroup,
+        type: attachmentIds.length > 0 ? "file" : "text",
       };
 
+      // GỌI API LƯU TIN NHẮN
       const res = await axios.post(`${API_URL}/api/messages`, messagePayload, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const savedMessage = res.data;
 
+      // BẮN SOCKET CHO NGƯỜI NHẬN
       socket.emit("sendMessage", {
-        ...messagePayload,
+        ...savedMessage,
         createdAt: savedMessage.createdAt,
         senderId: currentUser._id,
         receiverId: activeChat._id,
+        isGroup: isGroup,
         text: savedMessage.text,
         image: savedMessage.image,
         files: savedMessage.files,
+        attachments: savedMessage.attachments,
       });
 
-      setUsers((prevUsers) => {
-        const updatedUsers = [...prevUsers];
-        const index = updatedUsers.findIndex((u) => u._id === activeChat._id);
-
-        if (index !== -1) {
-          const userToUpdate = updatedUsers[index];
-          let previewContent = savedMessage.text;
-          if (!previewContent && savedMessage.image)
-            previewContent = "[Hình ảnh]";
-
-          const updatedUser = {
-            ...userToUpdate,
-            lastMessage: {
-              content: previewContent,
-              senderId: currentUser._id,
-              createdAt: savedMessage.createdAt || new Date().toISOString(),
-              isRead: false,
-            },
-            hasUnread: false,
-          };
-          updatedUsers.splice(index, 1);
-          updatedUsers.unshift(updatedUser);
-        }
-        return updatedUsers;
-      });
-
+      // CẬP NHẬT GIAO DIỆN
       setNewMessage("");
-      clearImage();
+      clearUploads();
       setShowEmoji(false);
-      setSelectedFiles([]);
+
     } catch (err) {
       console.error(err);
       toast.error("Lỗi gửi tin nhắn");
     }
-  };
-
-  const onEmojiClick = (emojiObject) => {
-    setNewMessage((prev) => prev + emojiObject.emoji);
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const clearImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const filesWithPreview = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setSelectedFiles((prev) => [...prev, ...filesWithPreview]);
-    e.target.value = "";
-  };
-
-  const removeFile = (index) => {
-    setSelectedFiles((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      if (updated.length === 0 && fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      return updated;
-    });
   };
 
   const handleLogout = () => {
@@ -958,7 +876,7 @@ const Home = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* 1. SIDEBAR */}
+      {/* SIDEBAR */}
       <Sidebar
         currentUser={currentUser}
         setShowProfile={setShowProfile}
@@ -980,44 +898,53 @@ const Home = () => {
         handleAddFriend={handleAddFriend}
       />
 
-      {/* 2. CHAT WINDOW */}
-      <div className="flex-1 flex flex-col bg-gray-50">
-        <ChatWindow
-          activeChat={activeChat}
-          currentChatUser={currentChatUser}
-          currentUser={currentUser}
-          messages={messages}
-          users={users}
-          isFriend={isFriend}
-          isTyping={isTyping}
-          typingUserName={typingUserName}
-          typingUserAvatar={typingUserAvatar}
-          scrollRef={scrollRef}
-          API_URL={API_URL}
-          getAvatarUrl={getAvatarUrl}
-          checkIsOnline={checkIsOnline}
-          handleVideoCall={handleVideoCall}
-          setShowGroupMembers={setShowGroupMembers}
-          handleScrollToBottom={handleScrollToBottom}
-          // Truyền nốt các prop dành cho form nhập liệu và preview
-          imagePreview={imagePreview}
-          clearImage={clearImage}
-          selectedFiles={selectedFiles}
-          removeFile={removeFile}
-          showEmoji={showEmoji}
-          setShowEmoji={setShowEmoji}
-          onEmojiClick={onEmojiClick}
-          handleSendMessage={handleSendMessage}
-          imageInputRef={imageInputRef}
-          handleImageChange={handleImageChange}
-          fileInputRef={fileInputRef}
-          handleFileChange={handleFileChange}
-          newMessage={newMessage}
-          handleInputChange={handleInputChange}
-        />
+      {/* CHAT WINDOW */}
+      <div className="flex-1 flex flex-col bg-gray-50 h-full">
+        {/* NƯỚC CỜ THẦN THÁNH: Bọc toàn bộ cột phải bằng FilePicker Kéo Thả */}
+        {activeChat && currentChatUser ? (
+          <FilePicker
+            onFilesSelected={addFiles}
+            disableClick={true} // Bật True để click vào chat không bị mở hộp thoại
+            className="flex-1 flex flex-col h-full overflow-hidden"
+          >
+            <ChatWindow
+              activeChat={activeChat}
+              currentChatUser={currentChatUser}
+              currentUser={currentUser}
+              messages={messages}
+              users={users}
+              isFriend={isFriend}
+              isTyping={isTyping}
+              typingUserName={typingUserName}
+              typingUserAvatar={typingUserAvatar}
+              scrollRef={scrollRef}
+              API_URL={API_URL}
+              getAvatarUrl={getAvatarUrl}
+              checkIsOnline={checkIsOnline}
+              handleVideoCall={handleVideoCall}
+              setShowGroupMembers={setShowGroupMembers}
+              handleScrollToBottom={handleScrollToBottom}
+            />
+
+            <ChatInput
+              showEmoji={showEmoji}
+              setShowEmoji={setShowEmoji}
+              onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)}
+              handleSendMessage={handleSendMessage}
+              newMessage={newMessage}
+              handleInputChange={handleInputChange}
+              uploadQueue={uploadQueue}
+              addFiles={addFiles}
+              removeUploadItem={removeUploadItem}
+            />
+          </FilePicker>
+        ) : (
+          /* Màn hình chờ khi chưa chọn ai để chat */
+          <ChatWindow activeChat={null} currentChatUser={null} />
+        )}
       </div>
 
-      {/* 3. MODALS */}
+      {/* MODALS */}
       {showProfile && (
         <UserProfileSidebar
           isOpen={showProfile}

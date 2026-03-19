@@ -39,6 +39,10 @@ export const useUploader = () => {
         newEntries.forEach(entry => startUpload(entry.id, entry.file));
     };
 
+    const removeUploadItem = (id) => {
+        setUploadQueue(prev => prev.filter(item => item.id !== id));
+    };
+
     const clearUploads = () => setUploadQueue([]);
-    return { uploadQueue, addFiles, clearUploads };
+    return { uploadQueue, addFiles, clearUploads, removeUploadItem };
 };

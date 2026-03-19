@@ -1,5 +1,5 @@
-const s3Service = require('../services/s3.service');
-const FileModel = require('../models/File.model');
+const s3Service = require('../service/s3.service');
+const FileModel = require('../models/File');
 
 module.exports = {
     init: async (req, res) => {
@@ -37,9 +37,15 @@ module.exports = {
             const baseUrl = process.env.CLOUDFRONT_URL || `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`;
             const fileUrl = `${baseUrl}/${key}`;
 
+            const userId = req.user?._id || req.user?.id || req.userId;
+
+            if (!userId) {
+                throw new Error("Không lấy được ID người dùng từ Token. Hãy kiểm tra lại middleware auth!");
+            }
+
             // Lưu thông tin vào Database
             const newFile = await FileModel.create({
-                ownerId: req.user._id,
+                ownerId: userId,
                 originalName: fileName,
                 mimeType: fileType,
                 size: fileSize,

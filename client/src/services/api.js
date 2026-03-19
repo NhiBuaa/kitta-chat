@@ -1,21 +1,47 @@
 import axios from 'axios';
 
-const API_BASE = '/api/files'; // Sửa lại để khớp với route
+const API_URL = import.meta.env.VITE_API_URL;
 
-export const api = {
-    // Khởi tạo quá trình Multipart
-    initUpload: async ({ fileName, fileType, fileHash }) => {
-        const { data } = await axios.post(`${API_BASE}/init`, { fileName, fileType, fileHash });
-        return data;
-    },
-    // Lấy Signed URL cho từng chunk
-    getPartSignedUrl: async ({ uploadId, key, partNumber }) => {
-        const { data } = await axios.post(`${API_BASE}/get-presigned-url`, { uploadId, key, partNumber });
-        return data.url;
-    },
-    // Báo cáo hoàn tất để Backend ghép file
-    completeUpload: async ({ uploadId, key, parts }) => {
-        const { data } = await axios.post(`${API_BASE}/complete`, { uploadId, key, parts });
-        return data.file; // Metadata của file trong DB
-    }
-}
+// Hàm lấy Token từ LocalStorage
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    };
+};
+
+export const initUpload = async (fileName, fileType, fileHash) => {
+    const res = await axios.post(`${API_URL}/api/files/init`, {
+        fileName,
+        fileType,
+        fileHash
+    }, getAuthHeaders());
+
+    return res.data;
+};
+
+export const getPresignedUrl = async (uploadId, key, partNumber) => {
+    const res = await axios.post(`${API_URL}/api/files/get-presigned-url`, {
+        uploadId,
+        key,
+        partNumber
+    }, getAuthHeaders()); // <--- ĐÍNH KÈM TOKEN VÀO ĐÂY
+
+    return res.data.url;
+};
+
+export const completeUpload = async (uploadId, key, parts, fileInfo) => {
+    const res = await axios.post(`${API_URL}/api/files/complete`, {
+        uploadId,
+        key,
+        parts,
+        fileName: fileInfo.name,
+        fileType: fileInfo.type,
+        fileSize: fileInfo.size,
+        fileHash: fileInfo.hash
+    }, getAuthHeaders());
+
+    return res.data.file;
+};

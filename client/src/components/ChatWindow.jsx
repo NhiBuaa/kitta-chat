@@ -4,14 +4,10 @@ import {
     FaPhone,
     FaVideo,
     FaInfoCircle,
-    FaSmile,
     FaCheck,
     FaCheckDouble,
-    FaTimesCircle,
-    FaPaperclip,
-    FaImage,
+    FaPaperclip
 } from "react-icons/fa";
-import EmojiPicker from "emoji-picker-react";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 
@@ -26,27 +22,11 @@ const ChatWindow = ({
     typingUserName,
     typingUserAvatar,
     scrollRef,
-    API_URL,
     getAvatarUrl,
     checkIsOnline,
     handleVideoCall,
     setShowGroupMembers,
-    handleScrollToBottom,
-    // Props cho form chat
-    imagePreview,
-    clearImage,
-    selectedFiles,
-    removeFile,
-    showEmoji,
-    setShowEmoji,
-    onEmojiClick,
-    handleSendMessage,
-    imageInputRef,
-    handleImageChange,
-    fileInputRef,
-    handleFileChange,
-    newMessage,
-    handleInputChange,
+    handleScrollToBottom
 }) => {
     if (!activeChat || !currentChatUser) {
         return (
@@ -179,34 +159,48 @@ const ChatWindow = ({
 
                                 <div
                                     className={`p-3 max-w-xs shadow-sm text-sm ${isMe
-                                            ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
-                                            : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
+                                        ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
+                                        : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
                                         }`}
                                 >
-                                    {m.image && (
-                                        <img
-                                            src={getAvatarUrl(m.image)}
-                                            className="w-full h-auto rounded-lg mb-2 cursor-pointer hover:opacity-90"
-                                            onClick={() =>
-                                                window.open(getAvatarUrl(m.image), "_blank")
-                                            }
-                                            alt="attachment"
-                                        />
-                                    )}
-                                    {/* Render files nếu có */}
-                                    {m.files && m.files.length > 0 && (
-                                        <div className="mt-2 space-y-1">
-                                            {m.files.map((fileUrl, i) => (
-                                                <a
-                                                    key={i}
-                                                    href={`${API_URL}${fileUrl}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="block text-xs text-blue-600 underline break-all"
-                                                >
-                                                    📎 {fileUrl.split("/").pop()}
-                                                </a>
-                                            ))}
+                                    {m.attachments && m.attachments.length > 0 && (
+                                        <div className="flex flex-col gap-2 mb-2">
+                                            {m.attachments.map((file) => {
+                                                if (file.mimeType?.startsWith("image/")) {
+                                                    return (
+                                                        <img
+                                                            key={file._id}
+                                                            src={file.url}
+                                                            alt="img"
+                                                            className="w-full h-auto rounded-lg cursor-pointer hover:opacity-90 bg-gray-100"
+                                                            onClick={() => window.open(file.url, "_blank")}
+                                                        />
+                                                    );
+                                                }
+                                                if (file.mimeType?.startsWith("video/")) {
+                                                    return (
+                                                        <video
+                                                            key={file._id}
+                                                            src={file.url}
+                                                            controls
+                                                            className="w-full h-auto rounded-lg bg-black"
+                                                        />
+                                                    );
+                                                }
+                                                return (
+                                                    <a
+                                                        key={file._id}
+                                                        href={file.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe ? "bg-green-700 hover:bg-green-800 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                                                            }`}
+                                                    >
+                                                        <FaPaperclip className="text-lg" />
+                                                        <span className="truncate">{file.originalName}</span>
+                                                    </a>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                     {m.text && <span>{m.text}</span>}
@@ -291,132 +285,6 @@ const ChatWindow = ({
                         </div>
                     </div>
                 )}
-            </div>
-
-            <div className="bg-white p-4 border-t border-gray-200">
-                {/* xem hình ảnh trước gửi */}
-                {imagePreview && (
-                    <div className="absolute bottom-20 left-4 bg-white p-2 rounded-lg shadow-lg border border-gray-200">
-                        <div className="relative">
-                            <img
-                                src={imagePreview}
-                                alt="preview"
-                                className="w-24 h-24 object-cover rounded-md"
-                            />
-                            <button
-                                onClick={clearImage}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            >
-                                <FaTimesCircle size={12} />
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* xem file trước khi gửi */}
-                {selectedFiles.length > 0 && (
-                    <div className="absolute bottom-20 left-4 bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-                        <div className="flex gap-3 flex-wrap max-w-xs">
-                            {selectedFiles.map((item, index) => (
-                                <div key={index} className="relative">
-                                    {item.file.type.startsWith("image/") ? (
-                                        <img
-                                            src={item.preview}
-                                            alt="preview"
-                                            className="w-24 h-24 object-cover rounded-md"
-                                        />
-                                    ) : (
-                                        <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded-md text-xs text-center p-2">
-                                            📄 {item.file.name}
-                                        </div>
-                                    )}
-
-                                    <button
-                                        onClick={() => removeFile(index)}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                                    >
-                                        <FaTimesCircle size={12} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* icon */}
-                {showEmoji && (
-                    <div className="absolute bottom-20 left-4 z-10">
-                        <EmojiPicker onEmojiClick={onEmojiClick} />
-                    </div>
-                )}
-
-                {/* form gửi tin nhắn  */}
-                <form
-                    onSubmit={handleSendMessage}
-                    className="flex items-center bg-gray-100 rounded-full px-4 py-2"
-                >
-                    <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        ref={imageInputRef}
-                        onChange={handleImageChange}
-                    />
-
-                    <input
-                        type="file"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        style={{ display: "none" }}
-                        multiple
-                    />
-                    <div className="flex items-center gap-3">
-                        {/* nút gửi ảnh */}
-                        <button
-                            type="button"
-                            title="Chọn ảnh để gửi"
-                            onClick={() => imageInputRef.current.click()}
-                            className="text-gray-500 hover:text-green-600 transition"
-                        >
-                            <FaImage size={18} />
-                        </button>
-
-                        {/* nút gửi file */}
-                        <button
-                            type="button"
-                            title="Chọn file để gửi"
-                            onClick={() => fileInputRef.current.click()}
-                            className="text-gray-500 hover:text-green-600 transition"
-                        >
-                            <FaPaperclip size={18} />
-                        </button>
-
-                        {/* gửi emoji  */}
-                        <button
-                            type="button"
-                            onClick={() => setShowEmoji(!showEmoji)}
-                            className="text-gray-500 hover:text-green-600 mr-3 transition"
-                        >
-                            <FaSmile size={18} />
-                        </button>
-                    </div>
-
-                    {/* chỗ nhập tin nhắn */}
-                    <input
-                        type="text"
-                        placeholder="Nhập tin nhắn..."
-                        className="flex-1 bg-transparent focus:outline-none"
-                        value={newMessage}
-                        onChange={handleInputChange}
-                    />
-                    <button
-                        type="submit"
-                        className="text-green-600 hover:text-green-800 ml-3"
-                    >
-                        <FaPaperPlane size={18} />
-                    </button>
-                </form>
             </div>
         </>
     );

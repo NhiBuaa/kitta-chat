@@ -1,65 +1,40 @@
-import { compressImage } from '../utils/compression.js';
-import { calculatedMD5 } from '../utils/hashing';
-import { api } from '../services/api.js'
-import { s3Service } from '../services/s3-service.js';
-
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB cho mỗi CHUNK
-const CONCURRENCY_LIMIT = 3; // Gửi một lúc tối đa 3 CHUNK
+import axios from 'axios';
+import { initUpload, getPresignedUrl, completeUpload } from '../services/api';
 
 export const uploadFile = async (file, onProgress) => {
-    // Sử dụng lại các util nén và bâm
-    const compressed = await compressImage(file);
-    const fileHash = await calculatedMD5(compressed);
+    const { uploadId, key } = await initUpload(file.name, file.type, "");
 
-    const { uploadId, key} = await api.initUpload({
-        fileName: file.name,
-        fileType: file.type,
-        fileHash
-    })
+    const CHUNK_SIZE = 5 * 1024 * 1024;
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const parts = [];
+    let uploadedSize = 0;
 
-    const totalChunks = Math.ceil(compressed.size / CHUNK_SIZE);
-    const completedParts = [];
-    let uploadedBytes = 0;
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+        const partNumber = i + 1;
 
-    // Xử lý hàng đợi CHUNK
-    const uploadChunk = async (partNumber) => {
-        const start = (partNumber - 1) * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, compressed.size);
-        const chunk = compressed.splice(start, end);
+        const url = await getPresignedUrl(uploadId, key, partNumber);
 
-        const signedUrl = await api.getPartSignedUrl({ uploadId, key, partNumber });
+        const uploadRes = await axios.put(url, chunk, {
+            headers: { 'Content-Type': file.type }
+        });
 
-        let retries = 3;
-        while (retries > 0) {
-            try {
-                const etag = await s3Service.uploadToS3(signedUrl, chunk, (p) => {
-                    //Logic tính toán % mức độ thực tế
-                    const currentProgress = uploadedBytes + p.loaded;
-                    onProgress(Math.round((currentProgress / compressed.size) * 100));
-                })
+        parts.push({
+            ETag: uploadRes.headers.etag.replace(/"/g, ''),
+            PartNumber: partNumber
+        });
 
-                uploadedBytes += chunk.size;
-                return {ETag: etag, PartNumber: partNumber};
-            } catch (e) {
-                retries--;
-                if (retries === 0) throw new Error(`Part ${partNumber} failed after 3 retries`);
-                await new Promise(r => setTimeout(r, 100 * (3 - retries)));
-                console.log('error upload image: ', e);
-            }
+        // Cập nhật thanh tiến trình
+        uploadedSize += chunk.size;
+        if (onProgress) {
+            onProgress(Math.round((uploadedSize / file.size) * 100));
         }
     }
 
-    // Thực hiện upload song song
-    const pool = new Set();
-    for(let i = 1; i <= totalChunks; i++) {
-        const task = uploadChunk(i).then(part => {
-            completedParts.push(part);
-            pool.delete(task);
-        })
-        pool.add(task);
-        if(pool.size >= CONCURRENCY_LIMIT) await Promise.race(pool);
-    }
-    await Promise.all(pool);
+    const fileInfo = { name: file.name, type: file.type, size: file.size, hash: "" };
+    const completedFile = await completeUpload(uploadId, key, parts, fileInfo);
 
-    return await api.completeUpload({ uploadId, key, parts: completedParts.sort((a, b) => a.PartNumber - b.PartNumber)});
-}
+    return completedFile;
+};

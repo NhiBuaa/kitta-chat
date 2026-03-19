@@ -1,10 +1,8 @@
-// src/routes/file.routes.js
 const express = require('express');
 const router = express.Router();
-const fileController = require('../controllers/file.controller');
+const fileController = require('../controllers/fileController');
 const authMiddleware = require('../middlewares/auth');
 
-// Tất cả thao tác upload đều cần đăng nhập
 router.use(authMiddleware);
 
 router.post('/init', fileController.init);
