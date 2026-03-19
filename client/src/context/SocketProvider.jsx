@@ -61,10 +61,10 @@ export const SocketProvider = ({ children }) => {
                 const userId = user._id || user.id;
 
                 if (userId) {
-                    console.log(`📤 Tab mới: Emitting addNewUser event với userId: ${userId}`);
+                    console.log(`Emitting addNewUser event với userId: ${userId}`);
                     socket.emit("addNewUser", userId);
                 } else {
-                    console.error("⚠️ User object trong storage không có trường _id hoặc id:", user);
+                    console.log("user object tồn tại nhưng không có _id, không emit addNewUser");
                 }
             } catch (error) {
                 console.error("Lỗi parse user từ storage:", error);
