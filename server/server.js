@@ -81,12 +81,12 @@ const handleUserConnected = async (socket, userId, socketId) => {
   io.emit("getOnlineUsers", usersArray);
 };
 
-// ===================== SOCKET LISTENERS =====================
+// SOCKET
 io.on("connection", async (socket) => {
   let userId = socket.handshake.query.userId;
   console.log(`[Socket Connection] ID: ${socket.id}, Query userId: ${userId}`);
 
-  // 1. Khởi tạo User
+  // Khởi tạo User
   if (!userId || userId === "undefined") {
     console.log(`userId không hợp lệ từ query string, đợi event addNewUser`);
     socket.on("addNewUser", async (id) => {
@@ -108,7 +108,7 @@ io.on("connection", async (socket) => {
     }
   })();
 
-  // 2. Disconnect
+  // Disconnect
   socket.on("disconnect", async () => {
     console.log(`User Disconnected: ${userId}`);
     if (userId) {
@@ -124,7 +124,7 @@ io.on("connection", async (socket) => {
     }
   });
 
-  // 3. Friend Requests
+  // Friend Requests
   socket.on("sendFriendRequest", async ({ senderId, receiverId, senderName }) => {
     console.log(`Received sendFriendRequest from ${senderId} to ${receiverId}`);
     const receiverSocketId = onlineUsers.get(receiverId);
@@ -151,7 +151,7 @@ io.on("connection", async (socket) => {
     }
   });
 
-  // 4. Group Rooms
+  // Group Rooms
   socket.on("joinGroup", (groupId) => {
     socket.join(groupId);
     console.log(`User ${userId} joined group room ${groupId}`);
@@ -162,7 +162,7 @@ io.on("connection", async (socket) => {
     console.log(`User ${userId} left group room ${groupId}`);
   });
 
-  // 5. Messaging (Hỗ trợ File S3 + Text + Group)
+  // Messaging (Hỗ trợ File S3 + Text + Group)
   socket.on("sendMessage", async (messageData) => {
     const { sender, receiverId, isGroup } = messageData;
     const senderId = typeof sender === "object" ? sender._id : sender;
@@ -190,7 +190,7 @@ io.on("connection", async (socket) => {
     }
   });
 
-  // 6. Typing Indicators
+  // Typing Indicators
   socket.on("typing", async ({ receiverId, isGroup, senderId, senderName, senderAvatar }) => {
     if (isGroup) {
       socket.broadcast.to(receiverId).emit("getTyping", {
@@ -211,7 +211,7 @@ io.on("connection", async (socket) => {
     }
   });
 
-  // 7. Read Receipts (Đã xem)
+  // Read Receipts (Đã xem)
   socket.on("markRead", async (data) => {
     try {
       if (data?.isGroup) {
@@ -243,7 +243,7 @@ io.on("connection", async (socket) => {
     }
   });
 
-  // ================= 8. WEBRTC (VIDEO/AUDIO CALLS) =================
+  // WEBRTC (VIDEO/AUDIO CALLS)
   socket.emit("me", socket.id);
 
   socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId }) => {
@@ -274,7 +274,7 @@ io.on("connection", async (socket) => {
   });
 });
 
-// ===================== ROUTES =====================
+// ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
