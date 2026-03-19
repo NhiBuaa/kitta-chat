@@ -5,7 +5,7 @@ const messageSchema = new mongoose.Schema(
     conversationId: { type: String, required: true },
     type: {
       type: String,
-      enum: ["text", "image", "system"],
+      enum: ["text", "file", "system"],
       default: "text",
     },
     sender: {
@@ -21,17 +21,17 @@ const messageSchema = new mongoose.Schema(
 
     text: { type: String, default: "" },
 
-    image: { type: String, default: "" },
-    files: [
+    attachments: [
       {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "File",
       },
     ],
+
     isRead: { type: Boolean, default: false },
-    // Array of userIds who have read this message (for group read-receipts)
     readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Message", messageSchema);

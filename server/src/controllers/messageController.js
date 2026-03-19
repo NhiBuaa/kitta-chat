@@ -3,9 +3,8 @@ const Message = require("../models/Message");
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
   try {
-    // Lấy type từ frontend gửi lên
-    const { sender, receiver, text, image, files, isGroup, type } = req.body;
-    console.log("📥 Dữ liệu nhận từ FE:", req.body);
+    const { sender, receiver, text, attachments, isGroup, type } = req.body;
+    console.log("Dữ liệu nhận từ FE:", req.body);
 
     let conversationId;
     const isGroupChat = isGroup === true || isGroup === "true";
@@ -25,7 +24,7 @@ exports.createMessage = async (req, res) => {
     if (type === "system") {
       const savedSystemMsg = await exports.createSystemMessage(
         conversationId,
-        text,
+        text
       );
 
       if (savedSystemMsg) {
@@ -35,19 +34,23 @@ exports.createMessage = async (req, res) => {
       }
     }
 
-    // NẾU LÀ TIN NHẮN THƯỜNG -> XỬ LÝ NHƯ CŨ
+    // NẾU LÀ TIN NHẮN THƯỜNG / TIN NHẮN FILE
     const newMessage = new Message({
       conversationId,
-      type: "text",
+      type: attachments && attachments.length > 0 ? "file" : "text",
       sender,
       receiver,
       text,
-      image,
-      files,
+      attachments: attachments || [],
     });
 
+    // Lưu message
     const savedMessage = await newMessage.save();
-    console.log("✅ Đã lưu thành công:", savedMessage);
+
+    // Dùng populate để trả về thông tin file đầy đủ ngay sau khi tạo
+    await savedMessage.populate("attachments");
+
+    console.log("Đã lưu thành công:", savedMessage);
     res.status(200).json(savedMessage);
   } catch (err) {
     console.error("Create Message Error:", err);
@@ -60,6 +63,7 @@ exports.getMessages = async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
     let conversationId;
+
     if (req.query.isGroup === "true") {
       conversationId = userId2;
     } else {
@@ -68,7 +72,9 @@ exports.getMessages = async (req, res) => {
 
     const messages = await Message.find({
       conversationId: conversationId,
-    }).populate("sender", "displayName avatar email");
+    })
+      .populate("sender", "displayName avatar email")
+      .populate("attachments");
 
     res.status(200).json(messages);
   } catch (err) {
@@ -76,19 +82,6 @@ exports.getMessages = async (req, res) => {
   }
 };
 
-exports.uploadImage = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "Chưa chọn file" });
-    }
-    const imageUrl = `/uploads/${req.file.filename}`;
-    res.json({ imageUrl });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi upload" });
-  }
-};
-
-// Helper function: Tạo system message
 exports.createSystemMessage = async (groupId, text) => {
   try {
     const systemMessage = new Message({
@@ -97,28 +90,12 @@ exports.createSystemMessage = async (groupId, text) => {
       sender: null,
       receiver: null,
       text: text,
+      attachments: []
     });
     await systemMessage.save();
     return systemMessage;
   } catch (error) {
     console.error("Lỗi tạo system message:", error);
     return null;
-  }
-};
-
-exports.uploadMultipleFiles = async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "No files uploaded" });
-    }
-
-    const fileUrls = req.files.map((file) => `/uploads/${file.filename}`);
-
-    res.status(200).json({
-      success: true,
-      files: fileUrls,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
 };

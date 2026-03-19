@@ -1,34 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  FaUserPlus,
-  FaBell,
-  FaSearch,
-  FaPaperPlane,
-  FaPhone,
-  FaUsers,
-  FaVideo,
-  FaInfoCircle,
-  FaSmile,
-  FaCheck,
-  FaCheckDouble,
-  FaTimesCircle,
-  FaPaperclip,
-  FaImage,
-} from "react-icons/fa";
-import UserProfileSidebar from "../components/UserProfileSidebar";
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import axios from "axios";
-import UserStatus from "../components/UserStatus";
-import { formatTimeAgo } from "../utils/formatTime";
 import { toast } from "react-toastify";
-import EmojiPicker from "emoji-picker-react";
+
+// --- Components ---
+import Sidebar from "../components/Sidebar";
+import ChatWindow from "../components/ChatWindow";
+import UserProfileSidebar from "../components/UserProfileSidebar";
 import CreateGroupModal from "../components/CreateGroupModal";
 import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
-import { sendFriendRequest } from "../services/userService";
-import { useContext } from "react";
+
+// --- Context & Services ---
 import { CallContext } from "../context/CallContext";
 import { useSocket } from "../context/SocketContext";
-import { FiLogOut } from "react-icons/fi";
+import { sendFriendRequest } from "../services/userService";
 
 const Home = () => {
   // STATE
@@ -75,22 +60,12 @@ const Home = () => {
   // --- HÀM XỬ LÝ GỌI VIDEO ---
   const handleVideoCall = () => {
     if (!currentChatUser) return;
-
     const chatUserId = currentChatUser._id || currentChatUser.id;
-
     if (currentChatUser.members || currentChatUser.isGroup) {
       toast.warning("Chưa hỗ trợ gọi nhóm!");
       return;
     }
-
-    console.log("🔍 Debug - onlineUsers:", onlineUsers);
-    console.log("🔍 Debug - chatUserId:", chatUserId);
-
-    // Tìm người dùng trong danh sách online (Lấy từ Context)
     const receiver = onlineUsers.find((user) => user.userId === chatUserId);
-
-    console.log("🔍 Debug - receiver:", receiver);
-
     if (receiver) {
       callUser({
         socketId: receiver.socketId,
@@ -116,21 +91,16 @@ const Home = () => {
       users.some((u) => u._id === currentChatUser._id));
 
   // --- USE EFFECTS ---
-
   useEffect(() => {
-    // Đọc lại user tươi nhất từ LocalStorage
     const userStr = localStorage.getItem("user");
-
     if (socket && userStr) {
       const user = JSON.parse(userStr);
       if (user && user._id) {
-        console.log("📤 Đã vào Home, gửi tín hiệu Online cho user:", user._id);
         socket.emit("addNewUser", user._id);
       }
     }
   }, [socket]);
 
-  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       setTimeout(() => {
@@ -139,28 +109,21 @@ const Home = () => {
     }
   }, [messages, activeChat, isTyping]);
 
-  // Update Ref
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
 
-  // Join/Leave group rooms
   useEffect(() => {
     if (!socket) return;
-
     const isGroup = activeChat?.members ? true : false;
-
     if (isGroup) {
       socket.emit("joinGroup", activeChat._id);
-      console.log(`📍 Client joined group room: ${activeChat._id}`);
     } else if (activeChatRef.current?.members) {
       socket.emit("leaveGroup", activeChatRef.current._id);
-      console.log(`📍 Client left group room: ${activeChatRef.current._id}`);
     }
   }, [activeChat, socket]);
 
   // --- CÁC HÀM HELPER & API ---
-  // Hàm load conversation mới nếu chưa có trong list
   const fetchNewConversation = useCallback(
     async (targetId, isGroup, messageData) => {
       try {
@@ -174,13 +137,10 @@ const Home = () => {
 
         if (res.data.success) {
           const newItem = res.data.data || res.data.user || res.data.group;
-
-          // Xử lý nội dung tin nhắn preview
           let previewContent = messageData.text;
           if (!previewContent && messageData.image)
             previewContent = "[Hình ảnh]";
 
-          // Tạo object user hoàn chỉnh với tin nhắn mới nhất
           const newItemWithMsg = {
             ...newItem,
             lastMessage: {
@@ -191,14 +151,13 @@ const Home = () => {
             },
             hasUnread: true,
           };
-          // Thêm vào đầu danh sách
           setUsers((prev) => [newItemWithMsg, ...prev]);
         }
       } catch (error) {
         console.error("Không thể load conversation mới:", error);
       }
     },
-    [API_URL],
+    [API_URL]
   );
 
   const renderLastMessage = (user, currentUserId) => {
@@ -239,12 +198,9 @@ const Home = () => {
 
   const checkIsOnline = (user) => {
     if (!user || !onlineUsers || onlineUsers.length === 0) return false;
-
-    const isOnline = onlineUsers.some((u) => u.userId === user._id);
-    return isOnline;
+    return onlineUsers.some((u) => u.userId === user._id);
   };
 
-  // --- FETCH DATA INITIAL ---
   const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -279,18 +235,13 @@ const Home = () => {
   }, [API_URL]);
 
   useEffect(() => {
-    // Emit addNewUser khi Home component mount (fallback)
     if (socket && currentUser) {
-      console.log(
-        `📤 Home mounted: Emitting addNewUser với userId: ${currentUser._id}`,
-      );
       socket.emit("addNewUser", currentUser._id);
     }
   }, [socket, currentUser]);
 
   useEffect(() => {
     fetchData();
-    // Fetch groups riêng
     const fetchGroups = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -306,7 +257,6 @@ const Home = () => {
     fetchGroups();
   }, [API_URL, fetchData]);
 
-  // --- SEARCH LOGIC ---
   useEffect(() => {
     if (!searchTerm.trim()) {
       setSearchResult([]);
@@ -319,7 +269,7 @@ const Home = () => {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const res = await axios.get(
           `${API_URL}/api/users/search?keyword=${searchTerm}`,
-          config,
+          config
         );
         if (res.data.success) setSearchResult(res.data.users);
       } catch (error) {
@@ -335,12 +285,7 @@ const Home = () => {
 
   // --- SOCKET CONNECTION ---
   useEffect(() => {
-    // Nếu chưa có socket hoặc currentUser chưa load xong thì không làm gì
     if (!socket || !currentUser) return;
-
-    // -- LOGIC CẬP NHẬT TRẠNG THÁI ONLINE --
-
-    // ĐỊNH NGHĨA CÁC HÀM XỬ LÝ SỰ KIỆN
 
     const handleUserDisconnected = (userId) => {
       setUsers((prevUsers) =>
@@ -355,40 +300,33 @@ const Home = () => {
             };
           }
           return user;
-        }),
+        })
       );
     };
 
     const handleNewFriendRequest = (data) => {
-      console.log("Có lời mời kết bạn mới từ:", data.senderName);
-
       setRequestCount((prevCount) => prevCount + 1);
-
       toast.info(`${data.senderName} đã gửi lời mời kết bạn`, {
-        toastId: `new-req-${data.senderId}`, // Mẹo: Chống trùng toast
+        toastId: `new-req-${data.senderId}`,
         position: "top-right",
         autoClose: 5000,
       });
-
       setUsers((prevUsers) =>
         prevUsers.map((u) => {
           if (u._id === data.senderId) {
             return { ...u, isIncomingRequest: true };
           }
           return u;
-        }),
+        })
       );
     };
 
     const handleFriendRequestAccepted = (data) => {
-      console.log("Lời mời kết bạn đã được chấp nhận bởi:", data.newFriendName);
-
       toast.success(`${data.newFriendName} đã chấp nhận lời mời kết bạn`, {
-        toastId: `accept-req-${data.newFriendId}`, // Mẹo: Chống trùng toast
+        toastId: `accept-req-${data.newFriendId}`,
         position: "top-right",
         autoClose: 3000,
       });
-
       setUsers((prev) => {
         const updatedUsers = prev.map((user) => {
           if (user._id === data.newFriendId) {
@@ -417,10 +355,7 @@ const Home = () => {
     };
 
     const handleFriendRequestRejected = (data) => {
-      console.log("Lời mời kết bạn đã bị từ chối bởi ID:", data.rejecterId);
-
       setSentRequests((prev) => prev.filter((id) => id !== data.rejecterId));
-
       setUsers((prevUsers) =>
         prevUsers.map((user) => {
           if (user._id === data.rejecterId) {
@@ -431,23 +366,20 @@ const Home = () => {
             };
           }
           return user;
-        }),
+        })
       );
     };
 
-    // GỠ BỎ TẤT CẢ LISTENER CŨ TRƯỚC KHI ĐĂNG KÝ MỚI
     socket.off("userDisconnected");
     socket.off("newFriendRequest");
     socket.off("friendRequestAccepted");
     socket.off("friendRequestRejected");
 
-    // ĐĂNG KÝ LẮNG NGHE SỰ KIỆN
     socket.on("userDisconnected", handleUserDisconnected);
     socket.on("newFriendRequest", handleNewFriendRequest);
     socket.on("friendRequestAccepted", handleFriendRequestAccepted);
     socket.on("friendRequestRejected", handleFriendRequestRejected);
 
-    // CLEANUP
     return () => {
       socket.off("userDisconnected", handleUserDisconnected);
       socket.off("newFriendRequest", handleNewFriendRequest);
@@ -456,7 +388,6 @@ const Home = () => {
     };
   }, [socket, currentUser]);
 
-  // READ RECEIPTS LISTENER
   useEffect(() => {
     if (!socket) return;
 
@@ -471,7 +402,7 @@ const Home = () => {
             return { ...u, hasUnread: false, lastMessage: lm };
           }
           return u;
-        }),
+        })
       );
 
       if (activeChat && !activeChat.members && activeChat._id === readerId) {
@@ -483,7 +414,7 @@ const Home = () => {
               return { ...m, isRead: true };
             }
             return m;
-          }),
+          })
         );
       }
     };
@@ -498,7 +429,7 @@ const Home = () => {
               return { ...m, readBy: [...readBy, readerId] };
             }
             return m;
-          }),
+          })
         );
       }
       setGroups((prev) =>
@@ -520,7 +451,7 @@ const Home = () => {
             }
           }
           return g;
-        }),
+        })
       );
     };
 
@@ -533,15 +464,11 @@ const Home = () => {
     };
   }, [socket, activeChat, currentUser]);
 
-  // MESSAGE LISTENER
   useEffect(() => {
     if (!socket) return;
 
     const handleUnifiedMessage = (data) => {
-      console.log("Socket nhận tin nhắn:", data);
       const currentActiveChat = activeChatRef.current;
-
-      // CẬP NHẬT SIDEBAR
       setUsers((prevUsers) => {
         const updatedUsers = [...prevUsers];
         const targetId = data.isGroup ? data.receiverId : data.senderId;
@@ -572,7 +499,6 @@ const Home = () => {
         }
       });
 
-      // CẬP NHẬT MESSAGES
       const isViewingChat =
         (data.isGroup && currentActiveChat?._id === data.receiverId) ||
         (!data.isGroup &&
@@ -616,7 +542,7 @@ const Home = () => {
         }
         setTimeout(
           () => scrollRef.current?.scrollIntoView({ behavior: "smooth" }),
-          100,
+          100
         );
       } else {
         if (data.type !== "system") {
@@ -638,7 +564,6 @@ const Home = () => {
     };
   }, [socket, currentUser, users, fetchNewConversation]);
 
-  // FETCH MESSAGE KHI CHỌN USER
   useEffect(() => {
     const fetchMessages = async () => {
       if (!activeChat || !currentUser) return;
@@ -653,7 +578,6 @@ const Home = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setMessages(res.data);
-        // Khi mở cuộc chat, đánh dấu đã đọc (1-1 hoặc group)
         if (socket) {
           if (isGroup) {
             socket.emit("markRead", {
@@ -675,7 +599,6 @@ const Home = () => {
     fetchMessages();
   }, [activeChat, currentUser, API_URL, socket]);
 
-  // TYPING LOGIC
   useEffect(() => {
     if (!socket) return;
 
@@ -720,31 +643,25 @@ const Home = () => {
     setTypingUserAvatar(null);
   }, [activeChat]);
 
-  // --- HANDLERS ---
+  // --- HANDLERS CHÍNH ---
   const handleScrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   };
-  const handleSelectUser = (user) => {
-    // Set người dùng đang chat để mở đoạn chat
-    setActiveChat(user);
 
-    // Đánh dấu tin nhắn là đã đọc (sidebar)
+  const handleSelectUser = (user) => {
+    setActiveChat(user);
     setUsers((prev) =>
       prev.map((u) => {
         if (u._id === user._id) {
           const lm = u.lastMessage
             ? { ...u.lastMessage, isRead: true }
             : u.lastMessage;
-          return {
-            ...u,
-            hasUnread: false,
-            lastMessage: lm,
-          };
+          return { ...u, hasUnread: false, lastMessage: lm };
         }
         return u;
-      }),
+      })
     );
 
     if (socket) {
@@ -755,7 +672,6 @@ const Home = () => {
     }
   };
 
-  // Socket listener cho cập nhật nhóm
   useEffect(() => {
     if (!socket) return;
 
@@ -763,8 +679,8 @@ const Home = () => {
       const { groupId, newAdminId } = data;
       setGroups((prevGroups) =>
         prevGroups.map((g) =>
-          g._id === groupId ? { ...g, admin: newAdminId } : g,
-        ),
+          g._id === groupId ? { ...g, admin: newAdminId } : g
+        )
       );
       if (activeChat?._id === groupId) {
         setActiveChat((prev) => ({ ...prev, admin: newAdminId }));
@@ -775,8 +691,8 @@ const Home = () => {
       const { groupId, newName, newAvatar } = data;
       setGroups((prevGroups) =>
         prevGroups.map((g) =>
-          g._id === groupId ? { ...g, name: newName, avatar: newAvatar } : g,
-        ),
+          g._id === groupId ? { ...g, name: newName, avatar: newAvatar } : g
+        )
       );
       if (activeChat?._id === groupId) {
         setActiveChat((prev) => ({
@@ -812,8 +728,8 @@ const Home = () => {
       if (updatedGroup) {
         setGroups((prevGroups) =>
           prevGroups.map((g) =>
-            g._id === groupId ? { ...g, members: updatedGroup.members } : g,
-          ),
+            g._id === groupId ? { ...g, members: updatedGroup.members } : g
+          )
         );
       }
       if (activeChat?._id === groupId && updatedGroup) {
@@ -853,7 +769,6 @@ const Home = () => {
     if (!socket || !activeChat) return;
 
     const isGroup = activeChat.members ? true : false;
-
     socket.emit("typing", {
       receiverId: activeChat._id,
       isGroup: isGroup,
@@ -863,11 +778,6 @@ const Home = () => {
     });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      console.log("📤 Emitting stopTyping:", {
-        receiverId: activeChat._id,
-        isGroup: isGroup,
-        senderId: currentUser._id,
-      });
       socket.emit("stopTyping", {
         receiverId: activeChat._id,
         isGroup: isGroup,
@@ -880,10 +790,9 @@ const Home = () => {
     e.preventDefault();
     if (!newMessage.trim() && !imageFile && selectedFiles.length === 0) return;
 
-    // Kiểm tra xem user còn trong group hay không (nếu là group)
     if (activeChat?.members) {
       const isStillMember = activeChat.members.some(
-        (m) => m._id === currentUser._id,
+        (m) => m._id === currentUser._id
       );
       if (!isStillMember) {
         toast.error("Bạn đã bị xóa khỏi nhóm này");
@@ -896,7 +805,6 @@ const Home = () => {
     let fileUrls = [];
 
     try {
-      // Upload 1 ảnh
       if (imageFile) {
         const formData = new FormData();
         formData.append("image", imageFile);
@@ -909,16 +817,13 @@ const Home = () => {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-          },
+          }
         );
-
         imageUrl = uploadRes.data.imageUrl;
       }
 
-      // 🔥 Upload nhiều file
       if (selectedFiles.length > 0) {
         const formData = new FormData();
-
         selectedFiles.forEach((item) => {
           formData.append("files", item.file);
         });
@@ -931,9 +836,8 @@ const Home = () => {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-          },
+          }
         );
-
         fileUrls = uploadRes.data.files;
       }
 
@@ -947,13 +851,11 @@ const Home = () => {
         isGroup: isGroup,
       };
 
-      // 1. Lưu DB
       const res = await axios.post(`${API_URL}/api/messages`, messagePayload, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const savedMessage = res.data;
 
-      // 2. Gửi Socket
       socket.emit("sendMessage", {
         ...messagePayload,
         createdAt: savedMessage.createdAt,
@@ -964,7 +866,6 @@ const Home = () => {
         files: savedMessage.files,
       });
 
-      // 3. Update UI Sidebar (Đưa lên đầu)
       setUsers((prevUsers) => {
         const updatedUsers = [...prevUsers];
         const index = updatedUsers.findIndex((u) => u._id === activeChat._id);
@@ -1005,7 +906,6 @@ const Home = () => {
     setNewMessage((prev) => prev + emojiObject.emoji);
   };
 
-  // xử lý chọn ảnh gửi
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1014,37 +914,28 @@ const Home = () => {
     }
   };
 
-  // xóa ảnh đã chọn
   const clearImage = () => {
     setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
-  // xử lý chọn file gửi
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-
     const filesWithPreview = files.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
     }));
-
     setSelectedFiles((prev) => [...prev, ...filesWithPreview]);
-
-    // reset input để có thể chọn lại cùng file nếu muốn
     e.target.value = "";
   };
 
-  // xóa file đã chọn
   const removeFile = (index) => {
     setSelectedFiles((prev) => {
       const updated = prev.filter((_, i) => i !== index);
-
-      // nếu xoá hết thì reset input
       if (updated.length === 0 && fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-
       return updated;
     });
   };
@@ -1067,595 +958,66 @@ const Home = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* --- SIDEBAR --- */}
+      {/* 1. SIDEBAR */}
+      <Sidebar
+        currentUser={currentUser}
+        setShowProfile={setShowProfile}
+        getAvatarUrl={getAvatarUrl}
+        setShowCreateGroup={setShowCreateGroup}
+        setShowRequestModal={setShowRequestModal}
+        requestCount={requestCount}
+        handleLogout={handleLogout}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        isSearching={isSearching}
+        groups={groups}
+        handleSelectUser={handleSelectUser}
+        usersToDisplay={usersToDisplay}
+        users={users}
+        sentRequests={sentRequests}
+        checkIsOnline={checkIsOnline}
+        renderLastMessage={renderLastMessage}
+        handleAddFriend={handleAddFriend}
+      />
 
-      <div className="w-full md:w-1/4 bg-white border-r border-gray-200 flex flex-col">
-        {/* tên app với avt */}
-        <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-blue-600 text-white relative z-10 shadow-md h-16">
-          <div className="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0 mr-2">
-            {/* avt */}
-            <button
-              onClick={() => setShowProfile(true)}
-              className="focus:outline-none group relative shrink-0"
-              title="Hồ sơ của bạn"
-            >
-              <img
-                src={getAvatarUrl(currentUser?.avatar)}
-                alt="User Avatar"
-                className="w-9 h-9 rounded-full object-cover border-2 border-blue-400"
-              />
-
-              {/* online chấm xanh hiện  */}
-              <span className="absolute bottom-0 right-0 block h-2 w-2 md:h-2.5 md:w-2.5 rounded-full ring-2 ring-white bg-green-400"></span>
-            </button>
-
-            {/* tên app */}
-            <h1 className="text-base md:text-xl font-bold truncate">
-              KittaChat
-            </h1>
-          </div>
-          {/* icon kế bên tên app */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-nowrap shrink-0">
-            <button
-              onClick={() => setShowCreateGroup(true)}
-              className="text-white hover:text-blue-200"
-              title="Tạo nhóm trò chuyện"
-            >
-              <FaUsers size={18} />
-            </button>
-
-            {/* nút addfr */}
-            <button
-              onClick={() => setShowRequestModal(true)}
-              className="relative p-1 hover:text-blue-200"
-              title="Thông báo kết bạn"
-            >
-              <FaBell
-                size={16}
-                className={`transition-all duration-300 ${requestCount > 0 ? "text-yellow-300 animate-pulse" : "hover:text-blue-200"}`}
-              />
-
-              {requestCount > 0 && (
-                <span className="absolute top-0 right-0 h-4 w-4 bg-red-600 text-[10px] flex items-center justify-center rounded-full border border-blue-600 text-white font-bold">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-
-                  <span className="relative inline-flex rounded-full h-5 w-5 bg-red-600 border-2 border-blue-600 text-white text-[10px] font-bold items-center justify-center">
-                    {requestCount > 9 ? "9+" : requestCount}
-                  </span>
-                </span>
-              )}
-            </button>
-            <button
-              onClick={handleLogout}
-              className="ml-1 bg-blue-800 hover:bg-blue-900 px-2 py-1.5 rounded text-[10px] font-bold uppercase whitespace-nowrap shadow-sm flex items-center"
-            >
-              {/* Trên màn hình lớn hiện chữ */}
-              <span className="hidden md:inline">Đăng xuất</span>
-
-              {/* Trên màn hình nhỏ hiện icon */}
-              <span className="md:hidden">
-                <FiLogOut size={14} />
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-4">
-          <div className="relative">
-            <FaSearch className="absolute top-3 left-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {isSearching && (
-              <div className="absolute top-3 right-3 animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {/* Groups */}
-          {groups.length > 0 && (
-            <>
-              <div className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase">
-                Nhóm chat
-              </div>
-              {groups.map((group) => (
-                <div
-                  key={group._id}
-                  onClick={() => handleSelectUser(group)}
-                  className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50"
-                >
-                  <img
-                    src={getAvatarUrl(group.avatar)}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="ml-3">
-                    <h3 className="font-semibold text-sm">{group.name}</h3>
-                    <p className="text-xs text-gray-400">
-                      {group.members.length} thành viên
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* Users */}
-          <div className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase">
-            Tin nhắn
-          </div>
-          {usersToDisplay.length > 0 ? (
-            usersToDisplay.map((user) => {
-              const isMe = user._id === currentUser?._id;
-              if (isMe) return null;
-
-              const isFriend =
-                user.isFriend || users.some((u) => u._id === user._id);
-              const isSent = user.isSent || sentRequests.includes(user._id);
-              const hasUnread = isFriend && user.hasUnread;
-
-              return (
-                <div
-                  key={user._id}
-                  onClick={() => handleSelectUser(user)}
-                  className={`group p-4 flex items-center border-b border-gray-50 transition cursor-pointer ${hasUnread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
-                >
-                  <div className="relative flex-shrink-0">
-                    <img
-                      src={getAvatarUrl(user.avatar)}
-                      alt="Avt"
-                      className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                    />
-                    {isFriend && checkIsOnline(user) && (
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>
-                    )}
-                  </div>
-
-                  <div className="ml-3 flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex justify-between items-center mb-1">
-                      <h3
-                        className={`text-sm truncate pr-2 ${hasUnread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}
-                      >
-                        {user.displayName}
-                      </h3>
-                      {user.lastMessage && (
-                        <span
-                          className={`text-[10px] flex-shrink-0 ${hasUnread ? "text-blue-600 font-bold" : "text-gray-400"}`}
-                        >
-                          {new Date(
-                            user.lastMessage.createdAt,
-                          ).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center h-5">
-                      <p className="text-xs truncate text-gray-500 w-full">
-                        {searchTerm && !isFriend && !user.lastMessage ? (
-                          <span className="text-blue-500">
-                            Người lạ • Kết bạn
-                          </span>
-                        ) : (
-                          renderLastMessage(user, currentUser._id)
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {!isFriend && (
-                    <div className="ml-2 flex-shrink-0">
-                      {isSent ? (
-                        <button
-                          disabled
-                          className="flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-500 rounded-full cursor-not-allowed"
-                        >
-                          <FaCheck size={12} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => handleAddFriend(e, user)}
-                          className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition shadow-sm"
-                        >
-                          <FaUserPlus size={14} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  {isFriend && hasUnread && (
-                    <div className="ml-2 flex-shrink-0">
-                      <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                        N
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div className="flex flex-col items-center justify-center mt-10 text-gray-400">
-              <p className="text-sm">Không có tin nhắn nào</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* --- CHAT WINDOW --- */}
+      {/* 2. CHAT WINDOW */}
       <div className="flex-1 flex flex-col bg-gray-50">
-        {activeChat && currentChatUser ? (
-          <>
-            {/* CHAT HEADER */}
-            <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
-              <div className="flex items-center">
-                <img
-                  src={getAvatarUrl(currentChatUser.avatar)}
-                  className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200"
-                  alt="avatar"
-                />
-                <div>
-                  <h3 className="font-bold text-gray-800">
-                    {currentChatUser.displayName || currentChatUser.name}
-                  </h3>
-                  {!currentChatUser.members &&
-                    (isFriend ? (
-                      <UserStatus
-                        user={currentChatUser}
-                        isOnline={checkIsOnline(currentChatUser)}
-                      />
-                    ) : (
-                      <></>
-                    ))}
-
-                  {currentChatUser.members && (
-                    <span className="text-xs text-gray-500">
-                      {currentChatUser.members.length} thành viên
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex space-x-4 text-blue-600">
-                {/* Nút Gọi Thoại */}
-                <button
-                  className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-                  onClick={() => alert("Tính năng gọi thoại đang phát triển")}
-                >
-                  <FaPhone />
-                </button>
-
-                <button
-                  onClick={handleVideoCall}
-                  className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
-                  title="Gọi Video"
-                  disabled={currentChatUser.members}
-                >
-                  <FaVideo />
-                </button>
-
-                {activeChat?.members && (
-                  <button
-                    onClick={() => setShowGroupMembers(true)}
-                    className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-                    title="Quản lý thành viên"
-                  >
-                    <FaInfoCircle />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div
-              className="flex-1 overflow-y-auto p-6 space-y-4"
-              ref={scrollRef}
-              onClick={handleScrollToBottom}
-            >
-              {messages.map((m, index) => {
-                const senderId =
-                  typeof m.sender === "object" ? m.sender?._id : m.sender;
-                const isMe = senderId === currentUser._id;
-                const isGroup = activeChat.members ? true : false;
-                const senderInfo =
-                  typeof m.sender === "object" ? m.sender : null;
-                const senderName =
-                  senderInfo?.displayName ||
-                  senderInfo?.email?.split("@")[0] ||
-                  "Người dùng";
-                const senderAvatar = senderInfo?.avatar || activeChat.avatar;
-                const isSystemMessage = m.type === "system";
-
-                if (isSystemMessage) {
-                  return (
-                    <div key={index} className="flex justify-center my-4">
-                      <div className="bg-gray-200 text-gray-600 text-xs px-4 py-1 rounded-full flex items-center shadow-sm">
-                        {m.text}
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Regular message rendering
-                return (
-                  <div key={index}>
-                    {/* Nhóm: Hiển thị tên người gửi nếu không phải tin nhắn của mình */}
-                    {isGroup && !isMe && senderInfo && (
-                      <div className="flex items-center ml-2 mb-1">
-                        <span className="text-xs font-semibold text-gray-600">
-                          {senderName}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className={`flex ${isMe ? "justify-end" : ""}`}>
-                      {/* Chat 1-1: Chỉ hiển thị avatar cho tin nhắn người khác */}
-                      {!isMe && !isGroup && (
-                        <img
-                          src={getAvatarUrl(activeChat.avatar)}
-                          className="w-8 h-8 rounded-full mr-2 mt-1 object-cover"
-                          alt="avt"
-                        />
-                      )}
-
-                      {/* Nhóm: Hiển thị avatar nhỏ cho tin nhắn người khác */}
-                      {!isMe && isGroup && (
-                        <img
-                          src={getAvatarUrl(senderAvatar)}
-                          className="w-8 h-8 rounded-full mr-2 mt-1 object-cover"
-                          alt="avt"
-                        />
-                      )}
-
-                      <div
-                        className={`p-3 max-w-xs shadow-sm text-sm ${isMe ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl" : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"}`}
-                      >
-                        {m.image && (
-                          <img
-                            src={getAvatarUrl(m.image)}
-                            className="w-full h-auto rounded-lg mb-2 cursor-pointer hover:opacity-90"
-                            onClick={() =>
-                              window.open(getAvatarUrl(m.image), "_blank")
-                            }
-                          />
-                        )}
-                        {/* Render files nếu có */}
-                        {m.files && m.files.length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            {m.files.map((fileUrl, i) => (
-                              <a
-                                key={i}
-                                href={`${API_URL}${fileUrl}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block text-xs text-blue-600 underline break-all"
-                              >
-                                📎 {fileUrl.split("/").pop()}
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                        {m.text && <span>{m.text}</span>}
-                        {isMe && (
-                          <div className="self-end mt-1 text-right">
-                            {/* 1-1: use isRead flag. Group: consider readBy array length */}
-                            {!isGroup ? (
-                              m.isRead ? (
-                                <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                              ) : (
-                                <FaCheck className="text-xs text-gray-300 inline-block" />
-                              )
-                            ) : m.readBy && m.readBy.length > 0 ? (
-                              <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                            ) : (
-                              <FaCheck className="text-xs text-gray-300 inline-block" />
-                            )}
-                          </div>
-                        )}
-
-                        {/* For group messages sent by me, show the list of reader names when available */}
-                        {isMe &&
-                          isGroup &&
-                          m.readBy &&
-                          m.readBy.length > 0 &&
-                          (() => {
-                            const readerIds = m.readBy.map((r) =>
-                              typeof r === "object" ? r._id : r,
-                            );
-                            const readerNames = readerIds.map((id) => {
-                              const member =
-                                activeChat?.members?.find(
-                                  (mm) => mm._id === id,
-                                ) || users.find((u) => u._id === id);
-                              return (
-                                member?.displayName ||
-                                member?.name ||
-                                "Người dùng"
-                              );
-                            });
-                            return (
-                              <div className="text-[11px] mt-1 text-gray-200/90">
-                                <span className="text-white/70">Đã xem:</span>{" "}
-                                <span className="font-medium">
-                                  {readerNames.join(", ")}
-                                </span>
-                              </div>
-                            );
-                          })()}
-                      </div>
-                    </div>
-                    <div
-                      className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"}`}
-                    >
-                      {formatTimeAgo(m.createdAt)}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* hiển thị trạng thái đang nhập tin nhắn */}
-              {isTyping && (
-                <div className="flex items-center ml-2 mt-2">
-                  <img
-                    src={getAvatarUrl(
-                      activeChat.members ? typingUserAvatar : activeChat.avatar,
-                    )}
-                    className="w-6 h-6 rounded-full mr-2 object-cover"
-                  />
-                  <div>
-                    {typingUserName && activeChat.members && (
-                      <div className="text-xs text-gray-500 ml-1 mb-1">
-                        {typingUserName} đang nhập tin nhắn...
-                      </div>
-                    )}
-                    <div className="bg-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center space-x-1 w-16 h-9">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white p-4 border-t border-gray-200">
-              {/* xem hình ảnh trước gửi */}
-              {imagePreview && (
-                <div className="absolute bottom-20 left-4 bg-white p-2 rounded-lg shadow-lg border border-gray-200">
-                  <div className="relative">
-                    <img
-                      src={imagePreview}
-                      alt="preview"
-                      className="w-24 h-24 object-cover rounded-md"
-                    />
-                    <button
-                      onClick={clearImage}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                    >
-                      <FaTimesCircle size={12} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* xem file trước khi gửi */}
-
-              {selectedFiles.length > 0 && (
-                <div className="absolute bottom-20 left-4 bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-                  <div className="flex gap-3 flex-wrap max-w-xs">
-                    {selectedFiles.map((item, index) => (
-                      <div key={index} className="relative">
-                        {item.file.type.startsWith("image/") ? (
-                          <img
-                            src={item.preview}
-                            alt="preview"
-                            className="w-24 h-24 object-cover rounded-md"
-                          />
-                        ) : (
-                          <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded-md text-xs text-center p-2">
-                            📄 {item.file.name}
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                          <FaTimesCircle size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* icon */}
-              {showEmoji && (
-                <div className="absolute bottom-20 left-4 z-10">
-                  <EmojiPicker onEmojiClick={onEmojiClick} />
-                </div>
-              )}
-
-              {/* form gửi tin nhắn  */}
-              <form
-                onSubmit={handleSendMessage}
-                className="flex items-center bg-gray-100 rounded-full px-4 py-2"
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  ref={imageInputRef}
-                  onChange={handleImageChange}
-                />
-
-                <input
-                  type="file"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                  multiple
-                />
-                <div className="flex items-center gap-3">
-                  {/* nút gửi ảnh */}
-                  <button
-                    type="button"
-                    title="Chọn ảnh để gửi"
-                    onClick={() => imageInputRef.current.click()}
-                    className="text-gray-500 hover:text-green-600 transition"
-                  >
-                    <FaImage size={18} />
-                  </button>
-
-                  {/* nút gửi file */}
-                  <button
-                    type="button"
-                    title="Chọn file để gửi"
-                    onClick={() => fileInputRef.current.click()}
-                    className="text-gray-500 hover:text-green-600 transition"
-                  >
-                    <FaPaperclip size={18} />
-                  </button>
-
-                  {/* gửi emoji  */}
-                  <button
-                    type="button"
-                    onClick={() => setShowEmoji(!showEmoji)}
-                    className="text-gray-500 hover:text-green-600 mr-3 transition"
-                  >
-                    <FaSmile size={18} />
-                  </button>
-                </div>
-
-                {/* chỗ nhập tin nhắn */}
-                <input
-                  type="text"
-                  placeholder="Nhập tin nhắn..."
-                  className="flex-1 bg-transparent focus:outline-none"
-                  value={newMessage}
-                  onChange={handleInputChange}
-                />
-                <button
-                  type="submit"
-                  className="text-green-600 hover:text-green-800 ml-3"
-                >
-                  <FaPaperPlane size={18} />
-                </button>
-              </form>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-            <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-              <FaPaperPlane size={40} className="text-gray-400 ml-2" />
-            </div>
-            <p className="text-lg">Chọn một cuộc trò chuyện để bắt đầu.</p>
-          </div>
-        )}
+        <ChatWindow
+          activeChat={activeChat}
+          currentChatUser={currentChatUser}
+          currentUser={currentUser}
+          messages={messages}
+          users={users}
+          isFriend={isFriend}
+          isTyping={isTyping}
+          typingUserName={typingUserName}
+          typingUserAvatar={typingUserAvatar}
+          scrollRef={scrollRef}
+          API_URL={API_URL}
+          getAvatarUrl={getAvatarUrl}
+          checkIsOnline={checkIsOnline}
+          handleVideoCall={handleVideoCall}
+          setShowGroupMembers={setShowGroupMembers}
+          handleScrollToBottom={handleScrollToBottom}
+          // Truyền nốt các prop dành cho form nhập liệu và preview
+          imagePreview={imagePreview}
+          clearImage={clearImage}
+          selectedFiles={selectedFiles}
+          removeFile={removeFile}
+          showEmoji={showEmoji}
+          setShowEmoji={setShowEmoji}
+          onEmojiClick={onEmojiClick}
+          handleSendMessage={handleSendMessage}
+          imageInputRef={imageInputRef}
+          handleImageChange={handleImageChange}
+          fileInputRef={fileInputRef}
+          handleFileChange={handleFileChange}
+          newMessage={newMessage}
+          handleInputChange={handleInputChange}
+        />
       </div>
 
+      {/* 3. MODALS */}
       {showProfile && (
         <UserProfileSidebar
           isOpen={showProfile}
@@ -1684,20 +1046,15 @@ const Home = () => {
           currentUser={currentUser}
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
-            // Cập nhật activeChat
             setActiveChat(updatedGroup);
-            // Cập nhật lại danh sách groups
             setGroups(
               groups.map((g) =>
-                g._id === updatedGroup._id ? updatedGroup : g,
-              ),
+                g._id === updatedGroup._id ? updatedGroup : g
+              )
             );
-            // Nếu user rời nhóm thì đóng modal và reset activeChat
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);
-              // Do server will emit groupMemberUpdated which triggers the leave notification,
-              // avoid showing a duplicate toast here.
             }
           }}
         />

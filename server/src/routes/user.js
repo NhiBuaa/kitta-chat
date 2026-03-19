@@ -13,13 +13,11 @@ const {
   rejectFriendRequest,
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/auth");
-const upload = require("../middlewares/upload");
 
 router.get("/profile", authMiddleware, getUserProfile);
 router.put(
   "/profile",
   authMiddleware,
-  upload.single("avatar"),
   updateUserProfile,
 );
 router.get("/friends", authMiddleware, getFriends);

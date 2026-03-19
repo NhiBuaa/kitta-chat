@@ -40,15 +40,15 @@ export const SocketProvider = ({ children }) => {
     // lắng nghe sự kiện Online/Offline
     useEffect(() => {
         if (!socket) {
-            console.log("⚠️ Socket not initialized");
+            console.log("Socket not initialized");
             return;
         }
 
-        console.log("👂 Setting up socket listeners");
+        console.log("Setting up socket listeners");
 
         // Lắng nghe danh sách từ Server
         socket.on("getOnlineUsers", (res) => {
-            console.log("📡 Nhận danh sách online users:", res);
+            console.log("Nhận danh sách online users:", res);
             setOnlineUsers(res);
         });
 
@@ -59,20 +59,20 @@ export const SocketProvider = ({ children }) => {
                 const user = JSON.parse(userString);
                 const userId = user?._id;
                 if (userId) {
-                    console.log(`📤 Emitting addNewUser event với userId: ${userId}`);
+                    console.log(`Emitting addNewUser event với userId: ${userId}`);
                     socket.emit("addNewUser", userId);
                 } else {
-                    console.log("⚠️ user object tồn tại nhưng không có _id, không emit addNewUser");
+                    console.log("user object tồn tại nhưng không có _id, không emit addNewUser");
                 }
             } catch (error) {
                 console.error("Lỗi parse user:", error);
             }
         } else {
-            console.log("⚠️ Không tìm thấy user trong localStorage");
+            console.log("Không tìm thấy user trong localStorage");
         }
 
         return () => {
-            console.log("🧹 Cleaning up socket listeners");
+            console.log("Cleaning up socket listeners");
             socket.off("getOnlineUsers");
         };
     }, [socket]);

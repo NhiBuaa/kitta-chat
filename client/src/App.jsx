@@ -10,9 +10,6 @@ import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Home from "./pages/Home";
 
-// Components
-import VideoCallWidget from './components/VideoCallWidget';
-
 // Component bảo vệ Route (Kiểm tra xem đã login chưa)
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -40,8 +37,6 @@ function App() {
         {/* Route không tồn tại thì về trang chủ */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-
-      <VideoCallWidget />
 
       <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>

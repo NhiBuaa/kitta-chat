@@ -8,9 +8,12 @@ const messageRoutes = require("./src/routes/messages");
 const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
+
+// Import Model
 const User = require("./src/models/User");
 const Message = require("./src/models/Message");
 const Group = require("./src/models/Group");
+const File = require("./src/models/File");
 
 dotenv.config();
 
@@ -204,52 +207,46 @@ io.on("connection", async (socket) => {
   });
 
   // Lắng nghe sự kiện sendMessage
-  socket.on(
-    "sendMessage",
-    async ({ senderId, receiverId, text, image, isGroup }) => {
-      // Fetch thông tin người gửi
-      const sender = await User.findById(senderId).select(
-        "displayName avatar email",
+  socket.on("sendMessage", async (messageData) => {
+    // Lấy toàn bộ dữ liệu từ Client gửi lên
+    const { sender, receiverId, isGroup } = messageData;
+
+    // Đảm bảo lấy đúng ID (Tránh trường hợp sender đã là object)
+    const senderId = typeof sender === "object" ? sender._id : sender;
+
+    try {
+      // Fetch thông tin người gửi để gắn vào avatar/tên hiển thị
+      const senderDoc = await User.findById(senderId).select(
+        "displayName avatar email"
       );
       const senderInfo = {
         _id: senderId,
-        displayName: sender?.displayName || sender?.email?.split("@")[0],
-        avatar: sender?.avatar,
+        displayName: senderDoc?.displayName || senderDoc?.email?.split("@")[0],
+        avatar: senderDoc?.avatar,
+      };
+
+      // Đóng gói lại toàn bộ dữ liệu (giữ nguyên cấu trúc mới có attachments, type...)
+      const payloadToEmit = {
+        ...messageData,
+        sender: senderInfo,
       };
 
       if (isGroup) {
-        // LOGIC GỬI CHO NHÓM - Dùng Room
-        io.to(receiverId).emit("getMessage", {
-          senderId,
-          sender: senderInfo,
-          receiverId,
-          text,
-          image,
-          createdAt: Date.now(),
-          isGroup: true,
-        });
+        // LOGIC GỬI CHO NHÓM
+        io.to(receiverId).emit("getMessage", payloadToEmit);
         console.log(`Group message sent to room ${receiverId}`);
       } else {
-        // LOGIC GỬI 1-1 - Emit cho cả Sender lẫn Receiver
-        const messageData = {
-          senderId,
-          sender: senderInfo,
-          receiverId,
-          text,
-          image,
-          isGroup: false,
-          createdAt: Date.now(),
-        };
-
-        // Gửi cho receiver
-        io.to(receiverId).emit("getMessage", messageData);
-        // Gửi cho sender để sender thấy tin nhắn của mình
-        io.to(senderId).emit("getMessage", messageData);
+        // LOGIC GỬI 1-1
+        io.to(receiverId).emit("getMessage", payloadToEmit);
+        // Gửi lại cho chính mình để render mượt mà
+        io.to(senderId).emit("getMessage", payloadToEmit);
 
         console.log(`1-1 message sent to ${senderId} and ${receiverId}`);
       }
-    },
-  );
+    } catch (err) {
+      console.error("Lỗi socket sendMessage:", err);
+    }
+  });
 
   // Lắng nghe sự kiện đang gõ
   socket.on(
