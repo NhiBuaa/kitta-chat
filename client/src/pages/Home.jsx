@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useContext } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -14,8 +14,8 @@ import { FilePicker } from "../components/FilePicker"
 
 // CONTEXT & SERVICE
 import { CallContext } from "../context/CallContext";
-import { useSocket } from "../context/SocketContext";
 import { sendFriendRequest } from "../services/userService";
+import { useSocket } from "../context/SocketContext";
 
 // HOOK
 import { useUploader } from '../hooks/useUploader'
@@ -46,7 +46,6 @@ const Home = () => {
   const [sentRequests, setSentRequests] = useState([]);
 
   // CONTEXT
-  const { callUser } = useContext(CallContext);
   const { onlineUsers, socket } = useSocket();
 
   // REF
@@ -63,21 +62,17 @@ const Home = () => {
   // HÀM XỬ LÝ GỌI VIDEO
   const handleVideoCall = () => {
     if (!currentChatUser) return;
-    const chatUserId = currentChatUser._id || currentChatUser.id;
+
     if (currentChatUser.members || currentChatUser.isGroup) {
       toast.warning("Chưa hỗ trợ gọi nhóm!");
       return;
     }
-    const receiver = onlineUsers.find((user) => user.userId === chatUserId);
-    if (receiver) {
-      callUser({
-        socketId: receiver.socketId,
-        _id: chatUserId,
-        displayName: currentChatUser.displayName,
-      });
-    } else {
-      toast.info(`Người dùng ${currentChatUser.displayName} đang ngoại tuyến.`);
-    }
+
+    const chatUserId = currentChatUser._id || currentChatUser.id;
+    const url = `/video-call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}`;
+
+    localStorage.setItem('activePartnerUserId', chatUserId);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   // CÁC BIẾN TÍNH TOÁN

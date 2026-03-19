@@ -11,16 +11,14 @@ const UserProfile = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Giả lập load data user ban đầu (thực tế bạn gọi API get profile ở đây)
+  // Giả lập load data user ban đầu
   useEffect(() => {
-    // Ví dụ data lấy từ API
-
     const initialData = {
-      displayName: "User Demo",
-      status: "Đang code ReactJS...",
-      avatarPreview: "https://via.placeholder.com/150", // Avatar mặc định
+      displayName: 'User Demo',
+      status: 'Đang code ReactJS...',
+      avatarPreview: 'https://via.placeholder.com/150'
     };
-    setFormData((prev) => ({ ...prev, ...initialData }));
+    setFormData(prev => ({ ...prev, ...initialData }));
   }, []);
 
   // Xử lý khi chọn ảnh
@@ -30,7 +28,7 @@ const UserProfile = () => {
       setFormData({
         ...formData,
         avatarFile: file,
-        avatarPreview: URL.createObjectURL(file), // Tạo URL tạm để xem trước
+        avatarPreview: URL.createObjectURL(file) // Tạo URL tạm để xem trước
       });
     }
   };
@@ -41,7 +39,6 @@ const UserProfile = () => {
     setLoading(true);
 
     try {
-      // Dùng FormData để gửi file lên server
       const data = new FormData();
       data.append("displayName", formData.displayName);
       data.append("status", formData.status);
@@ -49,7 +46,6 @@ const UserProfile = () => {
         data.append("avatar", formData.avatarFile);
       }
 
-      // Gọi API (Thay URL bằng endpoint thật của bạn)
       await axios.put("/api/users/profile", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -65,14 +61,12 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      {/* Card Container */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Header với Gradient Green -> Teal */}
-        <div className="h-32 bg-gradient-to-r from-green-500 to-teal-500 relative">
-          {/* Tiêu đề ẩn hoặc nút back có thể đặt ở đây */}
-        </div>
 
-        {/* Phần Avatar (Nằm đè lên header và body) */}
+        {/* Header với Gradient */}
+        <div className="h-32 bg-gradient-to-r from-green-500 to-teal-500 relative"></div>
+
+        {/* Phần Avatar */}
         <div className="relative -mt-16 flex justify-center">
           <div className="relative group">
             <img
@@ -80,11 +74,7 @@ const UserProfile = () => {
               alt="Avatar"
               className="w-32 h-32 rounded-full border-4 border-white object-cover shadow-md bg-gray-200"
             />
-            {/* Nút camera overlay khi hover */}
-            <label
-              htmlFor="avatar-upload"
-              className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-bold"
-            >
+            <label htmlFor="avatar-upload" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-bold">
               Đổi ảnh
             </label>
             <input
@@ -97,13 +87,7 @@ const UserProfile = () => {
           </div>
         </div>
 
-        {/* Form nhập liệu */}
-        <div className="px-8 pb-8 pt-4">
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-1">
-            {formData.displayName || "Tên người dùng"}
-          </h2>
-          <p className="text-center text-gray-500 text-sm mb-6">User Profile</p>
-
+        <div className="p-8 pt-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Input: Tên hiển thị */}
             <div>
@@ -137,14 +121,11 @@ const UserProfile = () => {
               ></textarea>
             </div>
 
-            {/* Nút Save - Gradient Green -> Teal */}
+            {/* Nút Save */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 mt-2 rounded-lg text-white font-bold shadow-lg
-                         bg-gradient-to-r from-green-500 to-teal-500 
-                         hover:from-green-600 hover:to-teal-600 
-                         transform transition-all active:scale-95 disabled:opacity-70"
+              className="w-full py-3 mt-2 rounded-lg text-white font-bold shadow-lg bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 transform transition-all active:scale-95 disabled:opacity-70"
             >
               {loading ? "Đang lưu..." : "Lưu thay đổi"}
             </button>

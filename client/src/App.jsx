@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from 'axios';
 
 // Pages
 import Login from "./pages/Login";
@@ -9,6 +10,29 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Home from "./pages/Home";
+import VideoCallPage from './pages/VideoCallPage';
+
+// Components
+import CallNotification from './components/CallNotification';
+
+// Xử lý token hết hạn
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Nếu Backend trả về lỗi
+    if (error.response && error.response.status === 403) {
+      console.log("Token hết hạn, đang đăng xuất...");
+      // Xóa sạch dữ liệu cũ
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Component bảo vệ Route (Kiểm tra xem đã login chưa)
 const ProtectedRoute = ({ children }) => {
@@ -33,10 +57,13 @@ function App() {
 
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+        <Route path="/video-call/:partnerId" element={<VideoCallPage />} />
 
         {/* Route không tồn tại thì về trang chủ */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+
+      <CallNotification />
 
       <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
