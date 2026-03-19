@@ -13,7 +13,6 @@ import ChatInput from "../components/ChatInput";
 import { FilePicker } from "../components/FilePicker"
 
 // CONTEXT & SERVICE
-import { CallContext } from "../context/CallContext";
 import { sendFriendRequest } from "../services/userService";
 import { useSocket } from "../context/SocketContext";
 
