@@ -149,7 +149,7 @@ const VideoCallPage = () => {
         };
     }, [socket, currentUser]);
 
-    // --- Cuộc gọi kết thúc ---
+    //  Cuộc gọi kết thúc
     if (callEnded) {
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-[#1c1c1c] text-white">
@@ -167,7 +167,7 @@ const VideoCallPage = () => {
         );
     }
 
-    // --- Đang trong cuộc gọi ---
+    // Đang trong cuộc gọi
     if (isJoined && callAccepted && !callEnded) {
         return (
             <div className="relative w-screen h-screen bg-black group overflow-hidden">
@@ -230,7 +230,7 @@ const VideoCallPage = () => {
         );
     }
 
-    // --- Màn hình chuẩn bị ---
+    // Màn hình chuẩn bị
     return (
         <div className="flex h-screen w-screen bg-[#1c1c1c] text-white">
             <div className="flex-1 flex flex-col items-center justify-center p-8 border-r border-gray-700">
