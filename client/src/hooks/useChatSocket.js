@@ -21,9 +21,7 @@ export const useChatSocket = ({
     useEffect(() => {
         if (!socket || !currentUser) return;
 
-        // ==========================================
-        // 1. NGƯỜI DÙNG & BẠN BÈ
-        // ==========================================
+        // NGƯỜI DÙNG & BẠN BÈ
         const handleUserDisconnected = (userId) => {
             setUsers((prev) =>
                 prev.map((user) =>
@@ -56,9 +54,7 @@ export const useChatSocket = ({
             setUsers((prev) => prev.map((u) => (u._id === data.rejecterId ? { ...u, isSent: false, isIncomingRequest: false } : u)));
         };
 
-        // ==========================================
-        // 2. TIN NHẮN (NHẬN & ĐÃ ĐỌC)
-        // ==========================================
+        // TIN NHẮN (NHẬN & ĐÃ ĐỌC)
         const handleUnifiedMessage = (data) => {
             const currentActiveChat = activeChatRef.current;
             const targetId = data.isGroup ? data.receiverId : data.senderId;
@@ -153,9 +149,7 @@ export const useChatSocket = ({
             }));
         };
 
-        // ==========================================
-        // 3. ĐANG GÕ (TYPING)
-        // ==========================================
+        // ĐANG GÕ
         const handleTyping = (data) => {
             if (activeChatRef.current?._id === data.chatId && data.senderId !== currentUser._id) {
                 setIsTyping(true);
@@ -169,9 +163,7 @@ export const useChatSocket = ({
             }
         };
 
-        // ==========================================
-        // 4. QUẢN LÝ NHÓM (GROUPS)
-        // ==========================================
+        // QUẢN LÝ NHÓM
         const handleGroupAdminChanged = (data) => {
             const { groupId, newAdminId } = data;
             setGroups((prev) => prev.map((g) => g._id === groupId ? { ...g, admin: newAdminId } : g));
@@ -218,9 +210,8 @@ export const useChatSocket = ({
             try { socket.emit("leaveGroup", groupId); } catch (err) { console.error(err); }
         };
 
-        // ==========================================
+
         // ĐĂNG KÝ VÀ HỦY SỰ KIỆN
-        // ==========================================
         socket.on("userDisconnected", handleUserDisconnected);
         socket.on("newFriendRequest", handleNewFriendRequest);
         socket.on("friendRequestAccepted", handleFriendRequestAccepted);
@@ -257,7 +248,5 @@ export const useChatSocket = ({
             socket.off("groupDeleted", handleGroupDeleted);
         };
     }, [socket, currentUser, fetchNewConversation]);
-    // Thêm các biến liên quan đến state cập nhật nếu bạn muốn chặt chẽ hơn,
-    // nhưng để tránh re-render liên tục do hàm, hãy đảm bảo fetchNewConversation
-    // được bọc bằng useCallback ở Home.jsx.
+    
 };
