@@ -870,6 +870,11 @@ const Home = () => {
   };
 
   const handleLogout = () => {
+    // Ngắt kết nối socket
+    if (socket) {
+      socket.disconnect();
+    }
+
     // Dọn dẹp LocalStorage/SessionStorage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
