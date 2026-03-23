@@ -545,13 +545,26 @@ const Home = () => {
         );
       } else {
         if (data.type !== "system") {
-          const sender = users.find((u) => u._id === data.senderId);
-          const senderName = sender ? sender.displayName : "Ai đó";
-          toast.info(`Tin nhắn mới từ ${senderName}`, {
+          let messageToast = "";
+
+          if(data.isGroup) {
+            const group = users.find((u) => u._id === data.receiverId);
+            const groupName = group ? group.name : "Nhóm chat";
+            const senderName = data.sender?.displayName || "Một thành viên";
+
+            messageToast = `${senderName} vừa gửi một tin nhắn tới ${groupName}`
+          } else {
+            const sender = users.find((u) => u._id === data.receiverId);
+            const senderName = sender.sender?.displayName || "Ai đó";
+
+            messageToast = `Tin nhắn mới từ ${senderName}`
+          }
+
+          toast.info(messageToast, {
             position: "top-right",
             autoClose: 3000,
-            hideProgressBar: true,
-          });
+            hideProgressBar: true
+          })
         }
       }
     };
