@@ -114,6 +114,8 @@ const getAllUsers = async (req, res) => {
 };
 
 // Tìm kiếm người dùng
+
+// hàm bỏ dấu để tìm ko phân biệt
 const removeVietnameseTones = (str = "") => {
   return str
     .toLowerCase()
@@ -128,13 +130,15 @@ const searchUsers = async (req, res) => {
     const { keyword } = req.query;
     const currentUserId = req.user.id;
 
+    // lấy full in4 của user hiện tại để check bb, lời mời
     const currentUserFull = await User.findById(currentUserId);
 
     if (!keyword || !keyword.trim()) {
       return res.json({ success: true, users: [] });
     }
 
-    const keywordClean = keyword.trim().toLowerCase();
+    // xoá dấu + lowercase
+    const keywordClean = removeVietnameseTones(keyword.trim());
 
     const users = await User.find({
       _id: { $ne: currentUserId },
@@ -143,12 +147,14 @@ const searchUsers = async (req, res) => {
     );
 
     const filteredUsers = users.filter((user) => {
-      const name = (user.displayName || "").toLowerCase();
-      const email = (user.email || "").toLowerCase();
+      const name = removeVietnameseTones(user.displayName || "");
+      const email = removeVietnameseTones(user.email || "");
 
-      return name.startsWith(keywordClean) || email.startsWith(keywordClean);
+      // key nằm trong tên or mail thì giữ
+      return name.includes(keywordClean) || email.includes(keywordClean);
     });
 
+    // thêm trạng thái là bb hay chưa
     const usersWithStatus = filteredUsers.map((user) => {
       const isSent = (user.friendRequests || []).includes(currentUserId);
       const isReceived = (currentUserFull.friendRequests || []).includes(
@@ -169,9 +175,12 @@ const searchUsers = async (req, res) => {
       };
     });
 
+    // trả kq về FE
     res.json({ success: true, users: usersWithStatus });
   } catch (error) {
     console.error("Lỗi tìm kiếm người dùng:", error);
+
+    // trả lỗi cho client
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
