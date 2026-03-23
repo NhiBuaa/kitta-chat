@@ -870,7 +870,12 @@ const Home = () => {
   };
 
   const handleLogout = () => {
+    // Dọn dẹp LocalStorage/SessionStorage
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setCurrentUser(null);
+
     window.location.reload();
   };
 
