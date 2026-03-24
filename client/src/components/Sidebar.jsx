@@ -243,8 +243,17 @@ const Sidebar = ({
             );
           })
         ) : (
-          <div className="flex flex-col items-center justify-center mt-10 text-gray-400">
-            <p className="text-sm">Không có tin nhắn nào</p>
+          <div className="flex flex-col items-center justify-center mt-10 text-gray-500 px-6 text-center">
+            <FaSearch className="text-3xl text-gray-300 mb-3" />
+
+            <p className="text-sm font-semibold text-gray-700">
+              Không tìm thấy kết quả nào
+            </p>
+
+            <p className="text-xs mt-1 text-gray-400">
+              Hãy thử tìm với cách viết khác hoặc kết hợp từ khóa khác. Từ đầy
+              đủ thường cho kết quả tốt hơn.
+            </p>
           </div>
         )}
       </div>
