@@ -36,7 +36,7 @@ const updateUserProfile = async (req, res) => {
         // Validate và gán Status
         if (status) updateData.status = status;
 
-        // Xử lý ActivityStatus (Quan trọng: Parse từ chuỗi JSON sang Object)
+        // Xử lý ActivityStatus
         if (activityStatus) {
             try {
                 // Nếu là chuỗi JSON thì parse, nếu là object thì giữ nguyên
@@ -53,7 +53,7 @@ const updateUserProfile = async (req, res) => {
         // Xử lý Avatar (Nếu có file upload)
         if (req.file) {
             let path = req.file.path.replace(/\\/g, "/");
-            // Nếu bạn lưu file trong folder uploads ở root, đường dẫn thường là uploads/tenfile.jpg
+            // Nếu lưu file trong folder uploads ở root, đường dẫn thường là uploads/tenfile.jpg
             // Cần sửa lại cho khớp với cách bạn serve static file
             updateData.avatar = `/uploads/${req.file.filename}`;
         }
@@ -69,7 +69,6 @@ const updateUserProfile = async (req, res) => {
         res.json({ success: true, message: 'Cập nhật thành công', user: updatedUser });
 
     } catch (error) {
-        // In lỗi ra terminal server để bạn nhìn thấy
         console.error("LỖI UPDATE PROFILE:", error);
         res.status(500).json({ success: false, message: 'Lỗi Server: ' + error.message });
     }

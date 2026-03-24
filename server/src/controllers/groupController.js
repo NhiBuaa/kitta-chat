@@ -175,7 +175,7 @@ const removeMember = async (req, res) => {
             `${removedMember.displayName || removedMember.email.split('@')[0]} đã ${actionType} nhóm`
         );
 
-        // Emit system message tới tất cả trong group room TRƯỚC KHI remove-member (để user vừa bị remove còn kịp nhận)
+        // Emit system message tới tất cả trong group room
         io.to(groupId).emit('getMessage', {
             senderId: null,
             sender: null,

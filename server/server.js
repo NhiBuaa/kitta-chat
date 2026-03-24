@@ -87,21 +87,28 @@ io.on("connection", (socket) => {
 
   socket.on("addNewUser", async (userId) => {
     if (!userId || userId === "undefined") return;
+    if (socket.userRegistered && socket.userId === userId) {
+      socket.emit("getOnlineUsers", getOnlineUsersPayload());
+      return;
+    }
+    const hadPendingOfflineTimer = disconnectTimers.has(userId);
+    const currentCount = userConnections.get(userId) || 0;
 
     try {
       // Join user vào room với userId (để nhận tin nhắn 1-1)
-      socket.userId = userId
+      socket.userId = userId;
+      socket.userRegistered = true;
       socket.join(userId);
       console.log(`User ${userId} joined room ${userId}`);
 
       // Join user vào các room Group
-      const userGroups = await Group.find({ members: userId })
+      const userGroups = await Group.find({ members: userId });
 
       if (userGroups) {
         userGroups.forEach((group) => {
           socket.join(group._id.toString());
-          console.log(`User ${userId} joined group room ${userId}`);
-        })
+          console.log(`User ${userId} joined group room ${group._id.toString()}`);
+        });
       }
     } catch (err) {
       console.error(`Lỗi khi join room cho user ${userId}:`, err);
@@ -111,18 +118,18 @@ io.on("connection", (socket) => {
     existingSocketIds.add(socket.id);
     onlineUsers.set(userId, existingSocketIds);
 
-    if (disconnectTimers.has(userId)) {
+    if (hadPendingOfflineTimer) {
       console.log(`[Presence] Cancel offline timer for ${userId}.`);
       clearTimeout(disconnectTimers.get(userId));
       disconnectTimers.delete(userId);
-    } else {
-      const currentCount = userConnections.get(userId) || 0;
-      userConnections.set(userId, currentCount + 1);
+    }
 
-      if (currentCount === 0) {
-        broadcastUserStatus(io, userId, "online");
-        await User.findByIdAndUpdate(userId, { "activityStatus.state": "online" });
-      }
+    userConnections.set(userId, currentCount + 1);
+    console.log(`[Presence] User ${userId} connected. Count ${currentCount} -> ${currentCount + 1}`);
+
+    if (!hadPendingOfflineTimer && currentCount === 0) {
+      broadcastUserStatus(io, userId, "online");
+      await User.findByIdAndUpdate(userId, { "activityStatus.state": "active" });
     }
 
     socket.emit("getOnlineUsers", getOnlineUsersPayload());
@@ -143,6 +150,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const userId = socket.userId;
     if (!userId) return;
+    socket.userRegistered = false;
 
     const existingSocketIds = onlineUsers.get(userId);
     if (existingSocketIds) {
@@ -159,24 +167,33 @@ io.on("connection", (socket) => {
     const currentCount = userConnections.get(userId) || 0;
     const newCount = Math.max(0, currentCount - 1);
     userConnections.set(userId, newCount);
+    console.log(`[Presence] User ${userId} disconnected. Count ${currentCount} -> ${newCount}`);
 
     if (newCount === 0) {
       const timerId = setTimeout(async () => {
-        if (userConnections.get(userId) === 0) {
-          console.log(`Confirmed user ${userId} is offline.`);
+        try {
+          console.log(`[Timer 5s] Hết 5 giây. Đang kiểm tra lại count của ${userId}...`);
+          const finalCount = userConnections.get(userId);
+          const finalSocketCount = onlineUsers.get(userId)?.size || 0;
 
-          broadcastUserStatus(io, userId, "offline");
+          if (finalCount === 0 && finalSocketCount === 0) {
+            console.log(`[Timer 5s] Xác nhận User ${userId} ĐÃ CHÍNH THỨC OFFLINE.`);
 
-          try {
+            broadcastUserStatus(io, userId, "offline");
+
+            console.log(`[Timer 5s] Đang lưu trạng thái offline xuống Database...`);
             await User.findByIdAndUpdate(userId, {
               activityStatus: { state: "offline", lastSeen: new Date() },
             });
-          } catch (err) {
-            console.error("Failed to persist offline status:", err);
-          }
+            console.log(`[Timer 5s] Lưu Database thành công!`);
 
-          userConnections.delete(userId);
-          disconnectTimers.delete(userId);
+            userConnections.delete(userId);
+            disconnectTimers.delete(userId);
+          } else {
+            console.log(`[Timer 5s] Đã hủy báo Offline vì ${userId} đã kết nối lại.`);
+          }
+        } catch (error) {
+          console.error(`[LỖI NGHIÊM TRỌNG TRONG TIMER 5S]:`, error);
         }
       }, 5000);
 

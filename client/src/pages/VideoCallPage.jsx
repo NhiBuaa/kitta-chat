@@ -137,10 +137,6 @@ const VideoCallPage = () => {
             }
         }
 
-        if (socket && currentUser) {
-            socket.emit("addNewUser", currentUser._id);
-        }
-
         return () => {
             setLocalStream(prev => {
                 if (prev) prev.getTracks().forEach(track => track.stop());

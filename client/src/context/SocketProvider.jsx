@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import io from "socket.io-client";
 import { SocketContext } from "./SocketContext.js";
+
+const AUTH_CHANGED_EVENT = "auth-changed";
 
 const parseStoredUser = () => {
     const userString = localStorage.getItem("user");
@@ -16,60 +18,76 @@ const parseStoredUser = () => {
 
 export const SocketProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(() => parseStoredUser());
+    const [onlineUsers, setOnlineUsers] = useState([]);
 
-    const [socket] = useState(() => {
-        const user = parseStoredUser();
-        if (!user) return null;
+    const userId = currentUser?._id || currentUser?.id || null;
 
-        const userId = user._id || user.id;
+    const socket = useMemo(() => {
+        if (!userId) return null;
+
         const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
         return io(SERVER_URL, {
             transports: ["websocket"],
             query: { userId },
         });
-    });
-
-    const [onlineUsers, setOnlineUsers] = useState([]);
+    }, [userId]);
 
     useEffect(() => {
-        const syncUser = () => setCurrentUser(parseStoredUser());
+        const syncUser = () => {
+            const nextUser = parseStoredUser();
+            setCurrentUser(nextUser);
+
+            if (!nextUser) {
+                setOnlineUsers([]);
+            }
+        };
+
         window.addEventListener("storage", syncUser);
-        return () => window.removeEventListener("storage", syncUser);
+        window.addEventListener(AUTH_CHANGED_EVENT, syncUser);
+
+        return () => {
+            window.removeEventListener("storage", syncUser);
+            window.removeEventListener(AUTH_CHANGED_EVENT, syncUser);
+        };
     }, []);
 
     useEffect(() => {
-        if (!socket) return;
+        if (!socket || !userId) return;
 
-        if (currentUser) {
-            socket.emit("addNewUser", currentUser._id || currentUser.id);
-        }
+        const handleConnect = () => {
+            socket.emit("addNewUser", userId);
+        };
 
         const handleOnlineUsers = (users) => {
             setOnlineUsers(Array.isArray(users) ? users : []);
         };
 
-        const handleUserStatusChanged = ({ userId, status }) => {
+        const handleUserStatusChanged = ({ userId: changedUserId, status }) => {
             setOnlineUsers((prev) => {
-                const existingEntry = prev.find((user) => user.userId === userId);
+                const existingEntry = prev.find((user) => user.userId === changedUserId);
 
                 if (status === "online") {
-                    return existingEntry ? prev : [...prev, { userId, socketId: null, socketIds: [] }];
+                    return existingEntry
+                        ? prev
+                        : [...prev, { userId: changedUserId, socketId: null, socketIds: [] }];
                 }
 
-                return prev.filter((user) => user.userId !== userId);
+                return prev.filter((user) => user.userId !== changedUserId);
             });
         };
 
+        socket.on("connect", handleConnect);
         socket.on("getOnlineUsers", handleOnlineUsers);
         socket.on("userStatusChanged", handleUserStatusChanged);
 
         return () => {
+            socket.off("connect", handleConnect);
             socket.off("getOnlineUsers", handleOnlineUsers);
             socket.off("userStatusChanged", handleUserStatusChanged);
             socket.disconnect();
         };
-    }, [socket, currentUser]);
+    }, [socket, userId]);
 
     return (
         <SocketContext.Provider value={{ socket, onlineUsers, currentUser }}>
