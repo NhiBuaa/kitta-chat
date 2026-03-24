@@ -23,7 +23,7 @@ const Login = () => {
       toast.success(`Chào mừng ${res.data.user.displayName} quay trở lại!`);
       navigate("/");
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Đăng nhập thất bại");
+      toast.error(err.response?.data?.msg || "Tài khoản hoặc mật khẩu không chính xác");
     }
   };
 
