@@ -41,7 +41,8 @@ const createGroup = async (req, res) => {
         if (io) {
             allMembers.forEach(memberId => {
                 const onlineUsers = req.app.get('onlineUsers');
-                const memberSocketId = onlineUsers?.get(memberId.toString());
+                const memberSocketIds = onlineUsers?.get(memberId.toString());
+                const memberSocketId = memberSocketIds ? Array.from(memberSocketIds).at(-1) : null;
                 if (memberSocketId) {
                     io.to(memberSocketId).emit('getMessage', {
                         senderId: null,

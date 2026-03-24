@@ -1,86 +1,78 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 import { SocketContext } from "./SocketContext.js";
 
+const parseStoredUser = () => {
+    const userString = localStorage.getItem("user");
+    if (!userString) return null;
+
+    try {
+        return JSON.parse(userString);
+    } catch (error) {
+        console.error("Loi parse user trong localStorage:", error);
+        return null;
+    }
+};
+
 export const SocketProvider = ({ children }) => {
-    // STATE
-    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [currentUser, setCurrentUser] = useState(() => parseStoredUser());
+
     const [socket] = useState(() => {
+        const user = parseStoredUser();
+        if (!user) return null;
+
+        const userId = user._id || user.id;
         const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
-        // Lấy userId từ localStorage
-        const userString = localStorage.getItem("user");
-        let userId = "";
-        if (userString) {
-            try {
-                const user = JSON.parse(userString);
-                userId = user._id || "";
-            } catch (error) {
-                console.error("Lỗi parse user:", error);
-            }
-        }
-
-        const newSocket = io(SERVER_URL, {
-            transports: ['websocket'],
-            query: {
-                userId: userId
-            }
-            // reconnection: true,
+        return io(SERVER_URL, {
+            transports: ["websocket"],
+            query: { userId },
         });
-
-        return newSocket;
     });
 
-    useEffect(() => {
-        return () => {
-            if (socket) socket.disconnect();
-        };
-    }, [socket]);
+    const [onlineUsers, setOnlineUsers] = useState([]);
 
-    // lắng nghe sự kiện Online/Offline
     useEffect(() => {
-        if (!socket) {
-            console.log("Socket not initialized");
-            return;
+        const syncUser = () => setCurrentUser(parseStoredUser());
+        window.addEventListener("storage", syncUser);
+        return () => window.removeEventListener("storage", syncUser);
+    }, []);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        if (currentUser) {
+            socket.emit("addNewUser", currentUser._id || currentUser.id);
         }
 
-        console.log("Setting up socket listeners");
+        const handleOnlineUsers = (users) => {
+            setOnlineUsers(Array.isArray(users) ? users : []);
+        };
 
-        // Lắng nghe danh sách từ Server
-        socket.on("getOnlineUsers", (res) => {
-            console.log("Nhận danh sách online users:", res);
-            setOnlineUsers(res);
-        });
+        const handleUserStatusChanged = ({ userId, status }) => {
+            setOnlineUsers((prev) => {
+                const existingEntry = prev.find((user) => user.userId === userId);
 
-        // Emit addNewUser khi socket connect (để register userId với server)
-        const userString = localStorage.getItem("user");
-        if (userString) {
-            try {
-                const user = JSON.parse(userString);
-                // Kiểm tra kỹ các trường hợp id hoặc _id
-                const userId = user._id || user.id;
-
-                if (userId) {
-                    console.log(`Emitting addNewUser event với userId: ${userId}`);
-                    socket.emit("addNewUser", userId);
-                } else {
-                    console.log("user object tồn tại nhưng không có _id, không emit addNewUser");
+                if (status === "online") {
+                    return existingEntry ? prev : [...prev, { userId, socketId: null, socketIds: [] }];
                 }
-            } catch (error) {
-                console.error("Lỗi parse user từ storage:", error);
-            }
-        } else {
-            console.log("Không tìm thấy user trong localStorage");
-        }
+
+                return prev.filter((user) => user.userId !== userId);
+            });
+        };
+
+        socket.on("getOnlineUsers", handleOnlineUsers);
+        socket.on("userStatusChanged", handleUserStatusChanged);
 
         return () => {
-            console.log("Cleaning up socket listeners");
-            socket.off("getOnlineUsers");
+            socket.off("getOnlineUsers", handleOnlineUsers);
+            socket.off("userStatusChanged", handleUserStatusChanged);
+            socket.disconnect();
         };
-    }, [socket]);
+    }, [socket, currentUser]);
 
     return (
-        <SocketContext.Provider value={{ socket, onlineUsers }}>
+        <SocketContext.Provider value={{ socket, onlineUsers, currentUser }}>
             {children}
         </SocketContext.Provider>
     );

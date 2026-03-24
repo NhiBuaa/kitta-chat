@@ -194,7 +194,8 @@ const accceptFriendRequest = async (req, res) => {
         }, { new: true });
 
         // Emit event cho người gửi (sender) để cập nhật sidebar
-        const senderSocketId = onlineUsers.get(senderId.toString());
+        const senderSocketIds = onlineUsers.get(senderId.toString());
+        const senderSocketId = senderSocketIds ? Array.from(senderSocketIds).at(-1) : null;
         if (senderSocketId) {
             io.to(senderSocketId).emit('friendRequestAccepted', {
                 newFriendId: receiverId,
@@ -322,7 +323,8 @@ const sendFriendRequest = async (req, res) => {
         })
 
         // Gửi thông báo real-time nếu người nhận đang online
-        const receiverSocketId = onlineUsers.get(receiverId.toString());
+        const receiverSocketIds = onlineUsers.get(receiverId.toString());
+        const receiverSocketId = receiverSocketIds ? Array.from(receiverSocketIds).at(-1) : null;
         console.log("Receiver Socket ID:", receiverSocketId);
         if(receiverSocketId) {
             io.to(receiverSocketId).emit('newFriendRequest', {

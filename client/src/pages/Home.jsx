@@ -367,23 +367,39 @@ const Home = () => {
       );
     };
 
-    socket.off("userDisconnected");
+    socket.off("userStatusChanged");
     socket.off("newFriendRequest");
     socket.off("friendRequestAccepted");
     socket.off("friendRequestRejected");
 
-    socket.on("userDisconnected", handleUserDisconnected);
+    socket.on("userStatusChanged", ({ userId, status }) => {
+      if (status === "offline") {
+        handleUserDisconnected(userId);
+      }
+    });
     socket.on("newFriendRequest", handleNewFriendRequest);
     socket.on("friendRequestAccepted", handleFriendRequestAccepted);
     socket.on("friendRequestRejected", handleFriendRequestRejected);
 
     return () => {
-      socket.off("userDisconnected", handleUserDisconnected);
+      socket.off("userStatusChanged");
       socket.off("newFriendRequest", handleNewFriendRequest);
       socket.off("friendRequestAccepted", handleFriendRequestAccepted);
       socket.off("friendRequestRejected", handleFriendRequestRejected);
     };
   }, [socket, currentUser]);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => ({
+          ...u,
+          // Kiểm tra xem ID của user có nằm trong mảng online của socket không
+          isOnline: onlineUsers.some((onlineUser) => onlineUser.userId === u._id)
+        }))
+      );
+    }
+  }, [onlineUsers, users.length]);
 
   useEffect(() => {
     if (!socket) return;
