@@ -311,19 +311,28 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId }) => {
+  socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId, mediaStatus }) => {
     console.log(`[SERVER] callUser from ${callerDbId} to ${userToCall}`);
 
     const room = io.sockets.adapter.rooms.get(userToCall);
     if (room && room.size > 0) {
-      io.to(userToCall).emit("callUser", { signal: signalData, from, name, callerDbId });
+      io.to(userToCall).emit("callUser", {
+        signal: signalData,
+        from,
+        name,
+        callerDbId,
+        mediaStatus,
+      });
     } else {
       socket.emit("callRejected", { reason: "User offline" });
     }
   });
 
   socket.on("answerCall", (data) => {
-    io.to(data.to).emit("callAccepted", data.signal);
+    io.to(data.to).emit("callAccepted", {
+      signal: data.signal,
+      mediaStatus: data.mediaStatus,
+    });
   });
 
   socket.on("endCall", (data) => {
