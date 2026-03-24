@@ -143,23 +143,23 @@ const Register = () => {
             {/* check list */}
             <div className="text-xs mt-2 space-y-1">
               <p className={hasMinLength ? "text-green-500" : "text-red-400"}>
-                {hasMinLength} Ít nhất 8 ký tự
+                {hasMinLength ? "✔" : "✖"} Ít nhất 8 ký tự
               </p>
 
               <p className={hasUpper ? "text-green-500" : "text-red-400"}>
-                {hasUpper} Có chữ in hoa
+                {hasUpper ? "✔" : "✖"} Có chữ in hoa
               </p>
 
               <p className={hasLower ? "text-green-500" : "text-red-400"}>
-                {hasLower} Có chữ thường
+                {hasLower ? "✔" : "✖"} Có chữ thường
               </p>
 
               <p className={hasNumber ? "text-green-500" : "text-red-400"}>
-                {hasNumber} Có số
+                {hasNumber ? "✔" : "✖"} Có số
               </p>
 
               <p className={hasSpecial ? "text-green-500" : "text-red-400"}>
-                {hasSpecial} Có ký tự đặc biệt
+                {hasSpecial ? "✔" : "✖"} Có ký tự đặc biệt
               </p>
             </div>
           </div>
@@ -196,12 +196,12 @@ const Register = () => {
             <p className="text-xs min-h-[18px]">
               {confirmPassword ? (
                 confirmPassword === password ? (
-                  <span className="text-green-500">Mật khẩu khớp</span>
+                  <span className="text-green-500">✔ Mật khẩu khớp</span>
                 ) : (
-                  <span className="text-red-500">Mật khẩu không khớp</span>
+                  <span className="text-red-500">✖ Mật khẩu không khớp</span>
                 )
               ) : (
-                ""
+                " "
               )}
             </p>
           </div>
