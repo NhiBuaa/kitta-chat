@@ -44,6 +44,7 @@ const VideoCallPage = () => {
     const [micOn, setMicOn] = useState(true);
     const [camOn, setCamOn] = useState(true);
     const [isJoined, setIsJoined] = useState(false);
+    const [mediaError, setMediaError] = useState(false);
 
     const notifyMediaChange = (newCam, newMic) => {
         const targetId =
@@ -72,8 +73,8 @@ const VideoCallPage = () => {
     };
 
     const handleJoinCall = () => {
-        if (!socket || !stream) {
-            toast.warn("Vui long doi ket noi...");
+        if (!socket || (!stream && !mediaError)) {
+            toast.warn("Vui lòng đợi kết nối");
             return;
         }
 
@@ -88,7 +89,7 @@ const VideoCallPage = () => {
             callUser(partnerId, stream, camOn, micOn);
             setIsJoined(true);
         } else {
-            toast.error("Nguoi dung khong online hoac chua san sang.");
+            toast.error("Người dùng không online hoặc chưa sẵn sàng.");
         }
     };
 
@@ -101,28 +102,86 @@ const VideoCallPage = () => {
 
         if (myVideoFull.current && stream) {
             myVideoFull.current.srcObject = stream;
-            myVideoFull.current.play().catch(() => {});
+            myVideoFull.current.play().catch(() => { });
         }
 
         if (userVideoFull.current && remoteStream) {
             userVideoFull.current.srcObject = remoteStream;
-            userVideoFull.current.play().catch(() => {});
+            userVideoFull.current.play().catch(() => { });
         }
     }, [isJoined, callAccepted, callEnded, stream, remoteStream, partnerMediaStatus.cam]);
 
     useEffect(() => {
-        navigator.mediaDevices
-            .getUserMedia({ video: true, audio: true })
-            .then((currentStream) => {
+        const initMedia = async () => {
+            try {
+                // XIN QUYỀN CẢ CAM VÀ MIC
+                const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
                 setLocalStream(currentStream);
-                if (myVideo.current) {
-                    myVideo.current.srcObject = currentStream;
+                setMediaError(false);
+                setCamOn(true);
+                setMicOn(true);
+                if (myVideo.current) myVideo.current.srcObject = currentStream;
+
+                // Sự kiện khi bị ngắt kết nối đột ngột
+                const videoTrack = currentStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    videoTrack.onended = () => {
+                        toast.error("Camera bị ngắt kết nối đột ngột!");
+                        setCamOn(false);
+                        // Báo ngay cho đối phương biết mình vừa sập cam
+                        notifyMediaChange(false, micOn);
+                    };
                 }
-            })
-            .catch((err) => {
-                console.error("Loi Camera:", err);
-                toast.error("Khong the truy cap Camera/Mic.");
-            });
+
+            } catch (err) {
+                console.error("Lỗi Camera/Mic ban đầu:", err.name);
+
+                if (err.name === 'NotAllowedError') {
+                    toast.error("Bạn đã từ chối quyền truy cập. Chỉ có thể xem/nghe.");
+                    setMediaError(true);
+                    setCamOn(false);
+                    setMicOn(false);
+                }
+                // NẾU CAMERA HƯ HOẶC BỊ ỨNG DỤNG KHÁC CHIẾM DỤNG
+                else if (err.name === 'NotFoundError') {
+                    toast.error("Không tìm thấy Camera/Microphone. Vui lòng kiểm tra lại jack cắm.");
+                }
+                else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                    toast.warn("Camera đang bị ứng dụng khác sử dụng hoặc bị lỗi phần cứng. Đang chuyển sang chế độ Audio...");
+                }
+                else if (err.name === 'OverconstrainedError') {
+                    toast.error("Thiết bị không đáp ứng được yêu cầu chất lượng video.");
+                } else {
+                    toast.error("Lỗi thiết bị không xác định. Tham gia với tư cách khán giả.");
+                    setMediaError(true);
+                    setCamOn(false);
+                    setMicOn(false);
+                }
+
+                if (['NotFoundError', 'NotReadableError', 'TrackStartError'].includes(err.name)) {
+                    try {
+                        const audioOnlyStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        setLocalStream(audioOnlyStream);
+
+                        // Thử xin lại quyền nhưng CHỈ LẤY MIC
+                        setCamOn(false);
+                        setMicOn(true);
+                        setMediaError(false);
+
+                        toast.success("Đã kết nối được Microphone!");
+                    } catch (audioErr) {
+                        console.error("Lỗi Fallback Mic:", audioErr.name);
+                        toast.error("Không thể kết nối cả Camera lẫn Mic. Tham gia với tư cách khán giả.");
+                        setMediaError(true);
+                        setCamOn(false);
+                        setMicOn(false);
+                    }
+                }
+            }
+        }
+
+        initMedia();
 
         if (isIncoming) {
             const callerId = localStorage.getItem("tempCallerId");
@@ -304,12 +363,19 @@ const VideoCallPage = () => {
                 ) : (
                     <button
                         onClick={handleJoinCall}
-                        disabled={!stream}
-                        className={`px-10 py-4 font-bold rounded-full text-lg shadow-lg w-full max-w-[250px] transition ${!stream ? "bg-gray-600" : "bg-blue-600 hover:bg-blue-500 text-white transform active:scale-95"}`}
+                        className={`px-10 py-4 font-bold rounded-full text-lg shadow-lg transition ${(!stream && !mediaError) ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-500 text-white transform active:scale-95'}`}
                     >
-                        {!stream ? "Dang bat Camera..." : isIncoming ? "Tham gia ngay" : "Bắt đầu cuộc gọi"}
+                        {(!stream && !mediaError) ? "Đang kết nối..." : (isIncoming ? "Tham gia" : "Bắt đầu cuộc gọi")}
                     </button>
                 )}
+                <button
+                    onClick={() => {
+                        handleEndCall();
+                    }}
+                    className="mt-5 top-20 px-8 py-3 font-semibold rounded-full text-red-500 bg-red-500/10 hover:bg-red-500/20 transition"
+                >
+                    Hủy cuộc gọi
+                </button>
             </div>
         </div>
     );

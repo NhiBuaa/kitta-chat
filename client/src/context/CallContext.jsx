@@ -41,6 +41,7 @@ export const CallProvider = ({ children }) => {
     const userVideo = useRef();
     const connectionRef = useRef(null);
     const streamRef = useRef(null);
+    const callTimeoutRef = useRef(null);
 
     const updateStream = (newStream) => {
         streamRef.current = newStream;
@@ -75,6 +76,15 @@ export const CallProvider = ({ children }) => {
         setCallEnded(true);
     };
 
+    // BỔ SUNG: Cấu hình STUN Server (Để xuyên tường lửa 4G)
+    // Sau này nếu có kinh phí, bạn chèn thêm TURN Server của Twilio/Metered vào mảng này
+    const ICE_SERVERS = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+    };
+
     const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true) => {
         const userStr = localStorage.getItem("user");
         const freshUser = userStr ? JSON.parse(userStr) : null;
@@ -103,14 +113,20 @@ export const CallProvider = ({ children }) => {
 
         localStorage.setItem("activePartnerUserId", receiverUserId);
 
-        const peer = new Peer({ initiator: true, trickle: false, stream: localStream });
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+        callTimeoutRef.current = setTimeout(() => {
+            toast.error("Không có phản hồi từ đối phương.");
+            leaveCall();
+        }, 45000);
+
+        const peer = new Peer({ initiator: true, trickle: false, stream: localStream, config: ICE_SERVERS });
 
         peer.on("signal", (data) => {
             socket.emit("callUser", {
                 userToCall: receiverUserId,
                 signalData: data,
                 from: socket.id,
-                name: freshUser.displayName || "Nguoi dung",
+                name: freshUser.displayName || "Người dùng",
                 callerDbId: freshUser._id || freshUser.id,
                 mediaStatus: { cam: isCamOn, mic: isMicOn },
             });
@@ -129,6 +145,7 @@ export const CallProvider = ({ children }) => {
         });
 
         const handleCallAccepted = (payload) => {
+            clearTimeout(callTimeoutRef.current);
             const signal = payload?.signal || payload;
             const acceptedMediaStatus = payload?.mediaStatus;
 
@@ -151,7 +168,7 @@ export const CallProvider = ({ children }) => {
         const savedSignal = localStorage.getItem("tempCallSignal");
 
         if (!savedSignal || !callerUserId || savedSignal === "undefined") {
-            toast.error("Mat tin hieu cuoc goi.");
+            toast.error("Mất tín hiệu cuộc gọi.");
             return false;
         }
 
@@ -162,7 +179,7 @@ export const CallProvider = ({ children }) => {
         setCallEnded(false);
         updateStream(currentStream);
 
-        const peer = new Peer({ initiator: false, trickle: false, stream: currentStream });
+        const peer = new Peer({ initiator: false, trickle: false, stream: currentStream, config: ICE_SERVERS });
 
         peer.on("signal", (data) => {
             socket.emit("answerCall", {
@@ -197,6 +214,7 @@ export const CallProvider = ({ children }) => {
     };
 
     const leaveCall = () => {
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
         const partnerUserId =
             localStorage.getItem("activePartnerUserId") ||
             localStorage.getItem("tempCallerUserId");
@@ -246,8 +264,9 @@ export const CallProvider = ({ children }) => {
         };
 
         const handleCallRejected = () => {
+            if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
             setIsCalling(false);
-            toast.info("Nguoi dung ban hoac tu choi.");
+            toast.info("Người dùng bận hoặc từ chối.");
             cleanupConnection();
             clearStoredCallState();
         };
