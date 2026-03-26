@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
+const getSafeUserName = require("../utils/getSafeUserName");
 
 // [GET] /api/users/profile
 const getUserProfile = async (req, res) => {
@@ -165,7 +166,6 @@ const searchUsers = async (req, res) => {
       return {
         _id: user._id,
         displayName: user.displayName,
-        email: user.email,
         avatar: user.avatar,
         status: user.status,
         activityStatus: user.activityStatus,
@@ -189,7 +189,7 @@ const getFriends = async (req, res) => {
   try {
     const currentUser = await User.findById(req.user.id).populate(
       "friends",
-      "displayName email avatar status activityStatus",
+      "displayName avatar username status activityStatus",
     );
     res.json({ success: true, friends: currentUser.friends });
   } catch (error) {
@@ -203,7 +203,7 @@ const getFriendRequests = async (req, res) => {
   try {
     const currentUser = await User.findById(req.user.id).populate(
       "friendRequests",
-      "displayName avatar email",
+      "displayName avatar username",
     );
 
     res.json({ success: true, requests: currentUser.friendRequests });
@@ -248,7 +248,7 @@ const accceptFriendRequest = async (req, res) => {
     if (senderSocketId) {
       io.to(senderSocketId).emit("friendRequestAccepted", {
         newFriendId: receiverId,
-        newFriendName: receiver.displayName || receiver.email.split("@")[0],
+        newFriendName: getSafeUserName(receiver),
         newFriendAvatar: receiver.avatar,
       });
     }
@@ -391,7 +391,7 @@ const sendFriendRequest = async (req, res) => {
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newFriendRequest", {
         senderId: senderId,
-        senderName: sender.displayName || sender.email.split("@")[0],
+        senderName: getSafeUserName(sender),
         avatar: sender.avatar,
       });
     }
