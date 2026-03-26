@@ -2,16 +2,19 @@ import { useForm } from "react-hook-form";
 import { register as registerAPI } from "../services/authService";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
-import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaLock, FaPassport } from "react-icons/fa";
 
 const Register = () => {
   const {
     register,
     handleSubmit,
     watch,
+    trigger,
     formState: { errors, isSubmitting },
-  } = useForm();
+  } = useForm({ criteriaMode: "all" });
+
   const navigate = useNavigate();
+  const password = watch("password");
 
   const onSubmit = async (data) => {
     try {
@@ -42,6 +45,20 @@ const Register = () => {
             <input
               {...register("displayName", {
                 required: "Tên hiển thị là bắt buộc",
+                minLength: {
+                  value: 2,
+                  message: "Tên hiển thị phải có ít nhất 2 ký tự",
+                },
+                maxLength: {
+                  value: 30,
+                  message: "Tên hiển thị không được vượt quá 30 ký tự",
+                },
+                pattern: {
+                  value: /^[A-Za-zÀ-ỹà-ỹ\s]+$/,
+                  message: "Tên hiển thị chỉ được chứa chữ cái và khoảng trắng",
+                },
+                validate: (value) =>
+                  value.trim().length > 0 || "Tên không hợp lệ",
               })}
               className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
               placeholder="Tên hiển thị"
@@ -60,7 +77,7 @@ const Register = () => {
             </div>
             <input
               {...register("email", {
-                required: "Email là bắt buộc",
+                required: "Vui lòng nhập email để đăng ký",
                 pattern: { value: /^\S+@\S+$/i, message: "Email không hợp lệ" },
               })}
               className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
@@ -81,18 +98,26 @@ const Register = () => {
             <input
               type="password"
               {...register("password", {
-                required: "Mật khẩu là bắt buộc",
-                minLength: {
-                  value: 6,
-                  message: "Tối thiểu 6 ký tự bao gồm chữ và số",
+                required: "Vui lòng nhập mật khẩu để đăng ký",
+                validate: {
+                  hasMinLength: (v) => v.length >= 8 || "Ít nhất 8 ký tự",
+                  hasUpper: (v) =>
+                    /[A-Z]/.test(v) || "Cần ít nhất 1 chữ in hoa",
+                  hasLower: (v) =>
+                    /[a-z]/.test(v) || "Cần ít nhất 1 chữ thường",
+                  hasNumber: (v) => /\d/.test(v) || "Cần ít nhất 1 số",
+                  hasSpecial: (v) =>
+                    /[@$!%*?&]/.test(v) || "Cần ít nhất 1 ký tự đặc biệt",
                 },
               })}
+              onChange={() => trigger("confirmPassword")}
               className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
               placeholder="Mật khẩu"
             />
             {errors.password && (
               <p className="text-red-500 text-xs mt-1">
-                {errors.password.message}
+                Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và
+                ký tự đặc biệt
               </p>
             )}
           </div>
@@ -105,9 +130,9 @@ const Register = () => {
             <input
               type="password"
               {...register("confirmPassword", {
-                required: "Vui lòng nhập lại mật khẩu",
-                validate: (value) =>
-                  value === watch("password") || "Mật khẩu không khớp",
+                required: "Vui lòng xác nhận mật khẩu",
+                validate: (v) =>
+                  v.trim() === password?.trim() || "Mật khẩu không khớp",
               })}
               className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
               placeholder="Nhập lại mật khẩu"

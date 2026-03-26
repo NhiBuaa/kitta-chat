@@ -10,14 +10,14 @@ import CreateGroupModal from "../components/CreateGroupModal";
 import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
 import ChatInput from "../components/ChatInput";
-import { FilePicker } from "../components/FilePicker"
+import { FilePicker } from "../components/FilePicker";
 
 // CONTEXT & SERVICE
 import { sendFriendRequest } from "../services/userService";
 import { useSocket } from "../context/SocketContext";
 
 // HOOK
-import { useUploader } from '../hooks/useUploader'
+import { useUploader } from "../hooks/useUploader";
 
 const Home = () => {
   // STATE
@@ -56,7 +56,8 @@ const Home = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // HOOK
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
+    useUploader();
 
   // HÀM XỬ LÝ GỌI VIDEO
   const handleVideoCall = () => {
@@ -70,8 +71,8 @@ const Home = () => {
     const chatUserId = currentChatUser._id || currentChatUser.id;
     const url = `/video-call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}`;
 
-    localStorage.setItem('activePartnerUserId', chatUserId);
-    window.open(url, '_blank', 'noopener,noreferrer');
+    localStorage.setItem("activePartnerUserId", chatUserId);
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   // CÁC BIẾN TÍNH TOÁN
@@ -144,7 +145,7 @@ const Home = () => {
         console.error("Không thể load conversation mới:", error);
       }
     },
-    [API_URL]
+    [API_URL],
   );
 
   const renderLastMessage = (user, currentUserId) => {
@@ -245,13 +246,15 @@ const Home = () => {
     }
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
+      console.log("searchTerm:", searchTerm);
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const res = await axios.get(
-          `${API_URL}/api/users/search?keyword=${searchTerm}`,
-          config
+          `${API_URL}/api/users/search?keyword=${encodeURIComponent(searchTerm)}`,
+          config,
         );
+        console.log("searchResult:", res.data.users);
         if (res.data.success) setSearchResult(res.data.users);
       } catch (error) {
         console.error("Lỗi tìm kiếm:", error);
@@ -262,7 +265,9 @@ const Home = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, API_URL]);
 
-  const usersToDisplay = searchTerm.trim() ? searchResult : users;
+  const isSearchingMode = searchTerm.trim() !== "";
+
+  const usersToDisplay = isSearchingMode ? searchResult : users;
 
   // SOCKET CONNECTION
   useEffect(() => {
@@ -281,7 +286,7 @@ const Home = () => {
             return { ...u, isIncomingRequest: true };
           }
           return u;
-        })
+        }),
       );
     };
 
@@ -330,7 +335,7 @@ const Home = () => {
             };
           }
           return user;
-        })
+        }),
       );
     };
 
@@ -400,7 +405,7 @@ const Home = () => {
             return { ...u, hasUnread: false, lastMessage: lm };
           }
           return u;
-        })
+        }),
       );
 
       if (activeChat && !activeChat.members && activeChat._id === readerId) {
@@ -412,7 +417,7 @@ const Home = () => {
               return { ...m, isRead: true };
             }
             return m;
-          })
+          }),
         );
       }
     };
@@ -427,7 +432,7 @@ const Home = () => {
               return { ...m, readBy: [...readBy, readerId] };
             }
             return m;
-          })
+          }),
         );
       }
       setGroups((prev) =>
@@ -449,7 +454,7 @@ const Home = () => {
             }
           }
           return g;
-        })
+        }),
       );
     };
 
@@ -469,14 +474,19 @@ const Home = () => {
       const currentActiveChat = activeChatRef.current;
       setUsers((prevUsers) => {
         const updatedUsers = [...prevUsers];
-        const targetId = data.isGroup ? data.receiverId : (data.senderId === currentUser._id ? data.receiverId : data.senderId);
+        const targetId = data.isGroup
+          ? data.receiverId
+          : data.senderId === currentUser._id
+            ? data.receiverId
+            : data.senderId;
         const index = updatedUsers.findIndex((u) => u._id === targetId);
 
         if (index !== -1) {
           const userToUpdate = updatedUsers[index];
           let previewContent = data.text;
           if (!previewContent && data.image) previewContent = "[Hình ảnh]";
-          if (!previewContent && data.attachments?.length > 0) previewContent = "[Tệp đính kèm]";
+          if (!previewContent && data.attachments?.length > 0)
+            previewContent = "[Tệp đính kèm]";
 
           const updatedUser = {
             ...userToUpdate,
@@ -542,7 +552,7 @@ const Home = () => {
         }
         setTimeout(
           () => scrollRef.current?.scrollIntoView({ behavior: "smooth" }),
-          100
+          100,
         );
       } else {
         if (data.type !== "system" && data.senderId !== currentUser._id) {
@@ -678,7 +688,7 @@ const Home = () => {
           return { ...u, hasUnread: false, lastMessage: lm };
         }
         return u;
-      })
+      }),
     );
 
     if (socket) {
@@ -696,8 +706,8 @@ const Home = () => {
       const { groupId, newAdminId } = data;
       setGroups((prevGroups) =>
         prevGroups.map((g) =>
-          g._id === groupId ? { ...g, admin: newAdminId } : g
-        )
+          g._id === groupId ? { ...g, admin: newAdminId } : g,
+        ),
       );
       if (activeChat?._id === groupId) {
         setActiveChat((prev) => ({ ...prev, admin: newAdminId }));
@@ -708,8 +718,8 @@ const Home = () => {
       const { groupId, newName, newAvatar } = data;
       setGroups((prevGroups) =>
         prevGroups.map((g) =>
-          g._id === groupId ? { ...g, name: newName, avatar: newAvatar } : g
-        )
+          g._id === groupId ? { ...g, name: newName, avatar: newAvatar } : g,
+        ),
       );
       if (activeChat?._id === groupId) {
         setActiveChat((prev) => ({
@@ -745,8 +755,8 @@ const Home = () => {
       if (updatedGroup) {
         setGroups((prevGroups) =>
           prevGroups.map((g) =>
-            g._id === groupId ? { ...g, members: updatedGroup.members } : g
-          )
+            g._id === groupId ? { ...g, members: updatedGroup.members } : g,
+          ),
         );
       }
       if (activeChat?._id === groupId && updatedGroup) {
@@ -806,22 +816,24 @@ const Home = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
-    const isUploading = uploadQueue.some(item => item.status === 'uploading');
+    const isUploading = uploadQueue.some((item) => item.status === "uploading");
     if (isUploading) {
       toast.warning("Vui lòng chờ file tải lên hoàn tất trước khi gửi!");
       return;
     }
 
     const attachmentIds = uploadQueue
-      .filter(item => item.status === 'completed' && item.dbFileId)
-      .map(item => item.dbFileId);
+      .filter((item) => item.status === "completed" && item.dbFileId)
+      .map((item) => item.dbFileId);
 
     // Nếu không có text và không có file nào thì dừng
     if (!newMessage.trim() && attachmentIds.length === 0) return;
 
     // Kiểm tra quyền trong nhóm
     if (activeChat?.members) {
-      const isStillMember = activeChat.members.some((m) => m._id === currentUser._id);
+      const isStillMember = activeChat.members.some(
+        (m) => m._id === currentUser._id,
+      );
       if (!isStillMember) {
         toast.error("Bạn đã bị xóa khỏi nhóm này");
         setActiveChat(null);
@@ -863,7 +875,6 @@ const Home = () => {
       setNewMessage("");
       clearUploads();
       setShowEmoji(false);
-
     } catch (err) {
       console.error(err);
       toast.error("Lỗi gửi tin nhắn");
@@ -952,7 +963,7 @@ const Home = () => {
             <ChatInput
               showEmoji={showEmoji}
               setShowEmoji={setShowEmoji}
-              onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)}
+              onEmojiClick={(e) => setNewMessage((prev) => prev + e.emoji)}
               handleSendMessage={handleSendMessage}
               newMessage={newMessage}
               handleInputChange={handleInputChange}
@@ -999,8 +1010,8 @@ const Home = () => {
             setActiveChat(updatedGroup);
             setGroups(
               groups.map((g) =>
-                g._id === updatedGroup._id ? updatedGroup : g
-              )
+                g._id === updatedGroup._id ? updatedGroup : g,
+              ),
             );
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
