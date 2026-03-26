@@ -56,10 +56,20 @@ const handleUserConnected = async (socket, userId, socketId) => {
   console.log(`User Connected: ${userId}`);
   onlineUsers.set(userId, socketId);
 
-  // Join user vào room với userId (để nhận tin nhắn 1-1)
   try {
+    // Join user vào room với userId (để nhận tin nhắn 1-1)
     socket.join(userId);
     console.log(`User ${userId} joined room ${userId}`);
+
+    // Join user vào các room Group
+    const userGroups = await Group.find({members: userId})
+
+    if (userGroups) {
+      userGroups.forEach((group) => {
+        socket.join(group._id.toString());
+        console.log(`User ${userId} joined group room ${userId}`);
+      })
+    }
   } catch (err) {
     console.error(`Lỗi khi join room cho user ${userId}:`, err);
   }
@@ -178,6 +188,9 @@ io.on("connection", async (socket) => {
       const payloadToEmit = { ...messageData, sender: senderInfo };
 
       if (isGroup) {
+        const groupDoc = await Group.findById(receiverId).select("name");
+        payloadToEmit.groupName = groupDoc?.name || "Nhóm chat";
+
         io.to(receiverId).emit("getMessage", payloadToEmit);
         console.log(`Group message sent to room ${receiverId}`);
       } else {

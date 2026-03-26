@@ -554,14 +554,31 @@ const Home = () => {
           100,
         );
       } else {
-        if (data.type !== "system") {
-          const sender = users.find((u) => u._id === data.senderId);
-          const senderName = sender ? sender.displayName : "Ai đó";
-          toast.info(`Tin nhắn mới từ ${senderName}`, {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: true,
-          });
+        if (data.type !== "system" && data.senderId !== currentUser._id) {
+          try {
+            let messageToast = "";
+
+            if (data.isGroup) {
+              const groupName = data.groupName;
+              const senderName = data.sender?.displayName;
+
+              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`
+            } else {
+              const sender = users.find((u) => u._id === data.senderId);
+              const senderName = sender ? sender.displayName : (data.sender?.displayName || "Ai đó");
+
+              messageToast = `Tin nhắn mới từ ${senderName}`
+            }
+
+            toast.info(messageToast, {
+              position: "top-right",
+              autoClose: 3000,
+              hideProgressBar: true
+            })
+          } catch (error) {
+            console.error("Lỗi không hiển thị toast: ", error);
+            console.log("Dữ liệu tin nhắn bị lỗi:", data);
+          }
         }
       }
     };
