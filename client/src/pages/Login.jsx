@@ -5,7 +5,6 @@ import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-// import { useSocket } from "../context/SocketContext";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);

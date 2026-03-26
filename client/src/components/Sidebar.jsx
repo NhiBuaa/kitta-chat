@@ -23,7 +23,7 @@ const Sidebar = ({
   handleAddFriend,
 }) => {
   return (
-    <div className="w-full md:w-1/4 bg-white border-r border-gray-200 flex flex-col">
+    <div className=" hidden sm:flex w-[280px] md:w-[320px] lg:w-[360px] min-w-[240px] flex-shrink h-full bg-white border-r border-gray-200 flex-col">
       {/* tên app với avt */}
       <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-blue-600 text-white relative z-10 shadow-md h-16">
         <div className="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0 mr-2">
@@ -108,7 +108,7 @@ const Sidebar = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-aut pb-2">
         {/* Groups */}
         {groups.length > 0 && (
           <>
@@ -155,7 +155,7 @@ const Sidebar = ({
               <div
                 key={user._id}
                 onClick={() => handleSelectUser(user)}
-                className={`group p-4 flex items-center border-b border-gray-50 transition cursor-pointer ${
+                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer${
                   hasUnread
                     ? "bg-blue-50 hover:bg-blue-100"
                     : "hover:bg-gray-50"
@@ -172,7 +172,7 @@ const Sidebar = ({
                   )}
                 </div>
 
-                <div className="ml-3 flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <div className="flex justify-between items-center mb-1">
                     <h3
                       className={`text-sm truncate pr-2 ${
@@ -243,17 +243,28 @@ const Sidebar = ({
             );
           })
         ) : (
-          <div className="flex flex-col items-center justify-center mt-10 text-gray-500 px-6 text-center">
+          <div className="flex flex-col items-center justify-center flex-1 flex flex-col items-center justify-center text-gray-500 px-6 text-center">
             <FaSearch className="text-3xl text-gray-300 mb-3" />
 
-            <p className="text-sm font-semibold text-gray-700">
-              Không tìm thấy kết quả nào
-            </p>
-
-            <p className="text-xs mt-1 text-gray-400">
-              Hãy thử tìm với cách viết khác hoặc kết hợp từ khóa khác. Từ đầy
-              đủ thường cho kết quả tốt hơn.
-            </p>
+            {searchTerm ? (
+              <>
+                <p className="text-sm font-semibold text-gray-700">
+                  Không tìm thấy kết quả nào
+                </p>
+                <p className="text-xs mt-1 text-gray-400">
+                  Hãy thử tìm với cách viết khác hoặc kết hợp từ khóa khác.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-gray-700">
+                  Không có tin nhắn nào
+                </p>
+                <p className="text-xs mt-1 text-gray-400">
+                  Hãy bắt đầu cuộc trò chuyện hoặc tìm kiếm bạn bè.
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>
