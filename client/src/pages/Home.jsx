@@ -904,13 +904,13 @@ const Home = () => {
       />
 
       {/* CHAT WINDOW */}
-      <div className="flex-1 flex flex-col bg-gray-50 h-full">
+      <div className="flex-1  flex  flex-col bg-gray-50 h-full">
         {/* NƯỚC CỜ THẦN THÁNH: Bọc toàn bộ cột phải bằng FilePicker Kéo Thả */}
         {activeChat && currentChatUser ? (
           <FilePicker
             onFilesSelected={addFiles}
             disableClick={true} // Bật True để click vào chat không bị mở hộp thoại
-            className="flex-1 flex flex-col h-full overflow-hidden"
+            className="flex-1  flex flex-col h-full overflow-hidden"
           >
             <ChatWindow
               activeChat={activeChat}
