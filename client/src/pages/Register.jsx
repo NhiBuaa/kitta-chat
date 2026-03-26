@@ -1,20 +1,36 @@
 import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { register as registerAPI } from "../services/authService";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUser, FaEnvelope, FaLock, FaPassport } from "react-icons/fa";
 
 const Register = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const {
     register,
     handleSubmit,
+    // control,
     watch,
-    trigger,
     formState: { errors, isSubmitting },
-  } = useForm({ criteriaMode: "all" });
+  } = useForm({ mode: "onChange" });
 
   const navigate = useNavigate();
-  const password = watch("password");
+  const password = watch("password", "");
+  const confirmPassword = watch("confirmPassword", "");
+
+  // dùng cho các ô
+  const inputClass =
+    "pl-10 w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 shadow-sm";
+
+  // ktra độ mạnh pass
+  const hasMinLength = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecial = /[@$!%*?&]/.test(password);
 
   const onSubmit = async (data) => {
     try {
@@ -27,136 +43,184 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 md:p-12 transform transition-all">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-gray-800">
-            Đăng ký tài khoản KittaChat
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl w-full max-w-md p-8 md:p-10 transition-all">
+        <div className="text-center mb-20">
+          <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Đăng ký KittaChat
           </h2>
           <p className="text-gray-500 mt-2">Tham gia cộng đồng chat miễn phí</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Display Name Input */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaUser className="text-gray-400" />
+
+          <div className="space-y-1 min-h-[72px]">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaUser className="text-gray-400" />
+              </div>
+
+              <input
+                {...register("displayName", {
+                  required: "Tên hiển thị là bắt buộc",
+                  minLength: {
+                    value: 2,
+                    message: "Tên hiển thị phải có ít nhất 2 ký tự",
+                  },
+                  maxLength: {
+                    value: 30,
+                    message: "Tên hiển thị không được vượt quá 30 ký tự",
+                  },
+                  pattern: {
+                    value: /^[A-Za-zÀ-ỹà-ỹ\s]+$/,
+                    message:
+                      "Tên hiển thị chỉ được chứa chữ cái và khoảng trắng",
+                  },
+                  validate: (value) =>
+                    value.trim().length > 0 || "Tên không hợp lệ",
+                })}
+                className={inputClass}
+                placeholder="Tên hiển thị"
+              />
             </div>
-            <input
-              {...register("displayName", {
-                required: "Tên hiển thị là bắt buộc",
-                minLength: {
-                  value: 2,
-                  message: "Tên hiển thị phải có ít nhất 2 ký tự",
-                },
-                maxLength: {
-                  value: 30,
-                  message: "Tên hiển thị không được vượt quá 30 ký tự",
-                },
-                pattern: {
-                  value: /^[A-Za-zÀ-ỹà-ỹ\s]+$/,
-                  message: "Tên hiển thị chỉ được chứa chữ cái và khoảng trắng",
-                },
-                validate: (value) =>
-                  value.trim().length > 0 || "Tên không hợp lệ",
-              })}
-              className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
-              placeholder="Tên hiển thị"
-            />
-            {errors.displayName && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.displayName.message}
-              </p>
-            )}
+            <p className="text-red-500 text-xs min-h-[18px]">
+              {errors.displayName?.message || ""}
+            </p>
           </div>
 
           {/* Email Input */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaEnvelope className="text-gray-400" />
+          <div className="space-y-1 min-h-[72px]">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaEnvelope className="text-gray-400" />
+              </div>
+              <input
+                {...register("email", {
+                  required: "Vui lòng nhập email để đăng ký",
+                  pattern: {
+                    value: /^\S+@\S+$/i,
+                    message: "Hãy nhập email hợp lệ",
+                  },
+                })}
+                className={inputClass}
+                placeholder="Email của bạn"
+              />
             </div>
-            <input
-              {...register("email", {
-                required: "Vui lòng nhập email để đăng ký",
-                pattern: { value: /^\S+@\S+$/i, message: "Email không hợp lệ" },
-              })}
-              className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
-              placeholder="Email của bạn"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.email.message}
-              </p>
-            )}
+            <p className="text-red-500 text-xs min-h-[18px]">
+              {errors.email?.message || ""}
+            </p>
           </div>
 
           {/* Password Input */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaLock className="text-gray-400" />
+          <div className="space-y-1 min-h-[140px]">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaLock className="text-gray-400" />
+              </div>
+
+              <input
+                type={showPassword ? "text" : "password"}
+                {...register("password", {
+                  required: "Nhập mật khẩu",
+                })}
+                className={inputClass + " pr-10"}
+                placeholder="Mật khẩu"
+              />
+
+              <div
+                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <FaEyeSlash className="text-gray-500 hover:text-gray-700 transition" />
+                ) : (
+                  <FaEye className="text-gray-500 hover:text-gray-700 transition" />
+                )}
+              </div>
             </div>
-            <input
-              type="password"
-              {...register("password", {
-                required: "Vui lòng nhập mật khẩu để đăng ký",
-                validate: {
-                  hasMinLength: (v) => v.length >= 8 || "Ít nhất 8 ký tự",
-                  hasUpper: (v) =>
-                    /[A-Z]/.test(v) || "Cần ít nhất 1 chữ in hoa",
-                  hasLower: (v) =>
-                    /[a-z]/.test(v) || "Cần ít nhất 1 chữ thường",
-                  hasNumber: (v) => /\d/.test(v) || "Cần ít nhất 1 số",
-                  hasSpecial: (v) =>
-                    /[@$!%*?&]/.test(v) || "Cần ít nhất 1 ký tự đặc biệt",
-                },
-              })}
-              onChange={() => trigger("confirmPassword")}
-              className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
-              placeholder="Mật khẩu"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-xs mt-1">
-                Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và
-                ký tự đặc biệt
+
+            {/* check list */}
+            <div className="text-xs mt-2 space-y-1">
+              <p className={hasMinLength ? "text-green-500" : "text-red-400"}>
+                {hasMinLength} Ít nhất 8 ký tự
               </p>
-            )}
+
+              <p className={hasUpper ? "text-green-500" : "text-red-400"}>
+                {hasUpper} Có chữ in hoa
+              </p>
+
+              <p className={hasLower ? "text-green-500" : "text-red-400"}>
+                {hasLower} Có chữ thường
+              </p>
+
+              <p className={hasNumber ? "text-green-500" : "text-red-400"}>
+                {hasNumber} Có số
+              </p>
+
+              <p className={hasSpecial ? "text-green-500" : "text-red-400"}>
+                {hasSpecial} Có ký tự đặc biệt
+              </p>
+            </div>
           </div>
 
           {/* Nhập lại Password */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaLock className="text-gray-400" />
-            </div>
-            <input
-              type="password"
-              {...register("confirmPassword", {
-                required: "Vui lòng xác nhận mật khẩu",
-                validate: (v) =>
-                  v.trim() === password?.trim() || "Mật khẩu không khớp",
-              })}
-              className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition"
-              placeholder="Nhập lại mật khẩu"
-            />
+          <div className="space-y-1 min-h-[72px]">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaLock className="text-gray-400" />
+              </div>
+              <input
+                type={showConfirm ? "text" : "password"}
+                {...register("confirmPassword", {
+                  required: "Xác nhận mật khẩu",
+                  validate: (v) =>
+                    v.trim() === password.trim() || "Mật khẩu không khớp",
+                })}
+                className={inputClass + " pr-10"}
+                placeholder="Nhập lại mật khẩu"
+              />
 
-            {errors.confirmPassword && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.confirmPassword.message}
-              </p>
-            )}
+              <div
+                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                onClick={() => setShowConfirm(!showConfirm)}
+              >
+                {showConfirm ? (
+                  <FaEyeSlash className="text-gray-500 hover:text-gray-700 transition" />
+                ) : (
+                  <FaEye className="text-gray-500 hover:text-gray-700 transition" />
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs min-h-[18px]">
+              {confirmPassword ? (
+                confirmPassword === password ? (
+                  <span className="text-green-500">Mật khẩu khớp</span>
+                ) : (
+                  <span className="text-red-500">Mật khẩu không khớp</span>
+                )
+              ) : (
+                ""
+              )}
+            </p>
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-lg"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 rounded-xl hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] transition-all duration-200"
           >
             {isSubmitting ? "Đang tạo..." : "Đăng ký ngay"}
           </button>
         </form>
 
-        <div className="mt-8 text-center text-sm text-gray-600 border-t pt-6">
+        <div className="mt-6 text-center text-sm text-gray-600 border-t pt-4">
           Đã có tài khoản?{" "}
-          <Link to="/login" className="text-blue-600 font-bold hover:underline">
+          <Link
+            to="/login"
+            className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80 transition"
+          >
             Đăng nhập
           </Link>
         </div>
