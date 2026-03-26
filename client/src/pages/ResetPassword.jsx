@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { resetPassword } from "../services/authService";
 import { toast } from "react-toastify";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { FaLock, FaEye, FaEyeSlash, FaKey } from "react-icons/fa";
+import { FaLock, FaEye, FaEyeSlash, FaKey, FaArrowLeft } from "react-icons/fa";
 
 const ResetPassword = () => {
   const { id, token } = useParams();
@@ -23,6 +23,14 @@ const ResetPassword = () => {
   // Theo dõi giá trị password để validate confirm password
   const password = watch("newPassword");
 
+  const confirmPassword = watch("confirmPassword");
+
+  const hasMinLength = password?.length >= 8;
+  const hasUpper = /[A-Z]/.test(password || "");
+  const hasLower = /[a-z]/.test(password || "");
+  const hasNumber = /\d/.test(password || "");
+  const hasSpecial = /[@$!%*?&]/.test(password || "");
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
@@ -32,150 +40,155 @@ const ResetPassword = () => {
       // Chờ 1 chút để user đọc thông báo rồi chuyển trang
       setTimeout(() => {
         navigate("/login");
-      }, 1500);
+      }, 1200);
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Link hết hạn hoặc không hợp lệ");
+      toast.error(
+        err.response?.data?.msg || "Link hết hạn hoặc mật khẩu không hợp lệ",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-teal-100 p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:scale-[1.01] duration-300">
-        {/* Header Section */}
-        <div className="bg-blue-600 p-8 text-center">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-gradient-to-br from-blue-100 via-purple-200 to-pink-100">
+      <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-300 rounded-full blur-3xl opacity-30"></div>
+      <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-300 rounded-full blur-3xl opacity-30"></div>
+
+      <div className="relative z-10 w-full max-w-md rounded-3xl shadow-2xl bg-white border border-white/30 overflow-hidden">
+        {/* header */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
           <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <FaKey className="text-white text-3xl" />
+            <FaKey className="text-white text-2xl" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">
-            Đặt Lại Mật Khẩu
-          </h2>
-          <p className="text-blue-100 text-sm">
-            Hãy nhập mật khẩu mới đủ mạnh để bảo vệ tài khoản của bạn.
+
+          <h2 className="text-3xl font-bold text-white">Đặt Lại Mật Khẩu</h2>
+
+          <p className="text-blue-100 text-sm mt-2">
+            Hãy nhập mật khẩu mới đủ mạnh để bảo vệ tài khoản của bạn
           </p>
         </div>
 
-        {/* Form Section */}
+        {/* form */}
         <div className="p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Mật khẩu mới */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* pass mới */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 pl-1">
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
                 Mật khẩu mới
               </label>
+
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-gray-400" />
-                </div>
+                <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+
                 <input
                   type={showPassword ? "text" : "password"}
-                  className={`w-full pl-10 pr-10 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${errors.newPassword ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"}`}
-                  placeholder="••••••••"
                   {...register("newPassword", {
                     required: "Vui lòng nhập mật khẩu mới",
-                    minLength: {
-                      value: 6,
-                      message: "Mật khẩu phải có ít nhất 6 ký tự",
-                    },
                   })}
+                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                  placeholder="Mật khẩu mới của bạn"
                 />
-                <button
-                  type="button"
+
+                <div
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-purple-600"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 cursor-pointer focus:outline-none"
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
+                </div>
               </div>
+
               {errors.newPassword && (
-                <p className="text-red-500 text-xs mt-1 ml-1 flex items-center">
-                  ⚠ {errors.newPassword.message}
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.newPassword.message}
                 </p>
               )}
+
+              <div className="text-xs mt-2 space-y-1">
+                <p className={hasMinLength ? "text-green-500" : "text-red-400"}>
+                  {hasMinLength ? "✔" : "✖"} Ít nhất 8 ký tự
+                </p>
+
+                <p className={hasUpper ? "text-green-500" : "text-red-400"}>
+                  {hasUpper ? "✔" : "✖"} Có chữ in hoa
+                </p>
+
+                <p className={hasLower ? "text-green-500" : "text-red-400"}>
+                  {hasLower ? "✔" : "✖"} Có chữ thường
+                </p>
+
+                <p className={hasNumber ? "text-green-500" : "text-red-400"}>
+                  {hasNumber ? "✔" : "✖"} Có số
+                </p>
+
+                <p className={hasSpecial ? "text-green-500" : "text-red-400"}>
+                  {hasSpecial ? "✔" : "✖"} Có ký tự đặc biệt
+                </p>
+              </div>
             </div>
 
-            {/* Xác nhận mật khẩu */}
+            {/* xác nhận lại mk */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 pl-1">
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
                 Nhập lại mật khẩu
               </label>
+
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-gray-400" />
-                </div>
+                <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  className={`w-full pl-10 pr-10 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50"}`}
-                  placeholder="••••••••"
                   {...register("confirmPassword", {
                     required: "Vui lòng xác nhận mật khẩu",
-                    validate: (value) =>
-                      value === password || "Mật khẩu không khớp",
+                    validate: (v) => v === password || "Mật khẩu không khớp",
                   })}
+                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  placeholder="Xác nhận mật khẩu mới"
                 />
-                <button
-                  type="button"
+
+                <div
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-purple-600"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 cursor-pointer focus:outline-none"
                 >
                   {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
+                </div>
               </div>
-              {errors.confirmPassword && (
-                <p className="text-red-500 text-xs mt-1 ml-1 flex items-center">
-                  ⚠ {errors.confirmPassword.message}
-                </p>
-              )}
+
+              <p className="text-xs mt-1 min-h-[18px]">
+                {confirmPassword ? (
+                  confirmPassword === password ? (
+                    <span className="text-green-500">✔ Mật khẩu khớp</span>
+                  ) : (
+                    <span className="text-red-500">✖ Mật khẩu không khớp</span>
+                  )
+                ) : (
+                  ""
+                )}
+              </p>
             </div>
 
-            {/* Button Submit */}
+            {/* nút */}
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3.5 rounded-xl text-white font-bold text-lg shadow-lg transform transition-all duration-300 ${
+              className={`w-full py-3.5 rounded-xl text-white font-semibold shadow-lg transition-all ${
                 isLoading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1 hover:shadow-xl"
+                  ? "bg-gray-400"
+                  : "bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] hover:shadow-xl"
               }`}
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Đang xử lý...
-                </span>
-              ) : (
-                "Xác nhận đổi mật khẩu"
-              )}
+              {isLoading ? "Đang xử lý..." : "Xác nhận đổi mật khẩu"}
             </button>
           </form>
 
-          {/* Back to Login */}
+          {/* về trang đăng nhập */}
           <div className="mt-6 text-center">
             <Link
               to="/login"
-              className="text-sm text-gray-500 hover:text-blue-600 hover:underline transition-colors"
+              className="inline-flex items-center text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80"
             >
-              ← Quay lại trang đăng nhập
+              <FaArrowLeft className="mr-2" />
+              Quay lại trang đăng nhập
             </Link>
           </div>
         </div>
