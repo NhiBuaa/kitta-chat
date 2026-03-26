@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import { useSocket } from "../context/SocketContext";
+// import { useSocket } from "../context/SocketContext";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,7 +15,6 @@ const Login = () => {
     formState: { errors, isSubmitting },
   } = useForm();
   const navigate = useNavigate();
-  const { socket } = useSocket();
 
   const inputClass =
     "pl-10 w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 shadow-sm";
@@ -23,19 +22,15 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await login(data);
+
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      // Emit addNewUser để server biết user này online
-      if (socket) {
-        console.log(
-          `📤 Login: Emitting addNewUser với userId: ${res.data.user._id}`,
-        );
-        socket.emit("addNewUser", res.data.user._id);
-      }
+      window.dispatchEvent(new Event("auth-changed"));
+
       toast.success(`Chào mừng ${res.data.user.displayName} quay trở lại!`);
       navigate("/");
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Đăng nhập thất bại");
+      toast.error(err.response?.data?.msg || "Tài khoản hoặc mật khẩu không chính xác");
     }
   };
 
@@ -50,7 +45,6 @@ const Login = () => {
               Kết nối bạn bè, trò chuyện không giới hạn
             </p>
           </div>
-          {/* Họa tiết trang trí */}
           <div
             className="absolute top-0 left-0 w-full h-full bg-cover opacity-20"
             style={{
