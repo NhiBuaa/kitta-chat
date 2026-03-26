@@ -1,16 +1,23 @@
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { login } from "../services/authService";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
-import { FaEnvelope, FaLock } from "react-icons/fa";
+
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+// import { useSocket } from "../context/SocketContext";
 
 const Login = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm();
   const navigate = useNavigate();
+
+  const inputClass =
+    "pl-10 w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 shadow-sm";
 
   const onSubmit = async (data) => {
     try {
@@ -28,14 +35,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl flex w-full max-w-4xl overflow-hidden">
-        {/* Cột trái: Hình ảnh/Intro */}
-        <div className="hidden md:flex w-1/2 bg-blue-600 text-white flex-col justify-center items-center p-12 relative">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl flex w-full max-w-4xl overflow-hidden">
+        {/* Cột trái: Hình ảnh/Intro (Ẩn trên mobile) */}
+        <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-600 to-purple-600 text-white flex-col justify-center items-center p-12 relative">
           <div className="z-10 text-center">
             <h2 className="text-4xl font-bold mb-4">KittaChat</h2>
             <p className="text-indigo-200">
-              Kết nối bạn bè, trò chuyện không giới hạn.
+              Kết nối bạn bè, trò chuyện không giới hạn
             </p>
           </div>
           <div
@@ -52,11 +59,11 @@ const Login = () => {
           <h2 className="text-3xl font-bold text-gray-800 text-center mb-2">
             Đăng Nhập
           </h2>
-          <p className="text-gray-500 text-center mb-8">
+          <p className="text-gray-500 text-center mt-2 mb-8">
             Điền thông tin để truy cập vào tài khoản
           </p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -71,35 +78,45 @@ const Login = () => {
                   placeholder="name@example.com"
                 />
               </div>
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.email.message}
-                </p>
-              )}
+              <p className="text-red-500 text-xs min-h-[18px]">
+                {errors.email?.message || ""}
+              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Mật khẩu
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-gray-400" />
+              {/* pass */}
+              <div className="space-y-1">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaLock className="text-gray-400" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    {...register("password", {
+                      required: "Vui lòng nhập mật khẩu",
+                    })}
+                    className={inputClass + " pr-10"}
+                    placeholder="••••••••"
+                  />
+                  <div
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <FaEyeSlash className="text-gray-500 hover:text-gray-700" />
+                    ) : (
+                      <FaEye className="text-gray-500 hover:text-gray-700" />
+                    )}
+                  </div>
                 </div>
-                <input
-                  type="password"
-                  {...register("password", {
-                    required: "Vui lòng nhập mật khẩu",
-                  })}
-                  className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition outline-none"
-                  placeholder="••••••••"
-                />
               </div>
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.password.message}
-                </p>
-              )}
+
+              <p className="text-red-500 text-xs min-h-[18px]">
+                {errors.password?.message}
+              </p>
               <div className="flex justify-between items-center mb-1">
                 <Link
                   to="/forgot-password"
@@ -113,7 +130,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300 shadow-lg transform hover:-translate-y-1"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 rounded-xl hover:scale-[1.02] hover:shadow-xl transition"
             >
               {isSubmitting ? "Đang xử lý..." : "Đăng Nhập"}
             </button>
@@ -123,7 +140,7 @@ const Login = () => {
             Chưa có tài khoản?{" "}
             <Link
               to="/register"
-              className="text-blue-600 font-bold hover:underline"
+              className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80"
             >
               Đăng ký ngay
             </Link>
