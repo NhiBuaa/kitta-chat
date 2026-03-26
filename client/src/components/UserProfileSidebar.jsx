@@ -15,17 +15,15 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   });
 
   const [loading, setLoading] = useState(false);
-  // dùng để xác nhận trước khi tắt trạng thái hoạt động
   const [showConfirm, setShowConfirm] = useState(false);
-  // Dùng useEffect để fill dữ liệu khi sidebar mở hoặc user thay đổi
   useEffect(() => {
     if (user && isOpen) {
       setFormData({
         displayName: user.name || "",
         status: user.status || "",
-        isOnline: user.activityStatus?.state === "active",
+        isOnline: user.activityStatus?.state === "online" || user.activityStatus?.state === "active",
         avatarPreview: user.avatar || "",
-        avatarFile: null, // Reset file khi mở lại
+        avatarFile: null,
       });
     }
   }, [user, isOpen]);
@@ -43,7 +41,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
       setFormData((prev) => ({
         ...prev,
         avatarFile: file, // Lưu file gốc
-        avatarPreview: URL.createObjectURL(file), // Tạo link ảo để xem trước ngay lập tức
+        avatarPreview: URL.createObjectURL(file), // Tạo link để xem trước ngay lập tức
       }));
     }
   };
@@ -57,9 +55,9 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
       dataPayload.append("displayName", formData.displayName);
       dataPayload.append("status", formData.status);
 
-      // Xử lý status online/offline (Object -> String JSON)
+      // Xử lý status online/offline
       const activityStatus = {
-        state: formData.isOnline ? "active" : "offline",
+        state: formData.isOnline ? "online" : "offline",
         lastSeen: new Date(),
       };
       dataPayload.append("activityStatus", JSON.stringify(activityStatus));
@@ -97,15 +95,13 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   };
 
   return (
-    // Container chính: Phủ toàn màn hình
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* 2. Backdrop (Lớp nền tối)*/}
       <div
         className="absolute inset-0 bg-black/50 transition-opacity"
         onClick={onClose}
       ></div>
 
-      {/*Sidebar (Thanh bên phải)*/}
+      {/*Sidebar*/}
       <div className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col">
         {/* HEADER CỦA SIDEBAR */}
         <div className="h-32 bg-blue-600 relative flex items-center justify-center">
@@ -151,7 +147,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
           </div>
         </div>
 
-        {/* --- BODY CỦA SIDEBAR --- */}
+        {/* BODY CỦA SIDEBAR */}
         <div className="mt-4 px-6 py-4 flex-grow overflow-y-auto">
           <h2 className="text-xl font-bold text-center text-gray-800">
             {user.displayName}
@@ -191,7 +187,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
               ></textarea>
             </div>
 
-            {/* Toggle: Online/Offline */}
+            {/* Toggle Online/Offline */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Trạng thái hoạt động
@@ -221,7 +217,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
             </div>
           </div>
 
-          {/* --- FOOTER CỦA SIDEBAR --- */}
+          {/* FOOTER CỦA SIDEBAR */}
           <div className="p-4 border-t border-gray-100">
             <button
               onClick={handlesSave}

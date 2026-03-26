@@ -90,16 +90,6 @@ const Home = () => {
 
   // USE EFFECTS
   useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (socket && userStr) {
-      const user = JSON.parse(userStr);
-      if (user && user._id) {
-        socket.emit("addNewUser", user._id);
-      }
-    }
-  }, [socket]);
-
-  useEffect(() => {
     if (scrollRef.current) {
       setTimeout(() => {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -233,12 +223,6 @@ const Home = () => {
   }, [API_URL]);
 
   useEffect(() => {
-    if (socket && currentUser) {
-      socket.emit("addNewUser", currentUser._id);
-    }
-  }, [socket, currentUser]);
-
-  useEffect(() => {
     fetchData();
     const fetchGroups = async () => {
       try {
@@ -288,23 +272,6 @@ const Home = () => {
   // SOCKET CONNECTION
   useEffect(() => {
     if (!socket || !currentUser) return;
-
-    const handleUserDisconnected = (userId) => {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id === userId) {
-            return {
-              ...user,
-              activityStatus: {
-                ...(user.activityStatus || {}),
-                lastSeen: new Date().toISOString(),
-              },
-            };
-          }
-          return user;
-        }),
-      );
-    };
 
     const handleNewFriendRequest = (data) => {
       setRequestCount((prevCount) => prevCount + 1);
@@ -372,23 +339,57 @@ const Home = () => {
       );
     };
 
-    socket.off("userDisconnected");
-    socket.off("newFriendRequest");
-    socket.off("friendRequestAccepted");
-    socket.off("friendRequestRejected");
+    const handleUserStatusChanged = ({ userId, status }) => {
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => {
+          if (user._id !== userId) return user;
 
-    socket.on("userDisconnected", handleUserDisconnected);
+          if (status === "online") {
+            return {
+              ...user,
+              activityStatus: {
+                ...(user.activityStatus || {}),
+                state: "online",
+              },
+            };
+          }
+
+          return {
+            ...user,
+            activityStatus: {
+              ...(user.activityStatus || {}),
+              state: "offline",
+              lastSeen: new Date().toISOString(),
+            },
+          };
+        })
+      );
+    };
+
+    socket.on("userStatusChanged", handleUserStatusChanged);
     socket.on("newFriendRequest", handleNewFriendRequest);
     socket.on("friendRequestAccepted", handleFriendRequestAccepted);
     socket.on("friendRequestRejected", handleFriendRequestRejected);
 
     return () => {
-      socket.off("userDisconnected", handleUserDisconnected);
+      socket.off("userStatusChanged", handleUserStatusChanged);
       socket.off("newFriendRequest", handleNewFriendRequest);
       socket.off("friendRequestAccepted", handleFriendRequestAccepted);
       socket.off("friendRequestRejected", handleFriendRequestRejected);
     };
   }, [socket, currentUser]);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => ({
+          ...u,
+          // Kiểm tra xem ID của user có nằm trong mảng online của socket không
+          isOnline: onlineUsers.some((onlineUser) => onlineUser.userId === u._id)
+        }))
+      );
+    }
+  }, [onlineUsers, users.length]);
 
   useEffect(() => {
     if (!socket) return;
@@ -889,10 +890,11 @@ const Home = () => {
     // Dọn dẹp LocalStorage/SessionStorage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("auth-changed"));
 
     setCurrentUser(null);
 
-    window.location.reload();
+    window.location.href = "/login";
   };
 
   const handleUpdateSuccess = (updatedUser) => {
@@ -932,11 +934,11 @@ const Home = () => {
 
       {/* CHAT WINDOW */}
       <div className="flex-1 flex flex-col bg-gray-50 h-full">
-        {/* NƯỚC CỜ THẦN THÁNH: Bọc toàn bộ cột phải bằng FilePicker Kéo Thả */}
+        {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
             onFilesSelected={addFiles}
-            disableClick={true} // Bật True để click vào chat không bị mở hộp thoại
+            disableClick={true}
             className="flex-1 flex flex-col h-full overflow-hidden"
           >
             <ChatWindow

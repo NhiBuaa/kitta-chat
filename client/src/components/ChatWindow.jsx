@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     FaPaperPlane,
     FaPhone,
@@ -6,7 +6,8 @@ import {
     FaInfoCircle,
     FaCheck,
     FaCheckDouble,
-    FaPaperclip
+    FaPaperclip,
+    FaArrowDown
 } from "react-icons/fa";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
@@ -28,6 +29,22 @@ const ChatWindow = ({
     setShowGroupMembers,
     handleScrollToBottom
 }) => {
+    // STATE
+    const [showScrollButton, setShowScrollButton] = useState(false);
+
+    // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+
+        // Nếu cách đáy hơn 150px thì hiện nút
+        if (distanceToBottom > 150) {
+            setShowScrollButton(true);
+        } else {
+            setShowScrollButton(false);
+        }
+    }
+
     if (!activeChat || !currentChatUser) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
@@ -101,7 +118,7 @@ const ChatWindow = ({
             <div
                 className="flex-1 overflow-y-auto p-6 space-y-4"
                 ref={scrollRef}
-                onClick={handleScrollToBottom}
+                onScroll={handleScroll}
             >
                 {messages.map((m, index) => {
                     const senderId =
@@ -284,6 +301,15 @@ const ChatWindow = ({
                             </div>
                         </div>
                     </div>
+                )}
+                {showScrollButton && (
+                    <button
+                        onClick={handleScrollToBottom}
+                        className="absolute bottom-22 right-10 z-50 bg-white border border-gray-200 text-green-600 hover:bg-blue-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
+                        title="Cuộn xuống tin nhắn mới nhất"
+                    >
+                        <FaArrowDown size={16} />
+                    </button>
                 )}
             </div>
         </>

@@ -31,8 +31,10 @@ export const FilePicker = ({
     const handleDragEnter = (e) => {
         e.preventDefault();
         e.stopPropagation();
+
         dragCounter.current += 1;
-        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
             setIsDragging(true);
         }
     };
@@ -49,6 +51,12 @@ export const FilePicker = ({
     const handleDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+            e.dataTransfer.dropEffect = "copy";
+        } else {
+            e.dataTransfer.dropEffect = "none";
+        }
     };
 
     const handleDrop = (e) => {
