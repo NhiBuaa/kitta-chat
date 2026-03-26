@@ -10,14 +10,13 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import AddMemberModal from "./AddMemberModal";
 import ConfirmationModal from "./ConfirmationModal";
+import { getUserDisplayName } from "../utils/getUserDisplayName";
 
 const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [transferringAdmin, setTransferringAdmin] = useState(false);
-
-  // Confirmation Modal States
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -31,11 +30,8 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   const API_URL = import.meta.env.VITE_API_URL;
   const token = localStorage.getItem("token");
 
-  // Xử lý an toàn khi group.admin có thể là string hoặc object
   const adminId =
-    group.admin && typeof group.admin === "object"
-      ? group.admin._id
-      : group.admin;
+    group.admin && typeof group.admin === "object" ? group.admin._id : group.admin;
   const isAdmin = currentUser._id === adminId;
 
   useEffect(() => {
@@ -44,23 +40,23 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
     }
   }, [group]);
 
-  // Xóa/Rời nhóm
+  const closeConfirmModal = () =>
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+
   const handleRemoveMember = async (memberId) => {
     const isCurrentUser = memberId === currentUser._id;
 
     if (isCurrentUser && isAdmin && members.length > 1) {
-      // Nếu là admin muốn rời thì phải chuyển quyền trước
       setTransferringAdmin(true);
       toast.warning("Vui lòng chuyển quyền trưởng nhóm trước khi rời");
       return;
     }
 
-    // Mở confirmation modal
     setConfirmModal({
       isOpen: true,
       title: isCurrentUser ? "Rời nhóm" : "Xóa thành viên",
       message: isCurrentUser
-        ? "Bạn chắc chắn muốn rời nhóm này không?"
+        ? "Bạn chắc chắn muốn rời nhóm này?"
         : "Bạn chắc chắn muốn xóa thành viên này khỏi nhóm?",
       type: "warning",
       confirmText: isCurrentUser ? "Rời nhóm" : "Xóa",
@@ -76,29 +72,28 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
 
           if (res.data.success) {
             if (isCurrentUser) {
-              onClose(); // Nếu tự rời thì đóng modal
+              onClose();
             } else {
               toast.success("Xóa thành viên thành công");
-              const updatedMembers = members.filter((m) => m._id !== memberId);
+              const updatedMembers = members.filter((member) => member._id !== memberId);
               setMembers(updatedMembers);
               onGroupUpdated?.({ ...group, members: updatedMembers });
             }
           }
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } catch (error) {
           toast.error(error.response?.data?.message || "Lỗi xóa thành viên");
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } finally {
           setLoading(false);
+          closeConfirmModal();
         }
       },
     });
   };
 
-  // Chuyển quyền trưởng nhóm
   const handleTransferAdmin = async (newAdminId) => {
     const newAdminName =
-      members.find((m) => m._id === newAdminId)?.displayName || "người này";
+      members.find((member) => member._id === newAdminId)?.displayName ||
+      "người này";
 
     setConfirmModal({
       isOpen: true,
@@ -118,30 +113,24 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
 
           if (res.data.success) {
             toast.success("Chuyển quyền trưởng nhóm thành công");
-
             const updatedGroup = res.data.group;
             if (updatedGroup) {
               setMembers(updatedGroup.members);
               onGroupUpdated?.(updatedGroup);
             }
-
             setTransferringAdmin(false);
-
-            
           }
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } catch (error) {
           console.log(error);
           toast.error("Lỗi chuyển quyền trưởng nhóm");
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } finally {
           setLoading(false);
+          closeConfirmModal();
         }
       },
     });
   };
 
-  // Giải tán nhóm
   const handleDeleteGroup = async () => {
     setConfirmModal({
       isOpen: true,
@@ -162,12 +151,11 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
             toast.success("Giải tán nhóm thành công");
             onClose();
           }
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } catch (error) {
           toast.error(error.response?.data?.message || "Lỗi giải tán nhóm");
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } finally {
           setLoading(false);
+          closeConfirmModal();
         }
       },
     });
@@ -182,11 +170,8 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg w-150 max-h-[80vh] flex flex-col">
-        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-lg font-bold">
-            Thành viên nhóm ({members.length})
-          </h2>
+          <h2 className="text-lg font-bold">Thành viên nhóm ({members.length})</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -196,38 +181,30 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
           </button>
         </div>
 
-        {/* Member List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {members.map((member) => (
             <div
               key={member._id}
               className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-lg"
             >
-              {/* Thông tin thành viên (Avatar + Tên) */}
               <div className="flex items-center space-x-3 overflow-hidden">
                 <img
                   src={getAvatarUrl(member.avatar)}
-                  alt="avatar"
+                  alt={getUserDisplayName(member)}
                   className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                 />
                 <div className="min-w-0">
                   <p className="text-sm font-medium flex items-center whitespace-nowrap">
-                    <span className="truncate">
-                      {member.displayName || member.email?.split("@")[0]}
-                    </span>
+                    <span className="truncate">{getUserDisplayName(member)}</span>
                     {member._id === adminId && (
                       <span className="ml-2 text-yellow-500 flex items-center gap-1 text-xs flex-shrink-0">
                         <FaCrown size={12} /> Trưởng nhóm
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {member.email}
-                  </p>
                 </div>
               </div>
 
-              {/* Các nút hành động */}
               <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                 {isAdmin && member._id !== adminId && (
                   <>
@@ -250,27 +227,21 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
                   </>
                 )}
 
-                {/* Khi admin tự rời nhóm  */}
-                {isAdmin &&
-                  member._id === currentUser._id &&
-                  members.length > 1 && (
-                    <button
-                      onClick={() =>
-                        transferringAdmin
-                          ? toast.info(
-                            "Vui lòng chọn người chuẩn bị nhận quyền",
-                          )
-                          : handleRemoveMember(member._id)
-                      }
-                      className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors"
-                      title="Rời nhóm"
-                      disabled={loading}
-                    >
-                      <FaUserMinus size={14} />
-                    </button>
-                  )}
+                {isAdmin && member._id === currentUser._id && members.length > 1 && (
+                  <button
+                    onClick={() =>
+                      transferringAdmin
+                        ? toast.info("Vui lòng chọn người nhận quyền trước")
+                        : handleRemoveMember(member._id)
+                    }
+                    className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors"
+                    title="Rời nhóm"
+                    disabled={loading}
+                  >
+                    <FaUserMinus size={14} />
+                  </button>
+                )}
 
-                {/* Member tự rời nhóm*/}
                 {!isAdmin && member._id === currentUser._id && (
                   <button
                     onClick={() => handleRemoveMember(member._id)}
@@ -286,7 +257,6 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
           ))}
         </div>
 
-        {/* Footer */}
         <div className="border-t p-4 flex gap-2">
           {isAdmin && (
             <button
@@ -317,33 +287,18 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
           </button>
         </div>
 
-        {/* Add Member Modal Component */}
         <AddMemberModal
           isOpen={showAddMember}
           onClose={() => setShowAddMember(false)}
           group={group}
-          onAddSuccess={() => {
-            const reloadGroup = async () => {
-              try {
-                const groupRes = await axios.get(`${API_URL}/api/groups`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                const updatedGroup = groupRes.data.groups.find(
-                  (g) => g._id === group._id,
-                );
-                if (updatedGroup) {
-                  setMembers(updatedGroup.members);
-                  onGroupUpdated?.(updatedGroup);
-                }
-              } catch (error) {
-                console.error("Lỗi reload nhóm:", error);
-              }
-            };
-            reloadGroup();
+          onAddSuccess={(updatedGroup) => {
+            if (updatedGroup) {
+              setMembers(updatedGroup.members);
+              onGroupUpdated?.(updatedGroup);
+            }
           }}
         />
 
-        {/* Confirmation Modal */}
         <ConfirmationModal
           isOpen={confirmModal.isOpen}
           title={confirmModal.title}
@@ -353,7 +308,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
           isDangerous={confirmModal.isDangerous}
           isLoading={loading}
           onConfirm={() => confirmModal.onConfirm?.()}
-          onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+          onCancel={closeConfirmModal}
         />
       </div>
     </div>

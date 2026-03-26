@@ -49,6 +49,7 @@ const Home = () => {
 
   // REF
   const activeChatRef = useRef(null);
+  const groupsRef = useRef([]);
   const scrollRef = useRef();
   const typingTimeoutRef = useRef(null);
 
@@ -90,16 +91,6 @@ const Home = () => {
 
   // USE EFFECTS
   useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (socket && userStr) {
-      const user = JSON.parse(userStr);
-      if (user && user._id) {
-        socket.emit("addNewUser", user._id);
-      }
-    }
-  }, [socket]);
-
-  useEffect(() => {
     if (scrollRef.current) {
       setTimeout(() => {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -110,6 +101,10 @@ const Home = () => {
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
+
+  useEffect(() => {
+    groupsRef.current = groups;
+  }, [groups]);
 
   useEffect(() => {
     if (!socket) return;
@@ -176,6 +171,54 @@ const Home = () => {
     );
   };
 
+  const upsertGroup = useCallback((incomingGroup) => {
+    if (!incomingGroup?._id) return;
+
+    setGroups((prevGroups) => {
+      const existingIndex = prevGroups.findIndex(
+        (group) => group._id === incomingGroup._id,
+      );
+
+      if (existingIndex === -1) {
+        return [incomingGroup, ...prevGroups];
+      }
+
+      const existingGroup = prevGroups[existingIndex];
+      const mergedGroup = {
+        ...existingGroup,
+        ...incomingGroup,
+        members: incomingGroup.members || existingGroup.members,
+        admin: incomingGroup.admin || existingGroup.admin,
+      };
+
+      const nextGroups = [...prevGroups];
+      nextGroups.splice(existingIndex, 1);
+      nextGroups.unshift(mergedGroup);
+      return nextGroups;
+    });
+
+    if (activeChatRef.current?._id === incomingGroup._id) {
+      setActiveChat((prevChat) =>
+        prevChat
+          ? {
+              ...prevChat,
+              ...incomingGroup,
+              members: incomingGroup.members || prevChat.members,
+              admin: incomingGroup.admin || prevChat.admin,
+            }
+          : prevChat,
+      );
+    }
+  }, []);
+
+  const handleCreateGroupSuccess = useCallback(
+    (newGroup) => {
+      upsertGroup(newGroup);
+      setActiveChat(newGroup);
+    },
+    [upsertGroup],
+  );
+
   const handleAddFriend = async (e, user) => {
     e.stopPropagation();
     try {
@@ -233,12 +276,6 @@ const Home = () => {
   }, [API_URL]);
 
   useEffect(() => {
-    if (socket && currentUser) {
-      socket.emit("addNewUser", currentUser._id);
-    }
-  }, [socket, currentUser]);
-
-  useEffect(() => {
     fetchData();
     const fetchGroups = async () => {
       try {
@@ -288,23 +325,6 @@ const Home = () => {
   // SOCKET CONNECTION
   useEffect(() => {
     if (!socket || !currentUser) return;
-
-    const handleUserDisconnected = (userId) => {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id === userId) {
-            return {
-              ...user,
-              activityStatus: {
-                ...(user.activityStatus || {}),
-                lastSeen: new Date().toISOString(),
-              },
-            };
-          }
-          return user;
-        }),
-      );
-    };
 
     const handleNewFriendRequest = (data) => {
       setRequestCount((prevCount) => prevCount + 1);
@@ -372,23 +392,57 @@ const Home = () => {
       );
     };
 
-    socket.off("userDisconnected");
-    socket.off("newFriendRequest");
-    socket.off("friendRequestAccepted");
-    socket.off("friendRequestRejected");
+    const handleUserStatusChanged = ({ userId, status }) => {
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => {
+          if (user._id !== userId) return user;
 
-    socket.on("userDisconnected", handleUserDisconnected);
+          if (status === "online") {
+            return {
+              ...user,
+              activityStatus: {
+                ...(user.activityStatus || {}),
+                state: "online",
+              },
+            };
+          }
+
+          return {
+            ...user,
+            activityStatus: {
+              ...(user.activityStatus || {}),
+              state: "offline",
+              lastSeen: new Date().toISOString(),
+            },
+          };
+        })
+      );
+    };
+
+    socket.on("userStatusChanged", handleUserStatusChanged);
     socket.on("newFriendRequest", handleNewFriendRequest);
     socket.on("friendRequestAccepted", handleFriendRequestAccepted);
     socket.on("friendRequestRejected", handleFriendRequestRejected);
 
     return () => {
-      socket.off("userDisconnected", handleUserDisconnected);
+      socket.off("userStatusChanged", handleUserStatusChanged);
       socket.off("newFriendRequest", handleNewFriendRequest);
       socket.off("friendRequestAccepted", handleFriendRequestAccepted);
       socket.off("friendRequestRejected", handleFriendRequestRejected);
     };
   }, [socket, currentUser]);
+
+  useEffect(() => {
+    if (users.length > 0) {
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => ({
+          ...u,
+          // Kiểm tra xem ID của user có nằm trong mảng online của socket không
+          isOnline: onlineUsers.some((onlineUser) => onlineUser.userId === u._id)
+        }))
+      );
+    }
+  }, [onlineUsers, users.length]);
 
   useEffect(() => {
     if (!socket) return;
@@ -554,14 +608,31 @@ const Home = () => {
           100,
         );
       } else {
-        if (data.type !== "system") {
-          const sender = users.find((u) => u._id === data.senderId);
-          const senderName = sender ? sender.displayName : "Ai đó";
-          toast.info(`Tin nhắn mới từ ${senderName}`, {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: true,
-          });
+        if (data.type !== "system" && data.senderId !== currentUser._id) {
+          try {
+            let messageToast = "";
+
+            if (data.isGroup) {
+              const groupName = data.groupName;
+              const senderName = data.sender?.displayName;
+
+              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`
+            } else {
+              const sender = users.find((u) => u._id === data.senderId);
+              const senderName = sender ? sender.displayName : (data.sender?.displayName || "Ai đó");
+
+              messageToast = `Tin nhắn mới từ ${senderName}`
+            }
+
+            toast.info(messageToast, {
+              position: "top-right",
+              autoClose: 3000,
+              hideProgressBar: true
+            })
+          } catch (error) {
+            console.error("Lỗi không hiển thị toast: ", error);
+            console.log("Dữ liệu tin nhắn bị lỗi:", data);
+          }
         }
       }
     };
@@ -684,6 +755,27 @@ const Home = () => {
   useEffect(() => {
     if (!socket) return;
 
+    const handleGroupUpserted = (data) => {
+      const { group, action, actorId, addedMemberId } = data || {};
+      if (!group?._id || !currentUser?._id) return;
+
+      const existedBefore = groupsRef.current.some((g) => g._id === group._id);
+      upsertGroup(group);
+
+      const isCurrentUserAdded =
+        action === "member-added" && addedMemberId === currentUser._id;
+      const isInvitedWhenCreated =
+        action === "created" &&
+        actorId !== currentUser._id &&
+        group.members?.some((member) => member._id === currentUser._id);
+
+      if (!existedBefore && (isCurrentUserAdded || isInvitedWhenCreated)) {
+        toast.info(`Bạn vừa được thêm vào nhóm "${group.name}"`, {
+          toastId: `group-upsert-${group._id}`,
+        });
+      }
+    };
+
     const handleGroupAdminChanged = (data) => {
       const { groupId, newAdminId } = data;
       setGroups((prevGroups) =>
@@ -735,14 +827,7 @@ const Home = () => {
       }
 
       if (updatedGroup) {
-        setGroups((prevGroups) =>
-          prevGroups.map((g) =>
-            g._id === groupId ? { ...g, members: updatedGroup.members } : g,
-          ),
-        );
-      }
-      if (activeChat?._id === groupId && updatedGroup) {
-        setActiveChat((prev) => ({ ...prev, members: updatedGroup.members }));
+        upsertGroup(updatedGroup);
       }
     };
 
@@ -760,18 +845,20 @@ const Home = () => {
       }
     };
 
+    socket.on("groupUpserted", handleGroupUpserted);
     socket.on("groupAdminChanged", handleGroupAdminChanged);
     socket.on("groupRenamed", handleGroupRenamed);
     socket.on("groupMemberUpdated", handleGroupMemberUpdated);
     socket.on("groupDeleted", handleGroupDeleted);
 
     return () => {
+      socket.off("groupUpserted", handleGroupUpserted);
       socket.off("groupAdminChanged", handleGroupAdminChanged);
       socket.off("groupRenamed", handleGroupRenamed);
       socket.off("groupMemberUpdated", handleGroupMemberUpdated);
       socket.off("groupDeleted", handleGroupDeleted);
     };
-  }, [socket, activeChat, currentUser]);
+  }, [socket, activeChat, currentUser, upsertGroup]);
 
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
@@ -864,8 +951,19 @@ const Home = () => {
   };
 
   const handleLogout = () => {
+    // Ngắt kết nối socket
+    if (socket) {
+      socket.disconnect();
+    }
+
+    // Dọn dẹp LocalStorage/SessionStorage
     localStorage.removeItem("token");
-    window.location.reload();
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("auth-changed"));
+
+    setCurrentUser(null);
+
+    window.location.href = "/login";
   };
 
   const handleUpdateSuccess = (updatedUser) => {
@@ -904,13 +1002,13 @@ const Home = () => {
       />
 
       {/* CHAT WINDOW */}
-      <div className="flex-1  flex  flex-col bg-gray-50 h-full">
-        {/* NƯỚC CỜ THẦN THÁNH: Bọc toàn bộ cột phải bằng FilePicker Kéo Thả */}
+      <div className="flex-1 flex flex-col bg-gray-50 h-full">
+        {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
             onFilesSelected={addFiles}
-            disableClick={true} // Bật True để click vào chat không bị mở hộp thoại
-            className="flex-1  flex flex-col h-full overflow-hidden"
+            disableClick={true}
+            className="flex-1 flex flex-col h-full overflow-hidden"
           >
             <ChatWindow
               activeChat={activeChat}
@@ -962,7 +1060,7 @@ const Home = () => {
         isOpen={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
         users={users}
-        onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])}
+        onCreateSuccess={handleCreateGroupSuccess}
       />
       {showRequestModal && (
         <FriendRequestModal
@@ -978,12 +1076,8 @@ const Home = () => {
           currentUser={currentUser}
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
+            upsertGroup(updatedGroup);
             setActiveChat(updatedGroup);
-            setGroups(
-              groups.map((g) =>
-                g._id === updatedGroup._id ? updatedGroup : g,
-              ),
-            );
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);

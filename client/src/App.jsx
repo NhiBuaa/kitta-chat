@@ -27,6 +27,7 @@ axios.interceptors.response.use(
       // Xóa sạch dữ liệu cũ
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      window.dispatchEvent(new Event("auth-changed"));
 
       window.location.href = '/login';
     }
