@@ -184,6 +184,7 @@ const searchUsers = async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
+
 // Lấy danh sách bạn bè
 const getFriends = async (req, res) => {
   try {
@@ -412,10 +413,6 @@ const rejectFriendRequest = async (req, res) => {
     await User.findByIdAndUpdate(receiverId, {
       $pull: { friendRequests: senderId },
     });
-
-    // await User.findByIdAndUpdate(senderId, {
-    //     $pull: { sentRequests: receiverId }
-    // })
 
     res.status(200).json({ success: true, message: "Đã từ chối lời mời" });
   } catch (error) {

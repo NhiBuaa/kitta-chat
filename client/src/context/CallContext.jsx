@@ -1,16 +1,32 @@
-import React, { createContext, useState, useEffect, useRef } from "react";
+import React, { createContext, useEffect, useRef, useState } from "react";
+import Peer from "simple-peer";
 import { toast } from "react-toastify";
 import { useSocket } from "./SocketContext.js";
-import Peer from "simple-peer";
-import * as process from "process";
+
 window.global = window;
-window.process = process;
-window.Buffer = [];
+window.process = {
+    env: { DEBUG: undefined },
+    version: "",
+    nextTick: (cb) => setTimeout(cb, 0),
+};
+window.Buffer = window.Buffer || [];
 
 const CallContext = createContext();
 
 export const CallProvider = ({ children }) => {
-    const { socket, onlineUsers } = useSocket();
+    const { socket } = useSocket();
+
+    const getStoredPartnerMediaStatus = () => {
+        const storedStatus = localStorage.getItem("tempCallerMediaStatus");
+        if (!storedStatus) return { cam: true, mic: true };
+
+        try {
+            return JSON.parse(storedStatus);
+        } catch (error) {
+            console.error("Failed to parse stored partner media status:", error);
+            return { cam: true, mic: true };
+        }
+    };
 
     const [stream, setStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
@@ -19,34 +35,25 @@ export const CallProvider = ({ children }) => {
     const [callEnded, setCallEnded] = useState(false);
     const [isCalling, setIsCalling] = useState(false);
     const [me, setMe] = useState("");
-    const [partnerMediaStatus, setPartnerMediaStatus] = useState({ cam: true, mic: true });
+    const [partnerMediaStatus, setPartnerMediaStatus] = useState(() => getStoredPartnerMediaStatus());
 
     const myVideo = useRef();
     const userVideo = useRef();
-    const connectionRef = useRef();
+    const connectionRef = useRef(null);
     const streamRef = useRef(null);
+    const callTimeoutRef = useRef(null);
 
     const updateStream = (newStream) => {
         streamRef.current = newStream;
         setStream(newStream);
     };
 
-    const getPartnerSocketId = () => {
-        const savedSocketId = localStorage.getItem('activePartnerSocketId');
-
-        const partnerUserId = localStorage.getItem('activePartnerUserId');
-
-        if (partnerUserId && Array.isArray(onlineUsers)) {
-            const found = onlineUsers.find(u => u.userId === partnerUserId);
-            if (found) {
-                console.log(`[getPartnerSocketId] Tìm thấy socket mới nhất cho userId ${partnerUserId}:`, found.socketId);
-                return found.socketId;
-            }
-        }
-
-        // Fallback: dùng socket ID đã lưu
-        console.log(`[getPartnerSocketId] Dùng savedSocketId:`, savedSocketId);
-        return savedSocketId;
+    const clearStoredCallState = () => {
+        localStorage.removeItem("activePartnerUserId");
+        localStorage.removeItem("tempCallerId");
+        localStorage.removeItem("tempCallerUserId");
+        localStorage.removeItem("tempCallSignal");
+        localStorage.removeItem("tempCallerMediaStatus");
     };
 
     const cleanupConnection = () => {
@@ -56,181 +63,230 @@ export const CallProvider = ({ children }) => {
         }
 
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
         }
 
         setStream(null);
         setRemoteStream(null);
-        setCallEnded(true);
+        setPartnerMediaStatus({ cam: true, mic: true });
         setCallAccepted(false);
         setIsCalling(false);
         setCall({});
+        setCallEnded(true);
     };
 
-    // --- HÀM GỌI ĐI ---
-    const callUser = async (receiverSocketId, localStream, receiverUserId = null) => {
-        const userStr = localStorage.getItem('user');
+    // BỔ SUNG: Cấu hình STUN Server (Để xuyên tường lửa 4G)
+    // Sau này nếu có kinh phí, bạn chèn thêm TURN Server của Twilio/Metered vào mảng này
+    const ICE_SERVERS = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+    };
+
+    const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true) => {
+        const userStr = localStorage.getItem("user");
         const freshUser = userStr ? JSON.parse(userStr) : null;
 
-        if (!freshUser) { toast.error("Phiên đăng nhập hết hạn."); return; }
-        if (!receiverSocketId || !localStream) { console.error("Thiếu thông tin để gọi"); return; }
-        if (!socket?.id) { toast.error("Mất kết nối máy chủ."); return; }
+        if (!freshUser) {
+            toast.error("Phien dang nhap het han.");
+            return;
+        }
+
+        if (!receiverUserId || !localStream) {
+            console.error("Thieu thong tin de goi.");
+            return;
+        }
+
+        if (!socket?.id) {
+            toast.error("Mat ket noi may chu.");
+            return;
+        }
 
         updateStream(localStream);
         setCallAccepted(false);
         setCallEnded(false);
         setIsCalling(true);
-        setCall(prev => ({ ...prev, userToCall: receiverSocketId }));
+        setPartnerMediaStatus({ cam: true, mic: true });
+        setCall((prev) => ({ ...prev, userToCall: receiverUserId }));
 
-        localStorage.setItem('activePartnerSocketId', receiverSocketId);
-        if (receiverUserId) {
-            localStorage.setItem('activePartnerUserId', receiverUserId);
-        }
+        localStorage.setItem("activePartnerUserId", receiverUserId);
 
-        const peer = new Peer({ initiator: true, trickle: false, stream: localStream });
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+        callTimeoutRef.current = setTimeout(() => {
+            toast.error("Không có phản hồi từ đối phương.");
+            leaveCall();
+        }, 45000);
+
+        const peer = new Peer({ initiator: true, trickle: false, stream: localStream, config: ICE_SERVERS });
 
         peer.on("signal", (data) => {
             socket.emit("callUser", {
-                userToCall: receiverSocketId,
+                userToCall: receiverUserId,
                 signalData: data,
                 from: socket.id,
                 name: freshUser.displayName || "Người dùng",
-                callerDbId: freshUser.id
+                callerDbId: freshUser._id || freshUser.id,
+                mediaStatus: { cam: isCamOn, mic: isMicOn },
             });
         });
 
         peer.on("stream", (currentRemoteStream) => {
             setRemoteStream(currentRemoteStream);
-            if (userVideo.current) userVideo.current.srcObject = currentRemoteStream;
+            if (userVideo.current) {
+                userVideo.current.srcObject = currentRemoteStream;
+            }
         });
 
-        peer.on("error", (err) => { console.error("Peer Error:", err); leaveCall(); });
+        peer.on("error", (err) => {
+            console.error("Peer Error:", err);
+            leaveCall();
+        });
 
-        socket.once("callAccepted", (signal) => {
+        const handleCallAccepted = (payload) => {
+            clearTimeout(callTimeoutRef.current);
+            const signal = payload?.signal || payload;
+            const acceptedMediaStatus = payload?.mediaStatus;
+
             setCallAccepted(true);
-            peer.signal(signal);
-        });
+            setCallEnded(false);
 
+            if (acceptedMediaStatus) {
+                setPartnerMediaStatus(acceptedMediaStatus);
+            }
+
+            peer.signal(signal);
+        };
+
+        socket.once("callAccepted", handleCallAccepted);
         connectionRef.current = peer;
     };
 
-    // --- HÀM TRẢ LỜI ---
-    const answerCall = (currentStream) => {
-        const callerId = localStorage.getItem('tempCallerId') || call.from;
-        const callerUserId = localStorage.getItem('tempCallerUserId');
-        const savedSignal = localStorage.getItem('tempCallSignal');
+    const answerCall = (currentStream, isCamOn = true, isMicOn = true) => {
+        const callerUserId = localStorage.getItem("tempCallerUserId");
+        const savedSignal = localStorage.getItem("tempCallSignal");
 
-        if (!savedSignal || !callerId || savedSignal === "undefined") {
+        if (!savedSignal || !callerUserId || savedSignal === "undefined") {
             toast.error("Mất tín hiệu cuộc gọi.");
             return false;
         }
 
-        localStorage.setItem('activePartnerSocketId', callerId);
-        if (callerUserId) {
-            localStorage.setItem('activePartnerUserId', callerUserId);
-        }
+        localStorage.setItem("activePartnerUserId", callerUserId);
 
         const signalToUse = JSON.parse(savedSignal);
         setCallAccepted(true);
+        setCallEnded(false);
         updateStream(currentStream);
 
-        const peer = new Peer({ initiator: false, trickle: false, stream: currentStream });
+        const peer = new Peer({ initiator: false, trickle: false, stream: currentStream, config: ICE_SERVERS });
 
         peer.on("signal", (data) => {
-            socket.emit("answerCall", { signal: data, to: callerId });
+            socket.emit("answerCall", {
+                signal: data,
+                to: callerUserId,
+                mediaStatus: { cam: isCamOn, mic: isMicOn },
+            });
         });
 
         peer.on("stream", (currentRemoteStream) => {
             setRemoteStream(currentRemoteStream);
-            if (userVideo.current) userVideo.current.srcObject = currentRemoteStream;
+            if (userVideo.current) {
+                userVideo.current.srcObject = currentRemoteStream;
+            }
         });
 
-        peer.on("error", (err) => { console.error("Peer Error:", err); leaveCall(); });
+        peer.on("error", (err) => {
+            console.error("Peer Error:", err);
+            leaveCall();
+        });
 
         peer.signal(signalToUse);
         connectionRef.current = peer;
 
         setTimeout(() => {
-            localStorage.removeItem('tempCallSignal');
-            localStorage.removeItem('tempCallerId');
-            localStorage.removeItem('tempCallerUserId');
+            localStorage.removeItem("tempCallSignal");
+            localStorage.removeItem("tempCallerId");
+            localStorage.removeItem("tempCallerUserId");
         }, 2000);
 
         return true;
     };
 
-    // --- HÀM KẾT THÚC ---
     const leaveCall = () => {
-        const partnerSocketId = getPartnerSocketId();
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+        const partnerUserId =
+            localStorage.getItem("activePartnerUserId") ||
+            localStorage.getItem("tempCallerUserId");
 
-        if (socket && partnerSocketId) {
-            console.log("[leaveCall] Gửi endCall tới socket:", partnerSocketId);
-            socket.emit("endCall", { to: partnerSocketId });
-        } else {
-            console.warn("[leaveCall] Không tìm được socket ID của đối phương!");
+        if (socket && partnerUserId) {
+            socket.emit("endCall", { to: partnerUserId });
         }
 
+        clearStoredCallState();
         cleanupConnection();
-
-        localStorage.removeItem('activePartnerSocketId');
-        localStorage.removeItem('activePartnerUserId');
-        localStorage.removeItem('tempCallerId');
-        localStorage.removeItem('tempCallerUserId');
-        localStorage.removeItem('tempCallSignal');
     };
 
-    // --- LẮNG NGHE SOCKET ---
     useEffect(() => {
         if (!socket) return;
 
-        socket.on("me", (id) => setMe(id));
+        const handleMe = (id) => setMe(id);
 
-        socket.on("callUser", (data) => {
-            console.log("[Socket] Nhận cuộc gọi:", data);
+        const handleIncomingCall = (data) => {
             const validSignal = data.signal || data.signalData;
 
-            localStorage.setItem('tempCallerId', data.from);           // socket ID của caller
-            localStorage.setItem('tempCallSignal', JSON.stringify(validSignal));
+            localStorage.setItem("tempCallerId", data.from);
+            localStorage.setItem("tempCallSignal", JSON.stringify(validSignal));
+
             if (data.callerDbId) {
-                localStorage.setItem('tempCallerUserId', data.callerDbId);
+                localStorage.setItem("tempCallerUserId", data.callerDbId);
+                localStorage.setItem("activePartnerUserId", data.callerDbId);
             }
 
+            localStorage.setItem(
+                "tempCallerMediaStatus",
+                JSON.stringify(data.mediaStatus || { cam: true, mic: true })
+            );
+            setPartnerMediaStatus(data.mediaStatus || { cam: true, mic: true });
+            setCallEnded(false);
             setCall({
                 isReceivingCall: true,
                 from: data.from,
                 name: data.name,
                 avatar: data.avatar,
-                signal: validSignal
+                signal: validSignal,
             });
-        });
+        };
 
-        socket.on("callEnded", () => {
-            console.log("[Socket] Đối phương đã tắt máy, đang cleanup...");
+        const handleCallEnded = () => {
             cleanupConnection();
-            localStorage.removeItem('activePartnerSocketId');
-            localStorage.removeItem('activePartnerUserId');
-            localStorage.removeItem('tempCallerId');
-            localStorage.removeItem('tempCallerUserId');
-            localStorage.removeItem('tempCallSignal');
-        });
+            clearStoredCallState();
+        };
 
-        socket.on("callRejected", () => {
+        const handleCallRejected = () => {
+            if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
             setIsCalling(false);
             toast.info("Người dùng bận hoặc từ chối.");
             cleanupConnection();
-        });
+            clearStoredCallState();
+        };
 
-        socket.on("updateMediaStatus", ({ cam, mic }) => {
+        const handleUpdateMediaStatus = ({ cam, mic }) => {
             setPartnerMediaStatus({ cam, mic });
-        });
+        };
+
+        socket.on("me", handleMe);
+        socket.on("callUser", handleIncomingCall);
+        socket.on("callEnded", handleCallEnded);
+        socket.on("callRejected", handleCallRejected);
+        socket.on("updateMediaStatus", handleUpdateMediaStatus);
 
         return () => {
-            socket.off("me");
-            socket.off("callUser");
-            socket.off("callEnded");
-            socket.off("callRejected");
-            socket.off("updateMediaStatus");
+            socket.off("me", handleMe);
+            socket.off("callUser", handleIncomingCall);
+            socket.off("callEnded", handleCallEnded);
+            socket.off("callRejected", handleCallRejected);
+            socket.off("updateMediaStatus", handleUpdateMediaStatus);
         };
     }, [socket]);
 
@@ -251,7 +307,7 @@ export const CallProvider = ({ children }) => {
                 isCalling,
                 setCall,
                 remoteStream,
-                partnerMediaStatus
+                partnerMediaStatus,
             }}
         >
             {children}

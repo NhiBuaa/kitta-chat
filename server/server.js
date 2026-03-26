@@ -39,131 +39,186 @@ const io = new Server(server, {
   },
 });
 
-// Lưu danh sách user đang online vào RAM
-let onlineUsers = new Map();
-global.onlineUsers = onlineUsers;
+// Online presence state
+const onlineUsers = new Map();
+const userConnections = new Map();
+const disconnectTimers = new Map();
 
-// Set io vào app để controller có thể access
+const getOnlineUsersPayload = () =>
+  Array.from(onlineUsers.entries()).map(([userId, socketIds]) => ({
+    userId,
+    socketId: Array.from(socketIds)[socketIds.size - 1] || null,
+    socketIds: Array.from(socketIds),
+  }));
+
+// Allow controllers to access shared realtime state
 app.set("socketio", io);
 app.set("onlineUsers", onlineUsers);
 
-// Helper function để xử lý khi user connect
-const handleUserConnected = async (socket, userId, socketId) => {
-  if (!userId || typeof userId !== "string" || userId.trim() === "") {
-    console.warn(`Ignoring invalid userId on connect: ${userId}`);
-    return;
-  }
-
-  console.log(`User Connected: ${userId}`);
-  onlineUsers.set(userId, socketId);
-
-  // Join user vào room với userId (để nhận tin nhắn 1-1)
+// Notify only related rooms about presence changes
+const broadcastUserStatus = async (ioInstance, userId, status) => {
   try {
-    socket.join(userId);
-    console.log(`User ${userId} joined room ${userId}`);
-  } catch (err) {
-    console.error(`Lỗi khi join room cho user ${userId}:`, err);
+    const groups = await Group.find({ members: userId }).select("_id");
+    const groupIds = groups.map((group) => group._id.toString());
+
+    const user = await User.findById(userId).select("friends");
+    const friendIds = user?.friends ? user.friends.map((friend) => friend.toString()) : [];
+
+    const targetRooms = [...new Set([...groupIds, ...friendIds])];
+
+    if (targetRooms.length > 0) {
+      ioInstance.to(targetRooms).emit("userStatusChanged", { userId, status });
+      console.log(
+        `[Presence] Broadcast ${status} for user ${userId} to ${targetRooms.length} rooms.`
+      );
+    } else {
+      console.log(`[Presence] User ${userId} is ${status} but has no related rooms.`);
+    }
+  } catch (error) {
+    console.error(`[Presence] Failed to broadcast status for ${userId}:`, error);
   }
-
-  // Cập nhật DB thành ACTIVE
-  try {
-    await User.findByIdAndUpdate(userId, {
-      activityStatus: { state: "active", lastSeen: new Date() },
-    });
-  } catch (err) {
-    console.error(`Lỗi cập nhật activityStatus cho user ${userId}:`, err.message || err);
-  }
-
-  const usersArray = Array.from(onlineUsers, ([uid, sid]) => ({
-    userId: uid,
-    socketId: sid,
-  })).filter((u) => u.userId && typeof u.userId === "string" && u.userId.trim() !== "");
-
-  io.emit("getOnlineUsers", usersArray);
 };
 
 // SOCKET
-io.on("connection", async (socket) => {
-  let userId = socket.handshake.query.userId;
-  console.log(`[Socket Connection] ID: ${socket.id}, Query userId: ${userId}`);
+io.on("connection", (socket) => {
+  const initialUserId = socket.handshake.query.userId;
+  console.log(`[Socket Connection] ID: ${socket.id}, Query userId: ${initialUserId}`);
 
-  // Khởi tạo User
-  if (!userId || userId === "undefined") {
-    console.log(`userId không hợp lệ từ query string, đợi event addNewUser`);
-    socket.on("addNewUser", async (id) => {
-      userId = id;
-      if (!userId || typeof userId !== "string" || userId.trim() === "") {
-        console.warn(`Received addNewUser with invalid id: ${userId}`);
-        return;
-      }
-      console.log(`Nhận event addNewUser: ${userId}`);
-      await handleUserConnected(socket, userId, socket.id);
-    });
-  }
+  socket.emit("me", socket.id);
 
-  (async () => {
+  socket.on("addNewUser", async (userId) => {
+    if (!userId || userId === "undefined") return;
+    if (socket.userRegistered && socket.userId === userId) {
+      socket.emit("getOnlineUsers", getOnlineUsersPayload());
+      return;
+    }
+    const hadPendingOfflineTimer = disconnectTimers.has(userId);
+    const currentCount = userConnections.get(userId) || 0;
+
     try {
-      await handleUserConnected(socket, userId, socket.id);
-    } catch (error) {
-      console.error(`Lỗi khi connect user ${userId}:`, error);
-    }
-  })();
+      // Join user vào room với userId (để nhận tin nhắn 1-1)
+      socket.userId = userId;
+      socket.userRegistered = true;
+      socket.join(userId);
+      console.log(`User ${userId} joined room ${userId}`);
 
-  // Disconnect
-  socket.on("disconnect", async () => {
-    console.log(`User Disconnected: ${userId}`);
-    if (userId) {
-      onlineUsers.delete(userId);
-      await User.findByIdAndUpdate(userId, {
-        activityStatus: { state: "offline", lastSeen: new Date() },
-      });
-      const usersArray = Array.from(onlineUsers, ([uid, sid]) => ({
-        userId: uid,
-        socketId: sid,
-      }));
-      io.emit("getOnlineUsers", usersArray);
+      // Join user vào các room Group
+      const userGroups = await Group.find({ members: userId });
+
+      if (userGroups) {
+        userGroups.forEach((group) => {
+          socket.join(group._id.toString());
+          console.log(`User ${userId} joined group room ${group._id.toString()}`);
+        });
+      }
+    } catch (err) {
+      console.error(`Lỗi khi join room cho user ${userId}:`, err);
     }
+
+    const existingSocketIds = onlineUsers.get(userId) || new Set();
+    existingSocketIds.add(socket.id);
+    onlineUsers.set(userId, existingSocketIds);
+
+    if (hadPendingOfflineTimer) {
+      console.log(`[Presence] Cancel offline timer for ${userId}.`);
+      clearTimeout(disconnectTimers.get(userId));
+      disconnectTimers.delete(userId);
+    }
+
+    userConnections.set(userId, currentCount + 1);
+    console.log(`[Presence] User ${userId} connected. Count ${currentCount} -> ${currentCount + 1}`);
+
+    if (!hadPendingOfflineTimer && currentCount === 0) {
+      broadcastUserStatus(io, userId, "online");
+      await User.findByIdAndUpdate(userId, { "activityStatus.state": "active" });
+    }
+
+    socket.emit("getOnlineUsers", getOnlineUsersPayload());
   });
 
-  // Friend Requests
-  socket.on("sendFriendRequest", async ({ senderId, receiverId, senderName }) => {
-    console.log(`Received sendFriendRequest from ${senderId} to ${receiverId}`);
-    const receiverSocketId = onlineUsers.get(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newFriendRequest", { senderId, senderName });
-    }
-  });
-
-  socket.on("acceptFriendRequest", async ({ senderId, receiverId, receiverName, receiverAvatar }) => {
-    const senderSocketId = onlineUsers.get(senderId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("friendRequestAccepted", {
-        newFriendId: receiverId,
-        newFriendName: receiverName,
-        newFriendAvatar: receiverAvatar,
-      });
-    }
-  });
-
-  socket.on("rejectFriendRequest", async ({ senderId, receiverId }) => {
-    const senderSocketId = onlineUsers.get(senderId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("friendRequestRejected", { rejecterId: receiverId });
-    }
-  });
-
-  // Group Rooms
   socket.on("joinGroup", (groupId) => {
+    if (!groupId) return;
     socket.join(groupId);
-    console.log(`User ${userId} joined group room ${groupId}`);
+    console.log(`[Socket] ${socket.id} joined group ${groupId}`);
   });
 
   socket.on("leaveGroup", (groupId) => {
+    if (!groupId) return;
     socket.leave(groupId);
-    console.log(`User ${userId} left group room ${groupId}`);
+    console.log(`[Socket] ${socket.id} left group ${groupId}`);
   });
 
-  // Messaging (Hỗ trợ File S3 + Text + Group)
+  socket.on("disconnect", () => {
+    const userId = socket.userId;
+    if (!userId) return;
+    socket.userRegistered = false;
+
+    const existingSocketIds = onlineUsers.get(userId);
+    if (existingSocketIds) {
+      existingSocketIds.delete(socket.id);
+      if (existingSocketIds.size === 0) {
+        onlineUsers.delete(userId);
+      } else {
+        onlineUsers.set(userId, existingSocketIds);
+      }
+    }
+
+    console.log(`Socket disconnected. Waiting to confirm offline for user: ${userId}`);
+
+    const currentCount = userConnections.get(userId) || 0;
+    const newCount = Math.max(0, currentCount - 1);
+    userConnections.set(userId, newCount);
+    console.log(`[Presence] User ${userId} disconnected. Count ${currentCount} -> ${newCount}`);
+
+    if (newCount === 0) {
+      const timerId = setTimeout(async () => {
+        try {
+          console.log(`[Timer 5s] Hết 5 giây. Đang kiểm tra lại count của ${userId}...`);
+          const finalCount = userConnections.get(userId);
+          const finalSocketCount = onlineUsers.get(userId)?.size || 0;
+
+          if (finalCount === 0 && finalSocketCount === 0) {
+            console.log(`[Timer 5s] Xác nhận User ${userId} ĐÃ CHÍNH THỨC OFFLINE.`);
+
+            broadcastUserStatus(io, userId, "offline");
+
+            console.log(`[Timer 5s] Đang lưu trạng thái offline xuống Database...`);
+            await User.findByIdAndUpdate(userId, {
+              activityStatus: { state: "offline", lastSeen: new Date() },
+            });
+            console.log(`[Timer 5s] Lưu Database thành công!`);
+
+            userConnections.delete(userId);
+            disconnectTimers.delete(userId);
+          } else {
+            console.log(`[Timer 5s] Đã hủy báo Offline vì ${userId} đã kết nối lại.`);
+          }
+        } catch (error) {
+          console.error(`[LỖI NGHIÊM TRỌNG TRONG TIMER 5S]:`, error);
+        }
+      }, 5000);
+
+      disconnectTimers.set(userId, timerId);
+    }
+  });
+
+  socket.on("sendFriendRequest", ({ senderId, receiverId, senderName }) => {
+    console.log(`Friend request from ${senderId} to ${receiverId}`);
+    io.to(receiverId).emit("newFriendRequest", { senderId, senderName });
+  });
+
+  socket.on("acceptFriendRequest", ({ senderId, receiverId, receiverName, receiverAvatar }) => {
+    io.to(senderId).emit("friendRequestAccepted", {
+      newFriendId: receiverId,
+      newFriendName: receiverName,
+      newFriendAvatar: receiverAvatar,
+    });
+  });
+
+  socket.on("rejectFriendRequest", ({ senderId, receiverId }) => {
+    io.to(senderId).emit("friendRequestRejected", { rejecterId: receiverId });
+  });
+
   socket.on("sendMessage", async (messageData) => {
     const { sender, receiverId, isGroup } = messageData;
     const senderId = typeof sender === "object" ? sender._id : sender;
@@ -179,6 +234,9 @@ io.on("connection", async (socket) => {
       const payloadToEmit = { ...messageData, sender: senderInfo };
 
       if (isGroup) {
+        const groupDoc = await Group.findById(receiverId).select("name displayName");
+        payloadToEmit.groupName = groupDoc?.displayName || groupDoc?.name || "Nhom chat";
+
         io.to(receiverId).emit("getMessage", payloadToEmit);
         console.log(`Group message sent to room ${receiverId}`);
       } else {
@@ -187,32 +245,45 @@ io.on("connection", async (socket) => {
         console.log(`1-1 message sent to ${senderId} and ${receiverId}`);
       }
     } catch (err) {
-      console.error("Lỗi socket sendMessage:", err);
+      console.error("Socket sendMessage error:", err);
     }
   });
 
-  // Typing Indicators
-  socket.on("typing", async ({ receiverId, isGroup, senderId, senderName, senderAvatar }) => {
+  socket.on("typing", ({ receiverId, isGroup, senderId, senderName, senderAvatar }) => {
     if (isGroup) {
       socket.broadcast.to(receiverId).emit("getTyping", {
-        chatId: receiverId, isGroup: true, senderName, senderAvatar
+        chatId: receiverId,
+        isGroup: true,
+        senderId,
+        senderName,
+        senderAvatar,
       });
     } else {
       io.to(receiverId).emit("getTyping", {
-        chatId: senderId, isGroup: false, senderAvatar
+        chatId: senderId,
+        isGroup: false,
+        senderId,
+        senderAvatar,
       });
     }
   });
 
-  socket.on("stopTyping", async ({ receiverId, isGroup, senderId }) => {
+  socket.on("stopTyping", ({ receiverId, isGroup, senderId }) => {
     if (isGroup) {
-      socket.broadcast.to(receiverId).emit("getStopTyping", { chatId: receiverId, isGroup: true });
+      socket.broadcast.to(receiverId).emit("getStopTyping", {
+        chatId: receiverId,
+        isGroup: true,
+        senderId,
+      });
     } else {
-      io.to(receiverId).emit("getStopTyping", { chatId: senderId, isGroup: false });
+      io.to(receiverId).emit("getStopTyping", {
+        chatId: senderId,
+        isGroup: false,
+        senderId,
+      });
     }
   });
 
-  // Read Receipts (Đã xem)
   socket.on("markRead", async (data) => {
     try {
       if (data?.isGroup) {
@@ -234,40 +305,44 @@ io.on("connection", async (socket) => {
           { $set: { isRead: true } }
         );
 
-        const senderSocketId = onlineUsers.get(senderId);
-        if (senderSocketId) {
-          io.to(senderSocketId).emit("userReadMessages", { readerId: receiverId });
-        }
+        io.to(senderId).emit("userReadMessages", { readerId: receiverId });
       }
     } catch (err) {
       console.error("markRead handler error", err);
     }
   });
 
-  // WEBRTC (VIDEO/AUDIO CALLS)
-  socket.emit("me", socket.id);
+  socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId, mediaStatus }) => {
+    console.log(`[SERVER] callUser from ${callerDbId} to ${userToCall}`);
 
-  socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId }) => {
-    console.log(`[SERVER] Nhận lệnh callUser từ ${from} gọi tới ${userToCall}`);
     const room = io.sockets.adapter.rooms.get(userToCall);
-    if (room) {
-      io.to(userToCall).emit("callUser", { signal: signalData, from, name, callerDbId });
+    if (room && room.size > 0) {
+      io.to(userToCall).emit("callUser", {
+        signal: signalData,
+        from,
+        name,
+        callerDbId,
+        mediaStatus,
+      });
     } else {
-      socket.emit("callRejected");
+      socket.emit("callRejected", { reason: "User offline" });
     }
   });
 
   socket.on("answerCall", (data) => {
-    io.to(data.to).emit("callAccepted", data.signal);
+    io.to(data.to).emit("callAccepted", {
+      signal: data.signal,
+      mediaStatus: data.mediaStatus,
+    });
   });
 
   socket.on("endCall", (data) => {
-    console.log(`[SERVER] Kết thúc cuộc gọi từ ${socket.id} tới ${data.to}`);
+    console.log(`[SERVER] End call to ${data.to}`);
     io.to(data.to).emit("callEnded");
   });
 
   socket.on("rejectCall", (data) => {
-    io.to(data.to).emit("callRejected");
+    io.to(data.to).emit("callRejected", { reason: "User busy" });
   });
 
   socket.on("toggleMedia", ({ to, cam, mic }) => {
@@ -284,7 +359,7 @@ app.use("/api/groups", require("./src/routes/group"));
 app.use("/api/files", require("./src/routes/file"));
 
 // Start Server
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 // Database Connection
 mongoose

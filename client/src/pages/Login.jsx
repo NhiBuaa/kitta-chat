@@ -3,7 +3,6 @@ import { login } from "../services/authService";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-import { useSocket } from "../context/SocketContext";
 
 const Login = () => {
   const {
@@ -12,31 +11,26 @@ const Login = () => {
     formState: { errors, isSubmitting },
   } = useForm();
   const navigate = useNavigate();
-  const { socket } = useSocket();
 
   const onSubmit = async (data) => {
     try {
       const res = await login(data);
+
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      // Emit addNewUser để server biết user này online
-      if (socket) {
-        console.log(
-          `📤 Login: Emitting addNewUser với userId: ${res.data.user._id}`,
-        );
-        socket.emit("addNewUser", res.data.user._id);
-      }
+      window.dispatchEvent(new Event("auth-changed"));
+
       toast.success(`Chào mừng ${res.data.user.displayName} quay trở lại!`);
       navigate("/");
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Đăng nhập thất bại");
+      toast.error(err.response?.data?.msg || "Tài khoản hoặc mật khẩu không chính xác");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl flex w-full max-w-4xl overflow-hidden">
-        {/* Cột trái: Hình ảnh/Intro (Ẩn trên mobile) */}
+        {/* Cột trái: Hình ảnh/Intro */}
         <div className="hidden md:flex w-1/2 bg-blue-600 text-white flex-col justify-center items-center p-12 relative">
           <div className="z-10 text-center">
             <h2 className="text-4xl font-bold mb-4">KittaChat</h2>
@@ -44,7 +38,6 @@ const Login = () => {
               Kết nối bạn bè, trò chuyện không giới hạn.
             </p>
           </div>
-          {/* Họa tiết trang trí */}
           <div
             className="absolute top-0 left-0 w-full h-full bg-cover opacity-20"
             style={{
