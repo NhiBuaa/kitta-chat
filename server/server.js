@@ -14,6 +14,7 @@ const User = require("./src/models/User");
 const Message = require("./src/models/Message");
 const Group = require("./src/models/Group");
 const File = require("./src/models/File");
+const getSafeUserName = require("./src/utils/getSafeUserName");
 
 dotenv.config();
 
@@ -223,10 +224,10 @@ io.on("connection", (socket) => {
     const senderId = typeof sender === "object" ? sender._id : sender;
 
     try {
-      const senderDoc = await User.findById(senderId).select("displayName avatar email");
+      const senderDoc = await User.findById(senderId).select("displayName avatar username");
       const senderInfo = {
         _id: senderId,
-        displayName: senderDoc?.displayName || senderDoc?.email?.split("@")[0],
+        displayName: getSafeUserName(senderDoc),
         avatar: senderDoc?.avatar,
       };
 
@@ -363,5 +364,5 @@ server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 // Database Connection
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log("MongoDB error:", err));
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.log("❌ MongoDB Error:", err));
