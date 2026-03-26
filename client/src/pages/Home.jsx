@@ -49,6 +49,7 @@ const Home = () => {
 
   // REF
   const activeChatRef = useRef(null);
+  const groupsRef = useRef([]);
   const scrollRef = useRef();
   const typingTimeoutRef = useRef(null);
 
@@ -100,6 +101,10 @@ const Home = () => {
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
+
+  useEffect(() => {
+    groupsRef.current = groups;
+  }, [groups]);
 
   useEffect(() => {
     if (!socket) return;
@@ -165,6 +170,54 @@ const Home = () => {
       </span>
     );
   };
+
+  const upsertGroup = useCallback((incomingGroup) => {
+    if (!incomingGroup?._id) return;
+
+    setGroups((prevGroups) => {
+      const existingIndex = prevGroups.findIndex(
+        (group) => group._id === incomingGroup._id,
+      );
+
+      if (existingIndex === -1) {
+        return [incomingGroup, ...prevGroups];
+      }
+
+      const existingGroup = prevGroups[existingIndex];
+      const mergedGroup = {
+        ...existingGroup,
+        ...incomingGroup,
+        members: incomingGroup.members || existingGroup.members,
+        admin: incomingGroup.admin || existingGroup.admin,
+      };
+
+      const nextGroups = [...prevGroups];
+      nextGroups.splice(existingIndex, 1);
+      nextGroups.unshift(mergedGroup);
+      return nextGroups;
+    });
+
+    if (activeChatRef.current?._id === incomingGroup._id) {
+      setActiveChat((prevChat) =>
+        prevChat
+          ? {
+              ...prevChat,
+              ...incomingGroup,
+              members: incomingGroup.members || prevChat.members,
+              admin: incomingGroup.admin || prevChat.admin,
+            }
+          : prevChat,
+      );
+    }
+  }, []);
+
+  const handleCreateGroupSuccess = useCallback(
+    (newGroup) => {
+      upsertGroup(newGroup);
+      setActiveChat(newGroup);
+    },
+    [upsertGroup],
+  );
 
   const handleAddFriend = async (e, user) => {
     e.stopPropagation();
@@ -702,6 +755,27 @@ const Home = () => {
   useEffect(() => {
     if (!socket) return;
 
+    const handleGroupUpserted = (data) => {
+      const { group, action, actorId, addedMemberId } = data || {};
+      if (!group?._id || !currentUser?._id) return;
+
+      const existedBefore = groupsRef.current.some((g) => g._id === group._id);
+      upsertGroup(group);
+
+      const isCurrentUserAdded =
+        action === "member-added" && addedMemberId === currentUser._id;
+      const isInvitedWhenCreated =
+        action === "created" &&
+        actorId !== currentUser._id &&
+        group.members?.some((member) => member._id === currentUser._id);
+
+      if (!existedBefore && (isCurrentUserAdded || isInvitedWhenCreated)) {
+        toast.info(`Bạn vừa được thêm vào nhóm "${group.name}"`, {
+          toastId: `group-upsert-${group._id}`,
+        });
+      }
+    };
+
     const handleGroupAdminChanged = (data) => {
       const { groupId, newAdminId } = data;
       setGroups((prevGroups) =>
@@ -753,14 +827,7 @@ const Home = () => {
       }
 
       if (updatedGroup) {
-        setGroups((prevGroups) =>
-          prevGroups.map((g) =>
-            g._id === groupId ? { ...g, members: updatedGroup.members } : g,
-          ),
-        );
-      }
-      if (activeChat?._id === groupId && updatedGroup) {
-        setActiveChat((prev) => ({ ...prev, members: updatedGroup.members }));
+        upsertGroup(updatedGroup);
       }
     };
 
@@ -778,18 +845,20 @@ const Home = () => {
       }
     };
 
+    socket.on("groupUpserted", handleGroupUpserted);
     socket.on("groupAdminChanged", handleGroupAdminChanged);
     socket.on("groupRenamed", handleGroupRenamed);
     socket.on("groupMemberUpdated", handleGroupMemberUpdated);
     socket.on("groupDeleted", handleGroupDeleted);
 
     return () => {
+      socket.off("groupUpserted", handleGroupUpserted);
       socket.off("groupAdminChanged", handleGroupAdminChanged);
       socket.off("groupRenamed", handleGroupRenamed);
       socket.off("groupMemberUpdated", handleGroupMemberUpdated);
       socket.off("groupDeleted", handleGroupDeleted);
     };
-  }, [socket, activeChat, currentUser]);
+  }, [socket, activeChat, currentUser, upsertGroup]);
 
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
@@ -991,7 +1060,7 @@ const Home = () => {
         isOpen={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
         users={users}
-        onCreateSuccess={(newGroup) => setGroups([newGroup, ...groups])}
+        onCreateSuccess={handleCreateGroupSuccess}
       />
       {showRequestModal && (
         <FriendRequestModal
@@ -1007,12 +1076,8 @@ const Home = () => {
           currentUser={currentUser}
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
+            upsertGroup(updatedGroup);
             setActiveChat(updatedGroup);
-            setGroups(
-              groups.map((g) =>
-                g._id === updatedGroup._id ? updatedGroup : g,
-              ),
-            );
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);
