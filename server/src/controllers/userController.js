@@ -50,7 +50,8 @@ const updateUserProfile = async (req, res) => {
       const avatarUrl = await uploadAvatar(
         compressedBuffer,
         newName,
-        'image/webp'
+        'image/webp',
+        'avatars'
       )
 
       updateData.avatar = avatarUrl;
