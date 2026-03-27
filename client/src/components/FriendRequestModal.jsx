@@ -7,16 +7,18 @@ import { getUserDisplayName } from "../utils/getUserDisplayName";
 
 const API_URL =
   import.meta.env.VITE_API_URL_USERS || "http://localhost:3000/api/users";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-const FriendRequestModal = ({
-  onClose,
-  onSuccess,
-  setRequestCount,
-  currentUser,
-}) => {
+const FriendRequestModal = ({ onClose, setRequestCount }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const { socket } = useSocket();
+
+  const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
+    if (avatarPath.startsWith("http")) return avatarPath;
+    return `${API_BASE}${avatarPath}`;
+  };
 
   const handleAccept = async (senderId) => {
     try {
@@ -29,16 +31,6 @@ const FriendRequestModal = ({
 
       toast.success("Đã đồng ý lời mời kết bạn!");
       setRequests((prev) => prev.filter((request) => request._id !== senderId));
-      onSuccess?.();
-
-      if (socket) {
-        socket.emit("acceptFriendRequest", {
-          senderId,
-          receiverId: currentUser._id,
-          receiverName: currentUser.displayName,
-          receiverAvatar: currentUser.avatar,
-        });
-      }
     } catch (error) {
       console.error("Lỗi đồng ý lời mời:", error);
       toast.error(error.response?.data?.message || "Lỗi kết nối");
@@ -55,14 +47,6 @@ const FriendRequestModal = ({
       );
 
       setRequests((prev) => prev.filter((request) => request._id !== senderId));
-      onSuccess?.();
-
-      if (socket) {
-        socket.emit("rejectFriendRequest", {
-          senderId,
-          receiverId: currentUser._id,
-        });
-      }
     } catch (error) {
       console.error("Lỗi từ chối lời mời:", error);
       toast.error(error.response?.data?.message || "Lỗi kết nối");
@@ -88,7 +72,42 @@ const FriendRequestModal = ({
     };
 
     fetchRequests();
-  }, []);
+  }, [setRequestCount]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewFriendRequest = (data) => {
+      setRequests((prev) => {
+        if (prev.some((request) => request._id === data.senderId)) {
+          return prev;
+        }
+
+        return [
+          {
+            _id: data.senderId,
+            displayName: data.senderName,
+            avatar: data.avatar,
+          },
+          ...prev,
+        ];
+      });
+    };
+
+    const handleFriendRequestHandled = (data) => {
+      setRequests((prev) =>
+        prev.filter((request) => request._id !== data.senderId),
+      );
+    };
+
+    socket.on("newFriendRequest", handleNewFriendRequest);
+    socket.on("friendRequestHandled", handleFriendRequestHandled);
+
+    return () => {
+      socket.off("newFriendRequest", handleNewFriendRequest);
+      socket.off("friendRequestHandled", handleFriendRequestHandled);
+    };
+  }, [socket]);
 
   const handleClose = () => {
     setRequestCount?.(requests.length);
@@ -135,7 +154,7 @@ const FriendRequestModal = ({
                 >
                   <div className="flex items-center space-x-3">
                     <img
-                      src={user.avatar}
+                      src={getAvatarUrl(user.avatar)}
                       alt={getUserDisplayName(user)}
                       className="w-10 h-10 rounded-full object-cover border border-gray-200"
                     />
