@@ -1,5 +1,6 @@
-const { S3Client, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand } = require("@aws-sdk/client-s3");
+const { S3Client, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+require('dotenv').config();
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -74,5 +75,25 @@ module.exports = {
       UploadId: uploadId
     });
     await s3Client.send(command);
+  },
+
+  uploadAvatar: async (fileBuffer, fileName, mimeType) => {
+    // Chỉ dành cho ảnh
+    if (!mimeType.startsWith("image/")) throw new Error("Chỉ hổ trợ định dạng ảnh.");
+
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '-');
+    const key = `avatars/${uniqueSuffix}-${safeName}`;
+
+    const command = new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: fileBuffer,
+      ContentType: mimeType,
+    });
+
+    await s3Client.send(command);
+
+    return `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
   }
 };

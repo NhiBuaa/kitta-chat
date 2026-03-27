@@ -19,7 +19,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   useEffect(() => {
     if (user && isOpen) {
       setFormData({
-        displayName: user.name || "",
+        displayName: user.displayName || "",
         status: user.status || "",
         isOnline: user.activityStatus?.state === "online" || user.activityStatus?.state === "active",
         avatarPreview: user.avatar || "",
