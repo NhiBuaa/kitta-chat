@@ -2,6 +2,16 @@ const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
 
+const toComparableId = (value) => value?.toString?.() || String(value);
+
+const includesId = (list = [], targetId) =>
+  list.some((item) => toComparableId(item) === toComparableId(targetId));
+
+const emitToUserRoom = (io, userId, eventName, payload) => {
+  if (!io || !userId) return;
+  io.to(toComparableId(userId)).emit(eventName, payload);
+};
+
 // [GET] /api/users/profile
 const getUserProfile = async (req, res) => {
   try {
@@ -219,12 +229,11 @@ const accceptFriendRequest = async (req, res) => {
     const { senderId } = req.body;
     const receiverId = req.user.id;
     const io = req.app.get("socketio");
-    const onlineUsers = req.app.get("onlineUsers");
 
     const receiver = await User.findById(receiverId);
 
     // Kiểm tra có lời mời này hay không
-    if (!receiver.friendRequests.includes(senderId)) {
+    if (!receiver || !includesId(receiver.friendRequests, senderId)) {
       return res
         .status(400)
         .json({ success: false, message: "Không có lời mời kết bạn này" });
@@ -245,14 +254,21 @@ const accceptFriendRequest = async (req, res) => {
     );
 
     // Emit event cho người gửi (sender) để cập nhật sidebar
-    const senderSocketId = onlineUsers.get(senderId.toString());
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("friendRequestAccepted", {
-        newFriendId: receiverId,
-        newFriendName: getSafeUserName(receiver),
-        newFriendAvatar: receiver.avatar,
-      });
-    }
+    emitToUserRoom(io, senderId, "friendRequestAccepted", {
+      newFriendId: receiverId,
+      newFriendName: getSafeUserName(receiver),
+      newFriendAvatar: receiver.avatar,
+    });
+
+    emitToUserRoom(io, receiverId, "friendRequestHandled", {
+      action: "accepted",
+      senderId: toComparableId(senderId),
+      friend: {
+        _id: toComparableId(senderId),
+        displayName: getSafeUserName(sender),
+        avatar: sender?.avatar,
+      },
+    });
 
     res.json({ success: true, message: "Đã chấp nhận lời mời kết bạn." });
   } catch (error) {
@@ -356,7 +372,6 @@ const sendFriendRequest = async (req, res) => {
     const { receiverId } = req.body;
     const senderId = req.user.id;
     const io = req.app.get("socketio");
-    const onlineUsers = req.app.get("onlineUsers");
 
     // Kiểm tra các lỗi cơ bản
     if (receiverId === senderId) {
@@ -371,12 +386,12 @@ const sendFriendRequest = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Người dùng không tồn tại" });
     }
-    if (receiver.friendRequests.includes(senderId)) {
+    if (includesId(receiver.friendRequests, senderId)) {
       return res
         .status(400)
         .json({ success: false, message: "Đã gửi lời mời kết bạn trước đó" });
     }
-    if (receiver.friends.includes(senderId)) {
+    if (includesId(receiver.friends, senderId)) {
       return res.status(400).json({ success: false, message: "Đã là bạn bè" });
     }
 
@@ -387,15 +402,15 @@ const sendFriendRequest = async (req, res) => {
     });
 
     // Gửi thông báo real-time nếu người nhận đang online
-    const receiverSocketId = onlineUsers.get(receiverId.toString());
-    console.log("Receiver Socket ID:", receiverSocketId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newFriendRequest", {
-        senderId: senderId,
-        senderName: getSafeUserName(sender),
-        avatar: sender.avatar,
-      });
-    }
+    emitToUserRoom(io, receiverId, "newFriendRequest", {
+      senderId: toComparableId(senderId),
+      senderName: getSafeUserName(sender),
+      avatar: sender?.avatar,
+    });
+
+    emitToUserRoom(io, senderId, "friendRequestSent", {
+      receiverId: toComparableId(receiverId),
+    });
 
     res.status(200).json({ success: true, message: "Đã gửi lời mời" });
   } catch (error) {
@@ -410,8 +425,19 @@ const rejectFriendRequest = async (req, res) => {
     const receiverId = req.user.id;
 
     // Xoá lời mời kết bạn
+    const io = req.app.get("socketio");
+
     await User.findByIdAndUpdate(receiverId, {
       $pull: { friendRequests: senderId },
+    });
+
+    emitToUserRoom(io, senderId, "friendRequestRejected", {
+      rejecterId: toComparableId(receiverId),
+    });
+
+    emitToUserRoom(io, receiverId, "friendRequestHandled", {
+      action: "rejected",
+      senderId: toComparableId(senderId),
     });
 
     res.status(200).json({ success: true, message: "Đã từ chối lời mời" });

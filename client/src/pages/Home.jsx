@@ -219,11 +219,104 @@ const Home = () => {
     [upsertGroup],
   );
 
+  const patchUserEverywhere = useCallback((targetUserId, updater) => {
+    if (!targetUserId) return;
+
+    const applyPatch = (list = []) =>
+      list.map((user) => (user?._id === targetUserId ? updater(user) : user));
+
+    setUsers((prevUsers) => applyPatch(prevUsers));
+    setSearchResult((prevUsers) => applyPatch(prevUsers));
+    setActiveChat((prevChat) => {
+      if (!prevChat || prevChat.members || prevChat._id !== targetUserId) {
+        return prevChat;
+      }
+
+      return updater(prevChat);
+    });
+  }, []);
+
+  const markFriendshipActive = useCallback((friendData) => {
+    if (!friendData?._id) return;
+
+    const buildFriendState = (user = {}) => ({
+      ...user,
+      ...friendData,
+      isFriend: true,
+      isIncomingRequest: false,
+      isSent: false,
+      lastMessage: user.lastMessage ?? friendData.lastMessage ?? null,
+      hasUnread: user.hasUnread ?? false,
+    });
+
+    setSentRequests((prev) => prev.filter((id) => id !== friendData._id));
+    setUsers((prevUsers) => {
+      const existingIndex = prevUsers.findIndex((user) => user._id === friendData._id);
+
+      if (existingIndex === -1) {
+        return [
+          buildFriendState({
+            _id: friendData._id,
+            displayName: friendData.displayName,
+            avatar: friendData.avatar,
+          }),
+          ...prevUsers,
+        ];
+      }
+
+      const nextUsers = [...prevUsers];
+      nextUsers[existingIndex] = buildFriendState(nextUsers[existingIndex]);
+      return nextUsers;
+    });
+    setSearchResult((prevUsers) =>
+      prevUsers.map((user) =>
+        user._id === friendData._id ? buildFriendState(user) : user,
+      ),
+    );
+    setActiveChat((prevChat) => {
+      if (!prevChat || prevChat.members || prevChat._id !== friendData._id) {
+        return prevChat;
+      }
+
+      return buildFriendState(prevChat);
+    });
+  }, []);
+
+  const markFriendRequestSent = useCallback(
+    (receiverId) => {
+      if (!receiverId) return;
+
+      setSentRequests((prev) =>
+        prev.includes(receiverId) ? prev : [...prev, receiverId],
+      );
+      patchUserEverywhere(receiverId, (user) => ({
+        ...user,
+        isSent: true,
+        isIncomingRequest: false,
+      }));
+    },
+    [patchUserEverywhere],
+  );
+
+  const clearSentFriendRequest = useCallback(
+    (targetUserId) => {
+      if (!targetUserId) return;
+
+      setSentRequests((prev) => prev.filter((id) => id !== targetUserId));
+      patchUserEverywhere(targetUserId, (user) => ({
+        ...user,
+        isSent: false,
+        isIncomingRequest: false,
+      }));
+    },
+    [patchUserEverywhere],
+  );
+
   const handleAddFriend = async (e, user) => {
     e.stopPropagation();
     try {
       await sendFriendRequest(user._id);
-      setSentRequests((prev) => [...prev, user._id]);
+      markFriendRequestSent(user._id);
       toast.success("Đã gửi lời mời kết bạn");
     } catch (error) {
       console.error(error);
@@ -326,6 +419,10 @@ const Home = () => {
   useEffect(() => {
     if (!socket || !currentUser) return;
 
+    const handleFriendRequestSent = ({ receiverId }) => {
+      markFriendRequestSent(receiverId);
+    };
+
     const handleNewFriendRequest = (data) => {
       setRequestCount((prevCount) => prevCount + 1);
       toast.info(`${data.senderName} đã gửi lời mời kết bạn`, {
@@ -333,14 +430,13 @@ const Home = () => {
         position: "top-right",
         autoClose: 5000,
       });
-      setUsers((prevUsers) =>
-        prevUsers.map((u) => {
-          if (u._id === data.senderId) {
-            return { ...u, isIncomingRequest: true };
-          }
-          return u;
-        }),
-      );
+      patchUserEverywhere(data.senderId, (user) => ({
+        ...user,
+        displayName: data.senderName || user.displayName,
+        avatar: data.avatar ?? user.avatar,
+        isIncomingRequest: true,
+        isSent: false,
+      }));
     };
 
     const handleFriendRequestAccepted = (data) => {
@@ -349,88 +445,77 @@ const Home = () => {
         position: "top-right",
         autoClose: 3000,
       });
-      setUsers((prev) => {
-        const updatedUsers = prev.map((user) => {
-          if (user._id === data.newFriendId) {
-            return {
-              ...user,
-              isFriend: true,
-              isIncomingRequest: false,
-            };
-          }
-          return user;
-        });
-
-        const userExists = updatedUsers.some((u) => u._id === data.newFriendId);
-        if (!userExists) {
-          updatedUsers.push({
-            _id: data.newFriendId,
-            displayName: data.newFriendName,
-            avatar: data.newFriendAvatar,
-            isFriend: true,
-            lastMessage: null,
-            hasUnread: false,
-          });
-        }
-        return updatedUsers;
+      markFriendshipActive({
+        _id: data.newFriendId,
+        displayName: data.newFriendName,
+        avatar: data.newFriendAvatar,
       });
     };
 
     const handleFriendRequestRejected = (data) => {
-      setSentRequests((prev) => prev.filter((id) => id !== data.rejecterId));
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id === data.rejecterId) {
-            return {
-              ...user,
-              isSent: false,
-              isIncomingRequest: false,
-            };
-          }
-          return user;
-        }),
-      );
+      clearSentFriendRequest(data.rejecterId);
+    };
+
+    const handleFriendRequestHandled = (data) => {
+      setRequestCount((prevCount) => Math.max(prevCount - 1, 0));
+
+      if (data.action === "accepted" && data.friend) {
+        markFriendshipActive(data.friend);
+        return;
+      }
+
+      patchUserEverywhere(data.senderId, (user) => ({
+        ...user,
+        isIncomingRequest: false,
+      }));
     };
 
     const handleUserStatusChanged = ({ userId, status }) => {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id !== userId) return user;
-
-          if (status === "online") {
-            return {
-              ...user,
-              activityStatus: {
-                ...(user.activityStatus || {}),
-                state: "online",
-              },
-            };
-          }
-
+      patchUserEverywhere(userId, (user) => {
+        if (status === "online") {
           return {
             ...user,
             activityStatus: {
               ...(user.activityStatus || {}),
-              state: "offline",
-              lastSeen: new Date().toISOString(),
+              state: "online",
             },
           };
-        })
-      );
+        }
+
+        return {
+          ...user,
+          activityStatus: {
+            ...(user.activityStatus || {}),
+            state: "offline",
+            lastSeen: new Date().toISOString(),
+          },
+        };
+      });
     };
 
     socket.on("userStatusChanged", handleUserStatusChanged);
+    socket.on("friendRequestSent", handleFriendRequestSent);
     socket.on("newFriendRequest", handleNewFriendRequest);
     socket.on("friendRequestAccepted", handleFriendRequestAccepted);
     socket.on("friendRequestRejected", handleFriendRequestRejected);
+    socket.on("friendRequestHandled", handleFriendRequestHandled);
 
     return () => {
       socket.off("userStatusChanged", handleUserStatusChanged);
+      socket.off("friendRequestSent", handleFriendRequestSent);
       socket.off("newFriendRequest", handleNewFriendRequest);
       socket.off("friendRequestAccepted", handleFriendRequestAccepted);
       socket.off("friendRequestRejected", handleFriendRequestRejected);
+      socket.off("friendRequestHandled", handleFriendRequestHandled);
     };
-  }, [socket, currentUser]);
+  }, [
+    socket,
+    currentUser,
+    clearSentFriendRequest,
+    markFriendRequestSent,
+    markFriendshipActive,
+    patchUserEverywhere,
+  ]);
 
   useEffect(() => {
     if (users.length > 0) {
@@ -1065,9 +1150,7 @@ const Home = () => {
       {showRequestModal && (
         <FriendRequestModal
           onClose={() => setShowRequestModal(false)}
-          onSuccess={fetchData}
           setRequestCount={setRequestCount}
-          currentUser={currentUser}
         />
       )}
       {showGroupMembers && activeChat?.members && currentUser && (
