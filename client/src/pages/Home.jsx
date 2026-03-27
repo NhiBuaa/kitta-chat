@@ -57,8 +57,7 @@ const Home = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // HOOK
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
-    useUploader();
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
 
   // HÀM XỬ LÝ GỌI VIDEO
   const handleVideoCall = () => {

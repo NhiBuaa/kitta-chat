@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import { uploadFile } from './useChunkUpload';
+import { toast } from 'react-toastify';
+
+// BIẾN
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
 export const useUploader = () => {
     const [uploadQueue, setUploadQueue] = useState([]);
@@ -25,8 +30,25 @@ export const useUploader = () => {
         }
     };
 
+    // THÊM FILE VÀO QUÁ TRÌNH TẢI LÊN
     const addFiles = (files) => {
-        const newEntries = Array.from(files).map(file => ({
+        const validFiles = [];
+
+        // Lọc ra các file nào đáp ưng được các ràn buộc về dung lượng
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
+                toast.warning(`Video "${file.name}" vượt quá 50MB.`);
+            } else if (!file.type.startsWith('video/') && !file.type.startsWith('image/') && file.size > MAX_FILE_SIZE) {
+                toast.warning(`File "${file.name}" vượt quá 30MB.`);
+            } else {
+                validFiles.push(file);
+            }
+        })
+
+        // Nếu không có file nào đáp ứng được thì return luôn
+        if(validFiles.length === 0) return;
+
+        const newEntries = validFiles.map(file => ({
             id: Math.random().toString(36).substr(2, 9),
             file,
             progress: 0,
