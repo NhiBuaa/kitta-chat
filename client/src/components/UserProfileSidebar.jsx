@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import imageCompression from "browser-image-compression";
 
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const URL_UPDATE_PROFILE = "http://localhost:3000/api/users/profile";
@@ -35,14 +36,37 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   };
 
   // Xử lý khi người dùng nhập liệu
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    // Kiểm tra xem có phải là ảnh không
+    if (!file.type.startsWith("image/")) {
+      toast.error("Chỉ chấp nhận định dạng ảnh.");
+      return;
+    }
+
+    try {
+      // Thực hiện resize ảnh
+      const options = {
+        maxSizeMB: 0.2,
+        maxWidthOrHeight: 512,
+        useWebWorker: true,
+        typeFile: 'image/webp'
+      }
+
+      // Nén
+      const compressedFile = await imageCompression(file, options);
+
       setFormData((prev) => ({
         ...prev,
-        avatarFile: file, // Lưu file gốc
-        avatarPreview: URL.createObjectURL(file), // Tạo link để xem trước ngay lập tức
-      }));
+        avatarFile: compressedFile,
+        avatarPreview: URL.createObjectURL(compressedFile)
+      }))
+
+    } catch (err) {
+      console.error("Lỗi upload avatar: ", err);
+      toast.error("Không thể xử lý hình ảnh này!");
     }
   };
 
@@ -195,21 +219,19 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
               <div className="flex bg-gray-100 p-1 rounded-lg">
                 <button
                   onClick={() => handleChange("isOnline", true)}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    formData.isOnline
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${formData.isOnline
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   Bật trạng thái hoạt động
                 </button>
                 <button
                   onClick={() => setShowConfirm(true)}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    !formData.isOnline
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!formData.isOnline
                       ? "bg-white text-gray-700 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   Tắt trạng thái hoạt động
                 </button>
