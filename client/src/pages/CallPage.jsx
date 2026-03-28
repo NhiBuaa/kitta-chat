@@ -11,6 +11,8 @@ import {
 import { toast } from "react-toastify";
 import { useSocket } from "../context/SocketContext";
 import { CallContext } from "../context/CallContext";
+import { useCallTimer } from "../hooks/useCallTimer";
+import { formatDuration } from "../utils/formatTime";
 
 const VideoCallPage = () => {
     const { partnerId } = useParams();
@@ -21,7 +23,6 @@ const VideoCallPage = () => {
     const urlAvatar = searchParams.get("avatar");
     const callType = searchParams.get("type") || localStorage.getItem("tempCallType") || "video";
     const isVideoCall = callType === "video";
-
     const partnerAvatar = urlAvatar && urlAvatar !== "undefined" && urlAvatar !== "null"
             ? urlAvatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(urlName)}&background=random`;
 
@@ -46,6 +47,7 @@ const VideoCallPage = () => {
     const [camOn, setCamOn] = useState(isVideoCall);
     const [isJoined, setIsJoined] = useState(false);
     const [mediaError, setMediaError] = useState(false);
+    const callDuration = useCallTimer(isJoined, callAccepted, callEnded);
 
     const notifyMediaChange = (newCam, newMic) => {
         const targetId =
@@ -250,7 +252,7 @@ const VideoCallPage = () => {
                             )}
                         </>
                     ) : (
-                        // GIAO DIỆN GỌI THOẠI (AUDIO ONLY) CHO ĐỐI PHƯƠNG
+                        // GIAO DIỆN GỌI AUDIO
                         <div className="flex flex-col items-center justify-center">
                             <img
                                 src={partnerAvatar}
@@ -258,7 +260,8 @@ const VideoCallPage = () => {
                                 className="w-40 h-40 rounded-full object-cover shadow-[0_0_50px_rgba(59,130,246,0.3)] animate-pulse"
                             />
                             <h2 className="text-3xl text-white font-semibold mt-6">{urlName}</h2>
-                            <p className="text-gray-400 mt-2">{partnerMediaStatus.mic ? "00:00" : "Đang tắt mic"}</p>
+                            <p className="text-gray-400 mt-2">{formatDuration(callDuration)}</p>
+                            <p className="text-gray-400 mt-2">{partnerMediaStatus.mic ? "" : "Đang tắt mic"}</p>
                             {/* Thẻ video ẩn đi chỉ để phát tiếng */}
                             <video ref={userVideoFull} autoPlay playsInline className="hidden" />
                         </div>
@@ -272,7 +275,7 @@ const VideoCallPage = () => {
                     )}
                 </div>
 
-                {/* KHU VỰC CỦA MÌNH (PIP) - CHỈ HIỂN THỊ NẾU LÀ VIDEO CALL */}
+                {/* KHU VỰC CỦA MÌNH NHỎ */}
                 {isVideoCall && (
                     <div className="absolute top-6 right-6 w-48 md:w-64 aspect-video bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-700 shadow-2xl z-40">
                         <video
