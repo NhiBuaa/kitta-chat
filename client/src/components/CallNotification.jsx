@@ -38,7 +38,7 @@ const CallNotification = () => {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={handleAnswer} className="flex-1 bg-green-500 text-white py-2 rounded-lg font-bold">Nghe</button>
+                    <button onClick={handleAnswer} className="flex-1 bg-green-500 text-white py-2 rounded-lg font-bold">Trả lời</button>
                     <button onClick={() => { rejectCall(); setCall(prev => ({ ...prev, isReceivingCall: false })); }} className="flex-1 bg-red-100 text-red-600 py-2 rounded-lg font-bold">Từ chối</button>
                 </div>
             </div>

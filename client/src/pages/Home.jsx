@@ -60,8 +60,8 @@ const Home = () => {
   const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
     useUploader();
 
-  // HÀM XỬ LÝ GỌI VIDEO
-  const handleVideoCall = () => {
+  // HÀM XỬ LÝ GỌI
+  const handleCall = (type = "video") => {
     if (!currentChatUser) return;
 
     if (currentChatUser.members || currentChatUser.isGroup) {
@@ -70,10 +70,10 @@ const Home = () => {
     }
 
     const chatUserId = currentChatUser._id || currentChatUser.id;
-    const url = `/video-call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}`;
+    const url = `/video-call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}`;
 
     localStorage.setItem("activePartnerUserId", chatUserId);
-    window.open(url, "_blank", "noopener,noreferrer");
+    window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
   // CÁC BIẾN TÍNH TOÁN
@@ -1156,7 +1156,7 @@ const Home = () => {
               API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
-              handleVideoCall={handleVideoCall}
+              handleCall={handleCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
             />

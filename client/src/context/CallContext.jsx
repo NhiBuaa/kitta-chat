@@ -54,6 +54,7 @@ export const CallProvider = ({ children }) => {
         localStorage.removeItem("tempCallerUserId");
         localStorage.removeItem("tempCallSignal");
         localStorage.removeItem("tempCallerMediaStatus");
+        localStorage.removeItem("tempCallType");
     };
 
     const cleanupConnection = () => {
@@ -85,7 +86,7 @@ export const CallProvider = ({ children }) => {
         ]
     };
 
-    const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true) => {
+    const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = "video") => {
         const userStr = localStorage.getItem("user");
         const freshUser = userStr ? JSON.parse(userStr) : null;
 
@@ -129,6 +130,7 @@ export const CallProvider = ({ children }) => {
                 name: freshUser.displayName || "Người dùng",
                 callerDbId: freshUser._id || freshUser.id,
                 mediaStatus: { cam: isCamOn, mic: isMicOn },
+                typeCall: callType // audio or video
             });
         });
 
@@ -234,9 +236,11 @@ export const CallProvider = ({ children }) => {
 
         const handleIncomingCall = (data) => {
             const validSignal = data.signal || data.signalData;
+            const incomingCallType = data.typeCall || "video";
 
             localStorage.setItem("tempCallerId", data.from);
             localStorage.setItem("tempCallSignal", JSON.stringify(validSignal));
+            localStorage.setItem("tempCallType", incomingCallType);
 
             if (data.callerDbId) {
                 localStorage.setItem("tempCallerUserId", data.callerDbId);
@@ -255,6 +259,7 @@ export const CallProvider = ({ children }) => {
                 name: data.name,
                 avatar: data.avatar,
                 signal: validSignal,
+                callType: incomingCallType
             });
         };
 

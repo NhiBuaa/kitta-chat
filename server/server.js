@@ -342,7 +342,7 @@ io.on("connection", (socket) => {
         from,
         name,
         callerDbId,
-        mediaStatus,
+        mediaStatus
       });
     } else {
       socket.emit("callRejected", { reason: "User offline" });

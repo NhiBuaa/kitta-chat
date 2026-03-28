@@ -6,6 +6,7 @@ import {
     FaPhoneSlash,
     FaVideo,
     FaVideoSlash,
+    FaPhoneAlt
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSocket } from "../context/SocketContext";
@@ -18,6 +19,8 @@ const VideoCallPage = () => {
     const isIncoming = searchParams.get("incoming") === "true";
     const urlName = searchParams.get("name") || "Nguoi dung";
     const urlAvatar = searchParams.get("avatar");
+    const callType = searchParams.get("type") || localStorage.getItem("tempCallType") || "video";
+    const isVideoCall = callType === "video";
 
     const partnerAvatar =
         urlAvatar && urlAvatar !== "undefined" && urlAvatar !== "null"
@@ -42,7 +45,7 @@ const VideoCallPage = () => {
 
     const [stream, setLocalStream] = useState(null);
     const [micOn, setMicOn] = useState(true);
-    const [camOn, setCamOn] = useState(true);
+    const [camOn, setCamOn] = useState(isVideoCall);
     const [isJoined, setIsJoined] = useState(false);
     const [mediaError, setMediaError] = useState(false);
 
@@ -65,7 +68,7 @@ const VideoCallPage = () => {
     };
 
     const toggleCam = () => {
-        if (!stream) return;
+        if (!stream || !isVideoCall) return;
         const newStatus = !camOn;
         stream.getVideoTracks()[0].enabled = newStatus;
         setCamOn(newStatus);
@@ -86,7 +89,7 @@ const VideoCallPage = () => {
 
         const isPartnerOnline = onlineUsers?.some((user) => user.userId === partnerId);
         if (isPartnerOnline || partnerId.length < 24) {
-            callUser(partnerId, stream, camOn, micOn);
+            callUser(partnerId, stream, camOn, micOn, callType);
             setIsJoined(true);
         } else {
             toast.error("Người dùng không online hoặc chưa sẵn sàng.");
@@ -115,7 +118,7 @@ const VideoCallPage = () => {
         const initMedia = async () => {
             try {
                 // XIN QUYỀN CẢ CAM VÀ MIC
-                const currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const currentStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
 
                 setLocalStream(currentStream);
                 setMediaError(false);
@@ -192,6 +195,7 @@ const VideoCallPage = () => {
                     from: callerId,
                     name: urlName,
                     signal: JSON.parse(signal),
+                    callType: callType
                 });
             }
         }
@@ -227,23 +231,42 @@ const VideoCallPage = () => {
     // Trang trong cuộc gọi
     if (isJoined && callAccepted && !callEnded) {
         return (
-            <div className="relative w-screen h-screen bg-black group overflow-hidden">
-                <div className="w-full h-full relative">
-                    <video
-                        ref={userVideoFull}
-                        autoPlay
-                        playsInline
-                        className={`w-full h-full object-cover ${!partnerMediaStatus.cam ? "hidden" : ""}`}
-                    />
-                    {!partnerMediaStatus.cam && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
-                            <div className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center mb-4">
-                                <FaVideoSlash className="text-gray-500 text-4xl" />
-                            </div>
-                            <p className="text-gray-400">{urlName} đang tắt cam</p>
+            <div className="relative w-screen h-screen bg-[#111] group overflow-hidden">
+                <div className="w-full h-full relative flex flex-col items-center justify-center">
+                    {/* KHU VỰC ĐỐI PHƯƠNG */}
+                    {isVideoCall ? (
+                        <>
+                            <video
+                                ref={userVideoFull}
+                                autoPlay
+                                playsInline
+                                className={`w-full h-full object-cover ${!partnerMediaStatus.cam ? "hidden" : ""}`}
+                            />
+                            {!partnerMediaStatus.cam && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
+                                    <div className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center mb-4">
+                                        <FaVideoSlash className="text-gray-500 text-4xl" />
+                                    </div>
+                                    <p className="text-gray-400">{urlName} đang tắt cam</p>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        // GIAO DIỆN GỌI THOẠI (AUDIO ONLY) CHO ĐỐI PHƯƠNG
+                        <div className="flex flex-col items-center justify-center">
+                            <img
+                                src={partnerAvatar}
+                                alt={urlName}
+                                className="w-40 h-40 rounded-full object-cover shadow-[0_0_50px_rgba(59,130,246,0.3)] animate-pulse"
+                            />
+                            <h2 className="text-3xl text-white font-semibold mt-6">{urlName}</h2>
+                            <p className="text-gray-400 mt-2">{partnerMediaStatus.mic ? "00:00" : "Đang tắt mic"}</p>
+                            {/* Thẻ video ẩn đi chỉ để phát tiếng */}
+                            <video ref={userVideoFull} autoPlay playsInline className="hidden" />
                         </div>
                     )}
-                    {!partnerMediaStatus.mic && (
+
+                    {!partnerMediaStatus.mic && isVideoCall && (
                         <div className="absolute top-20 left-6 bg-red-600/90 px-3 py-1.5 rounded-lg flex items-center gap-2 z-30">
                             <FaMicrophoneSlash className="text-white text-sm" />
                             <span className="text-white text-xs font-medium">{urlName} đang tắt mic</span>
@@ -251,37 +274,44 @@ const VideoCallPage = () => {
                     )}
                 </div>
 
-                <div className="absolute top-6 right-6 w-48 md:w-64 aspect-video bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-700 shadow-2xl z-40">
-                    <video
-                        ref={myVideoFull}
-                        autoPlay
-                        playsInline
-                        muted
-                        className={`w-full h-full object-cover transform scale-x-[-1] ${!camOn ? "hidden" : ""}`}
-                    />
-                    {!camOn && (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-800">
-                            <FaVideoSlash className="text-gray-400 mb-1" />
-                            <span className="text-[10px] text-gray-500">Bạn đang tắt cam</span>
-                        </div>
-                    )}
-                    {!micOn && (
-                        <div className="absolute bottom-2 right-2 bg-red-500 p-1.5 rounded-full shadow-lg">
-                            <FaMicrophoneSlash className="text-white text-[12px]" />
-                        </div>
-                    )}
-                </div>
+                {/* KHU VỰC CỦA MÌNH (PIP) - CHỈ HIỂN THỊ NẾU LÀ VIDEO CALL */}
+                {isVideoCall && (
+                    <div className="absolute top-6 right-6 w-48 md:w-64 aspect-video bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-700 shadow-2xl z-40">
+                        <video
+                            ref={myVideoFull}
+                            autoPlay
+                            playsInline
+                            muted
+                            className={`w-full h-full object-cover transform scale-x-[-1] ${!camOn ? "hidden" : ""}`}
+                        />
+                        {!camOn && (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-800">
+                                <FaVideoSlash className="text-gray-400 mb-1" />
+                                <span className="text-[10px] text-gray-500">Bạn đang tắt cam</span>
+                            </div>
+                        )}
+                        {!micOn && (
+                            <div className="absolute bottom-2 right-2 bg-red-500 p-1.5 rounded-full shadow-lg">
+                                <FaMicrophoneSlash className="text-white text-[12px]" />
+                            </div>
+                        )}
+                    </div>
+                )}
 
+                {/* THANH ĐIỀU KHIỂN */}
                 <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-gray-900/80 px-8 py-4 rounded-full backdrop-blur-md border border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                        onClick={toggleCam}
-                        className={`p-4 rounded-full transition transform hover:scale-110 transition ${camOn ? "bg-gray-500 hover:bg-gray-200" : "bg-red-500 animate-pulse"}`}
-                    >
-                        {camOn ? <FaVideo /> : <FaVideoSlash />}
-                    </button>
+                    {/* Ẩn nút Cam nếu là gọi thoại */}
+                    {isVideoCall && (
+                        <button
+                            onClick={toggleCam}
+                            className={`p-4 rounded-full transition transform hover:scale-110 ${camOn ? "bg-gray-500 hover:bg-gray-200" : "bg-red-500 animate-pulse"}`}
+                        >
+                            {camOn ? <FaVideo /> : <FaVideoSlash />}
+                        </button>
+                    )}
                     <button
                         onClick={toggleMic}
-                        className={`p-4 rounded-full transition transform hover:scale-110 transition ${micOn ? "bg-gray-500 hover:bg-gray-200" : "bg-red-500"}`}
+                        className={`p-4 rounded-full transition transform hover:scale-110 ${micOn ? "bg-gray-500 hover:bg-gray-200" : "bg-red-500"}`}
                     >
                         {micOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
                     </button>
@@ -300,45 +330,69 @@ const VideoCallPage = () => {
     return (
         <div className="flex h-screen w-screen bg-[#1c1c1c] text-white">
             <div className="flex-1 flex flex-col items-center justify-center p-8 border-r border-gray-700">
-                <div className="relative w-full max-w-2xl aspect-video bg-black rounded-2xl overflow-hidden">
-                    <video
-                        playsInline
-                        muted
-                        ref={myVideo}
-                        autoPlay
-                        className={`w-full h-full object-cover transform scale-x-[-1] ${!camOn ? "hidden" : ""}`}
-                    />
-                    {!camOn && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 flex-col">
-                            <FaVideoSlash size={25} className="text-gray-500 mb-3" />
-                            <span className="text-gray-400 text-sm font-medium">Máy ảnh đang tắt</span>
+                {isVideoCall ? (
+                    <div className="relative w-full max-w-2xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl">
+                        <video
+                            playsInline
+                            muted
+                            ref={myVideo}
+                            autoPlay
+                            className={`w-full h-full object-cover transform scale-x-[-1] ${!camOn ? "hidden" : ""}`}
+                        />
+                        {!camOn && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 flex-col">
+                                <FaVideoSlash size={25} className="text-gray-500 mb-3" />
+                                <span className="text-gray-400 text-sm font-medium">Máy ảnh đang tắt</span>
+                            </div>
+                        )}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 bg-gray-900/60 px-4 py-2 rounded-full backdrop-blur-sm">
+                            <button
+                                onClick={() => {
+                                    if (!stream) return;
+                                    const newStatus = !camOn;
+                                    stream.getVideoTracks()[0].enabled = newStatus;
+                                    setCamOn(newStatus);
+                                }}
+                                className={`p-3 rounded-full transition ${camOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-500 hover:bg-red-600"}`}
+                            >
+                                {camOn ? <FaVideo /> : <FaVideoSlash />}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!stream) return;
+                                    const newStatus = !micOn;
+                                    stream.getAudioTracks()[0].enabled = newStatus;
+                                    setMicOn(newStatus);
+                                }}
+                                className={`p-3 rounded-full transition ${micOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-500 hover:bg-red-600"}`}
+                            >
+                                {micOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
+                            </button>
                         </div>
-                    )}
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 bg-gray-900/60 px-4 py-2 rounded-full">
-                        <button
-                            onClick={() => {
-                                if (!stream) return;
-                                const newStatus = !camOn;
-                                stream.getVideoTracks()[0].enabled = newStatus;
-                                setCamOn(newStatus);
-                            }}
-                            className={`p-3 rounded-full ${camOn ? "bg-gray-700" : "bg-red-500"}`}
-                        >
-                            {camOn ? <FaVideo /> : <FaVideoSlash />}
-                        </button>
-                        <button
-                            onClick={() => {
-                                if (!stream) return;
-                                const newStatus = !micOn;
-                                stream.getAudioTracks()[0].enabled = newStatus;
-                                setMicOn(newStatus);
-                            }}
-                            className={`p-3 rounded-full ${micOn ? "bg-gray-700" : "bg-red-500"}`}
-                        >
-                            {micOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
-                        </button>
                     </div>
-                </div>
+                ) : (
+                    // GIAO DIỆN CHUẨN BỊ GỌI THOẠI
+                    <div className="flex flex-col items-center">
+                        <div className="w-32 h-32 bg-gray-800 rounded-full flex items-center justify-center shadow-lg border-2 border-gray-700 mb-8">
+                            <FaPhoneAlt className="text-4xl text-blue-500" />
+                        </div>
+                        <h2 className="text-xl text-gray-300">Chuẩn bị cuộc gọi thoại</h2>
+                        <div className="mt-8">
+                            <button
+                                onClick={() => {
+                                    if (!stream) return;
+                                    const newStatus = !micOn;
+                                    stream.getAudioTracks()[0].enabled = newStatus;
+                                    setMicOn(newStatus);
+                                }}
+                                className={`px-6 py-3 rounded-full flex items-center gap-2 font-medium transition ${micOn ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"}`}
+                            >
+                                {micOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
+                                {micOn ? "Microphone đang bật" : "Microphone đang tắt"}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="w-[400px] flex flex-col items-center justify-center bg-[#1c1c1c] p-8">
@@ -353,7 +407,7 @@ const VideoCallPage = () => {
                     />
                 </div>
                 <h2 className="text-2xl font-bold mb-2">{urlName}</h2>
-                <p className="text-gray-400 mb-8">{isIncoming ? "Sẵn sàng tham gia?" : "Sẵn sàng gọi?"}</p>
+                <p className="text-gray-400 mb-8">{isIncoming ? `Sẵn sàng tham gia cuộc gọi ${isVideoCall ? 'video' : 'thoại'}?` : `Bắt đầu gọi ${isVideoCall ? 'video' : 'thoại'}?`}</p>
 
                 {!isIncoming && isJoined && !callAccepted ? (
                     <div className="flex flex-col items-center animate-pulse">
@@ -369,10 +423,8 @@ const VideoCallPage = () => {
                     </button>
                 )}
                 <button
-                    onClick={() => {
-                        handleEndCall();
-                    }}
-                    className="mt-5 top-20 px-8 py-3 font-semibold rounded-full text-red-500 bg-red-500/10 hover:bg-red-500/20 transition"
+                    onClick={handleEndCall}
+                    className="mt-5 px-8 py-3 font-semibold rounded-full text-red-500 bg-red-500/10 hover:bg-red-500/20 transition"
                 >
                     Hủy cuộc gọi
                 </button>

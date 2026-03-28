@@ -25,7 +25,7 @@ const ChatWindow = ({
   scrollRef,
   getAvatarUrl,
   checkIsOnline,
-  handleVideoCall,
+  handleCall,
   setShowGroupMembers,
   handleScrollToBottom,
 }) => {
@@ -91,15 +91,20 @@ const ChatWindow = ({
         </div>
 
         <div className="flex space-x-4 text-blue-600">
+
+          {/* Gọi audio */}
           <button
-            className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-            onClick={() => alert("Tính năng gọi thoại đang phát triển")}
+            onClick={() => handleCall("audio")}
+            className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
+            title="Gọi Audio"
+            disabled={currentChatUser.members}
           >
             <FaPhone />
           </button>
 
+          {/* Gọi video */}
           <button
-            onClick={handleVideoCall}
+            onClick={() => handleCall("video")}
             className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
             title="Gọi Video"
             disabled={currentChatUser.members}
