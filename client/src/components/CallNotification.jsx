@@ -30,7 +30,7 @@ const CallNotification = () => {
             <div className="bg-white p-4 rounded-xl shadow-2xl border border-blue-100 animate-bounce w-72">
                 <div className="flex items-center gap-3 mb-4">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white bg-green-500`}>
-                        {!isVideoCall ? (
+                        {isVideoCall ? (
                             <FaVideo className="text-xl animate-pulse" />
                         ) : (
                             <FaPhone className="text-xl animate-pulse" />
@@ -39,7 +39,7 @@ const CallNotification = () => {
                     <div>
                         <h3 className="font-bold text-gray-800 text-lg">{call.name || "Người lạ"}</h3>
                         <p className={`text-xs font-medium text-green-500`}>
-                            {isVideoCall ? 'đang gọi thoại...' : 'đang gọi video...'}
+                            {!isVideoCall ? 'đang gọi thoại...' : 'đang gọi video...'}
                         </p>
                     </div>
                 </div>
