@@ -89,6 +89,12 @@ const Home = () => {
     (currentChatUser.isFriend ||
       users.some((u) => u._id === currentChatUser._id));
 
+  const activeChatId = activeChat?._id || null;
+  const activeChatIsGroup = Boolean(activeChat?.members);
+  const activeChatKey = activeChatId
+    ? `${activeChatIsGroup ? "group" : "user"}:${activeChatId}`
+    : null;
+
   // USE EFFECTS
   useEffect(() => {
     if (scrollRef.current) {
@@ -96,7 +102,7 @@ const Home = () => {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }, 100);
     }
-  }, [messages, activeChat, isTyping]);
+  }, [messages, activeChatKey, isTyping]);
 
   useEffect(() => {
     activeChatRef.current = activeChat;
@@ -108,13 +114,12 @@ const Home = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const isGroup = activeChat?.members ? true : false;
-    if (isGroup) {
-      socket.emit("joinGroup", activeChat._id);
+    if (activeChatIsGroup && activeChatId) {
+      socket.emit("joinGroup", activeChatId);
     } else if (activeChatRef.current?.members) {
       socket.emit("leaveGroup", activeChatRef.current._id);
     }
-  }, [activeChat, socket]);
+  }, [activeChatId, activeChatIsGroup, socket]);
 
   // CÁC HÀM HELPER & API
   const fetchNewConversation = useCallback(
@@ -731,28 +736,27 @@ const Home = () => {
 
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!activeChat || !currentUser) return;
+      if (!activeChatId || !currentUser?._id) return;
       setMessages([]);
       try {
-        const isGroup = activeChat.members ? true : false;
-        const url = isGroup
-          ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true`
-          : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
+        const url = activeChatIsGroup
+          ? `${API_URL}/api/messages/none/${activeChatId}?isGroup=true`
+          : `${API_URL}/api/messages/${currentUser._id}/${activeChatId}`;
 
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setMessages(res.data);
         if (socket) {
-          if (isGroup) {
+          if (activeChatIsGroup) {
             socket.emit("markRead", {
               isGroup: true,
-              groupId: activeChat._id,
+              groupId: activeChatId,
               readerId: currentUser._id,
             });
           } else {
             socket.emit("markRead", {
-              senderId: activeChat._id,
+              senderId: activeChatId,
               receiverId: currentUser._id,
             });
           }
@@ -762,7 +766,7 @@ const Home = () => {
       }
     };
     fetchMessages();
-  }, [activeChat, currentUser, API_URL, socket]);
+  }, [activeChatId, activeChatIsGroup, currentUser?._id, API_URL, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -806,7 +810,7 @@ const Home = () => {
     setIsTyping(false);
     setTypingUserName("");
     setTypingUserAvatar(null);
-  }, [activeChat]);
+  }, [activeChatKey]);
 
   // --- HANDLERS CHÍNH ---
   const handleScrollToBottom = () => {
@@ -1160,7 +1164,6 @@ const Home = () => {
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
             upsertGroup(updatedGroup);
-            setActiveChat(updatedGroup);
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);
