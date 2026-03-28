@@ -22,10 +22,8 @@ const VideoCallPage = () => {
     const callType = searchParams.get("type") || localStorage.getItem("tempCallType") || "video";
     const isVideoCall = callType === "video";
 
-    const partnerAvatar =
-        urlAvatar && urlAvatar !== "undefined" && urlAvatar !== "null"
-            ? urlAvatar
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(urlName)}&background=random`;
+    const partnerAvatar = urlAvatar && urlAvatar !== "undefined" && urlAvatar !== "null"
+            ? urlAvatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(urlName)}&background=random`;
 
     const { socket, onlineUsers } = useSocket();
     const {

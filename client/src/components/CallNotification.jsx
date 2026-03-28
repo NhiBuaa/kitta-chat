@@ -8,14 +8,15 @@ const CallNotification = () => {
     const location = useLocation();
     const isVideoCall = call.callType === "video";
 
-    if (!call.isReceivingCall || location.pathname.includes('/video-call')) return null;
+    if (!call.isReceivingCall || location.pathname.includes('/call')) return null;
 
-    const handleAnswer = (type = "video") => {
+    const handleAnswer = () => {
         if (call.signal && call.from) {
             localStorage.setItem('tempCallSignal', JSON.stringify(call.signal));
             localStorage.setItem('tempCallerId', call.from);
         }
 
+        const type = call.callType || "video";
         const avatar = call.avatar || "";
         const url = `/call/${call.from}?incoming=true&name=${encodeURIComponent(call.name)}&avatar=${encodeURIComponent(avatar)}&type=${type}`;
 
