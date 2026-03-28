@@ -742,7 +742,12 @@ const Home = () => {
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        setMessages(res.data);
+        const nextMessages = Array.isArray(res.data)
+          ? [...res.data].sort(
+              (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+            )
+          : [];
+        setMessages(nextMessages);
         if (socket) {
           if (isGroup) {
             socket.emit("markRead", {

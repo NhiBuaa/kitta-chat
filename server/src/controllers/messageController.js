@@ -73,6 +73,7 @@ exports.getMessages = async (req, res) => {
     const messages = await Message.find({
       conversationId: conversationId,
     })
+      .sort({ createdAt: 1 })
       .populate("sender", "displayName avatar username")
       .populate("attachments");
 
