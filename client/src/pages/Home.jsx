@@ -83,12 +83,6 @@ const Home = () => {
       : users.find((u) => u._id === activeChat._id) || activeChat
     : null;
 
-  const isFriend =
-    currentChatUser &&
-    !currentChatUser.members &&
-    (currentChatUser.isFriend ||
-      users.some((u) => u._id === currentChatUser._id));
-
   // USE EFFECTS
   useEffect(() => {
     if (scrollRef.current) {
@@ -142,7 +136,7 @@ const Home = () => {
               createdAt: messageData.createdAt || new Date().toISOString(),
               isRead: false,
             },
-            hasUnread: true,
+            hasUnread: messageData.senderId !== currentUser?._id,
           };
           setUsers((prev) => [newItemWithMsg, ...prev]);
         }
@@ -150,7 +144,7 @@ const Home = () => {
         console.error("Không thể load conversation mới:", error);
       }
     },
-    [API_URL],
+    [API_URL, currentUser?._id],
   );
 
   const renderLastMessage = (user, currentUserId) => {
@@ -244,6 +238,7 @@ const Home = () => {
       ...friendData,
       isFriend: true,
       isIncomingRequest: false,
+      isReceived: false,
       isSent: false,
       lastMessage: user.lastMessage ?? friendData.lastMessage ?? null,
       hasUnread: user.hasUnread ?? false,
@@ -354,6 +349,11 @@ const Home = () => {
         const fetchedList =
           sidebarRes.data.users || sidebarRes.data.friends || [];
         setUsers(fetchedList);
+        setSentRequests(
+          fetchedList
+            .filter((user) => user?.isSent)
+            .map((user) => user._id),
+        );
       }
       if (requestRes.data.success)
         setRequestCount(requestRes.data.requests.length);
@@ -435,6 +435,7 @@ const Home = () => {
         displayName: data.senderName || user.displayName,
         avatar: data.avatar ?? user.avatar,
         isIncomingRequest: true,
+        isReceived: true,
         isSent: false,
       }));
     };
@@ -467,6 +468,7 @@ const Home = () => {
       patchUserEverywhere(data.senderId, (user) => ({
         ...user,
         isIncomingRequest: false,
+        isReceived: false,
       }));
     };
 
@@ -610,8 +612,53 @@ const Home = () => {
 
     const handleUnifiedMessage = (data) => {
       const currentActiveChat = activeChatRef.current;
+      const targetId = data.isGroup
+        ? data.receiverId
+        : data.senderId === currentUser._id
+          ? data.receiverId
+          : data.senderId;
+      let previewContent = data.text;
+      if (!previewContent && data.image) previewContent = "[HÃ¬nh áº£nh]";
+      if (!previewContent && data.attachments?.length > 0)
+        previewContent = "[Tá»‡p Ä‘Ã­nh kÃ¨m]";
+
+      const applyPreviewUpdate = (list = []) => {
+        const updatedList = [...list];
+        const index = updatedList.findIndex((item) => item._id === targetId);
+
+        if (index === -1) return null;
+
+        const itemToUpdate = updatedList[index];
+        const updatedItem = {
+          ...itemToUpdate,
+          lastMessage: {
+            content: previewContent,
+            senderId: data.senderId,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: false,
+          },
+          hasUnread:
+            data.senderId !== currentUser._id &&
+            currentActiveChat?._id !== targetId,
+        };
+
+        updatedList.splice(index, 1);
+        updatedList.unshift(updatedItem);
+        return updatedList;
+      };
       setUsers((prevUsers) => {
-        const updatedUsers = [...prevUsers];
+        const nextUsers = applyPreviewUpdate(prevUsers);
+        if (nextUsers) {
+          return nextUsers;
+        }
+
+        if (!data.isGroup) {
+          fetchNewConversation(targetId, data.isGroup, data);
+        }
+
+        return prevUsers;
+
+        /* const updatedUsers = [...prevUsers];
         const targetId = data.isGroup
           ? data.receiverId
           : data.senderId === currentUser._id
@@ -643,8 +690,9 @@ const Home = () => {
         } else {
           fetchNewConversation(targetId, data.isGroup, data);
           return prevUsers;
-        }
+        } */
       });
+      setSearchResult((prevUsers) => applyPreviewUpdate(prevUsers) || prevUsers);
 
       const isViewingChat =
         (data.isGroup && currentActiveChat?._id === data.receiverId) ||
@@ -1101,7 +1149,6 @@ const Home = () => {
               currentUser={currentUser}
               messages={messages}
               users={users}
-              isFriend={isFriend}
               isTyping={isTyping}
               typingUserName={typingUserName}
               typingUserAvatar={typingUserAvatar}

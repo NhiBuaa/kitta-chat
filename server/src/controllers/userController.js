@@ -12,6 +12,16 @@ const emitToUserRoom = (io, userId, eventName, payload) => {
   io.to(toComparableId(userId)).emit(eventName, payload);
 };
 
+const buildRelationshipFlags = (targetUser, currentUser) => {
+  const currentUserId = toComparableId(currentUser?._id || currentUser?.id);
+
+  return {
+    isFriend: includesId(targetUser?.friends, currentUserId),
+    isSent: includesId(targetUser?.friendRequests, currentUserId),
+    isReceived: includesId(currentUser?.friendRequests, targetUser?._id),
+  };
+};
+
 // [GET] /api/users/profile
 const getUserProfile = async (req, res) => {
   try {
@@ -28,6 +38,39 @@ const getUserProfile = async (req, res) => {
   } catch (error) {
     console.error("Get Profile Error:", error);
     res.status(500).json({ success: false, message: "Lỗi Server" });
+  }
+};
+
+const getUserById = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const targetUserId = req.params.id;
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId).select("friendRequests"),
+      User.findById(targetUserId)
+        .select("displayName avatar username status activityStatus friends friendRequests")
+        .lean(),
+    ]);
+
+    if (!targetUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Người dùng không tồn tại" });
+    }
+
+    const relationshipFlags = buildRelationshipFlags(targetUser, currentUser);
+
+    res.json({
+      success: true,
+      user: {
+        ...targetUser,
+        ...relationshipFlags,
+      },
+    });
+  } catch (error) {
+    console.error("Get User By Id Error:", error);
+    res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
 
@@ -167,11 +210,7 @@ const searchUsers = async (req, res) => {
 
     // thêm trạng thái là bb hay chưa
     const usersWithStatus = filteredUsers.map((user) => {
-      const isSent = (user.friendRequests || []).includes(currentUserId);
-      const isReceived = (currentUserFull.friendRequests || []).includes(
-        user._id,
-      );
-      const isFriend = (user.friends || []).includes(currentUserId);
+      const relationshipFlags = buildRelationshipFlags(user, currentUserFull);
 
       return {
         _id: user._id,
@@ -179,9 +218,7 @@ const searchUsers = async (req, res) => {
         avatar: user.avatar,
         status: user.status,
         activityStatus: user.activityStatus,
-        isSent,
-        isReceived,
-        isFriend,
+        ...relationshipFlags,
       };
     });
 
@@ -281,7 +318,9 @@ const getSidebarUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    const currentUser = await User.findById(currentUserId);
+    const currentUser = await User.findById(currentUserId).select(
+      "friends friendRequests",
+    );
     // Map friends
     const friendsIds = currentUser.friends.map((id) => id.toString());
 
@@ -307,7 +346,7 @@ const getSidebarUsers = async (req, res) => {
     );
 
     const users = await User.find({ _id: { $in: allUserIdsToShow } }).select(
-      "displayName avatar status activityStatus",
+      "displayName avatar status activityStatus friends friendRequests",
     );
 
     const usersWithLastMessage = await Promise.all(
@@ -322,6 +361,8 @@ const getSidebarUsers = async (req, res) => {
           .select("content text image sender createdAt isRead");
 
         const userObj = user.toObject();
+
+        const relationshipFlags = buildRelationshipFlags(user, currentUser);
 
         if (lastMsg) {
           let previewContent = lastMsg.content || lastMsg.text || "";
@@ -346,7 +387,10 @@ const getSidebarUsers = async (req, res) => {
           userObj.hasUnread = false;
         }
 
-        return userObj;
+        return {
+          ...userObj,
+          ...relationshipFlags,
+        };
       }),
     );
 
@@ -449,6 +493,7 @@ const rejectFriendRequest = async (req, res) => {
 
 module.exports = {
   getUserProfile,
+  getUserById,
   updateUserProfile,
   getAllUsers,
   searchUsers,

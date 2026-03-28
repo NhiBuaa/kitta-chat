@@ -19,7 +19,6 @@ const ChatWindow = ({
   currentUser,
   messages,
   users,
-  isFriend,
   isTyping,
   typingUserName,
   typingUserAvatar,
@@ -32,6 +31,11 @@ const ChatWindow = ({
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
+
+  // BIẾN
+  const isGroupChat = Boolean(activeChat?.members);
+  const shouldShowOnlineStatus =
+    !isGroupChat && Boolean(currentChatUser?.isFriend);
 
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
@@ -71,12 +75,12 @@ const ChatWindow = ({
             <h3 className="font-bold text-gray-800">
               {getUserDisplayName(currentChatUser)}
             </h3>
-            {!currentChatUser.members && isFriend ? (
+            {shouldShowOnlineStatus && (
               <UserStatus
                 user={currentChatUser}
                 isOnline={checkIsOnline(currentChatUser)}
               />
-            ) : null}
+            )}
 
             {currentChatUser.members && (
               <span className="text-xs text-gray-500">
@@ -295,7 +299,7 @@ const ChatWindow = ({
         {showScrollButton && (
           <button
             onClick={handleScrollToBottom}
-            className="sticky bottom-4 left-full z-50 bg-white border border-gray-200 text-green-600 hover:bg-blue-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
+            className="sticky bottom-4 left-full z-50 bg-white border border-gray-200 text-green-600 hover:bg-green-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
             title="Cuộn xuống tin nhắn mới nhất"
           >
             <FaArrowDown size={16} />

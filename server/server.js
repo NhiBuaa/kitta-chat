@@ -64,7 +64,27 @@ const broadcastUserStatus = async (ioInstance, userId, status) => {
     const user = await User.findById(userId).select("friends");
     const friendIds = user?.friends ? user.friends.map((friend) => friend.toString()) : [];
 
-    const targetRooms = [...new Set([...groupIds, ...friendIds])];
+    const messages = await Message.find({
+      $or: [{ sender: userId }, { receiver: userId }],
+    })
+      .select("sender receiver")
+      .lean();
+
+    const chattedUserIds = messages.reduce((accumulator, message) => {
+      const senderId = message.sender?.toString();
+      const receiverId = message.receiver?.toString();
+
+      if (senderId && senderId !== userId) {
+        accumulator.push(senderId);
+      }
+      if (receiverId && receiverId !== userId) {
+        accumulator.push(receiverId);
+      }
+
+      return accumulator;
+    }, []);
+
+    const targetRooms = [...new Set([...groupIds, ...friendIds, ...chattedUserIds])];
 
     if (targetRooms.length > 0) {
       ioInstance.to(targetRooms).emit("userStatusChanged", { userId, status });
