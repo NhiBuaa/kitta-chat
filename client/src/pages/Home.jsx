@@ -51,6 +51,7 @@ const Home = () => {
   const activeChatRef = useRef(null);
   const groupsRef = useRef([]);
   const scrollRef = useRef();
+  const bottomRef = useRef();
   const typingTimeoutRef = useRef(null);
 
   // BIẾN
@@ -97,6 +98,10 @@ const Home = () => {
       }, 100);
     }
   }, [messages, activeChat, isTyping]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [messages]);
 
   useEffect(() => {
     activeChatRef.current = activeChat;
@@ -616,10 +621,9 @@ const Home = () => {
             });
           }
         }
-        setTimeout(
-          () => scrollRef.current?.scrollIntoView({ behavior: "smooth" }),
-          100,
-        );
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: "auto" });
+        }, 100);
       } else {
         if (data.type !== "system" && data.senderId !== currentUser._id) {
           try {
@@ -672,11 +676,12 @@ const Home = () => {
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        setMessages(
-          res.data.sort(
-            (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-          ),
+        const sorted = res.data.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
         );
+
+        setMessages(sorted);
+
         if (socket) {
           if (isGroup) {
             socket.emit("markRead", {
@@ -1041,6 +1046,7 @@ const Home = () => {
               typingUserName={typingUserName}
               typingUserAvatar={typingUserAvatar}
               scrollRef={scrollRef}
+              bottomRef={bottomRef}
               API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}

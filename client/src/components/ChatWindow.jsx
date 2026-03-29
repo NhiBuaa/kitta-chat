@@ -7,7 +7,7 @@ import {
   FaCheck,
   FaCheckDouble,
   FaPaperclip,
-  FaArrowDown
+  FaArrowDown,
 } from "react-icons/fa";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
@@ -24,6 +24,7 @@ const ChatWindow = ({
   typingUserName,
   typingUserAvatar,
   scrollRef,
+  bottomRef,
   getAvatarUrl,
   checkIsOnline,
   handleVideoCall,
@@ -122,7 +123,9 @@ const ChatWindow = ({
       >
         {messages.map((message, index) => {
           const senderId =
-            typeof message.sender === "object" ? message.sender?._id : message.sender;
+            typeof message.sender === "object"
+              ? message.sender?._id
+              : message.sender;
           const isMe = senderId === currentUser._id;
           const isGroup = Boolean(activeChat.members);
           const senderInfo =
@@ -169,10 +172,11 @@ const ChatWindow = ({
                 )}
 
                 <div
-                  className={`p-3 max-w-xs shadow-sm text-sm ${isMe
-                    ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
-                    : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
-                    }`}
+                  className={`p-3 max-w-xs shadow-sm text-sm ${
+                    isMe
+                      ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
+                      : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
+                  }`}
                 >
                   {message.attachments && message.attachments.length > 0 && (
                     <div className="flex flex-col gap-2 mb-2">
@@ -204,13 +208,16 @@ const ChatWindow = ({
                             href={file.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
-                              ? "bg-green-700 hover:bg-green-800 text-white"
-                              : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                              }`}
+                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${
+                              isMe
+                                ? "bg-green-700 hover:bg-green-800 text-white"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                            }`}
                           >
                             <FaPaperclip className="text-lg" />
-                            <span className="truncate">{file.originalName}</span>
+                            <span className="truncate">
+                              {file.originalName}
+                            </span>
                           </a>
                         );
                       })}
@@ -243,29 +250,34 @@ const ChatWindow = ({
                       );
                       const readerNames = readerIds.map((id) => {
                         const member =
-                          activeChat?.members?.find((groupMember) => groupMember._id === id) ||
-                          users.find((user) => user._id === id);
+                          activeChat?.members?.find(
+                            (groupMember) => groupMember._id === id,
+                          ) || users.find((user) => user._id === id);
                         return getUserDisplayName(member);
                       });
 
                       return (
                         <div className="text-[11px] mt-1 text-gray-200/90">
                           <span className="text-white/70">Đã xem:</span>{" "}
-                          <span className="font-medium">{readerNames.join(", ")}</span>
+                          <span className="font-medium">
+                            {readerNames.join(", ")}
+                          </span>
                         </div>
                       );
                     })()}
                 </div>
               </div>
               <div
-                className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
-                  }`}
+                className={`text-[10px] text-gray-400 mt-1 ${
+                  isMe ? "text-right" : "text-left ml-10"
+                }`}
               >
                 {formatTimeAgo(message.createdAt)}
               </div>
             </div>
           );
         })}
+        <div ref={bottomRef}></div>
 
         {/* hiển thị trạng thái đang nhập tin nhắn */}
         {isTyping && (
@@ -298,7 +310,7 @@ const ChatWindow = ({
             className="sticky bottom-4 left-full z-50 bg-white border border-gray-200 text-green-600 hover:bg-blue-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
             title="Cuộn xuống tin nhắn mới nhất"
           >
-            <FaArrowDown size={16} />
+            <FaArrowDown size={14} />
           </button>
         )}
       </div>
