@@ -13,6 +13,7 @@ import {
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
+import Loader from "./deco/Loader";
 
 const ChatWindow = ({
   activeChat,
@@ -134,10 +135,12 @@ const ChatWindow = ({
         onScroll={handleScroll}
       >
 
-        {/* Hiển thị vòng quay loading khi đang kéo thêm */}
+        {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
         {isLoadingMore && (
-          <div className="flex justify-center py-2">
-            <span className="text-gray-400 text-sm">Đang tải tin nhắn cũ...</span>
+          <div className="flex flex-col items-center justify-center py-4 bg-transparent">
+            <div className="scale-[0.3] origin-center h-12 flex items-center justify-center">
+              <Loader />
+            </div>
           </div>
         )}
 
@@ -241,7 +244,11 @@ const ChatWindow = ({
                   )}
 
                   {/* Render tin nhắn */}
-                  {message.text && <span>{message.text}</span>}
+                  {message.text && (
+                    <div className="break-words overflow-hidden whitespace-pre-wrap leading-relaxed">
+                      {message.text}
+                    </div>
+                  )}
                   {isMe && (
                     <div className="self-end mt-1 flex justify-end items-center gap-1">
                       {isSending && (
@@ -258,7 +265,6 @@ const ChatWindow = ({
                         </span>
                       )}
 
-                      {/* Chỉ hiện tích xanh/xám khi tin nhắn đã gửi xong (không có status hoặc status là sent) */}
                       {(!message.status || message.status === "sent") && (
                         <>
                           {!isGroup ? (

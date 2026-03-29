@@ -12,6 +12,7 @@ import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
 import ChatInput from "../components/ChatInput";
 import { FilePicker } from "../components/FilePicker";
+import Loader from "../components/deco/Loader";
 
 // CONTEXT & SERVICE
 import { sendFriendRequest } from "../services/userService";
@@ -754,6 +755,8 @@ const Home = () => {
       setHasMore(true);
       setMessages([]);
       isFirstLoad.current = true;
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
 
       try {
         const isGroup = activeChat.members ? true : false;
@@ -1257,7 +1260,7 @@ const Home = () => {
   if (isLoading)
     return (
       <div className="h-screen flex items-center justify-center">
-        Loading...
+        <Loader/>
       </div>
     );
 
