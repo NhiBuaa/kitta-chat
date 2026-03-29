@@ -1,20 +1,23 @@
 import React, { useState } from "react";
 import {
   FaPaperPlane,
+  FaArrowLeft,
   FaPhone,
   FaVideo,
   FaInfoCircle,
   FaCheck,
   FaCheckDouble,
   FaPaperclip,
-  FaArrowDown
+  FaArrowDown,
 } from "react-icons/fa";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
+import MessageSeenBy from './MessageSeenBy'; 
 
 const ChatWindow = ({
   activeChat,
+  setActiveChat,
   currentChatUser,
   currentUser,
   messages,
@@ -66,6 +69,13 @@ const ChatWindow = ({
       {/* CHAT HEADER */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
+          {/* chỉ hiện ở màn nhỏ */}
+          <button
+            onClick={() => setActiveChat(null)}
+            className="sm:hidden mr-3 text-gray-600 hover:text-blue-600"
+          >
+            <FaArrowLeft size={18} />
+          </button>
           <img
             src={getAvatarUrl(currentChatUser.avatar)}
             className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200"
@@ -131,7 +141,9 @@ const ChatWindow = ({
       >
         {messages.map((message, index) => {
           const senderId =
-            typeof message.sender === "object" ? message.sender?._id : message.sender;
+            typeof message.sender === "object"
+              ? message.sender?._id
+              : message.sender;
           const isMe = senderId === currentUser._id;
           const isGroup = Boolean(activeChat.members);
           const senderInfo =
@@ -178,10 +190,11 @@ const ChatWindow = ({
                 )}
 
                 <div
-                  className={`p-3 max-w-xs shadow-sm text-sm ${isMe
-                    ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
-                    : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
-                    }`}
+                  className={`p-3 max-w-xs shadow-sm text-sm ${
+                    isMe
+                      ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
+                      : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
+                  }`}
                 >
                   {message.attachments && message.attachments.length > 0 && (
                     <div className="flex flex-col gap-2 mb-2">
@@ -213,13 +226,16 @@ const ChatWindow = ({
                             href={file.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
-                              ? "bg-green-700 hover:bg-green-800 text-white"
-                              : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                              }`}
+                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${
+                              isMe
+                                ? "bg-green-700 hover:bg-green-800 text-white"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                            }`}
                           >
                             <FaPaperclip className="text-lg" />
-                            <span className="truncate">{file.originalName}</span>
+                            <span className="truncate">
+                              {file.originalName}
+                            </span>
                           </a>
                         );
                       })}
@@ -242,33 +258,34 @@ const ChatWindow = ({
                     </div>
                   )}
 
-                  {isMe &&
-                    isGroup &&
-                    message.readBy &&
-                    message.readBy.length > 0 &&
-                    (() => {
-                      const readerIds = message.readBy.map((reader) =>
-                        typeof reader === "object" ? reader._id : reader,
-                      );
-                      const readerNames = readerIds.map((id) => {
-                        const member =
-                          activeChat?.members?.find((groupMember) => groupMember._id === id) ||
-                          users.find((user) => user._id === id);
-                        return getUserDisplayName(member);
-                      });
+                  {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
+                    // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
+                    const fullViewersData = message.readBy.map(reader => {
+                      const readerId = typeof reader === "object" ? reader._id : reader;
+                      // Tìm user từ danh sách members hoặc users
+                      const userObj = activeChat?.members?.find(m => m._id === readerId) ||
+                        users.find(u => u._id === readerId);
 
-                      return (
-                        <div className="text-[11px] mt-1 text-gray-200/90">
-                          <span className="text-white/70">Đã xem:</span>{" "}
-                          <span className="font-medium">{readerNames.join(", ")}</span>
-                        </div>
-                      );
-                    })()}
+                      // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
+                      return userObj ? userObj : { _id: readerId, displayName: "User", avatar: "" };
+                    });
+
+                    return (
+                      <div className="mt-1 flex justify-end">
+                        <MessageSeenBy
+                          seenByList={fullViewersData}
+                          currentUser={currentUser}
+                          getAvatarUrl={getAvatarUrl}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
               <div
-                className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
-                  }`}
+                className={`text-[10px] text-gray-400 mt-1 ${
+                  isMe ? "text-right" : "text-left ml-10"
+                }`}
               >
                 {formatTimeAgo(message.createdAt)}
               </div>

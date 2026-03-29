@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
+const { uploadAvatar } = require('../service/s3.service')
+const sharp = require('sharp');
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -77,51 +79,44 @@ const getUserById = async (req, res) => {
 // [PUT] /api/users/profile
 const updateUserProfile = async (req, res) => {
   try {
-    console.log("--- Bắt đầu Update Profile ---");
+    console.log("Bắt đầu Update Profile");
     console.log("Body nhận được:", req.body);
     console.log("File nhận được:", req.file);
 
     const userId = req.user.id;
     const { displayName, status, activityStatus } = req.body;
 
-    let updateData = {};
+    // Chuẩn bị object update
+    const updateData = { displayName, status };
+    if (activityStatus) updateData.activityStatus = JSON.parse(activityStatus);
 
-    // Validate và gán DisplayName
-    if (displayName) updateData.displayName = displayName;
-
-    // Validate và gán Status
-    if (status) updateData.status = status;
-
-    // Xử lý ActivityStatus (Quan trọng: Parse từ chuỗi JSON sang Object)
-    if (activityStatus) {
-      try {
-        // Nếu là chuỗi JSON thì parse, nếu là object thì giữ nguyên
-        const parsedStatus =
-          typeof activityStatus === "string"
-            ? JSON.parse(activityStatus)
-            : activityStatus;
-
-        updateData.activityStatus = parsedStatus;
-      } catch (e) {
-        console.error("Lỗi parse activityStatus:", e);
-      }
-    }
-
-    // Xử lý Avatar (Nếu có file upload)
+    // Xử lý Avatar
     if (req.file) {
-      let path = req.file.path.replace(/\\/g, "/");
-      // Nếu bạn lưu file trong folder uploads ở root, đường dẫn thường là uploads/tenfile.jpg
-      // Cần sửa lại cho khớp với cách bạn serve static file
-      updateData.avatar = `/uploads/${req.file.filename}`;
+      const compressedBuffer = await sharp(req.file.buffer)
+        .resize(256, 256, {fit: 'cover'})
+        .webp({quality: 80})
+        .toBuffer();
+      
+      const OriginalNameWithoutExt = req.file.originalname.split('.')[0];
+      const newName = OriginalNameWithoutExt + ".webp";
+
+      const avatarUrl = await uploadAvatar(
+        compressedBuffer,
+        newName,
+        'image/webp',
+        'avatars'
+      )
+
+      updateData.avatar = avatarUrl;
     }
 
     console.log("Dữ liệu chuẩn bị update vào DB:", updateData);
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: updateData },
-      { new: true },
-    ).select("-password");
+      updateData,
+      { returnDocument: 'after' }
+    ).select('-password');
 
     res.json({
       success: true,

@@ -57,8 +57,7 @@ const Home = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // HOOK
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
-    useUploader();
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
 
   // HÀM XỬ LÝ GỌI
   const handleCall = (type = "video") => {
@@ -83,6 +82,12 @@ const Home = () => {
       : users.find((u) => u._id === activeChat._id) || activeChat
     : null;
 
+  const activeChatId = activeChat?._id || null;
+  const activeChatIsGroup = Boolean(activeChat?.members);
+  const activeChatKey = activeChatId
+    ? `${activeChatIsGroup ? "group" : "user"}:${activeChatId}`
+    : null;
+
   // USE EFFECTS
   useEffect(() => {
     if (scrollRef.current) {
@@ -90,7 +95,7 @@ const Home = () => {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }, 100);
     }
-  }, [messages, activeChat, isTyping]);
+  }, [messages, activeChatKey, isTyping]);
 
   useEffect(() => {
     activeChatRef.current = activeChat;
@@ -102,13 +107,12 @@ const Home = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const isGroup = activeChat?.members ? true : false;
-    if (isGroup) {
-      socket.emit("joinGroup", activeChat._id);
+    if (activeChatIsGroup && activeChatId) {
+      socket.emit("joinGroup", activeChatId);
     } else if (activeChatRef.current?.members) {
       socket.emit("leaveGroup", activeChatRef.current._id);
     }
-  }, [activeChat, socket]);
+  }, [activeChatId, activeChatIsGroup, socket]);
 
   // CÁC HÀM HELPER & API
   const fetchNewConversation = useCallback(
@@ -195,11 +199,11 @@ const Home = () => {
       setActiveChat((prevChat) =>
         prevChat
           ? {
-              ...prevChat,
-              ...incomingGroup,
-              members: incomingGroup.members || prevChat.members,
-              admin: incomingGroup.admin || prevChat.admin,
-            }
+            ...prevChat,
+            ...incomingGroup,
+            members: incomingGroup.members || prevChat.members,
+            admin: incomingGroup.admin || prevChat.admin,
+          }
           : prevChat,
       );
     }
@@ -525,8 +529,10 @@ const Home = () => {
         prevUsers.map((u) => ({
           ...u,
           // Kiểm tra xem ID của user có nằm trong mảng online của socket không
-          isOnline: onlineUsers.some((onlineUser) => onlineUser.userId === u._id)
-        }))
+          isOnline: onlineUsers.some(
+            (onlineUser) => onlineUser.userId === u._id,
+          ),
+        })),
       );
     }
   }, [onlineUsers, users.length]);
@@ -749,19 +755,21 @@ const Home = () => {
               const groupName = data.groupName;
               const senderName = data.sender?.displayName;
 
-              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`
+              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
             } else {
               const sender = users.find((u) => u._id === data.senderId);
-              const senderName = sender ? sender.displayName : (data.sender?.displayName || "Ai đó");
+              const senderName = sender
+                ? sender.displayName
+                : data.sender?.displayName || "Ai đó";
 
-              messageToast = `Tin nhắn mới từ ${senderName}`
+              messageToast = `Tin nhắn mới từ ${senderName}`;
             }
 
             toast.info(messageToast, {
               position: "top-right",
               autoClose: 3000,
-              hideProgressBar: true
-            })
+              hideProgressBar: true,
+            });
           } catch (error) {
             console.error("Lỗi không hiển thị toast: ", error);
             console.log("Dữ liệu tin nhắn bị lỗi:", data);
@@ -779,28 +787,27 @@ const Home = () => {
 
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!activeChat || !currentUser) return;
+      if (!activeChatId || !currentUser?._id) return;
       setMessages([]);
       try {
-        const isGroup = activeChat.members ? true : false;
-        const url = isGroup
-          ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true`
-          : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
+        const url = activeChatIsGroup
+          ? `${API_URL}/api/messages/none/${activeChatId}?isGroup=true`
+          : `${API_URL}/api/messages/${currentUser._id}/${activeChatId}`;
 
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setMessages(res.data);
         if (socket) {
-          if (isGroup) {
+          if (activeChatIsGroup) {
             socket.emit("markRead", {
               isGroup: true,
-              groupId: activeChat._id,
+              groupId: activeChatId,
               readerId: currentUser._id,
             });
           } else {
             socket.emit("markRead", {
-              senderId: activeChat._id,
+              senderId: activeChatId,
               receiverId: currentUser._id,
             });
           }
@@ -810,7 +817,7 @@ const Home = () => {
       }
     };
     fetchMessages();
-  }, [activeChat, currentUser, API_URL, socket]);
+  }, [activeChatId, activeChatIsGroup, currentUser?._id, API_URL, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -854,7 +861,7 @@ const Home = () => {
     setIsTyping(false);
     setTypingUserName("");
     setTypingUserAvatar(null);
-  }, [activeChat]);
+  }, [activeChatKey]);
 
   // --- HANDLERS CHÍNH ---
   const handleScrollToBottom = () => {
@@ -1113,29 +1120,37 @@ const Home = () => {
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* SIDEBAR */}
-      <Sidebar
-        currentUser={currentUser}
-        setShowProfile={setShowProfile}
-        getAvatarUrl={getAvatarUrl}
-        setShowCreateGroup={setShowCreateGroup}
-        setShowRequestModal={setShowRequestModal}
-        requestCount={requestCount}
-        handleLogout={handleLogout}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        isSearching={isSearching}
-        groups={groups}
-        handleSelectUser={handleSelectUser}
-        usersToDisplay={usersToDisplay}
-        users={users}
-        sentRequests={sentRequests}
-        checkIsOnline={checkIsOnline}
-        renderLastMessage={renderLastMessage}
-        handleAddFriend={handleAddFriend}
-      />
+      <div
+        className={`${activeChat ? "hidden sm:flex" : "flex"
+          } w-full sm:w-auto h-full`}
+      >
+        <Sidebar
+          currentUser={currentUser}
+          setShowProfile={setShowProfile}
+          getAvatarUrl={getAvatarUrl}
+          setShowCreateGroup={setShowCreateGroup}
+          setShowRequestModal={setShowRequestModal}
+          requestCount={requestCount}
+          handleLogout={handleLogout}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          isSearching={isSearching}
+          groups={groups}
+          handleSelectUser={handleSelectUser}
+          usersToDisplay={usersToDisplay}
+          users={users}
+          sentRequests={sentRequests}
+          checkIsOnline={checkIsOnline}
+          renderLastMessage={renderLastMessage}
+          handleAddFriend={handleAddFriend}
+        />
+      </div>
 
       {/* CHAT WINDOW */}
-      <div className="flex-1 flex flex-col bg-gray-50 h-full">
+      <div
+        className={`${activeChat ? "flex" : "hidden sm:flex"
+          } flex-1 flex-col bg-gray-50 h-full`}
+      >
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
@@ -1145,6 +1160,7 @@ const Home = () => {
           >
             <ChatWindow
               activeChat={activeChat}
+              setActiveChat={setActiveChat}
               currentChatUser={currentChatUser}
               currentUser={currentUser}
               messages={messages}
@@ -1175,7 +1191,11 @@ const Home = () => {
           </FilePicker>
         ) : (
           /* Màn hình chờ khi chưa chọn ai để chat */
-          <ChatWindow activeChat={null} currentChatUser={null} />
+          <ChatWindow
+            activeChat={null}
+            setActiveChat={setActiveChat}
+            currentChatUser={null}
+          />
         )}
       </div>
 
@@ -1207,7 +1227,6 @@ const Home = () => {
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
             upsertGroup(updatedGroup);
-            setActiveChat(updatedGroup);
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);

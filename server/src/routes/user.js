@@ -14,13 +14,11 @@ const {
   rejectFriendRequest,
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/auth");
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() })
 
 router.get("/profile", authMiddleware, getUserProfile);
-router.put(
-  "/profile",
-  authMiddleware,
-  updateUserProfile,
-);
+router.put("/profile", authMiddleware, upload.single('avatar'), updateUserProfile);
 router.get("/friends", authMiddleware, getFriends);
 router.get("/friend-requests", authMiddleware, getFriendRequests);
 router.post("/accept-friend", authMiddleware, accceptFriendRequest);
