@@ -121,15 +121,15 @@ const ChatWindow = ({
         onScroll={handleScroll}
       >
         {messages.map((message, index) => {
-          const senderId =
-            typeof message.sender === "object" ? message.sender?._id : message.sender;
+          const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
           const isMe = senderId === currentUser._id;
           const isGroup = Boolean(activeChat.members);
-          const senderInfo =
-            typeof message.sender === "object" ? message.sender : null;
+          const senderInfo = typeof message.sender === "object" ? message.sender : null;
           const senderName = getUserDisplayName(senderInfo);
           const senderAvatar = senderInfo?.avatar || activeChat.avatar;
           const isSystemMessage = message.type === "system";
+          const isSending = message.status === "sending";
+          const isError = message.status === "error";
 
           if (isSystemMessage) {
             return (
@@ -169,11 +169,13 @@ const ChatWindow = ({
                 )}
 
                 <div
-                  className={`p-3 max-w-xs shadow-sm text-sm ${isMe
+                  className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${isMe
                     ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
                     : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
+                    } ${isSending ? "opacity-70" : "opacity-100"} ${isError ? "border-2 border-red-400" : ""
                     }`}
                 >
+                  {/* Render files */}
                   {message.attachments && message.attachments.length > 0 && (
                     <div className="flex flex-col gap-2 mb-2">
                       {message.attachments.map((file) => {
@@ -216,23 +218,39 @@ const ChatWindow = ({
                       })}
                     </div>
                   )}
+
+                  {/* Render tin nhắn */}
                   {message.text && <span>{message.text}</span>}
                   {isMe && (
-                    <div className="self-end mt-1 text-right">
-                      {!isGroup ? (
-                        message.isRead ? (
-                          <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                        ) : (
-                          <FaCheck className="text-xs text-gray-300 inline-block" />
-                        )
-                      ) : message.readBy && message.readBy.length > 0 ? (
-                        <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                      ) : (
-                        <FaCheck className="text-xs text-gray-300 inline-block" />
+                    <div className="self-end mt-1 flex justify-end items-center gap-1">
+                      {isSending && (
+                        <span className="text-[10px] text-green-200 italic">Đang gửi...</span>
+                      )}
+
+                      {isError && (
+                        <span className="text-[10px] text-red-200 font-bold">⚠️ Lỗi gửi</span>
+                      )}
+
+                      {/* Chỉ hiện tích xanh/xám khi tin nhắn đã gửi xong (không có status hoặc status là sent) */}
+                      {(!message.status || message.status === "sent") && (
+                        <>
+                          {!isGroup ? (
+                            message.isRead ? (
+                              <FaCheckDouble className="text-xs text-blue-200 inline-block" />
+                            ) : (
+                              <FaCheck className="text-xs text-green-200 inline-block" />
+                            )
+                          ) : message.readBy && message.readBy.length > 0 ? (
+                            <FaCheckDouble className="text-xs text-blue-200 inline-block" />
+                          ) : (
+                            <FaCheck className="text-xs text-green-200 inline-block" />
+                          )}
+                        </>
                       )}
                     </div>
                   )}
 
+                  {/* Những người đã xem trong group */}
                   {isMe &&
                     isGroup &&
                     message.readBy &&

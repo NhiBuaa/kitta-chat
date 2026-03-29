@@ -104,14 +104,14 @@ async function saveMessageInBackground(data) {
       const messageToSave = {
         conversationId,
         sender: senderId,
-        receiver: data.receiverId,
+        receiver: data.receiverId || data.receiver,
         type: data.type || "text",
         text: data.content || data.text || "",
         attachments: data.attachments || [],
         isRead: false,
       };
 
-    // Lưu
+      // Lưu
       savedMessage = await Message.create(messageToSave);
     }
 
@@ -132,8 +132,12 @@ async function saveMessageInBackground(data) {
       multi.lTrim(cacheKey, 0, 49);
       await multi.exec();
     }
+
+    return savedMessage;
+
   } catch (error) {
     console.error("Lỗi lưu tin nhắn ngầm:", error);
+    return null;
   }
 }
 
@@ -277,11 +281,19 @@ io.on("connection", (socket) => {
     io.to(senderId).emit("friendRequestRejected", { rejecterId: receiverId });
   });
 
-  socket.on("sendMessage", async (messageData) => {
+  socket.on("sendMessage", async (messageData, callBack) => {
     try {
-      const { sender, receiverId, isGroup } = messageData;
+      const receiverId = messageData.receiverId || messageData.receiver;
+      const sender = messageData.sender;
+      const isGroup = messageData.isGroup;
       const senderId = typeof sender === "object" ? sender._id : sender;
       let senderInfo = messageData.senderInfo;
+
+      if (!receiverId) {
+        console.error("Lỗi Socket: Thiếu receiverId!", messageData);
+        if (typeof callBack === "function") callBack({ success: false });
+        return;
+      }
 
       if (!senderInfo) {
         const senderDoc = await User.findById(senderId).select("displayName avatar username");
@@ -310,16 +322,34 @@ io.on("connection", (socket) => {
         console.log(`1-1 message sent to ${senderId} and ${receiverId}`);
       }
 
-      const conversationId = isGroup
-        ? receiverId
-        : messageData.conversationId || buildConversationId(senderId, receiverId);
+      let conversationId = messageData.conversationId;
 
-      saveMessageInBackground({
+      if (!conversationId) {
+        if (isGroup) {
+          conversationId = receiverId;
+        } else {
+          conversationId = buildConversationId(senderId, receiverId);
+        }
+      }
+
+      const savedMessage = await saveMessageInBackground({
         ...payloadToEmit,
-        conversationId: conversationId
+        conversationId: conversationId,
+        receiverId: receiverId
       });
+
+      if (typeof callBack === "function") {
+        callBack({
+          success: true,
+          realId: savedMessage?._id
+        });
+      }
+
     } catch (err) {
       console.error("Socket sendMessage error:", err);
+      if (typeof callBack === "function") {
+        callBack({ success: false });
+      }
     }
   });
 

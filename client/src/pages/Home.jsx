@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from 'uuid';
 
 // COMPONENTS
 import Sidebar from "../components/Sidebar";
@@ -201,11 +202,11 @@ const Home = () => {
       setActiveChat((prevChat) =>
         prevChat
           ? {
-              ...prevChat,
-              ...incomingGroup,
-              members: incomingGroup.members || prevChat.members,
-              admin: incomingGroup.admin || prevChat.admin,
-            }
+            ...prevChat,
+            ...incomingGroup,
+            members: incomingGroup.members || prevChat.members,
+            admin: incomingGroup.admin || prevChat.admin,
+          }
           : prevChat,
       );
     }
@@ -610,13 +611,22 @@ const Home = () => {
 
     const handleUnifiedMessage = (data) => {
       const currentActiveChat = activeChatRef.current;
+
+      // SỬA Ở ĐÂY: Chuẩn hóa lại senderId và receiverId từ dữ liệu socket trả về
+      const senderId = data.senderId || data.sender?._id || data.sender;
+      const receiverId = data.receiverId || data.receiver;
+
+      // 1. Cập nhật Sidebar (Users list)
       setUsers((prevUsers) => {
         const updatedUsers = [...prevUsers];
+
+        // Xác định ID của đối tác để đưa lên đầu
         const targetId = data.isGroup
-          ? data.receiverId
-          : data.senderId === currentUser._id
-            ? data.receiverId
-            : data.senderId;
+          ? receiverId
+          : senderId === currentUser._id
+            ? receiverId
+            : senderId;
+
         const index = updatedUsers.findIndex((u) => u._id === targetId);
 
         if (index !== -1) {
@@ -630,7 +640,7 @@ const Home = () => {
             ...userToUpdate,
             lastMessage: {
               content: previewContent,
-              senderId: data.senderId,
+              senderId: senderId, // Dùng senderId chuẩn
               createdAt: data.createdAt || new Date().toISOString(),
               isRead: false,
             },
@@ -641,82 +651,84 @@ const Home = () => {
           updatedUsers.unshift(updatedUser);
           return updatedUsers;
         } else {
+          // Nếu có tin nhắn từ người lạ, gọi hàm lấy data
           fetchNewConversation(targetId, data.isGroup, data);
           return prevUsers;
         }
       });
 
+      // 2. Kiểm tra xem có đang mở đúng khung chat này không
       const isViewingChat =
-        (data.isGroup && currentActiveChat?._id === data.receiverId) ||
+        (data.isGroup && currentActiveChat?._id === receiverId) ||
         (!data.isGroup &&
-          (currentActiveChat?._id === data.senderId ||
-            currentActiveChat?._id === data.receiverId));
+          (currentActiveChat?._id === senderId ||
+            currentActiveChat?._id === receiverId));
 
       if (isViewingChat) {
-        const isMeSender = data.senderId === currentUser._id;
-        const computedIsRead = data.isGroup ? true : !isMeSender;
+        const isMeSender = senderId === currentUser._id;
 
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: data.sender || {
-              _id: data.senderId,
-              displayName: "Người dùng",
-              avatar: null,
+        // Chỉ chèn thêm tin nhắn vào màn hình nếu người gửi KHÔNG PHẢI LÀ MÌNH
+        if (!isMeSender) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: data.sender || {
+                _id: senderId,
+                displayName: "Người dùng",
+                avatar: null,
+              },
+              text: data.text,
+              image: data.image,
+              type: data.type,
+              files: data.files,
+              attachments: data.attachmentsData || data.attachments,
+              createdAt: data.createdAt,
+              isRead: data.isGroup ? true : false,
             },
-            text: data.text,
-            image: data.image,
-            type: data.type,
-            files: data.files,
-            attachments: data.attachments,
-            createdAt: data.createdAt,
-            isRead: computedIsRead,
-          },
-        ]);
+          ]);
 
-        if (data.senderId !== currentUser._id) {
+          // Bắn sự kiện đã đọc
           if (data.isGroup) {
             socket.emit("markRead", {
               isGroup: true,
-              groupId: data.receiverId,
+              groupId: receiverId,
               readerId: currentUser._id,
             });
           } else {
             socket.emit("markRead", {
-              senderId: data.senderId,
+              senderId: senderId,
               receiverId: currentUser._id,
             });
           }
+
+          setTimeout(
+            () => scrollRef.current?.scrollIntoView({ behavior: "smooth" }),
+            100,
+          );
         }
-        setTimeout(
-          () => scrollRef.current?.scrollIntoView({ behavior: "smooth" }),
-          100,
-        );
       } else {
-        if (data.type !== "system" && data.senderId !== currentUser._id) {
+        // 3. Xử lý thông báo (Toast) khi KHÔNG mở khung chat
+        if (data.type !== "system" && senderId !== currentUser._id) {
           try {
             let messageToast = "";
 
             if (data.isGroup) {
               const groupName = data.groupName;
               const senderName = data.sender?.displayName;
-
-              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`
+              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
             } else {
-              const sender = users.find((u) => u._id === data.senderId);
+              const sender = users.find((u) => u._id === senderId);
               const senderName = sender ? sender.displayName : (data.sender?.displayName || "Ai đó");
-
-              messageToast = `Tin nhắn mới từ ${senderName}`
+              messageToast = `Tin nhắn mới từ ${senderName}`;
             }
 
             toast.info(messageToast, {
               position: "top-right",
               autoClose: 3000,
-              hideProgressBar: true
-            })
+              hideProgressBar: true,
+            });
           } catch (error) {
             console.error("Lỗi không hiển thị toast: ", error);
-            console.log("Dữ liệu tin nhắn bị lỗi:", data);
           }
         }
       }
@@ -728,7 +740,7 @@ const Home = () => {
       socket.off("getMessage", handleUnifiedMessage);
     };
   }, [socket, currentUser, users, fetchNewConversation]);
-
+  
   useEffect(() => {
     const fetchMessages = async () => {
       if (!activeChat || !currentUser) return;
@@ -744,8 +756,8 @@ const Home = () => {
         });
         const nextMessages = Array.isArray(res.data)
           ? [...res.data].sort(
-              (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-            )
+            (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+          )
           : [];
         setMessages(nextMessages);
         if (socket) {
@@ -972,6 +984,7 @@ const Home = () => {
     }, 2000);
   };
 
+  // Gửi tin nhắn
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
@@ -981,9 +994,8 @@ const Home = () => {
       return;
     }
 
-    const attachmentIds = uploadQueue
-      .filter((item) => item.status === "completed" && item.dbFileId)
-      .map((item) => item.dbFileId);
+    const completedAttachments = uploadQueue.filter((item) => item.status === "completed" && item.dbFileId);
+    const attachmentIds = completedAttachments.map((item) => item.dbFileId);
 
     // Nếu không có text và không có file nào thì dừng
     if (!newMessage.trim() && attachmentIds.length === 0) return;
@@ -1002,38 +1014,75 @@ const Home = () => {
 
     try {
       const isGroup = activeChat.members ? true : false;
-      const messagePayload = {
-        sender: currentUser._id,
-        receiver: activeChat._id,
+      const tempId = `temp_${uuidv4()}`;
+      let currentConvId = activeChat.conversationId;
+
+      if (isGroup) {
+        currentConvId = activeChat._id;
+      }
+
+      // Hiển thị lên màn hình ngay lập tức cái data này
+      const optimisticMessage = {
+        _id: tempId,
+        conversationId: currentConvId,
+        sender: currentUser,
         text: newMessage,
-        attachments: attachmentIds,
+        attachments: completedAttachments,
         isGroup: isGroup,
         type: attachmentIds.length > 0 ? "file" : "text",
+        createdAt: new Date().toISOString(),
+        status: "sending"
       };
 
-      // GỌI API LƯU TIN NHẮN
-      const res = await axios.post(`${API_URL}/api/messages`, messagePayload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const savedMessage = res.data;
-
-      // BẮN SOCKET CHO NGƯỜI NHẬN
-      socket.emit("sendMessage", {
-        ...savedMessage,
-        createdAt: savedMessage.createdAt,
-        senderId: currentUser._id,
-        receiverId: activeChat._id,
-        isGroup: isGroup,
-        text: savedMessage.text,
-        image: savedMessage.image,
-        files: savedMessage.files,
-        attachments: savedMessage.attachments,
-      });
-
-      // CẬP NHẬT GIAO DIỆN
+      setMessages((prev) => [...prev, optimisticMessage]);
       setNewMessage("");
       clearUploads();
       setShowEmoji(false);
+
+      const messagePayload = {
+        conversationId: currentConvId,
+        sender: currentUser._id,
+        receiver: activeChat._id, // Cung cấp cho DB
+        receiverId: activeChat._id, // Cung cấp cho Socket
+        text: optimisticMessage.text,
+        attachments: attachmentIds,
+        attachmentsData: completedAttachments,
+        isGroup: isGroup,
+        type: optimisticMessage.type,
+        senderInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName,
+          avatar: currentUser.avatar
+        }
+      };
+
+      // Gửi tin nhắn qua socket
+      socket.emit("sendMessage", messagePayload, (res) => {
+        if (res && res.success) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === tempId
+                ? { ...msg, _id: res.realId, status: "sent" }
+                : msg
+            )
+          );
+        } else {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === tempId ? { ...msg, status: "error" } : msg
+            )
+          );
+          toast.error("Không thể gửi tin nhắn. Vui lòng thử lại!");
+        }
+      })
+
+      // Sau 5s nếu server không phản hồi thì đánh dấu là lỗi
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg =>
+          (msg._id === tempId && msg.status === "sending")
+            ? { ...msg, status: "error" } : msg
+        ));
+      }, 5000);
     } catch (err) {
       console.error(err);
       toast.error("Lỗi gửi tin nhắn");
