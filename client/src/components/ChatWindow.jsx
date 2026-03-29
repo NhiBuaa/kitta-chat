@@ -30,6 +30,7 @@ const ChatWindow = ({
   handleVideoCall,
   setShowGroupMembers,
   handleScrollToBottom,
+  handleRetryMessage
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -46,6 +47,7 @@ const ChatWindow = ({
       setShowScrollButton(false);
     }
   };
+
 
   if (!activeChat || !currentChatUser) {
     return (
@@ -229,7 +231,10 @@ const ChatWindow = ({
                       )}
 
                       {isError && (
-                        <span className="text-[10px] text-red-200 font-bold flex items-center gap-1">
+                        <span
+                          onClick={() => handleRetryMessage(message)}
+                          title="Gửi lại"
+                          className="text-[10px] text-red-200 font-bold flex items-center gap-1 cursor-pointer">
                           <FaExclamationTriangle />
                           Lỗi gửi
                         </span>

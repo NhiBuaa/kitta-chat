@@ -611,12 +611,10 @@ const Home = () => {
 
     const handleUnifiedMessage = (data) => {
       const currentActiveChat = activeChatRef.current;
-
-      // SỬA Ở ĐÂY: Chuẩn hóa lại senderId và receiverId từ dữ liệu socket trả về
       const senderId = data.senderId || data.sender?._id || data.sender;
       const receiverId = data.receiverId || data.receiver;
 
-      // 1. Cập nhật Sidebar (Users list)
+      // Cập nhật Sidebar
       setUsers((prevUsers) => {
         const updatedUsers = [...prevUsers];
 
@@ -640,7 +638,7 @@ const Home = () => {
             ...userToUpdate,
             lastMessage: {
               content: previewContent,
-              senderId: senderId, // Dùng senderId chuẩn
+              senderId: senderId,
               createdAt: data.createdAt || new Date().toISOString(),
               isRead: false,
             },
@@ -657,7 +655,7 @@ const Home = () => {
         }
       });
 
-      // 2. Kiểm tra xem có đang mở đúng khung chat này không
+      // Kiểm tra xem có đang mở đúng khung chat này không
       const isViewingChat =
         (data.isGroup && currentActiveChat?._id === receiverId) ||
         (!data.isGroup &&
@@ -707,7 +705,7 @@ const Home = () => {
           );
         }
       } else {
-        // 3. Xử lý thông báo (Toast) khi KHÔNG mở khung chat
+        // Xử lý thông báo
         if (data.type !== "system" && senderId !== currentUser._id) {
           try {
             let messageToast = "";
@@ -740,7 +738,7 @@ const Home = () => {
       socket.off("getMessage", handleUnifiedMessage);
     };
   }, [socket, currentUser, users, fetchNewConversation]);
-  
+
   useEffect(() => {
     const fetchMessages = async () => {
       if (!activeChat || !currentUser) return;
@@ -988,6 +986,16 @@ const Home = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
+    // CHẶN NẾU TRÌNH DUYỆT MẤT MẠNG INTERNET
+    if (!navigator.onLine) {
+      toast.error("Bạn đang mất kết nối mạng. Vui lòng kiểm tra lại!");
+    }
+
+    // CHẶN NẾU BỊ ĐỨT KẾT NỐI VỚI SERVER SOCKET
+    if (!socket || !socket.connected) {
+      toast.error("Đang mất kết nối với máy chủ chat. Đang thử kết nối lại...");
+    }
+
     const isUploading = uploadQueue.some((item) => item.status === "uploading");
     if (isUploading) {
       toast.warning("Vui lòng chờ file tải lên hoàn tất trước khi gửi!");
@@ -1021,34 +1029,16 @@ const Home = () => {
         currentConvId = activeChat._id;
       }
 
-      // Hiển thị lên màn hình ngay lập tức cái data này
-      const optimisticMessage = {
-        _id: tempId,
-        conversationId: currentConvId,
-        sender: currentUser,
-        text: newMessage,
-        attachments: completedAttachments,
-        isGroup: isGroup,
-        type: attachmentIds.length > 0 ? "file" : "text",
-        createdAt: new Date().toISOString(),
-        status: "sending"
-      };
-
-      setMessages((prev) => [...prev, optimisticMessage]);
-      setNewMessage("");
-      clearUploads();
-      setShowEmoji(false);
-
       const messagePayload = {
         conversationId: currentConvId,
         sender: currentUser._id,
-        receiver: activeChat._id, // Cung cấp cho DB
-        receiverId: activeChat._id, // Cung cấp cho Socket
-        text: optimisticMessage.text,
+        receiver: activeChat._id,
+        receiverId: activeChat._id,
+        text: newMessage,
         attachments: attachmentIds,
         attachmentsData: completedAttachments,
         isGroup: isGroup,
-        type: optimisticMessage.type,
+        type: attachmentIds.length > 0 ? "file" : "text",
         senderInfo: {
           _id: currentUser._id,
           displayName: currentUser.displayName,
@@ -1056,14 +1046,41 @@ const Home = () => {
         }
       };
 
+      //  Hiển thị lên màn hình ngay lập tức
+      const optimisticMessage = {
+        _id: tempId,
+        conversationId: currentConvId,
+        sender: currentUser,
+        text: newMessage,
+        attachments: completedAttachments,
+        isGroup: isGroup,
+        type: messagePayload.type,
+        createdAt: new Date().toISOString(),
+        status: "sending",
+        rawPayload: messagePayload
+      };
+
+      setMessages((prev) => [...prev, optimisticMessage]);
+      setNewMessage("");
+      clearUploads();
+      setShowEmoji(false);
+
+      // Sau 15s nếu server không phản hồi thì đánh dấu là lỗi
+      const timeoutId = setTimeout(() => {
+        setMessages(prev => prev.map(msg =>
+          (msg._id === tempId && msg.status === "sending")
+            ? { ...msg, status: "error" } : msg
+        ));
+      }, 15000);
+
       // Gửi tin nhắn qua socket
       socket.emit("sendMessage", messagePayload, (res) => {
+        clearTimeout(timeoutId);
         if (res && res.success) {
           setMessages((prev) =>
             prev.map((msg) =>
               msg._id === tempId
-                ? { ...msg, _id: res.realId, status: "sent" }
-                : msg
+                ? { ...msg, _id: res.realId, status: "sent", rawPayload: undefined } : msg
             )
           );
         } else {
@@ -1076,13 +1093,6 @@ const Home = () => {
         }
       })
 
-      // Sau 5s nếu server không phản hồi thì đánh dấu là lỗi
-      setTimeout(() => {
-        setMessages(prev => prev.map(msg =>
-          (msg._id === tempId && msg.status === "sending")
-            ? { ...msg, status: "error" } : msg
-        ));
-      }, 5000);
     } catch (err) {
       console.error(err);
       toast.error("Lỗi gửi tin nhắn");
@@ -1107,6 +1117,44 @@ const Home = () => {
 
   const handleUpdateSuccess = (updatedUser) => {
     setCurrentUser(updatedUser);
+  };
+
+  const handleRetryMessage = (failedMessage) => {
+    // Không có payload thì không thể gửi lại
+    if (!failedMessage.rawPayload) {
+      toast.error("Dữ liệu tin nhắn đã mất, không thể thử lại.");
+      return;
+    }
+
+    // Đổi trạng thái UI quay lại thành "Đang gửi..."
+    setMessages((prev) => prev.map((msg) =>
+      msg._id === failedMessage._id ? { ...msg, status: "sending" } : msg
+    ));
+
+    // Khởi tạo lại một Timeout 15s mới cho lần thử lại này
+    const retryTimeoutId = setTimeout(() => {
+      setMessages(prev => prev.map(msg =>
+        (msg._id === failedMessage._id && msg.status === "sending")
+          ? { ...msg, status: "error" } : msg
+      ));
+    }, 15000);
+
+    // Bắn Socket gửi lại với payload cũ
+    socket.emit("sendMessage", failedMessage.rawPayload, (res) => {
+      clearTimeout(retryTimeoutId); // Có phản hồi thì hủy hẹn giờ
+
+      if (res && res.success) {
+        setMessages((prev) => prev.map((msg) =>
+          msg._id === failedMessage._id
+            ? { ...msg, _id: res.realId, status: "sent", rawPayload: undefined }
+            : msg
+        ));
+      } else {
+        setMessages((prev) => prev.map((msg) =>
+          msg._id === failedMessage._id ? { ...msg, status: "error" } : msg
+        ));
+      }
+    });
   };
 
   if (isLoading)
@@ -1166,6 +1214,7 @@ const Home = () => {
               handleVideoCall={handleVideoCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
+              handleRetryMessage={handleRetryMessage}
             />
 
             <ChatInput
