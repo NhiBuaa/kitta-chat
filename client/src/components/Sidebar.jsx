@@ -16,7 +16,6 @@ const Sidebar = ({
   groups,
   handleSelectUser,
   usersToDisplay,
-  users,
   sentRequests,
   checkIsOnline,
   renderLastMessage,
@@ -145,10 +144,14 @@ const Sidebar = ({
             const isMe = user._id === currentUser?._id;
             if (isMe) return null;
 
-            const isFriend =
-              user.isFriend || users.some((u) => u._id === user._id);
-            const isSent = user.isSent || sentRequests.includes(user._id);
-            const hasUnread = isFriend && user.hasUnread;
+            const isFriend = Boolean(user.isFriend);
+            const isPendingRequest = Boolean(
+              user.isSent ||
+                user.isIncomingRequest ||
+                user.isReceived ||
+                sentRequests.includes(user._id),
+            );
+            const hasUnread = Boolean(user.hasUnread);
 
             return (
               <div
@@ -165,6 +168,7 @@ const Sidebar = ({
                     alt="Avt"
                     className="w-12 h-12 rounded-full object-cover border border-gray-200"
                   />
+                  {/* DOT */}
                   {isFriend && checkIsOnline(user) && (
                     <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>
                   )}
@@ -211,7 +215,7 @@ const Sidebar = ({
 
                 {!isFriend && (
                   <div className="ml-2 flex-shrink-0">
-                    {isSent ? (
+                    {isPendingRequest ? (
                       <button
                         disabled
                         className="flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-500 rounded-full cursor-not-allowed"
@@ -228,7 +232,7 @@ const Sidebar = ({
                     )}
                   </div>
                 )}
-                {isFriend && hasUnread && (
+                {hasUnread && isFriend && (
                   <div className="ml-2 flex-shrink-0">
                     <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                       N

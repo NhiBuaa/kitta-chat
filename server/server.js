@@ -64,7 +64,27 @@ const broadcastUserStatus = async (ioInstance, userId, status) => {
     const user = await User.findById(userId).select("friends");
     const friendIds = user?.friends ? user.friends.map((friend) => friend.toString()) : [];
 
-    const targetRooms = [...new Set([...groupIds, ...friendIds])];
+    const messages = await Message.find({
+      $or: [{ sender: userId }, { receiver: userId }],
+    })
+      .select("sender receiver")
+      .lean();
+
+    const chattedUserIds = messages.reduce((accumulator, message) => {
+      const senderId = message.sender?.toString();
+      const receiverId = message.receiver?.toString();
+
+      if (senderId && senderId !== userId) {
+        accumulator.push(senderId);
+      }
+      if (receiverId && receiverId !== userId) {
+        accumulator.push(receiverId);
+      }
+
+      return accumulator;
+    }, []);
+
+    const targetRooms = [...new Set([...groupIds, ...friendIds, ...chattedUserIds])];
 
     if (targetRooms.length > 0) {
       ioInstance.to(targetRooms).emit("userStatusChanged", { userId, status });
@@ -312,18 +332,13 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId, mediaStatus }) => {
-    console.log(`[SERVER] callUser from ${callerDbId} to ${userToCall}`);
+  socket.on("callUser", (data) => {
+    console.log(`[SERVER] callUser from ${data.callerDbId} to ${data.userToCall}`);
 
-    const room = io.sockets.adapter.rooms.get(userToCall);
+    const room = io.sockets.adapter.rooms.get(data.userToCall);
+
     if (room && room.size > 0) {
-      io.to(userToCall).emit("callUser", {
-        signal: signalData,
-        from,
-        name,
-        callerDbId,
-        mediaStatus,
-      });
+      io.to(data.userToCall).emit("callUser", data);
     } else {
       socket.emit("callRejected", { reason: "User offline" });
     }

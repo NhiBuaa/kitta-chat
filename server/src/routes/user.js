@@ -4,6 +4,7 @@ const {
   sendFriendRequest,
   accceptFriendRequest,
   getUserProfile,
+  getUserById,
   updateUserProfile,
   getAllUsers,
   searchUsers,
@@ -25,6 +26,7 @@ router.get("/sidebar-list", authMiddleware, getSidebarUsers);
 router.post("/friend-request", authMiddleware, sendFriendRequest);
 router.post("/reject-friend", authMiddleware, rejectFriendRequest);
 router.get("/search", authMiddleware, searchUsers);
+router.get("/:id", authMiddleware, getUserById);
 router.get("/", authMiddleware, getAllUsers);
 
 module.exports = router;

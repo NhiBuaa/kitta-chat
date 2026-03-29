@@ -22,19 +22,23 @@ const ChatWindow = ({
   currentUser,
   messages,
   users,
-  isFriend,
   isTyping,
   typingUserName,
   typingUserAvatar,
   scrollRef,
   getAvatarUrl,
   checkIsOnline,
-  handleVideoCall,
+  handleCall,
   setShowGroupMembers,
   handleScrollToBottom,
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
+
+  // BIẾN
+  const isGroupChat = Boolean(activeChat?.members);
+  const shouldShowOnlineStatus =
+    !isGroupChat && Boolean(currentChatUser?.isFriend);
 
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
@@ -81,12 +85,12 @@ const ChatWindow = ({
             <h3 className="font-bold text-gray-800">
               {getUserDisplayName(currentChatUser)}
             </h3>
-            {!currentChatUser.members && isFriend ? (
+            {shouldShowOnlineStatus && (
               <UserStatus
                 user={currentChatUser}
                 isOnline={checkIsOnline(currentChatUser)}
               />
-            ) : null}
+            )}
 
             {currentChatUser.members && (
               <span className="text-xs text-gray-500">
@@ -97,15 +101,20 @@ const ChatWindow = ({
         </div>
 
         <div className="flex space-x-4 text-blue-600">
+
+          {/* Gọi audio */}
           <button
-            className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-            onClick={() => alert("Tính năng gọi thoại đang phát triển")}
+            onClick={() => handleCall("audio")}
+            className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
+            title="Gọi Audio"
+            disabled={currentChatUser.members}
           >
             <FaPhone />
           </button>
 
+          {/* Gọi video */}
           <button
-            onClick={handleVideoCall}
+            onClick={() => handleCall("video")}
             className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
             title="Gọi Video"
             disabled={currentChatUser.members}
@@ -312,7 +321,7 @@ const ChatWindow = ({
         {showScrollButton && (
           <button
             onClick={handleScrollToBottom}
-            className="sticky bottom-4 left-full z-50 bg-white border border-gray-200 text-green-600 hover:bg-blue-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
+            className="sticky bottom-4 left-full z-50 bg-white border border-gray-200 text-green-600 hover:bg-green-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
             title="Cuộn xuống tin nhắn mới nhất"
           >
             <FaArrowDown size={16} />

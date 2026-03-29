@@ -54,6 +54,7 @@ export const CallProvider = ({ children }) => {
         localStorage.removeItem("tempCallerUserId");
         localStorage.removeItem("tempCallSignal");
         localStorage.removeItem("tempCallerMediaStatus");
+        localStorage.removeItem("tempCallType");
     };
 
     const cleanupConnection = () => {
@@ -85,22 +86,22 @@ export const CallProvider = ({ children }) => {
         ]
     };
 
-    const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true) => {
+    const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = "video") => {
         const userStr = localStorage.getItem("user");
         const freshUser = userStr ? JSON.parse(userStr) : null;
 
         if (!freshUser) {
-            toast.error("Phien dang nhap het han.");
+            toast.error("Phiên đăng nhập hết hạn.");
             return;
         }
 
         if (!receiverUserId || !localStream) {
-            console.error("Thieu thong tin de goi.");
+            console.error("Thiếu thông tin để gọi.");
             return;
         }
 
         if (!socket?.id) {
-            toast.error("Mat ket noi may chu.");
+            toast.error("Mất kết nối máy chủ.");
             return;
         }
 
@@ -127,8 +128,10 @@ export const CallProvider = ({ children }) => {
                 signalData: data,
                 from: socket.id,
                 name: freshUser.displayName || "Người dùng",
+                avatar: freshUser.avatar || "",
                 callerDbId: freshUser._id || freshUser.id,
                 mediaStatus: { cam: isCamOn, mic: isMicOn },
+                typeCall: callType // audio or video
             });
         });
 
@@ -234,9 +237,11 @@ export const CallProvider = ({ children }) => {
 
         const handleIncomingCall = (data) => {
             const validSignal = data.signal || data.signalData;
+            const incomingCallType = data.typeCall || "video";
 
             localStorage.setItem("tempCallerId", data.from);
             localStorage.setItem("tempCallSignal", JSON.stringify(validSignal));
+            localStorage.setItem("tempCallType", incomingCallType);
 
             if (data.callerDbId) {
                 localStorage.setItem("tempCallerUserId", data.callerDbId);
@@ -255,6 +260,7 @@ export const CallProvider = ({ children }) => {
                 name: data.name,
                 avatar: data.avatar,
                 signal: validSignal,
+                callType: incomingCallType
             });
         };
 
