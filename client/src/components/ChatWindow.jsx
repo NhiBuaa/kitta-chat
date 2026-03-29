@@ -13,6 +13,7 @@ import {
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
+import MessageSeenBy from './MessageSeenBy'; 
 
 const ChatWindow = ({
   activeChat,
@@ -248,31 +249,28 @@ const ChatWindow = ({
                     </div>
                   )}
 
-                  {isMe &&
-                    isGroup &&
-                    message.readBy &&
-                    message.readBy.length > 0 &&
-                    (() => {
-                      const readerIds = message.readBy.map((reader) =>
-                        typeof reader === "object" ? reader._id : reader,
-                      );
-                      const readerNames = readerIds.map((id) => {
-                        const member =
-                          activeChat?.members?.find(
-                            (groupMember) => groupMember._id === id,
-                          ) || users.find((user) => user._id === id);
-                        return getUserDisplayName(member);
-                      });
+                  {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
+                    // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
+                    const fullViewersData = message.readBy.map(reader => {
+                      const readerId = typeof reader === "object" ? reader._id : reader;
+                      // Tìm user từ danh sách members hoặc users
+                      const userObj = activeChat?.members?.find(m => m._id === readerId) ||
+                        users.find(u => u._id === readerId);
 
-                      return (
-                        <div className="text-[11px] mt-1 text-gray-200/90">
-                          <span className="text-white/70">Đã xem:</span>{" "}
-                          <span className="font-medium">
-                            {readerNames.join(", ")}
-                          </span>
-                        </div>
-                      );
-                    })()}
+                      // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
+                      return userObj ? userObj : { _id: readerId, displayName: "User", avatar: "" };
+                    });
+
+                    return (
+                      <div className="mt-1 flex justify-end">
+                        <MessageSeenBy
+                          seenByList={fullViewersData}
+                          currentUser={currentUser}
+                          getAvatarUrl={getAvatarUrl}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
               <div
