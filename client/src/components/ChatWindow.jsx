@@ -7,7 +7,8 @@ import {
   FaCheck,
   FaCheckDouble,
   FaPaperclip,
-  FaArrowDown
+  FaArrowDown,
+  FaExclamationTriangle
 } from "react-icons/fa";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
@@ -228,7 +229,10 @@ const ChatWindow = ({
                       )}
 
                       {isError && (
-                        <span className="text-[10px] text-red-200 font-bold">⚠️ Lỗi gửi</span>
+                        <span className="text-[10px] text-red-200 font-bold flex items-center gap-1">
+                          <FaExclamationTriangle />
+                          Lỗi gửi
+                        </span>
                       )}
 
                       {/* Chỉ hiện tích xanh/xám khi tin nhắn đã gửi xong (không có status hoặc status là sent) */}
