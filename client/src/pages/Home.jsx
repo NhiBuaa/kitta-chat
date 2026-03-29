@@ -57,11 +57,10 @@ const Home = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // HOOK
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
-    useUploader();
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
 
-  // HÀM XỬ LÝ GỌI VIDEO
-  const handleVideoCall = () => {
+  // HÀM XỬ LÝ GỌI
+  const handleCall = (type = "video") => {
     if (!currentChatUser) return;
 
     if (currentChatUser.members || currentChatUser.isGroup) {
@@ -70,10 +69,10 @@ const Home = () => {
     }
 
     const chatUserId = currentChatUser._id || currentChatUser.id;
-    const url = `/video-call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}`;
+    const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}`;
 
     localStorage.setItem("activePartnerUserId", chatUserId);
-    window.open(url, "_blank", "noopener,noreferrer");
+    window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
   // CÁC BIẾN TÍNH TOÁN
@@ -83,11 +82,11 @@ const Home = () => {
       : users.find((u) => u._id === activeChat._id) || activeChat
     : null;
 
-  const isFriend =
-    currentChatUser &&
-    !currentChatUser.members &&
-    (currentChatUser.isFriend ||
-      users.some((u) => u._id === currentChatUser._id));
+  const activeChatId = activeChat?._id || null;
+  const activeChatIsGroup = Boolean(activeChat?.members);
+  const activeChatKey = activeChatId
+    ? `${activeChatIsGroup ? "group" : "user"}:${activeChatId}`
+    : null;
 
   // USE EFFECTS
   useEffect(() => {
@@ -96,7 +95,7 @@ const Home = () => {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }, 100);
     }
-  }, [messages, activeChat, isTyping]);
+  }, [messages, activeChatKey, isTyping]);
 
   useEffect(() => {
     activeChatRef.current = activeChat;
@@ -108,13 +107,12 @@ const Home = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const isGroup = activeChat?.members ? true : false;
-    if (isGroup) {
-      socket.emit("joinGroup", activeChat._id);
+    if (activeChatIsGroup && activeChatId) {
+      socket.emit("joinGroup", activeChatId);
     } else if (activeChatRef.current?.members) {
       socket.emit("leaveGroup", activeChatRef.current._id);
     }
-  }, [activeChat, socket]);
+  }, [activeChatId, activeChatIsGroup, socket]);
 
   // CÁC HÀM HELPER & API
   const fetchNewConversation = useCallback(
@@ -151,7 +149,7 @@ const Home = () => {
         console.error("Không thể load conversation mới:", error);
       }
     },
-    [API_URL],
+    [API_URL, currentUser?._id],
   );
 
   const renderLastMessage = (user, currentUserId) => {
@@ -202,11 +200,11 @@ const Home = () => {
       setActiveChat((prevChat) =>
         prevChat
           ? {
-              ...prevChat,
-              ...incomingGroup,
-              members: incomingGroup.members || prevChat.members,
-              admin: incomingGroup.admin || prevChat.admin,
-            }
+            ...prevChat,
+            ...incomingGroup,
+            members: incomingGroup.members || prevChat.members,
+            admin: incomingGroup.admin || prevChat.admin,
+          }
           : prevChat,
       );
     }
@@ -220,11 +218,105 @@ const Home = () => {
     [upsertGroup],
   );
 
+  const patchUserEverywhere = useCallback((targetUserId, updater) => {
+    if (!targetUserId) return;
+
+    const applyPatch = (list = []) =>
+      list.map((user) => (user?._id === targetUserId ? updater(user) : user));
+
+    setUsers((prevUsers) => applyPatch(prevUsers));
+    setSearchResult((prevUsers) => applyPatch(prevUsers));
+    setActiveChat((prevChat) => {
+      if (!prevChat || prevChat.members || prevChat._id !== targetUserId) {
+        return prevChat;
+      }
+
+      return updater(prevChat);
+    });
+  }, []);
+
+  const markFriendshipActive = useCallback((friendData) => {
+    if (!friendData?._id) return;
+
+    const buildFriendState = (user = {}) => ({
+      ...user,
+      ...friendData,
+      isFriend: true,
+      isIncomingRequest: false,
+      isReceived: false,
+      isSent: false,
+      lastMessage: user.lastMessage ?? friendData.lastMessage ?? null,
+      hasUnread: user.hasUnread ?? false,
+    });
+
+    setSentRequests((prev) => prev.filter((id) => id !== friendData._id));
+    setUsers((prevUsers) => {
+      const existingIndex = prevUsers.findIndex((user) => user._id === friendData._id);
+
+      if (existingIndex === -1) {
+        return [
+          buildFriendState({
+            _id: friendData._id,
+            displayName: friendData.displayName,
+            avatar: friendData.avatar,
+          }),
+          ...prevUsers,
+        ];
+      }
+
+      const nextUsers = [...prevUsers];
+      nextUsers[existingIndex] = buildFriendState(nextUsers[existingIndex]);
+      return nextUsers;
+    });
+    setSearchResult((prevUsers) =>
+      prevUsers.map((user) =>
+        user._id === friendData._id ? buildFriendState(user) : user,
+      ),
+    );
+    setActiveChat((prevChat) => {
+      if (!prevChat || prevChat.members || prevChat._id !== friendData._id) {
+        return prevChat;
+      }
+
+      return buildFriendState(prevChat);
+    });
+  }, []);
+
+  const markFriendRequestSent = useCallback(
+    (receiverId) => {
+      if (!receiverId) return;
+
+      setSentRequests((prev) =>
+        prev.includes(receiverId) ? prev : [...prev, receiverId],
+      );
+      patchUserEverywhere(receiverId, (user) => ({
+        ...user,
+        isSent: true,
+        isIncomingRequest: false,
+      }));
+    },
+    [patchUserEverywhere],
+  );
+
+  const clearSentFriendRequest = useCallback(
+    (targetUserId) => {
+      if (!targetUserId) return;
+
+      setSentRequests((prev) => prev.filter((id) => id !== targetUserId));
+      patchUserEverywhere(targetUserId, (user) => ({
+        ...user,
+        isSent: false,
+        isIncomingRequest: false,
+      }));
+    },
+    [patchUserEverywhere],
+  );
+
   const handleAddFriend = async (e, user) => {
     e.stopPropagation();
     try {
       await sendFriendRequest(user._id);
-      setSentRequests((prev) => [...prev, user._id]);
+      markFriendRequestSent(user._id);
       toast.success("Đã gửi lời mời kết bạn");
     } catch (error) {
       console.error(error);
@@ -333,6 +425,10 @@ const Home = () => {
   useEffect(() => {
     if (!socket || !currentUser) return;
 
+    const handleFriendRequestSent = ({ receiverId }) => {
+      markFriendRequestSent(receiverId);
+    };
+
     const handleNewFriendRequest = (data) => {
       setRequestCount((prevCount) => prevCount + 1);
       toast.info(`${data.senderName} đã gửi lời mời kết bạn`, {
@@ -340,14 +436,14 @@ const Home = () => {
         position: "top-right",
         autoClose: 5000,
       });
-      setUsers((prevUsers) =>
-        prevUsers.map((u) => {
-          if (u._id === data.senderId) {
-            return { ...u, isIncomingRequest: true };
-          }
-          return u;
-        }),
-      );
+      patchUserEverywhere(data.senderId, (user) => ({
+        ...user,
+        displayName: data.senderName || user.displayName,
+        avatar: data.avatar ?? user.avatar,
+        isIncomingRequest: true,
+        isReceived: true,
+        isSent: false,
+      }));
     };
 
     const handleFriendRequestAccepted = (data) => {
@@ -356,88 +452,78 @@ const Home = () => {
         position: "top-right",
         autoClose: 3000,
       });
-      setUsers((prev) => {
-        const updatedUsers = prev.map((user) => {
-          if (user._id === data.newFriendId) {
-            return {
-              ...user,
-              isFriend: true,
-              isIncomingRequest: false,
-            };
-          }
-          return user;
-        });
-
-        const userExists = updatedUsers.some((u) => u._id === data.newFriendId);
-        if (!userExists) {
-          updatedUsers.push({
-            _id: data.newFriendId,
-            displayName: data.newFriendName,
-            avatar: data.newFriendAvatar,
-            isFriend: true,
-            lastMessage: null,
-            hasUnread: false,
-          });
-        }
-        return updatedUsers;
+      markFriendshipActive({
+        _id: data.newFriendId,
+        displayName: data.newFriendName,
+        avatar: data.newFriendAvatar,
       });
     };
 
     const handleFriendRequestRejected = (data) => {
-      setSentRequests((prev) => prev.filter((id) => id !== data.rejecterId));
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id === data.rejecterId) {
-            return {
-              ...user,
-              isSent: false,
-              isIncomingRequest: false,
-            };
-          }
-          return user;
-        }),
-      );
+      clearSentFriendRequest(data.rejecterId);
+    };
+
+    const handleFriendRequestHandled = (data) => {
+      setRequestCount((prevCount) => Math.max(prevCount - 1, 0));
+
+      if (data.action === "accepted" && data.friend) {
+        markFriendshipActive(data.friend);
+        return;
+      }
+
+      patchUserEverywhere(data.senderId, (user) => ({
+        ...user,
+        isIncomingRequest: false,
+        isReceived: false,
+      }));
     };
 
     const handleUserStatusChanged = ({ userId, status }) => {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id !== userId) return user;
-
-          if (status === "online") {
-            return {
-              ...user,
-              activityStatus: {
-                ...(user.activityStatus || {}),
-                state: "online",
-              },
-            };
-          }
-
+      patchUserEverywhere(userId, (user) => {
+        if (status === "online") {
           return {
             ...user,
             activityStatus: {
               ...(user.activityStatus || {}),
-              state: "offline",
-              lastSeen: new Date().toISOString(),
+              state: "online",
             },
           };
-        }),
-      );
+        }
+
+        return {
+          ...user,
+          activityStatus: {
+            ...(user.activityStatus || {}),
+            state: "offline",
+            lastSeen: new Date().toISOString(),
+          },
+        };
+      });
     };
 
     socket.on("userStatusChanged", handleUserStatusChanged);
+    socket.on("friendRequestSent", handleFriendRequestSent);
     socket.on("newFriendRequest", handleNewFriendRequest);
     socket.on("friendRequestAccepted", handleFriendRequestAccepted);
     socket.on("friendRequestRejected", handleFriendRequestRejected);
+    socket.on("friendRequestHandled", handleFriendRequestHandled);
 
     return () => {
       socket.off("userStatusChanged", handleUserStatusChanged);
+      socket.off("friendRequestSent", handleFriendRequestSent);
       socket.off("newFriendRequest", handleNewFriendRequest);
       socket.off("friendRequestAccepted", handleFriendRequestAccepted);
       socket.off("friendRequestRejected", handleFriendRequestRejected);
+      socket.off("friendRequestHandled", handleFriendRequestHandled);
     };
-  }, [socket, currentUser]);
+  }, [
+    socket,
+    currentUser,
+    clearSentFriendRequest,
+    markFriendRequestSent,
+    markFriendshipActive,
+    patchUserEverywhere,
+  ]);
 
   useEffect(() => {
     if (users.length > 0) {
@@ -534,9 +620,54 @@ const Home = () => {
 
     const handleUnifiedMessage = (data) => {
       const currentActiveChat = activeChatRef.current;
-      setUsers((prevUsers) => {
-        const updatedUsers = [...prevUsers];
+      const targetId = data.isGroup
+        ? data.receiverId
+        : data.senderId === currentUser._id
+          ? data.receiverId
+          : data.senderId;
+      let previewContent = data.text;
+      if (!previewContent && data.image) previewContent = "[HÃ¬nh áº£nh]";
+      if (!previewContent && data.attachments?.length > 0)
+        previewContent = "[Tá»‡p Ä‘Ã­nh kÃ¨m]";
 
+      const applyPreviewUpdate = (list = []) => {
+        const updatedList = [...list];
+        const index = updatedList.findIndex((item) => item._id === targetId);
+
+        if (index === -1) return null;
+
+        const itemToUpdate = updatedList[index];
+        const updatedItem = {
+          ...itemToUpdate,
+          lastMessage: {
+            content: previewContent,
+            senderId: data.senderId,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: false,
+          },
+          hasUnread:
+            data.senderId !== currentUser._id &&
+            currentActiveChat?._id !== targetId,
+        };
+
+        updatedList.splice(index, 1);
+        updatedList.unshift(updatedItem);
+        return updatedList;
+      };
+      setUsers((prevUsers) => {
+
+        const nextUsers = applyPreviewUpdate(prevUsers);
+        if (nextUsers) {
+          return nextUsers;
+        }
+
+        if (!data.isGroup) {
+          fetchNewConversation(targetId, data.isGroup, data);
+        }
+
+        return prevUsers;
+
+        /* const updatedUsers = [...prevUsers];
         const targetId = data.isGroup
           ? data.receiverId
           : data.senderId === currentUser._id
@@ -572,8 +703,9 @@ const Home = () => {
         } else {
           fetchNewConversation(targetId, data.isGroup, data);
           return prevUsers;
-        }
+        } */
       });
+      setSearchResult((prevUsers) => applyPreviewUpdate(prevUsers) || prevUsers);
 
       const isViewingChat =
         (data.isGroup && currentActiveChat?._id === data.receiverId) ||
@@ -659,13 +791,12 @@ const Home = () => {
 
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!activeChat || !currentUser) return;
+      if (!activeChatId || !currentUser?._id) return;
       setMessages([]);
       try {
-        const isGroup = activeChat.members ? true : false;
-        const url = isGroup
-          ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true`
-          : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
+        const url = activeChatIsGroup
+          ? `${API_URL}/api/messages/none/${activeChatId}?isGroup=true`
+          : `${API_URL}/api/messages/${currentUser._id}/${activeChatId}`;
 
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -680,15 +811,15 @@ const Home = () => {
           ),
         );
         if (socket) {
-          if (isGroup) {
+          if (activeChatIsGroup) {
             socket.emit("markRead", {
               isGroup: true,
-              groupId: activeChat._id,
+              groupId: activeChatId,
               readerId: currentUser._id,
             });
           } else {
             socket.emit("markRead", {
-              senderId: activeChat._id,
+              senderId: activeChatId,
               receiverId: currentUser._id,
             });
           }
@@ -698,7 +829,7 @@ const Home = () => {
       }
     };
     fetchMessages();
-  }, [activeChat, currentUser, API_URL, socket]);
+  }, [activeChatId, activeChatIsGroup, currentUser?._id, API_URL, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -742,7 +873,7 @@ const Home = () => {
     setIsTyping(false);
     setTypingUserName("");
     setTypingUserAvatar(null);
-  }, [activeChat]);
+  }, [activeChatKey]);
 
   // --- HANDLERS CHÍNH ---
   const handleScrollToBottom = () => {
@@ -1007,9 +1138,8 @@ const Home = () => {
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* SIDEBAR */}
       <div
-        className={`${
-          activeChat ? "hidden sm:flex" : "flex"
-        } w-full sm:w-auto h-full`}
+        className={`${activeChat ? "hidden sm:flex" : "flex"
+          } w-full sm:w-auto h-full`}
       >
         <Sidebar
           currentUser={currentUser}
@@ -1035,9 +1165,8 @@ const Home = () => {
 
       {/* CHAT WINDOW */}
       <div
-        className={`${
-          activeChat ? "flex" : "hidden sm:flex"
-        } flex-1 flex-col bg-gray-50 h-full`}
+        className={`${activeChat ? "flex" : "hidden sm:flex"
+          } flex-1 flex-col bg-gray-50 h-full`}
       >
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
@@ -1053,7 +1182,6 @@ const Home = () => {
               currentUser={currentUser}
               messages={messages}
               users={users}
-              isFriend={isFriend}
               isTyping={isTyping}
               typingUserName={typingUserName}
               typingUserAvatar={typingUserAvatar}
@@ -1061,7 +1189,7 @@ const Home = () => {
               API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
-              handleVideoCall={handleVideoCall}
+              handleCall={handleCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
             />
@@ -1106,9 +1234,7 @@ const Home = () => {
       {showRequestModal && (
         <FriendRequestModal
           onClose={() => setShowRequestModal(false)}
-          onSuccess={fetchData}
           setRequestCount={setRequestCount}
-          currentUser={currentUser}
         />
       )}
       {showGroupMembers && activeChat?.members && currentUser && (
@@ -1118,7 +1244,6 @@ const Home = () => {
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
             upsertGroup(updatedGroup);
-            setActiveChat(updatedGroup);
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);

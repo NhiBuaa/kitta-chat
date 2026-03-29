@@ -1,3 +1,4 @@
+// Dùng để xử lý trạng thái hoạt động
 export const formatTimeAgo = (dateString) => {
     if (!dateString) return '';
 
@@ -28,3 +29,13 @@ export const formatTimeAgo = (dateString) => {
     // Nếu quá 7 ngày thì hiện ngày tháng cụ thể
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 };
+
+// Dùng để sử lý bộ đếm thời gian khi gọi
+export const formatDuration = (totalSecond) => {
+    if(isNaN(totalSecond) || totalSecond < 0) return "00:00";
+
+    const minutes = Math.floor(totalSecond / 60).toString().padStart(2, '0');
+    const seconds = (totalSecond % 60).toString().padStart(2, '0');
+
+    return `${minutes}:${seconds}`
+}

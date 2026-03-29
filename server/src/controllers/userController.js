@@ -1,6 +1,28 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
+const { uploadAvatar } = require('../service/s3.service')
+const sharp = require('sharp');
+
+const toComparableId = (value) => value?.toString?.() || String(value);
+
+const includesId = (list = [], targetId) =>
+  list.some((item) => toComparableId(item) === toComparableId(targetId));
+
+const emitToUserRoom = (io, userId, eventName, payload) => {
+  if (!io || !userId) return;
+  io.to(toComparableId(userId)).emit(eventName, payload);
+};
+
+const buildRelationshipFlags = (targetUser, currentUser) => {
+  const currentUserId = toComparableId(currentUser?._id || currentUser?.id);
+
+  return {
+    isFriend: includesId(targetUser?.friends, currentUserId),
+    isSent: includesId(targetUser?.friendRequests, currentUserId),
+    isReceived: includesId(currentUser?.friendRequests, targetUser?._id),
+  };
+};
 
 // [GET] /api/users/profile
 const getUserProfile = async (req, res) => {
@@ -21,54 +43,80 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const targetUserId = req.params.id;
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId).select("friendRequests"),
+      User.findById(targetUserId)
+        .select("displayName avatar username status activityStatus friends friendRequests")
+        .lean(),
+    ]);
+
+    if (!targetUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Người dùng không tồn tại" });
+    }
+
+    const relationshipFlags = buildRelationshipFlags(targetUser, currentUser);
+
+    res.json({
+      success: true,
+      user: {
+        ...targetUser,
+        ...relationshipFlags,
+      },
+    });
+  } catch (error) {
+    console.error("Get User By Id Error:", error);
+    res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+};
+
 // [PUT] /api/users/profile
 const updateUserProfile = async (req, res) => {
   try {
-    console.log("--- Bắt đầu Update Profile ---");
+    console.log("Bắt đầu Update Profile");
     console.log("Body nhận được:", req.body);
     console.log("File nhận được:", req.file);
 
     const userId = req.user.id;
     const { displayName, status, activityStatus } = req.body;
 
-    let updateData = {};
+    // Chuẩn bị object update
+    const updateData = { displayName, status };
+    if (activityStatus) updateData.activityStatus = JSON.parse(activityStatus);
 
-    // Validate và gán DisplayName
-    if (displayName) updateData.displayName = displayName;
-
-    // Validate và gán Status
-    if (status) updateData.status = status;
-
-    // Xử lý ActivityStatus (Quan trọng: Parse từ chuỗi JSON sang Object)
-    if (activityStatus) {
-      try {
-        // Nếu là chuỗi JSON thì parse, nếu là object thì giữ nguyên
-        const parsedStatus =
-          typeof activityStatus === "string"
-            ? JSON.parse(activityStatus)
-            : activityStatus;
-
-        updateData.activityStatus = parsedStatus;
-      } catch (e) {
-        console.error("Lỗi parse activityStatus:", e);
-      }
-    }
-
-    // Xử lý Avatar (Nếu có file upload)
+    // Xử lý Avatar
     if (req.file) {
-      let path = req.file.path.replace(/\\/g, "/");
-      // Nếu bạn lưu file trong folder uploads ở root, đường dẫn thường là uploads/tenfile.jpg
-      // Cần sửa lại cho khớp với cách bạn serve static file
-      updateData.avatar = `/uploads/${req.file.filename}`;
+      const compressedBuffer = await sharp(req.file.buffer)
+        .resize(256, 256, {fit: 'cover'})
+        .webp({quality: 80})
+        .toBuffer();
+      
+      const OriginalNameWithoutExt = req.file.originalname.split('.')[0];
+      const newName = OriginalNameWithoutExt + ".webp";
+
+      const avatarUrl = await uploadAvatar(
+        compressedBuffer,
+        newName,
+        'image/webp',
+        'avatars'
+      )
+
+      updateData.avatar = avatarUrl;
     }
 
     console.log("Dữ liệu chuẩn bị update vào DB:", updateData);
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: updateData },
-      { new: true },
-    ).select("-password");
+      updateData,
+      { returnDocument: 'after' }
+    ).select('-password');
 
     res.json({
       success: true,
@@ -157,11 +205,7 @@ const searchUsers = async (req, res) => {
 
     // thêm trạng thái là bb hay chưa
     const usersWithStatus = filteredUsers.map((user) => {
-      const isSent = (user.friendRequests || []).includes(currentUserId);
-      const isReceived = (currentUserFull.friendRequests || []).includes(
-        user._id,
-      );
-      const isFriend = (user.friends || []).includes(currentUserId);
+      const relationshipFlags = buildRelationshipFlags(user, currentUserFull);
 
       return {
         _id: user._id,
@@ -169,9 +213,7 @@ const searchUsers = async (req, res) => {
         avatar: user.avatar,
         status: user.status,
         activityStatus: user.activityStatus,
-        isSent,
-        isReceived,
-        isFriend,
+        ...relationshipFlags,
       };
     });
 
@@ -219,12 +261,11 @@ const accceptFriendRequest = async (req, res) => {
     const { senderId } = req.body;
     const receiverId = req.user.id;
     const io = req.app.get("socketio");
-    const onlineUsers = req.app.get("onlineUsers");
 
     const receiver = await User.findById(receiverId);
 
     // Kiểm tra có lời mời này hay không
-    if (!receiver.friendRequests.includes(senderId)) {
+    if (!receiver || !includesId(receiver.friendRequests, senderId)) {
       return res
         .status(400)
         .json({ success: false, message: "Không có lời mời kết bạn này" });
@@ -245,14 +286,21 @@ const accceptFriendRequest = async (req, res) => {
     );
 
     // Emit event cho người gửi (sender) để cập nhật sidebar
-    const senderSocketId = onlineUsers.get(senderId.toString());
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("friendRequestAccepted", {
-        newFriendId: receiverId,
-        newFriendName: getSafeUserName(receiver),
-        newFriendAvatar: receiver.avatar,
-      });
-    }
+    emitToUserRoom(io, senderId, "friendRequestAccepted", {
+      newFriendId: receiverId,
+      newFriendName: getSafeUserName(receiver),
+      newFriendAvatar: receiver.avatar,
+    });
+
+    emitToUserRoom(io, receiverId, "friendRequestHandled", {
+      action: "accepted",
+      senderId: toComparableId(senderId),
+      friend: {
+        _id: toComparableId(senderId),
+        displayName: getSafeUserName(sender),
+        avatar: sender?.avatar,
+      },
+    });
 
     res.json({ success: true, message: "Đã chấp nhận lời mời kết bạn." });
   } catch (error) {
@@ -265,7 +313,9 @@ const getSidebarUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    const currentUser = await User.findById(currentUserId);
+    const currentUser = await User.findById(currentUserId).select(
+      "friends friendRequests",
+    );
     // Map friends
     const friendsIds = currentUser.friends.map((id) => id.toString());
 
@@ -291,7 +341,7 @@ const getSidebarUsers = async (req, res) => {
     );
 
     const users = await User.find({ _id: { $in: allUserIdsToShow } }).select(
-      "displayName avatar status activityStatus",
+      "displayName avatar status activityStatus friends friendRequests",
     );
 
     const usersWithLastMessage = await Promise.all(
@@ -306,6 +356,8 @@ const getSidebarUsers = async (req, res) => {
           .select("content text image sender createdAt isRead");
 
         const userObj = user.toObject();
+
+        const relationshipFlags = buildRelationshipFlags(user, currentUser);
 
         if (lastMsg) {
           let previewContent = lastMsg.content || lastMsg.text || "";
@@ -330,7 +382,10 @@ const getSidebarUsers = async (req, res) => {
           userObj.hasUnread = false;
         }
 
-        return userObj;
+        return {
+          ...userObj,
+          ...relationshipFlags,
+        };
       }),
     );
 
@@ -356,7 +411,6 @@ const sendFriendRequest = async (req, res) => {
     const { receiverId } = req.body;
     const senderId = req.user.id;
     const io = req.app.get("socketio");
-    const onlineUsers = req.app.get("onlineUsers");
 
     // Kiểm tra các lỗi cơ bản
     if (receiverId === senderId) {
@@ -371,12 +425,12 @@ const sendFriendRequest = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Người dùng không tồn tại" });
     }
-    if (receiver.friendRequests.includes(senderId)) {
+    if (includesId(receiver.friendRequests, senderId)) {
       return res
         .status(400)
         .json({ success: false, message: "Đã gửi lời mời kết bạn trước đó" });
     }
-    if (receiver.friends.includes(senderId)) {
+    if (includesId(receiver.friends, senderId)) {
       return res.status(400).json({ success: false, message: "Đã là bạn bè" });
     }
 
@@ -387,15 +441,15 @@ const sendFriendRequest = async (req, res) => {
     });
 
     // Gửi thông báo real-time nếu người nhận đang online
-    const receiverSocketId = onlineUsers.get(receiverId.toString());
-    console.log("Receiver Socket ID:", receiverSocketId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newFriendRequest", {
-        senderId: senderId,
-        senderName: getSafeUserName(sender),
-        avatar: sender.avatar,
-      });
-    }
+    emitToUserRoom(io, receiverId, "newFriendRequest", {
+      senderId: toComparableId(senderId),
+      senderName: getSafeUserName(sender),
+      avatar: sender?.avatar,
+    });
+
+    emitToUserRoom(io, senderId, "friendRequestSent", {
+      receiverId: toComparableId(receiverId),
+    });
 
     res.status(200).json({ success: true, message: "Đã gửi lời mời" });
   } catch (error) {
@@ -410,8 +464,19 @@ const rejectFriendRequest = async (req, res) => {
     const receiverId = req.user.id;
 
     // Xoá lời mời kết bạn
+    const io = req.app.get("socketio");
+
     await User.findByIdAndUpdate(receiverId, {
       $pull: { friendRequests: senderId },
+    });
+
+    emitToUserRoom(io, senderId, "friendRequestRejected", {
+      rejecterId: toComparableId(receiverId),
+    });
+
+    emitToUserRoom(io, receiverId, "friendRequestHandled", {
+      action: "rejected",
+      senderId: toComparableId(senderId),
     });
 
     res.status(200).json({ success: true, message: "Đã từ chối lời mời" });
@@ -423,6 +488,7 @@ const rejectFriendRequest = async (req, res) => {
 
 module.exports = {
   getUserProfile,
+  getUserById,
   updateUserProfile,
   getAllUsers,
   searchUsers,

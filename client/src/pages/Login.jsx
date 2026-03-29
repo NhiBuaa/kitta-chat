@@ -65,7 +65,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mx-1 block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <div className="relative">
@@ -84,7 +84,7 @@ const Login = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mx-1 block text-sm font-medium text-gray-700 mb-1">
                 Mật khẩu
               </label>
               {/* pass */}
@@ -120,7 +120,7 @@ const Login = () => {
               <div className="flex justify-between items-center mb-1">
                 <Link
                   to="/forgot-password"
-                  className="text-xs text-green-600 hover:underline"
+                  className="text-xs mx-1 text-green-600 hover:underline"
                 >
                   Quên mật khẩu?
                 </Link>

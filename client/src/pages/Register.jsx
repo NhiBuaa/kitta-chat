@@ -106,7 +106,7 @@ const Register = () => {
                 {...register("email", {
                   required: "Vui lòng nhập email để đăng ký",
                   pattern: {
-                    value: /^\S+@\S+$/i,
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}$/,
                     message: "Hãy nhập email hợp lệ",
                   },
                 })}
