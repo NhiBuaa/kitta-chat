@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FiCheck, FiX } from "react-icons/fi";
 import { register as registerAPI } from "../services/authService";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
@@ -14,6 +15,7 @@ const Register = () => {
     handleSubmit,
     // control,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({ mode: "onChange" });
 
@@ -23,8 +25,7 @@ const Register = () => {
 
   // dùng cho các ô
   const inputClass =
-    "pl-10 w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 shadow-sm";
-
+    "pl-10 w-full px-4 py-3 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all duration-200 shadow-sm focus:shadow-md";
   // ktra độ mạnh pass
   const hasMinLength = password.length >= 8;
   const hasUpper = /[A-Z]/.test(password);
@@ -43,22 +44,22 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100">
-      <div className="bg-white/80 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl w-full max-w-md p-8 md:p-10 transition-all">
-        <div className="text-center mb-20">
-          <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#F4FBF6]">
+      <div className="bg-white border border-[#D7EEDD] rounded-3xl shadow-lg w-full max-w-md p-8 md:p-10 transition-all">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-extrabold text-[#4CAF50]">
             Đăng ký KittaChat
           </h2>
-          <p className="text-gray-500 mt-2">Tham gia cộng đồng chat miễn phí</p>
+          <p className="text-gray-500 mt-1">Tham gia cộng đồng chat miễn phí</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-1">
           {/* Display Name Input */}
 
-          <div className="space-y-1 min-h-[72px]">
+          <div className="space-y-2 min-h-[72px]">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaUser className="text-gray-400" />
+                <FaUser className="text-[#66BB6A]" />
               </div>
 
               <input
@@ -84,16 +85,22 @@ const Register = () => {
                 placeholder="Tên hiển thị"
               />
             </div>
-            <p className="text-red-500 text-xs min-h-[18px]">
-              {errors.displayName?.message || ""}
-            </p>
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-red-500 text-xs min-h-[18px]">
+                {errors.displayName?.message || ""}
+              </p>
+
+              <p className="text-xs text-gray-400">
+                {watch("displayName")?.length || 0}/30
+              </p>
+            </div>
           </div>
 
           {/* Email Input */}
-          <div className="space-y-1 min-h-[72px]">
+          <div className="space-y-2 min-h-[72px]">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaEnvelope className="text-gray-400" />
+                <FaEnvelope className="text-[#66BB6A]" />
               </div>
               <input
                 {...register("email", {
@@ -113,17 +120,30 @@ const Register = () => {
           </div>
 
           {/* Password Input */}
-          <div className="space-y-1 min-h-[140px]">
+          <div className="space-y-2 min-h-[140px]">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaLock className="text-gray-400" />
+                <FaLock className="text-[#66BB6A]" />
               </div>
 
               <input
                 type={showPassword ? "text" : "password"}
                 {...register("password", {
                   required: "Nhập mật khẩu",
+                  validate: (value) =>
+                    !/\s/.test(value) ||
+                    "Mật khẩu không được chứa khoảng trắng",
                 })}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  // xoá toàn bộ khoảng trắng
+                  const noSpaceValue = value.replace(/\s/g, "");
+
+                  setValue("password", noSpaceValue, {
+                    shouldValidate: true,
+                  });
+                }}
                 className={inputClass + " pr-10"}
                 placeholder="Mật khẩu"
               />
@@ -141,42 +161,71 @@ const Register = () => {
             </div>
 
             {/* check list */}
-            <div className="text-xs mt-2 space-y-1">
-              <p className={hasMinLength ? "text-green-500" : "text-red-400"}>
-                {hasMinLength ? "✔" : "✖"} Ít nhất 8 ký tự
+            <div className="text-xs mt-2 space-y-">
+              <p
+                className={`flex items-center gap-1 text-xs ${hasNumber ? "text-[#4CAF50]" : "text-red-400"}`}
+              >
+                {hasNumber ? <FiCheck size={18} /> : <FiX size={18} />}
+                <span>Có số</span>
               </p>
 
-              <p className={hasUpper ? "text-green-500" : "text-red-400"}>
-                {hasUpper ? "✔" : "✖"} Có chữ in hoa
+              <p
+                className={`flex items-center gap-1 text-xs ${hasUpper ? "text-[#4CAF50]" : "text-red-400"}`}
+              >
+                {hasUpper ? <FiCheck size={18} /> : <FiX size={18} />}
+                <span>Có chữ in hoa</span>
               </p>
 
-              <p className={hasLower ? "text-green-500" : "text-red-400"}>
-                {hasLower ? "✔" : "✖"} Có chữ thường
+              <p
+                className={`flex items-center gap-1 text-xs ${hasMinLength ? "text-[#4CAF50]" : "text-red-400"}`}
+              >
+                {hasMinLength ? <FiCheck size={18} /> : <FiX size={18} />}
+                <span>Ít nhất 8 ký tự</span>
               </p>
 
-              <p className={hasNumber ? "text-green-500" : "text-red-400"}>
-                {hasNumber ? "✔" : "✖"} Có số
+              <p
+                className={`flex items-center gap-1 text-xs ${hasLower ? "text-[#4CAF50]" : "text-red-400"}`}
+              >
+                {hasLower ? <FiCheck size={18} /> : <FiX size={18} />}
+                <span>Có chữ thường</span>
               </p>
 
-              <p className={hasSpecial ? "text-green-500" : "text-red-400"}>
-                {hasSpecial ? "✔" : "✖"} Có ký tự đặc biệt
+              <p
+                className={`flex items-center gap-1  mb-2 text-xs ${hasSpecial ? "text-[#4CAF50]" : "text-red-400"}`}
+              >
+                {hasSpecial ? <FiCheck size={18} /> : <FiX size={18} />}
+                <span>Có ký tự đặc biệt</span>
               </p>
             </div>
           </div>
 
           {/* Nhập lại Password */}
-          <div className="space-y-1 min-h-[72px]">
+          <div className="space-y-2 min-h-[72px]">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaLock className="text-gray-400" />
+                <FaLock className="text-[#66BB6A]" />
               </div>
               <input
                 type={showConfirm ? "text" : "password"}
                 {...register("confirmPassword", {
                   required: "Xác nhận mật khẩu",
-                  validate: (v) =>
-                    v.trim() === password.trim() || "Mật khẩu không khớp",
+                  validate: (v) => {
+                    if (/\s/.test(v))
+                      return "Mật khẩu không được chứa khoảng trắng";
+                    if (v !== password) return "Mật khẩu không khớp";
+                    return true;
+                  },
                 })}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  // xoá khoảng trắng giống password
+                  const noSpaceValue = value.replace(/\s/g, "");
+
+                  setValue("confirmPassword", noSpaceValue, {
+                    shouldValidate: true,
+                  });
+                }}
                 className={inputClass + " pr-10"}
                 placeholder="Nhập lại mật khẩu"
               />
@@ -196,9 +245,15 @@ const Register = () => {
             <p className="text-xs min-h-[18px]">
               {confirmPassword ? (
                 confirmPassword === password ? (
-                  <span className="text-green-500">✔ Mật khẩu khớp</span>
+                  <span className="flex items-center gap- mb-2 text-[#4CAF50]">
+                    <FiCheck size={18} />
+                    Mật khẩu khớp
+                  </span>
                 ) : (
-                  <span className="text-red-500">✖ Mật khẩu không khớp</span>
+                  <span className="flex items-center gap-1 mb-2  text-red-400">
+                    <FiX size={18} />
+                    Mật khẩu không khớp
+                  </span>
                 )
               ) : (
                 " "
@@ -209,7 +264,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 rounded-xl hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] transition-all duration-200"
+            className="w-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white font-semibold py-3 rounded-xl hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] transition-all duration-200"
           >
             {isSubmitting ? "Đang tạo..." : "Đăng ký ngay"}
           </button>
@@ -219,7 +274,7 @@ const Register = () => {
           Đã có tài khoản?{" "}
           <Link
             to="/login"
-            className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80 transition"
+            className="font-semibold bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] bg-clip-text text-transparent hover:opacity-80 transition"
           >
             Đăng nhập
           </Link>

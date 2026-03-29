@@ -201,11 +201,11 @@ const Home = () => {
       setActiveChat((prevChat) =>
         prevChat
           ? {
-              ...prevChat,
-              ...incomingGroup,
-              members: incomingGroup.members || prevChat.members,
-              admin: incomingGroup.admin || prevChat.admin,
-            }
+            ...prevChat,
+            ...incomingGroup,
+            members: incomingGroup.members || prevChat.members,
+            admin: incomingGroup.admin || prevChat.admin,
+          }
           : prevChat,
       );
     }
@@ -523,8 +523,10 @@ const Home = () => {
         prevUsers.map((u) => ({
           ...u,
           // Kiểm tra xem ID của user có nằm trong mảng online của socket không
-          isOnline: onlineUsers.some((onlineUser) => onlineUser.userId === u._id)
-        }))
+          isOnline: onlineUsers.some(
+            (onlineUser) => onlineUser.userId === u._id,
+          ),
+        })),
       );
     }
   }, [onlineUsers, users.length]);
@@ -701,19 +703,21 @@ const Home = () => {
               const groupName = data.groupName;
               const senderName = data.sender?.displayName;
 
-              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`
+              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
             } else {
               const sender = users.find((u) => u._id === data.senderId);
-              const senderName = sender ? sender.displayName : (data.sender?.displayName || "Ai đó");
+              const senderName = sender
+                ? sender.displayName
+                : data.sender?.displayName || "Ai đó";
 
-              messageToast = `Tin nhắn mới từ ${senderName}`
+              messageToast = `Tin nhắn mới từ ${senderName}`;
             }
 
             toast.info(messageToast, {
               position: "top-right",
               autoClose: 3000,
-              hideProgressBar: true
-            })
+              hideProgressBar: true,
+            });
           } catch (error) {
             console.error("Lỗi không hiển thị toast: ", error);
             console.log("Dữ liệu tin nhắn bị lỗi:", data);
@@ -1065,29 +1069,37 @@ const Home = () => {
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* SIDEBAR */}
-      <Sidebar
-        currentUser={currentUser}
-        setShowProfile={setShowProfile}
-        getAvatarUrl={getAvatarUrl}
-        setShowCreateGroup={setShowCreateGroup}
-        setShowRequestModal={setShowRequestModal}
-        requestCount={requestCount}
-        handleLogout={handleLogout}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        isSearching={isSearching}
-        groups={groups}
-        handleSelectUser={handleSelectUser}
-        usersToDisplay={usersToDisplay}
-        users={users}
-        sentRequests={sentRequests}
-        checkIsOnline={checkIsOnline}
-        renderLastMessage={renderLastMessage}
-        handleAddFriend={handleAddFriend}
-      />
+      <div
+        className={`${activeChat ? "hidden sm:flex" : "flex"
+          } w-full sm:w-auto h-full`}
+      >
+        <Sidebar
+          currentUser={currentUser}
+          setShowProfile={setShowProfile}
+          getAvatarUrl={getAvatarUrl}
+          setShowCreateGroup={setShowCreateGroup}
+          setShowRequestModal={setShowRequestModal}
+          requestCount={requestCount}
+          handleLogout={handleLogout}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          isSearching={isSearching}
+          groups={groups}
+          handleSelectUser={handleSelectUser}
+          usersToDisplay={usersToDisplay}
+          users={users}
+          sentRequests={sentRequests}
+          checkIsOnline={checkIsOnline}
+          renderLastMessage={renderLastMessage}
+          handleAddFriend={handleAddFriend}
+        />
+      </div>
 
       {/* CHAT WINDOW */}
-      <div className="flex-1 flex flex-col bg-gray-50 h-full">
+      <div
+        className={`${activeChat ? "flex" : "hidden sm:flex"
+          } flex-1 flex-col bg-gray-50 h-full`}
+      >
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
@@ -1097,6 +1109,7 @@ const Home = () => {
           >
             <ChatWindow
               activeChat={activeChat}
+              setActiveChat={setActiveChat}
               currentChatUser={currentChatUser}
               currentUser={currentUser}
               messages={messages}
@@ -1128,7 +1141,11 @@ const Home = () => {
           </FilePicker>
         ) : (
           /* Màn hình chờ khi chưa chọn ai để chat */
-          <ChatWindow activeChat={null} currentChatUser={null} />
+          <ChatWindow
+            activeChat={null}
+            setActiveChat={setActiveChat}
+            currentChatUser={null}
+          />
         )}
       </div>
 
