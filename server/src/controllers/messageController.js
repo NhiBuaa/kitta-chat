@@ -24,7 +24,7 @@ exports.createMessage = async (req, res) => {
     if (type === "system") {
       const savedSystemMsg = await exports.createSystemMessage(
         conversationId,
-        text
+        text,
       );
 
       if (savedSystemMsg) {
@@ -73,6 +73,7 @@ exports.getMessages = async (req, res) => {
     const messages = await Message.find({
       conversationId: conversationId,
     })
+      .sort({ createdAt: 1 })
       .populate("sender", "displayName avatar username")
       .populate("attachments");
 
@@ -90,7 +91,7 @@ exports.createSystemMessage = async (groupId, text) => {
       sender: null,
       receiver: null,
       text: text,
-      attachments: []
+      attachments: [],
     });
     await systemMessage.save();
     return systemMessage;

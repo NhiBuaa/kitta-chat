@@ -173,7 +173,7 @@ const Sidebar = ({
                 </div>
 
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center justify-between gap-2">
                     <h3
                       className={`text-sm truncate pr-2 ${
                         hasUnread
@@ -234,8 +234,8 @@ const Sidebar = ({
                 )}
                 {isFriend && hasUnread && (
                   <div className="ml-2 flex-shrink-0">
-                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                      N
+                    <span className=" bg-red-500 text-white text-[11px] font-semibold px-2 py-[2px]  rounded-full  min-w-[20px] text-center  leading-none">
+                      {user.unreadCount > 9 ? "9+" : user.unreadCount}
                     </span>
                   </div>
                 )}

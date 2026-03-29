@@ -143,6 +143,7 @@ const Home = () => {
               isRead: false,
             },
             hasUnread: true,
+            unreadCount: 1,
           };
           setUsers((prev) => [newItemWithMsg, ...prev]);
         }
@@ -260,7 +261,13 @@ const Home = () => {
       if (sidebarRes.data.success) {
         const fetchedList =
           sidebarRes.data.users || sidebarRes.data.friends || [];
-        setUsers(fetchedList);
+
+        const usersWithUnread = fetchedList.map((user) => ({
+          ...user,
+          unreadCount: 0,
+        }));
+
+        setUsers(usersWithUnread);
       }
       if (requestRes.data.success)
         setRequestCount(requestRes.data.requests.length);
@@ -457,7 +464,7 @@ const Home = () => {
             const lm = u.lastMessage
               ? { ...u.lastMessage, isRead: true }
               : u.lastMessage;
-            return { ...u, hasUnread: false, lastMessage: lm };
+            return { ...u, hasUnread: false, unreadCount: 0, lastMessage: lm };
           }
           return u;
         }),
@@ -529,6 +536,7 @@ const Home = () => {
       const currentActiveChat = activeChatRef.current;
       setUsers((prevUsers) => {
         const updatedUsers = [...prevUsers];
+
         const targetId = data.isGroup
           ? data.receiverId
           : data.senderId === currentUser._id
@@ -543,6 +551,9 @@ const Home = () => {
           if (!previewContent && data.attachments?.length > 0)
             previewContent = "[Tệp đính kèm]";
 
+          const isUnread =
+            !currentActiveChat || currentActiveChat._id !== targetId;
+
           const updatedUser = {
             ...userToUpdate,
             lastMessage: {
@@ -551,7 +562,8 @@ const Home = () => {
               createdAt: data.createdAt || new Date().toISOString(),
               isRead: false,
             },
-            hasUnread: currentActiveChat?._id !== targetId,
+            hasUnread: isUnread,
+            unreadCount: isUnread ? (userToUpdate.unreadCount || 0) + 1 : 0,
           };
 
           updatedUsers.splice(index, 1);
@@ -620,10 +632,7 @@ const Home = () => {
 
               messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
             } else {
-              const sender = users.find((u) => u._id === data.senderId);
-              const senderName = sender
-                ? sender.displayName
-                : data.sender?.displayName || "Ai đó";
+              const senderName = data.sender?.displayName || "Ai đó";
 
               messageToast = `Tin nhắn mới từ ${senderName}`;
             }
@@ -662,6 +671,14 @@ const Home = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setMessages(res.data);
+
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id === activeChat._id
+              ? { ...u, unreadCount: 0, hasUnread: false }
+              : u,
+          ),
+        );
         if (socket) {
           if (isGroup) {
             socket.emit("markRead", {
@@ -742,7 +759,12 @@ const Home = () => {
           const lm = u.lastMessage
             ? { ...u.lastMessage, isRead: true }
             : u.lastMessage;
-          return { ...u, hasUnread: false, lastMessage: lm };
+          return {
+            ...u,
+            hasUnread: false,
+            unreadCount: 0,
+            lastMessage: lm,
+          };
         }
         return u;
       }),
