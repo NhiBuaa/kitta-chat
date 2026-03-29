@@ -32,7 +32,9 @@ const ChatWindow = ({
   handleScrollToBottom,
   handleRetryMessage,
   loadMoreMessages,
-  isLoadingMore
+  isLoadingMore,
+  setHasNewUnread,
+  hasNewUnread
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -47,6 +49,7 @@ const ChatWindow = ({
       setShowScrollButton(true);
     } else {
       setShowScrollButton(false);
+      setHasNewUnread(false)
     }
 
     // Nếu kéo lên trên thì hiện load thêm tin nhắn
@@ -341,6 +344,12 @@ const ChatWindow = ({
             title="Cuộn xuống tin nhắn mới nhất"
           >
             <FaArrowDown size={16} />
+            {hasNewUnread && (
+              <span className="absolute top-0 right-0 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
           </button>
         )}
       </div>

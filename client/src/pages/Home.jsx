@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from 'uuid';
@@ -46,6 +46,7 @@ const Home = () => {
   const [sentRequests, setSentRequests] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasNewUnread, setHasNewUnread] = useState(false);
 
   // CONTEXT
   const { onlineUsers, socket } = useSocket();
@@ -56,6 +57,7 @@ const Home = () => {
   const scrollRef = useRef();
   const typingTimeoutRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
+  const isFirstLoad = useRef(true);
 
   // BIẾN
   const API_URL = import.meta.env.VITE_API_URL;
@@ -94,14 +96,6 @@ const Home = () => {
       users.some((u) => u._id === currentChatUser._id));
 
   // USE EFFECTS
-  useEffect(() => {
-    if (scrollRef.current) {
-      setTimeout(() => {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }, 100);
-    }
-  }, [messages, activeChat, isTyping]);
-
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
@@ -623,11 +617,7 @@ const Home = () => {
         const updatedUsers = [...prevUsers];
 
         // Xác định ID của đối tác để đưa lên đầu
-        const targetId = data.isGroup
-          ? receiverId
-          : senderId === currentUser._id
-            ? receiverId
-            : senderId;
+        const targetId = data.isGroup ? receiverId : senderId === currentUser._id ? receiverId : senderId;
 
         const index = updatedUsers.findIndex((u) => u._id === targetId);
 
@@ -703,10 +693,23 @@ const Home = () => {
             });
           }
 
-          setTimeout(
-            () => scrollRef.current?.scrollIntoView({ behavior: "smooth" }),
-            100,
-          );
+          setTimeout(() => {
+            const container = scrollRef.current;
+            if (container) {
+              const { scrollTop, scrollHeight, clientHeight } = container;
+
+              // Tính toán khoảng cách từ vị trí cuộn hiện tại tới đáy
+              const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+
+              // Nếu người dùng đang mải đọc tin cũ
+              if (distanceToBottom > 150) {
+                setHasNewUnread(true);
+              } else {
+                // Nếu đang ở gần đáy, mượt mà cuộn thẳng xuống tin mới nhất
+                container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+              }
+            }
+          }, 100);
         }
       } else {
         // Xử lý thông báo
@@ -750,6 +753,7 @@ const Home = () => {
       // Reset lại khi đổi đoạn chat
       setHasMore(true);
       setMessages([]);
+      isFirstLoad.current = true;
 
       try {
         const isGroup = activeChat.members ? true : false;
@@ -833,10 +837,11 @@ const Home = () => {
     setTypingUserAvatar(null);
   }, [activeChat]);
 
-  // --- HANDLERS CHÍNH ---
+  // HANDLERS
   const handleScrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      setHasNewUnread(false);
     }
   };
 
@@ -1075,6 +1080,16 @@ const Home = () => {
       clearUploads();
       setShowEmoji(false);
 
+      // Khi vừa gửi tin nhắn thì kéo xuống để hiển thị cho chính mình luôn
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: "smooth"
+          });
+        }
+      }, 50);
+
       // Sau 15s nếu server không phản hồi thì đánh dấu là lỗi
       const timeoutId = setTimeout(() => {
         setMessages(prev => prev.map(msg =>
@@ -1224,6 +1239,21 @@ const Home = () => {
     }
   };
 
+  useLayoutEffect(() => {
+    // Chỉ chạy nếu đây là lần tải đầu tiên và đã có tin nhắn để cuộn
+    if (isFirstLoad.current && messages.length > 0) {
+      const container = scrollRef.current;
+      if (container) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "auto",
+        });
+
+        isFirstLoad.current = false;
+      }
+    }
+  }, [messages]);
+
   if (isLoading)
     return (
       <div className="h-screen flex items-center justify-center">
@@ -1284,6 +1314,8 @@ const Home = () => {
               handleRetryMessage={handleRetryMessage}
               loadMoreMessages={loadMoreMessages}
               isLoadingMore={isLoadingMore}
+              setHasNewUnread={setHasNewUnread}
+              hasNewUnread={hasNewUnread}
             />
 
             <ChatInput
