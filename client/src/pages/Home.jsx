@@ -44,6 +44,8 @@ const Home = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
   const [sentRequests, setSentRequests] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // CONTEXT
   const { onlineUsers, socket } = useSocket();
@@ -53,6 +55,7 @@ const Home = () => {
   const groupsRef = useRef([]);
   const scrollRef = useRef();
   const typingTimeoutRef = useRef(null);
+  const isLoadingMoreRef = useRef(false);
 
   // BIẾN
   const API_URL = import.meta.env.VITE_API_URL;
@@ -118,6 +121,7 @@ const Home = () => {
   }, [activeChat, socket]);
 
   // CÁC HÀM HELPER & API
+  // Hàm cập nhật lại bên thanh sidebar
   const fetchNewConversation = useCallback(
     async (targetId, isGroup, messageData) => {
       try {
@@ -742,9 +746,15 @@ const Home = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       if (!activeChat || !currentUser) return;
+
+      // Reset lại khi đổi đoạn chat
+      setHasMore(true);
       setMessages([]);
+
       try {
         const isGroup = activeChat.members ? true : false;
+
+        // Gọi API lần đầu
         const url = isGroup
           ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true`
           : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
@@ -752,12 +762,12 @@ const Home = () => {
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        const nextMessages = Array.isArray(res.data)
-          ? [...res.data].sort(
-            (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-          )
-          : [];
-        setMessages(nextMessages);
+
+        if (res.data && res.data.success) {
+          setMessages(res.data.data);
+          setHasMore(res.data.hasMore);
+        }
+
         if (socket) {
           if (isGroup) {
             socket.emit("markRead", {
@@ -1157,6 +1167,63 @@ const Home = () => {
     });
   };
 
+  // Hiển thị thêm tin nhắn khi cuộn lên
+  const loadMoreMessages = async () => {
+    // Chặn nếu đang tải, hoặc đã hết tin nhắn, hoặc chưa có tin nào
+    if (isLoadingMoreRef.current || !hasMore || messages.length === 0) return;
+
+    isLoadingMoreRef.current = true;
+
+    setIsLoadingMore(true);
+    const container = scrollRef.current;
+    const previousScrollHeight = container?.scrollHeight; // Lưu chiều cao cũ
+
+    try {
+      const isGroup = activeChat.members ? true : false;
+      const oldestMessageId = messages[0]._id; // Lấy ID của tin nhắn cũ nhất đang hiển thị
+
+      // Thêm cursor vào URL
+      const url = isGroup
+        ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true&cursor=${oldestMessageId}`
+        : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}?cursor=${oldestMessageId}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      if (res.data && res.data.success) {
+        const oldMessages = res.data.data;
+
+        if (oldMessages.length === 0) {
+          setHasMore(false);
+          isLoadingMoreRef.current = false;
+          setIsLoadingMore(false);
+          return;
+        }
+
+        // Nối tin cũ lên trước mảng tin nhắn hiện tại
+        setMessages(prev => [...oldMessages, ...prev]);
+        setHasMore(res.data.hasMore);
+
+        // Chống giật màn hình
+        setTimeout(() => {
+          if (container) {
+            const newScrollHeight = container.scrollHeight;
+            container.scrollTop = newScrollHeight - previousScrollHeight;
+          }
+
+          isLoadingMoreRef.current = false;
+          setIsLoadingMore(false);
+        }, 50);
+      }
+    } catch (error) {
+      console.error("Lỗi tải thêm tin nhắn:", error);
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen flex items-center justify-center">
@@ -1215,6 +1282,8 @@ const Home = () => {
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
               handleRetryMessage={handleRetryMessage}
+              loadMoreMessages={loadMoreMessages}
+              isLoadingMore={isLoadingMore}
             />
 
             <ChatInput

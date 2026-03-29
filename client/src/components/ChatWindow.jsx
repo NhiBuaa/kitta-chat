@@ -30,7 +30,9 @@ const ChatWindow = ({
   handleVideoCall,
   setShowGroupMembers,
   handleScrollToBottom,
-  handleRetryMessage
+  handleRetryMessage,
+  loadMoreMessages,
+  isLoadingMore
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -45,6 +47,11 @@ const ChatWindow = ({
       setShowScrollButton(true);
     } else {
       setShowScrollButton(false);
+    }
+
+    // Nếu kéo lên trên thì hiện load thêm tin nhắn
+    if (scrollTop <= 50) {
+      loadMoreMessages();
     }
   };
 
@@ -123,6 +130,14 @@ const ChatWindow = ({
         ref={scrollRef}
         onScroll={handleScroll}
       >
+
+        {/* Hiển thị vòng quay loading khi đang kéo thêm */}
+        {isLoadingMore && (
+          <div className="flex justify-center py-2">
+            <span className="text-gray-400 text-sm">Đang tải tin nhắn cũ...</span>
+          </div>
+        )}
+
         {messages.map((message, index) => {
           const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
           const isMe = senderId === currentUser._id;
