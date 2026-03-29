@@ -314,6 +314,12 @@ const getSidebarUsers = async (req, res) => {
             previewContent = "[Hình ảnh]";
           }
 
+          const unreadCount = await Message.countDocuments({
+            sender: user._id,
+            receiver: currentUserId,
+            isRead: false,
+          });
+
           userObj.lastMessage = {
             content: previewContent || "Tin nhắn",
             senderId: lastMsg.sender,
@@ -321,9 +327,8 @@ const getSidebarUsers = async (req, res) => {
             isRead: lastMsg.isRead,
           };
 
-          // Logic check unread
-          userObj.hasUnread =
-            lastMsg.sender.toString() !== currentUserId && !lastMsg.isRead;
+          userObj.hasUnread = unreadCount > 0;
+          userObj.unreadCount = unreadCount;
         } else {
           // Nếu là bạn bè nhưng chưa chat bao giờ
           userObj.lastMessage = null;

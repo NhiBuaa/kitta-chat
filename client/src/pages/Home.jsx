@@ -260,7 +260,12 @@ const Home = () => {
       if (sidebarRes.data.success) {
         const fetchedList =
           sidebarRes.data.users || sidebarRes.data.friends || [];
-        setUsers(fetchedList);
+
+        const usersWithUnread = fetchedList.map((user) => ({
+          ...user,
+          unreadCount: user.unreadCount || 0,
+        }));
+        setUsers(usersWithUnread);
       }
       if (requestRes.data.success)
         setRequestCount(requestRes.data.requests.length);
@@ -415,7 +420,7 @@ const Home = () => {
               lastSeen: new Date().toISOString(),
             },
           };
-        })
+        }),
       );
     };
 
@@ -438,8 +443,10 @@ const Home = () => {
         prevUsers.map((u) => ({
           ...u,
           // Kiểm tra xem ID của user có nằm trong mảng online của socket không
-          isOnline: onlineUsers.some((onlineUser) => onlineUser.userId === u._id)
-        }))
+          isOnline: onlineUsers.some(
+            (onlineUser) => onlineUser.userId === u._id,
+          ),
+        })),
       );
     }
   }, [onlineUsers, users.length]);
@@ -449,13 +456,14 @@ const Home = () => {
 
     const handleUserRead = (data) => {
       const { readerId } = data;
+
       setUsers((prev) =>
         prev.map((u) => {
-          if (u._id === readerId) {
+          if (u._id === activeChatRef.current?._id) {
             const lm = u.lastMessage
               ? { ...u.lastMessage, isRead: true }
               : u.lastMessage;
-            return { ...u, hasUnread: false, lastMessage: lm };
+            return { ...u, hasUnread: false, unreadCount: 0, lastMessage: lm };
           }
           return u;
         }),
@@ -550,6 +558,10 @@ const Home = () => {
               isRead: false,
             },
             hasUnread: currentActiveChat?._id !== targetId,
+            unreadCount:
+              currentActiveChat?._id !== targetId
+                ? (userToUpdate.unreadCount || 0) + 1
+                : 0,
           };
 
           updatedUsers.splice(index, 1);
@@ -600,6 +612,7 @@ const Home = () => {
             socket.emit("markRead", {
               senderId: data.senderId,
               receiverId: currentUser._id,
+              readerId: currentUser._id,
             });
           }
         }
@@ -616,19 +629,21 @@ const Home = () => {
               const groupName = data.groupName;
               const senderName = data.sender?.displayName;
 
-              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`
+              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
             } else {
               const sender = users.find((u) => u._id === data.senderId);
-              const senderName = sender ? sender.displayName : (data.sender?.displayName || "Ai đó");
+              const senderName = sender
+                ? sender.displayName
+                : data.sender?.displayName || "Ai đó";
 
-              messageToast = `Tin nhắn mới từ ${senderName}`
+              messageToast = `Tin nhắn mới từ ${senderName}`;
             }
 
             toast.info(messageToast, {
               position: "top-right",
               autoClose: 3000,
-              hideProgressBar: true
-            })
+              hideProgressBar: true,
+            });
           } catch (error) {
             console.error("Lỗi không hiển thị toast: ", error);
             console.log("Dữ liệu tin nhắn bị lỗi:", data);
@@ -657,7 +672,11 @@ const Home = () => {
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        setMessages(res.data);
+        setMessages(
+          res.data.sort(
+            (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+          ),
+        );
         if (socket) {
           if (isGroup) {
             socket.emit("markRead", {
@@ -738,7 +757,7 @@ const Home = () => {
           const lm = u.lastMessage
             ? { ...u.lastMessage, isRead: true }
             : u.lastMessage;
-          return { ...u, hasUnread: false, lastMessage: lm };
+          return { ...u, hasUnread: false, unreadCount: 0, lastMessage: lm };
         }
         return u;
       }),
@@ -748,6 +767,7 @@ const Home = () => {
       socket.emit("markRead", {
         senderId: user._id,
         receiverId: currentUser._id,
+        isGroup: false,
       });
     }
   };

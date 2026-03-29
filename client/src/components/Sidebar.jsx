@@ -234,8 +234,8 @@ const Sidebar = ({
                 )}
                 {isFriend && hasUnread && (
                   <div className="ml-2 flex-shrink-0">
-                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                      N
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow animate-bounce">
+                      {user.unreadCount > 9 ? "9+" : user.unreadCount}
                     </span>
                   </div>
                 )}
