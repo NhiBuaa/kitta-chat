@@ -655,19 +655,8 @@ const Home = () => {
         return updatedList;
       };
       setUsers((prevUsers) => {
+        const updatedUsers = [...prevUsers];
 
-        const nextUsers = applyPreviewUpdate(prevUsers);
-        if (nextUsers) {
-          return nextUsers;
-        }
-
-        if (!data.isGroup) {
-          fetchNewConversation(targetId, data.isGroup, data);
-        }
-
-        return prevUsers;
-
-        /* const updatedUsers = [...prevUsers];
         const targetId = data.isGroup
           ? data.receiverId
           : data.senderId === currentUser._id
@@ -703,7 +692,7 @@ const Home = () => {
         } else {
           fetchNewConversation(targetId, data.isGroup, data);
           return prevUsers;
-        } */
+        }
       });
       setSearchResult((prevUsers) => applyPreviewUpdate(prevUsers) || prevUsers);
 
