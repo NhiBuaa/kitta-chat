@@ -1,8 +1,8 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
-const { uploadAvatar } = require('../service/s3.service')
-const sharp = require('sharp');
+const { uploadAvatar } = require("../service/s3.service");
+const sharp = require("sharp");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -51,7 +51,9 @@ const getUserById = async (req, res) => {
     const [currentUser, targetUser] = await Promise.all([
       User.findById(currentUserId).select("friendRequests"),
       User.findById(targetUserId)
-        .select("displayName avatar username status activityStatus friends friendRequests")
+        .select(
+          "displayName avatar username status activityStatus friends friendRequests",
+        )
         .lean(),
     ]);
 
@@ -93,30 +95,28 @@ const updateUserProfile = async (req, res) => {
     // Xử lý Avatar
     if (req.file) {
       const compressedBuffer = await sharp(req.file.buffer)
-        .resize(256, 256, {fit: 'cover'})
-        .webp({quality: 80})
+        .resize(256, 256, { fit: "cover" })
+        .webp({ quality: 80 })
         .toBuffer();
-      
-      const OriginalNameWithoutExt = req.file.originalname.split('.')[0];
+
+      const OriginalNameWithoutExt = req.file.originalname.split(".")[0];
       const newName = OriginalNameWithoutExt + ".webp";
 
       const avatarUrl = await uploadAvatar(
         compressedBuffer,
         newName,
-        'image/webp',
-        'avatars'
-      )
+        "image/webp",
+        "avatars",
+      );
 
       updateData.avatar = avatarUrl;
     }
 
     console.log("Dữ liệu chuẩn bị update vào DB:", updateData);
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { returnDocument: 'after' }
-    ).select('-password');
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      returnDocument: "after",
+    }).select("-password");
 
     res.json({
       success: true,
@@ -353,17 +353,33 @@ const getSidebarUsers = async (req, res) => {
           ],
         })
           .sort({ createdAt: -1 })
-          .select("content text image sender createdAt isRead");
+          .populate("attachments", "name type url")
+          .select("content text image sender createdAt isRead attachments");
 
         const userObj = user.toObject();
 
         const relationshipFlags = buildRelationshipFlags(user, currentUser);
 
         if (lastMsg) {
-          let previewContent = lastMsg.content || lastMsg.text || "";
+          let previewContent = lastMsg.text || "";
 
-          if (!previewContent && lastMsg.image) {
-            previewContent = "[Hình ảnh]";
+          if (!previewContent && lastMsg.attachments?.length > 0) {
+            const file = lastMsg.attachments[0];
+
+            const isImage =
+              file.type?.startsWith("image/") ||
+              file.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+
+            if (isImage) {
+              previewContent = "[Hình ảnh]";
+            } else {
+              previewContent = file.name || "[Tệp đính kèm]";
+            }
+          }
+
+          // fallback cuối cùng
+          if (!previewContent) {
+            previewContent = "Tin nhắn";
           }
 
           userObj.lastMessage = {

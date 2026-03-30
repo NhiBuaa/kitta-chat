@@ -57,7 +57,8 @@ const Home = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // HOOK
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
+    useUploader();
 
   // HÀM XỬ LÝ GỌI
   const handleCall = (type = "video") => {
@@ -200,11 +201,11 @@ const Home = () => {
       setActiveChat((prevChat) =>
         prevChat
           ? {
-            ...prevChat,
-            ...incomingGroup,
-            members: incomingGroup.members || prevChat.members,
-            admin: incomingGroup.admin || prevChat.admin,
-          }
+              ...prevChat,
+              ...incomingGroup,
+              members: incomingGroup.members || prevChat.members,
+              admin: incomingGroup.admin || prevChat.admin,
+            }
           : prevChat,
       );
     }
@@ -251,7 +252,9 @@ const Home = () => {
 
     setSentRequests((prev) => prev.filter((id) => id !== friendData._id));
     setUsers((prevUsers) => {
-      const existingIndex = prevUsers.findIndex((user) => user._id === friendData._id);
+      const existingIndex = prevUsers.findIndex(
+        (user) => user._id === friendData._id,
+      );
 
       if (existingIndex === -1) {
         return [
@@ -626,9 +629,15 @@ const Home = () => {
           ? data.receiverId
           : data.senderId;
       let previewContent = data.text;
-      if (!previewContent && data.image) previewContent = "[HÃ¬nh áº£nh]";
-      if (!previewContent && data.attachments?.length > 0)
-        previewContent = "[Tá»‡p Ä‘Ã­nh kÃ¨m]";
+      if (!previewContent && data.attachments?.length > 0) {
+        const file = data.attachments[0];
+
+        if (file.type?.startsWith("image/")) {
+          previewContent = "[Hình ảnh]";
+        } else {
+          previewContent = file.name || "[Tệp đính kèm]";
+        }
+      }
 
       const applyPreviewUpdate = (list = []) => {
         const updatedList = [...list];
@@ -668,8 +677,19 @@ const Home = () => {
           const userToUpdate = updatedUsers[index];
           let previewContent = data.text;
           if (!previewContent && data.image) previewContent = "[Hình ảnh]";
-          if (!previewContent && data.attachments?.length > 0)
-            previewContent = "[Tệp đính kèm]";
+          if (!previewContent && data.attachments?.length > 0) {
+            const file = data.attachments[0];
+
+            const isImage =
+              file.type?.startsWith("image/") ||
+              file.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+
+            if (isImage) {
+              previewContent = "[Hình ảnh]";
+            } else {
+              previewContent = file.name || "[Tệp đính kèm]";
+            }
+          }
 
           const isUnread =
             !currentActiveChat || currentActiveChat._id !== targetId;
@@ -694,7 +714,9 @@ const Home = () => {
           return prevUsers;
         }
       });
-      setSearchResult((prevUsers) => applyPreviewUpdate(prevUsers) || prevUsers);
+      setSearchResult(
+        (prevUsers) => applyPreviewUpdate(prevUsers) || prevUsers,
+      );
 
       const isViewingChat =
         (data.isGroup && currentActiveChat?._id === data.receiverId) ||
@@ -1127,8 +1149,9 @@ const Home = () => {
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* SIDEBAR */}
       <div
-        className={`${activeChat ? "hidden sm:flex" : "flex"
-          } w-full sm:w-auto h-full`}
+        className={`${
+          activeChat ? "hidden sm:flex" : "flex"
+        } w-full sm:w-auto h-full`}
       >
         <Sidebar
           currentUser={currentUser}
@@ -1154,8 +1177,9 @@ const Home = () => {
 
       {/* CHAT WINDOW */}
       <div
-        className={`${activeChat ? "flex" : "hidden sm:flex"
-          } flex-1 flex-col bg-gray-50 h-full`}
+        className={`${
+          activeChat ? "flex" : "hidden sm:flex"
+        } flex-1 flex-col bg-gray-50 h-full`}
       >
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
