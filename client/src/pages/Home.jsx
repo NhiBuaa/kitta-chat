@@ -339,6 +339,22 @@ const Home = () => {
     return onlineUsers.some((u) => u.userId === user._id);
   };
 
+  const normalizeAttachmentForMessage = useCallback((attachment) => ({
+    _id: attachment?.dbFileId || attachment?._id,
+    url: attachment?.url || attachment?.cdnUrl || "",
+    mimeType:
+      attachment?.mimeType ||
+      attachment?.type ||
+      attachment?.file?.type ||
+      "",
+    originalName:
+      attachment?.originalName ||
+      attachment?.name ||
+      attachment?.file?.name ||
+      "Tep dinh kem",
+    size: attachment?.size || attachment?.file?.size || 0,
+  }), []);
+
   const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -627,6 +643,11 @@ const Home = () => {
       const senderId = data.senderId || data.sender?._id || data.sender;
       const receiverId = data.receiverId || data.receiver;
       const isMeSender = senderId === currentUser._id;
+      const resolvedAttachments = Array.isArray(data.attachmentsData)
+        ? data.attachmentsData
+        : Array.isArray(data.attachments)
+          ? data.attachments
+          : [];
 
       const targetId = data.isGroup
         ? receiverId
@@ -656,7 +677,7 @@ const Home = () => {
             image: data.image,
             type: data.type,
             files: data.files,
-            attachments: data.attachmentsData || data.attachments,
+            attachments: resolvedAttachments,
             createdAt: data.createdAt,
             isRead: true,
           },
@@ -686,7 +707,13 @@ const Home = () => {
       // CHUẨN BỊ NỘI DUNG PREVIEW CHO SIDEBAR
       let previewContent = data.text;
       if (!previewContent && data.image) previewContent = "[Hình ảnh]";
-      if (!previewContent && data.attachments?.length > 0) previewContent = "[Tệp đính kèm]";
+      if (!previewContent && resolvedAttachments.length > 0) {
+        previewContent = resolvedAttachments.some((file) =>
+          file?.mimeType?.startsWith("image/"),
+        )
+          ? "[Hình ảnh]"
+          : "[Tệp đính kèm]";
+      }
 
       // Hàm helper dùng chung cho cả Users list và Search list
       const updateListWithPreview = (list = []) => {
@@ -1039,6 +1066,7 @@ const Home = () => {
 
     const completedAttachments = uploadQueue.filter((item) => item.status === "completed" && item.dbFileId);
     const attachmentIds = completedAttachments.map((item) => item.dbFileId);
+    const attachmentMetas = completedAttachments.map(normalizeAttachmentForMessage);
 
     // Nếu không có text và không có file nào thì dừng
     if (!newMessage.trim() && attachmentIds.length === 0) return;
@@ -1071,7 +1099,7 @@ const Home = () => {
         receiverId: activeChat._id,
         text: newMessage,
         attachments: attachmentIds,
-        attachmentsData: completedAttachments,
+        attachmentsData: attachmentMetas,
         isGroup: isGroup,
         type: attachmentIds.length > 0 ? "file" : "text",
         senderInfo: {
@@ -1087,7 +1115,7 @@ const Home = () => {
         conversationId: currentConvId,
         sender: currentUser,
         text: newMessage,
-        attachments: completedAttachments,
+        attachments: attachmentMetas,
         isGroup: isGroup,
         type: messagePayload.type,
         createdAt: new Date().toISOString(),

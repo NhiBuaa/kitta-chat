@@ -308,6 +308,15 @@ io.on("connection", (socket) => {
       const isGroup = messageData.isGroup;
       const senderId = typeof sender === "object" ? sender._id : sender;
       let senderInfo = messageData.senderInfo;
+      const attachmentMetas = Array.isArray(messageData.attachmentsData)
+        ? messageData.attachmentsData.map((attachment) => ({
+          _id: attachment?._id,
+          url: attachment?.url,
+          mimeType: attachment?.mimeType,
+          originalName: attachment?.originalName,
+          size: attachment?.size,
+        }))
+        : [];
 
       if (!receiverId) {
         console.error("Lỗi Socket: Thiếu receiverId!", messageData);
@@ -324,7 +333,11 @@ io.on("connection", (socket) => {
         };
       }
 
-      const payloadToEmit = { ...messageData, sender: senderInfo };
+      const payloadToEmit = {
+        ...messageData,
+        sender: senderInfo,
+        attachmentsData: attachmentMetas,
+      };
 
       if (isGroup) {
         let groupName = messageData.groupName;
@@ -360,7 +373,7 @@ io.on("connection", (socket) => {
 
       if (typeof callBack === "function") {
         callBack({
-          success: true,
+          success: Boolean(savedMessage?._id),
           realId: savedMessage?._id
         });
       }
