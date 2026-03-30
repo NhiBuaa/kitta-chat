@@ -13,7 +13,7 @@ import {
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
-import MessageSeenBy from './MessageSeenBy'; 
+import MessageSeenBy from './MessageSeenBy';
 
 const ChatWindow = ({
   activeChat,
@@ -190,11 +190,10 @@ const ChatWindow = ({
                 )}
 
                 <div
-                  className={`p-3 max-w-xs shadow-sm text-sm ${
-                    isMe
+                  className={`p-3 max-w-xs shadow-sm text-sm ${isMe
                       ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
                       : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
-                  }`}
+                    }`}
                 >
                   {message.attachments && message.attachments.length > 0 && (
                     <div className="flex flex-col gap-2 mb-2">
@@ -226,11 +225,10 @@ const ChatWindow = ({
                             href={file.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${
-                              isMe
+                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
                                 ? "bg-green-700 hover:bg-green-800 text-white"
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                            }`}
+                              }`}
                           >
                             <FaPaperclip className="text-lg" />
                             <span className="truncate">
@@ -244,16 +242,12 @@ const ChatWindow = ({
                   {message.text && <span>{message.text}</span>}
                   {isMe && (
                     <div className="self-end mt-1 text-right">
-                      {!isGroup ? (
+                      {!isGroup && (
                         message.isRead ? (
                           <FaCheckDouble className="text-xs text-blue-200 inline-block" />
                         ) : (
                           <FaCheck className="text-xs text-gray-300 inline-block" />
                         )
-                      ) : message.readBy && message.readBy.length > 0 ? (
-                        <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                      ) : (
-                        <FaCheck className="text-xs text-gray-300 inline-block" />
                       )}
                     </div>
                   )}
@@ -283,9 +277,8 @@ const ChatWindow = ({
                 </div>
               </div>
               <div
-                className={`text-[10px] text-gray-400 mt-1 ${
-                  isMe ? "text-right" : "text-left ml-10"
-                }`}
+                className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
+                  }`}
               >
                 {formatTimeAgo(message.createdAt)}
               </div>
