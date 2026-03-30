@@ -9,28 +9,42 @@ const validateEmail = (email) => {
     .toLowerCase()
     .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
 };
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
 exports.register = async (req, res) => {
   try {
     const { displayName, email, password, confirmPassword } = req.body;
-    const userExists = await User.findOne({ email });
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+    const cleanEmail = email.trim().toLowerCase();
     // Validate thông tin đăng ký
     if (!displayName || !email || !password || !confirmPassword) {
       return res
         .status(400)
         .json({ success: false, message: "Vui lòng nhập đủ thông tin" });
     }
-    if (!validateEmail(email)) {
+    if (/\s/.test(email) || /\s/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Email và mật khẩu không được chứa khoảng trắng",
+      });
+    }
+    if (!validateEmail(cleanEmail)) {
       return res
         .status(400)
         .json({ success: false, message: "Email không hợp lệ" });
+    }
+
+    const userExists = await User.findOne({ email: cleanEmail });
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Email đã được sử dụng",
+      });
     }
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
         message:
-          "Mật khẩu phải có ít nhất 8 ký tự bao gồm cả chữ và số và kí tự đặc biệt",
+          "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
       });
     }
     if (password !== confirmPassword) {
@@ -39,18 +53,13 @@ exports.register = async (req, res) => {
         message: "Mật khẩu xác nhận không khớp",
       });
     }
-    if (userExists) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email đã được sử dụng" });
-    }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=22c55e&color=fff&size=128`;
     const newUser = new User({
       // KHÔNG CÒN USERNAME
-      email,
+      email: cleanEmail,
       password: hashedPassword,
       displayName,
       avatar: defaultAvatarUrl,
@@ -75,9 +84,10 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const cleanEmail = email.trim().toLowerCase();
 
     // Tìm bằng email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res
         .status(400)
@@ -119,13 +129,14 @@ exports.login = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    const cleanEmail = email.trim().toLowerCase();
 
     // Kiểm tra email có tồn tại không
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.json({
-        success: false,
-        message: `Chúng tôi đã gửi hướng dẫn đến email ${email}`,
+        success: true,
+        message: `Nếu email tồn tại, chúng tôi đã gửi hướng dẫn`,
       });
     }
 
@@ -177,7 +188,7 @@ exports.forgotPassword = async (req, res) => {
 
     return res.json({
       success: true,
-      message: `Đã gửi email hướng dẫn đến ${email}`,
+      message: `Nếu email tồn tại, chúng tôi đã gửi hướng dẫn`,
     });
   } catch (error) {
     console.error("Forgot Password Error:", error);
@@ -192,8 +203,6 @@ exports.resetPassword = async (req, res) => {
     // Lấy token từ URL
     const { id, token } = req.params;
     const { newPassword, confirmPassword } = req.body;
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
     // check empty
     if (!newPassword || !confirmPassword) {
@@ -202,19 +211,24 @@ exports.resetPassword = async (req, res) => {
         message: "Vui lòng nhập đầy đủ mật khẩu",
       });
     }
-    // Validate cơ bản
-    if (newPassword !== confirmPassword) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Mật khẩu xác nhận không khớp" });
+    if (/\s/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu không được chứa khoảng trắng",
+      });
     }
-
     if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
         success: false,
         message:
           "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
       });
+    }
+    // Validate cơ bản
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Mật khẩu xác nhận không khớp" });
     }
 
     // Tìm user trong DB
