@@ -28,6 +28,7 @@ const ChatWindow = ({
   typingUserName,
   typingUserAvatar,
   scrollRef,
+  bottomRef,
   getAvatarUrl,
   checkIsOnline,
   handleCall,
@@ -330,14 +331,16 @@ const ChatWindow = ({
                 </div>
               </div>
               <div
-                className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
-                  }`}
+                className={`text-[10px] text-gray-400 mt-1 ${
+                  isMe ? "text-right" : "text-left ml-10"
+                }`}
               >
                 {formatTimeAgo(message.createdAt)}
               </div>
             </div>
           );
         })}
+        <div ref={bottomRef}></div>
 
         {/* hiển thị trạng thái đang nhập tin nhắn */}
         {isTyping && (

@@ -56,6 +56,7 @@ const Home = () => {
   const activeChatRef = useRef(null);
   const groupsRef = useRef([]);
   const scrollRef = useRef();
+  const bottomRef = useRef();
   const typingTimeoutRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
   const isFirstLoad = useRef(true);
@@ -356,9 +357,8 @@ const Home = () => {
 
         const usersWithUnread = fetchedList.map((user) => ({
           ...user,
-          unreadCount: 0,
+          unreadCount: user.unreadCount || 0,
         }));
-
         setUsers(usersWithUnread);
       }
       if (requestRes.data.success)
@@ -544,9 +544,10 @@ const Home = () => {
 
     const handleUserRead = (data) => {
       const { readerId } = data;
+
       setUsers((prev) =>
         prev.map((u) => {
-          if (u._id === readerId) {
+          if (u._id === activeChatRef.current?._id) {
             const lm = u.lastMessage
               ? { ...u.lastMessage, isRead: true }
               : u.lastMessage;
@@ -624,14 +625,13 @@ const Home = () => {
       const receiverId = data.receiverId || data.receiver;
       const isMeSender = senderId === currentUser._id;
 
-      // 1. XÁC ĐỊNH ID ĐỐI TÁC (Để biết cập nhật ai trên Sidebar)
       const targetId = data.isGroup
         ? receiverId
         : isMeSender
           ? receiverId
           : senderId;
 
-      // 2. KIỂM TRA CÓ ĐANG MỞ KHUNG CHAT KHÔNG
+      // KIỂM TRA CÓ ĐANG MỞ KHUNG CHAT KHÔNG
       const isViewingChat =
         (data.isGroup && currentActiveChat?._id === receiverId) ||
         (!data.isGroup &&
@@ -639,7 +639,7 @@ const Home = () => {
 
       const isUnread = !isViewingChat && !isMeSender;
 
-      // 3. XỬ LÝ KHUNG CHAT BÊN PHẢI (Nếu đang mở)
+      // XỬ LÝ KHUNG CHAT BÊN PHẢI
       if (isViewingChat && !isMeSender) {
         setMessages((prev) => [
           ...prev,
@@ -655,7 +655,7 @@ const Home = () => {
             files: data.files,
             attachments: data.attachmentsData || data.attachments,
             createdAt: data.createdAt,
-            isRead: true, // Coi như đã đọc
+            isRead: true,
           },
         ]);
 
@@ -680,7 +680,7 @@ const Home = () => {
         }, 100);
       }
 
-      // 4. CHUẨN BỊ NỘI DUNG PREVIEW CHO SIDEBAR
+      // CHUẨN BỊ NỘI DUNG PREVIEW CHO SIDEBAR
       let previewContent = data.text;
       if (!previewContent && data.image) previewContent = "[Hình ảnh]";
       if (!previewContent && data.attachments?.length > 0) previewContent = "[Tệp đính kèm]";
@@ -690,7 +690,7 @@ const Home = () => {
         const updatedList = [...list];
         const index = updatedList.findIndex((item) => item._id === targetId);
 
-        if (index === -1) return null; // Trả về null nếu không tìm thấy
+        if (index === -1) return null; 
 
         const itemToUpdate = updatedList[index];
         const updatedItem = {
@@ -706,28 +706,28 @@ const Home = () => {
         };
 
         updatedList.splice(index, 1);
-        updatedList.unshift(updatedItem); // Đưa lên đầu
+        updatedList.unshift(updatedItem);
         return updatedList;
       };
 
-      // 5. CẬP NHẬT SIDEBAR CHÍNH
+      // CẬP NHẬT SIDEBAR CHÍNH
       setUsers((prevUsers) => {
         const newList = updateListWithPreview(prevUsers);
         if (newList) return newList;
 
-        // NẾU KHÔNG TÌM THẤY (Người lạ nhắn tin)
+        // NẾU KHÔNG TÌM THẤY
         fetchNewConversation(targetId, data.isGroup, data);
         return prevUsers;
       });
 
-      // 6. CẬP NHẬT DANH SÁCH TÌM KIẾM (Nếu đang mở)
+      // CẬP NHẬT DANH SÁCH TÌM KIẾM
       setSearchResult((prevResult) => {
         if (!prevResult || prevResult.length === 0) return prevResult;
         const newList = updateListWithPreview(prevResult);
         return newList || prevResult;
       });
 
-      // 7. HIỂN THỊ TOAST THÔNG BÁO (Nếu không mở chat và không phải mình gửi)
+      // HIỂN THỊ TOAST THÔNG BÁO
       if (isUnread && data.type !== "system") {
         try {
           const senderName = data.sender?.displayName || "Ai đó";
@@ -751,7 +751,7 @@ const Home = () => {
     return () => {
       socket.off("getMessage", handleUnifiedMessage);
     };
-  }, [socket, currentUser, fetchNewConversation]); // Xóa 'users' khỏi dependency để tránh re-render liên tục
+  }, [socket, currentUser, fetchNewConversation]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -869,12 +869,7 @@ const Home = () => {
           const lm = u.lastMessage
             ? { ...u.lastMessage, isRead: true }
             : u.lastMessage;
-          return {
-            ...u,
-            hasUnread: false,
-            unreadCount: 0,
-            lastMessage: lm,
-          };
+          return { ...u, hasUnread: false, unreadCount: 0, lastMessage: lm };
         }
         return u;
       }),
@@ -884,6 +879,7 @@ const Home = () => {
       socket.emit("markRead", {
         senderId: user._id,
         receiverId: currentUser._id,
+        isGroup: false,
       });
     }
   };
@@ -1334,6 +1330,7 @@ const Home = () => {
               typingUserName={typingUserName}
               typingUserAvatar={typingUserAvatar}
               scrollRef={scrollRef}
+              bottomRef={bottomRef}
               API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
