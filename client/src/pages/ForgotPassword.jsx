@@ -8,13 +8,16 @@ const ForgotPassword = () => {
   const {
     register,
     handleSubmit,
-    formState: { isSubmitting },
+    setValue,
+    formState: { isSubmitting, errors },
   } = useForm();
 
   const onSubmit = async (data) => {
     try {
       await forgotPassword(data);
-      toast.success("Đã gửi link reset! Hãy kiểm tra email.");
+      toast.success(
+        "Nếu email tồn tại, hãy kiểm tra email của bạn chúng tôi đã gửi link reset.",
+      );
     } catch (err) {
       toast.error(err.response?.data?.msg || "Lỗi gửi yêu cầu");
     }
@@ -49,10 +52,24 @@ const ForgotPassword = () => {
             </label>
 
             <input
-              {...register("email", { required: true })}
-              className="w-full px-4 py-2.5 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all duration-200 shadow-sm focus:shadow-md mb-4"
+              {...register("email", {
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Hãy nhập email hợp lệ",
+                },
+                validate: (value) =>
+                  !/\s/.test(value) || "Email không được chứa khoảng trắng",
+              })}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\s/g, "").toLowerCase();
+                setValue("email", value, { shouldValidate: true });
+              }}
+              className="w-full px-4 py-2.5 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all duration-200 shadow-sm focus:shadow-md mb-1"
               placeholder="Email của bạn"
             />
+            <p className="text-red-500 text-xs min-h-[18px]">
+              {errors.email?.message || ""}
+            </p>
           </div>
 
           {/* nút gửi link */}

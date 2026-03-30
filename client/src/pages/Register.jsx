@@ -32,6 +32,7 @@ const Register = () => {
   const hasLower = /[a-z]/.test(password);
   const hasNumber = /\d/.test(password);
   const hasSpecial = /[@$!%*?&]/.test(password);
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
   const onSubmit = async (data) => {
     try {
@@ -109,7 +110,13 @@ const Register = () => {
                     value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}$/,
                     message: "Hãy nhập email hợp lệ",
                   },
+                  validate: (value) =>
+                    !/\s/.test(value) || "Email không được chứa khoảng trắng",
                 })}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\s/g, "");
+                  setValue("email", value, { shouldValidate: true });
+                }}
                 className={inputClass}
                 placeholder="Email của bạn"
               />
@@ -130,9 +137,17 @@ const Register = () => {
                 type={showPassword ? "text" : "password"}
                 {...register("password", {
                   required: "Nhập mật khẩu",
-                  validate: (value) =>
-                    !/\s/.test(value) ||
-                    "Mật khẩu không được chứa khoảng trắng",
+                  validate: (value) => {
+                    if (/\s/.test(value)) {
+                      return "Mật khẩu không được chứa khoảng trắng";
+                    }
+
+                    if (!passwordRegex.test(value)) {
+                      return "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
+                    }
+
+                    return true;
+                  },
                 })}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -153,15 +168,15 @@ const Register = () => {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <FaEyeSlash className="text-gray-500 hover:text-gray-700 transition" />
+                  <FaEyeSlash className="text-[#66BB6A] hover:text-[#4CAF50] transition" />
                 ) : (
-                  <FaEye className="text-gray-500 hover:text-gray-700 transition" />
+                  <FaEye className="text-[#66BB6A] hover:text-[#4CAF50] transition" />
                 )}
               </div>
             </div>
 
             {/* check list */}
-            <div className="text-xs mt-2 space-y-">
+            <div className="text-xs mt-2 space-y-1">
               <p
                 className={`flex items-center gap-1 text-xs ${hasNumber ? "text-[#4CAF50]" : "text-red-400"}`}
               >
@@ -235,9 +250,9 @@ const Register = () => {
                 onClick={() => setShowConfirm(!showConfirm)}
               >
                 {showConfirm ? (
-                  <FaEyeSlash className="text-gray-500 hover:text-gray-700 transition" />
+                  <FaEyeSlash className="text-[#66BB6A] hover:text-[#4CAF50] transition" />
                 ) : (
-                  <FaEye className="text-gray-500 hover:text-gray-700 transition" />
+                  <FaEye className="text-[#66BB6A] hover:text-[#4CAF50] transition" />
                 )}
               </div>
             </div>
@@ -245,7 +260,7 @@ const Register = () => {
             <p className="text-xs min-h-[18px]">
               {confirmPassword ? (
                 confirmPassword === password ? (
-                  <span className="flex items-center gap- mb-2 text-[#4CAF50]">
+                  <span className="flex items-center gap-1 mb-2 text-[#4CAF50]">
                     <FiCheck size={18} />
                     Mật khẩu khớp
                   </span>
