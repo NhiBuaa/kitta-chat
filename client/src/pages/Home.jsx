@@ -48,6 +48,8 @@ const Home = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasNewUnread, setHasNewUnread] = useState(false);
+  const [isChatBootstrapping, setIsChatBootstrapping] = useState(false);
+  const [hasFetchedActiveChat, setHasFetchedActiveChat] = useState(false);
 
   // CONTEXT
   const { onlineUsers, socket } = useSocket();
@@ -805,6 +807,9 @@ const Home = () => {
   }, [socket, currentUser, fetchNewConversation]);
 
   useEffect(() => {
+    let isCancelled = false;
+    const controller = new AbortController();
+
     const fetchMessages = async () => {
       if (!activeChat || !currentUser) return;
 
@@ -826,7 +831,10 @@ const Home = () => {
 
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          signal: controller.signal,
         });
+
+        if (isCancelled) return;
 
         if (res.data && res.data.success) {
           setMessages(res.data.data);
@@ -854,11 +862,26 @@ const Home = () => {
             });
           }
         }
+
+        setHasFetchedActiveChat(true);
       } catch (err) {
+        if (
+          err?.code === "ERR_CANCELED" ||
+          err?.name === "CanceledError" ||
+          axios.isCancel?.(err)
+        ) {
+          return;
+        }
+        setHasFetchedActiveChat(true);
         console.error("Lỗi fetch tin nhắn:", err);
       }
     };
     fetchMessages();
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
   }, [activeChatId, activeChatIsGroup, currentUser?._id, API_URL, socket]);
 
   useEffect(() => {
@@ -905,6 +928,17 @@ const Home = () => {
     setTypingUserAvatar(null);
   }, [activeChatKey]);
 
+  useEffect(() => {
+    if (!activeChatKey) {
+      setIsChatBootstrapping(false);
+      setHasFetchedActiveChat(false);
+      return;
+    }
+
+    setIsChatBootstrapping(true);
+    setHasFetchedActiveChat(false);
+  }, [activeChatKey]);
+
   // HANDLERS
   const scrollChatToBottom = useCallback((behavior = "auto") => {
     if (bottomRef.current?.scrollIntoView) {
@@ -947,6 +981,20 @@ const Home = () => {
   }, [releaseAutoScrollLock]);
 
   const handleSelectUser = (user) => {
+    const currentChat = activeChatRef.current;
+    const isSelectingSameChat =
+      currentChat?._id === user?._id &&
+      Boolean(currentChat?.members) === Boolean(user?.members);
+
+    if (isSelectingSameChat) {
+      return;
+    }
+
+    setMessages([]);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    isLoadingMoreRef.current = false;
+    isFirstLoad.current = true;
     armAutoScrollLock();
     setActiveChat(user);
     setUsers((prev) =>
@@ -1345,12 +1393,35 @@ const Home = () => {
   };
 
   useLayoutEffect(() => {
+    if (!activeChatKey || !hasFetchedActiveChat || !isChatBootstrapping) {
+      return;
+    }
     // Chỉ chạy nếu đây là lần tải đầu tiên và đã có tin nhắn để cuộn
     if (isFirstLoad.current && messages.length > 0) {
       scrollChatToBottom("auto");
       isFirstLoad.current = false;
     }
-  }, [messages, scrollChatToBottom]);
+
+    let revealFrameId = null;
+    const settleFrameId = requestAnimationFrame(() => {
+      revealFrameId = requestAnimationFrame(() => {
+        setIsChatBootstrapping(false);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(settleFrameId);
+      if (revealFrameId) {
+        cancelAnimationFrame(revealFrameId);
+      }
+    };
+  }, [
+    activeChatKey,
+    hasFetchedActiveChat,
+    isChatBootstrapping,
+    messages.length,
+    scrollChatToBottom,
+  ]);
 
   useEffect(() => () => {
     if (autoScrollReleaseTimeoutRef.current) {
@@ -1404,11 +1475,13 @@ const Home = () => {
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
+            key={activeChatKey || "empty-chat-picker"}
             onFilesSelected={addFiles}
             disableClick={true}
             className="flex-1 flex flex-col h-full overflow-hidden"
           >
             <ChatWindow
+              key={activeChatKey || "empty-chat-window"}
               activeChat={activeChat}
               setActiveChat={setActiveChat}
               currentChatUser={currentChatUser}
@@ -1431,6 +1504,7 @@ const Home = () => {
               handleRetryMessage={handleRetryMessage}
               loadMoreMessages={loadMoreMessages}
               isLoadingMore={isLoadingMore}
+              isChatBootstrapping={isChatBootstrapping}
               setHasNewUnread={setHasNewUnread}
               hasNewUnread={hasNewUnread}
             />
@@ -1450,6 +1524,7 @@ const Home = () => {
         ) : (
           /* Màn hình chờ khi chưa chọn ai để chat */
           <ChatWindow
+            key="empty-chat-window"
             activeChat={null}
             setActiveChat={setActiveChat}
             currentChatUser={null}

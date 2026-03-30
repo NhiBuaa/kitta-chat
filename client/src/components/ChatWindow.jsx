@@ -39,6 +39,7 @@ const ChatWindow = ({
   handleRetryMessage,
   loadMoreMessages,
   isLoadingMore,
+  isChatBootstrapping = false,
   setHasNewUnread,
   hasNewUnread
 }) => {
@@ -60,7 +61,7 @@ const ChatWindow = ({
     const root = scrollRef?.current;
     const target = topSentinelRef.current;
 
-    if (!root || !target) {
+    if (!root || !target || isChatBootstrapping) {
       return;
     }
 
@@ -91,7 +92,7 @@ const ChatWindow = ({
     return () => {
       observer.disconnect();
     };
-  }, [activeChat?._id, isLoadingMore, loadMoreMessages, scrollRef]);
+  }, [activeChat?._id, isChatBootstrapping, isLoadingMore, loadMoreMessages, scrollRef]);
 
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
@@ -197,6 +198,14 @@ const ChatWindow = ({
         onScroll={handleScroll}
       >
         <div ref={topSentinelRef} className="h-px w-full" />
+        {isChatBootstrapping && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-50/90">
+            <div className="scale-[0.45] origin-center">
+              <Loader />
+            </div>
+          </div>
+        )}
+        <div className={isChatBootstrapping ? "opacity-0 pointer-events-none" : "opacity-100"}>
         {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
         {isLoadingMore && (
           <div className="flex flex-col items-center justify-center py-4 bg-transparent">
@@ -421,6 +430,7 @@ const ChatWindow = ({
             )}
           </button>
         )}
+        </div>
       </div>
     </>
   );
