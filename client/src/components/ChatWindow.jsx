@@ -162,7 +162,6 @@ const ChatWindow = ({
           </div>
         )}
 
-        {/* Cứu cánh: Kiểm tra Array.isArray */}
         {Array.isArray(messages) && messages.map((message, index) => {
           const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
           const isMe = senderId === currentUser._id;
@@ -213,8 +212,8 @@ const ChatWindow = ({
 
                 <div
                   className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${isMe
-                      ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
-                      : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
+                    ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
+                    : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
                     } ${isSending ? "opacity-70" : "opacity-100"} ${isError ? "border-2 border-red-400" : ""
                     }`}
                 >
@@ -250,8 +249,8 @@ const ChatWindow = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
-                                ? "bg-green-700 hover:bg-green-800 text-white"
-                                : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                              ? "bg-green-700 hover:bg-green-800 text-white"
+                              : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                               }`}
                           >
                             <FaPaperclip className="text-lg" />
@@ -289,51 +288,45 @@ const ChatWindow = ({
 
                       {(!message.status || message.status === "sent") && (
                         <>
-                          {!isGroup ? (
+                          {!isGroup && (
                             message.isRead ? (
                               <FaCheckDouble className="text-xs text-blue-200 inline-block" />
                             ) : (
                               <FaCheck className="text-xs text-green-200 inline-block" />
                             )
-                          ) : message.readBy && message.readBy.length > 0 ? (
-                            <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                          ) : (
-                            <FaCheck className="text-xs text-green-200 inline-block" />
                           )}
                         </>
                       )}
                     </div>
                   )}
-
-                  {/* Những người đã xem trong group */}
-                  {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
-                    // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
-                    const fullViewersData = message.readBy.map(reader => {
-                      const readerId = typeof reader === "object" ? reader._id : reader;
-                      // Tìm user từ danh sách members hoặc users
-                      const userObj = activeChat?.members?.find(m => m._id === readerId) ||
-                        users.find(u => u._id === readerId);
-
-                      // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
-                      return userObj ? userObj : { _id: readerId, displayName: "User", avatar: "" };
-                    });
-
-                    return (
-                      <div className="mt-1 flex justify-end">
-                        <MessageSeenBy
-                          seenByList={fullViewersData}
-                          currentUser={currentUser}
-                          getAvatarUrl={getAvatarUrl}
-                        />
-                      </div>
-                    );
-                  })()}
                 </div>
               </div>
+              {/* Những người đã xem trong group */}
+              {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
+                // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
+                const fullViewersData = message.readBy.map(reader => {
+                  const readerId = typeof reader === "object" ? reader._id : reader;
+                  // Tìm user từ danh sách members hoặc users
+                  const userObj = activeChat?.members?.find(m => m._id === readerId) ||
+                    users.find(u => u._id === readerId);
+
+                  // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
+                  return userObj ? userObj : { _id: readerId, displayName: "User", avatar: "" };
+                });
+
+                return (
+                  <div className="mt-1 flex justify-end">
+                    <MessageSeenBy
+                      seenByList={fullViewersData}
+                      currentUser={currentUser}
+                      getAvatarUrl={getAvatarUrl}
+                    />
+                  </div>
+                );
+              })()}
               <div
-                className={`text-[10px] text-gray-400 mt-1 ${
-                  isMe ? "text-right" : "text-left ml-10"
-                }`}
+                className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
+                  }`}
               >
                 {formatTimeAgo(message.createdAt)}
               </div>
