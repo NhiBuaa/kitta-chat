@@ -4,7 +4,7 @@ import { resetPassword } from "../services/authService";
 import { toast } from "react-toastify";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaLock, FaEye, FaEyeSlash, FaKey, FaArrowLeft } from "react-icons/fa";
-
+import { FiCheck, FiX } from "react-icons/fi";
 const ResetPassword = () => {
   const { id, token } = useParams();
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ const ResetPassword = () => {
       }, 1200);
     } catch (err) {
       toast.error(
-        err.response?.data?.msg || "Link hết hạn hoặc mật khẩu không hợp lệ",
+        err.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại",
       );
     } finally {
       setIsLoading(false);
@@ -51,30 +51,29 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-gradient-to-br from-blue-100 via-purple-200 to-pink-100">
-      <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-300 rounded-full blur-3xl opacity-30"></div>
-      <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-300 rounded-full blur-3xl opacity-30"></div>
-
-      <div className="relative z-10 w-full max-w-md rounded-3xl shadow-2xl bg-white border border-white/30 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#F4FBF6]">
+      <div className="relative z-10 w-full max-w-md rounded-3xl bg-white border border-[#D7EEDD] rounded-3xl shadow-lg overflow-hidden">
         {/* header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
-          <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <FaKey className="text-white text-2xl" />
+        <div className="text-center mb-1 p-10 bg-gradient-to-r from-[#C8E6C9] to-[#E8F5E9]">
+          <div className="w-16 h-16 bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
+            <FaKey className="text-xl" />
           </div>
 
-          <h2 className="text-3xl font-bold text-white">Đặt Lại Mật Khẩu</h2>
+          <h2 className="text-2xl font-extrabold text-[#4CAF50]">
+            Đặt lại mật khẩu
+          </h2>
 
-          <p className="text-blue-100 text-sm mt-2">
-            Hãy nhập mật khẩu mới đủ mạnh để bảo vệ tài khoản của bạn
+          <p className="text-gray-500 text-sm mt-1">
+            Hãy nhập mật khẩu mới để bảo vệ tài khoản
           </p>
         </div>
 
         {/* form */}
         <div className="p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
             {/* pass mới */}
             <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
+              <label className="mx-1 text-sm font-semibold text-gray-700 mb-2 block">
                 Mật khẩu mới
               </label>
 
@@ -86,7 +85,7 @@ const ResetPassword = () => {
                   {...register("newPassword", {
                     required: "Vui lòng nhập mật khẩu mới",
                   })}
-                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all shadow-sm focus:shadow-md"
                   placeholder="Mật khẩu mới của bạn"
                 />
 
@@ -104,32 +103,47 @@ const ResetPassword = () => {
                 </p>
               )}
 
-              <div className="text-xs mt-2 space-y-1">
-                <p className={hasMinLength ? "text-green-500" : "text-red-400"}>
-                  {hasMinLength ? "✔" : "✖"} Ít nhất 8 ký tự
+              <div className="text-xs mt-2">
+                <p
+                  className={`flex items-center gap-1 text-xs ${hasNumber ? "text-[#4CAF50]" : "text-red-400"}`}
+                >
+                  {hasNumber ? <FiCheck size={18} /> : <FiX size={18} />}
+                  <span>Có số</span>
                 </p>
 
-                <p className={hasUpper ? "text-green-500" : "text-red-400"}>
-                  {hasUpper ? "✔" : "✖"} Có chữ in hoa
+                <p
+                  className={`flex items-center gap-1 text-xs ${hasUpper ? "text-[#4CAF50]" : "text-red-400"}`}
+                >
+                  {hasUpper ? <FiCheck size={18} /> : <FiX size={18} />}
+                  <span>Có chữ in hoa</span>
                 </p>
 
-                <p className={hasLower ? "text-green-500" : "text-red-400"}>
-                  {hasLower ? "✔" : "✖"} Có chữ thường
+                <p
+                  className={`flex items-center gap-1 text-xs ${hasMinLength ? "text-[#4CAF50]" : "text-red-400"}`}
+                >
+                  {hasMinLength ? <FiCheck size={18} /> : <FiX size={18} />}
+                  <span>Ít nhất 8 ký tự</span>
                 </p>
 
-                <p className={hasNumber ? "text-green-500" : "text-red-400"}>
-                  {hasNumber ? "✔" : "✖"} Có số
+                <p
+                  className={`flex items-center gap-1 text-xs ${hasLower ? "text-[#4CAF50]" : "text-red-400"}`}
+                >
+                  {hasLower ? <FiCheck size={18} /> : <FiX size={18} />}
+                  <span>Có chữ thường</span>
                 </p>
 
-                <p className={hasSpecial ? "text-green-500" : "text-red-400"}>
-                  {hasSpecial ? "✔" : "✖"} Có ký tự đặc biệt
+                <p
+                  className={`flex items-center gap-1 text-xs ${hasSpecial ? "text-[#4CAF50]" : "text-red-400"}`}
+                >
+                  {hasSpecial ? <FiCheck size={18} /> : <FiX size={18} />}
+                  <span>Có ký tự đặc biệt</span>
                 </p>
               </div>
             </div>
 
             {/* xác nhận lại mk */}
             <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
+              <label className="mx-1 text-sm font-semibold text-gray-700 mb-2 block">
                 Nhập lại mật khẩu
               </label>
 
@@ -142,7 +156,7 @@ const ResetPassword = () => {
                     required: "Vui lòng xác nhận mật khẩu",
                     validate: (v) => v === password || "Mật khẩu không khớp",
                   })}
-                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all shadow-sm focus:shadow-md"
                   placeholder="Xác nhận mật khẩu mới"
                 />
 
@@ -154,12 +168,18 @@ const ResetPassword = () => {
                 </div>
               </div>
 
-              <p className="text-xs mt-1 min-h-[18px]">
+              <p className="text-xs mt-2 min-h-[18px]">
                 {confirmPassword ? (
                   confirmPassword === password ? (
-                    <span className="text-green-500">✔ Mật khẩu khớp</span>
+                    <span className="flex items-center gap-1 text-[#4CAF50]">
+                      <FiCheck size={18} />
+                      Mật khẩu khớp
+                    </span>
                   ) : (
-                    <span className="text-red-500">✖ Mật khẩu không khớp</span>
+                    <span className="flex items-center gap-1 text-red-400">
+                      <FiX size={18} />
+                      Mật khẩu không khớp
+                    </span>
                   )
                 ) : (
                   ""
@@ -171,10 +191,10 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3.5 rounded-xl text-white font-semibold shadow-lg transition-all ${
+              className={`w-full py-2.5 rounded-xl text-white font-semibold transition-all ${
                 isLoading
                   ? "bg-gray-400"
-                  : "bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] hover:shadow-xl"
+                  : "bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] hover:scale-[1.02] hover:shadow-xl"
               }`}
             >
               {isLoading ? "Đang xử lý..." : "Xác nhận đổi mật khẩu"}
@@ -182,10 +202,10 @@ const ResetPassword = () => {
           </form>
 
           {/* về trang đăng nhập */}
-          <div className="mt-6 text-center">
+          <div className="mt-5 text-center">
             <Link
               to="/login"
-              className="inline-flex items-center text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:opacity-80"
+              className="inline-flex items-center text-sm font-medium text-[#4CAF50] hover:underline transition"
             >
               <FaArrowLeft className="mr-2" />
               Quay lại trang đăng nhập

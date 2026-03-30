@@ -21,21 +21,18 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-gradient-to-br from-blue-100 via-purple-200 to-pink-100">
-      <div className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-purple-300 rounded-full blur-3xl opacity-30"></div>
-      <div className="absolute bottom-[-100px] right-[-100px] w-[300px] h-[300px] bg-blue-300 rounded-full blur-3xl opacity-30"></div>
-
-      <div className="relative z-10 max-w-md w-full bg-white backdrop-blur-2xl border border-white/30 p-8 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] hover:shadow-[0_30px_80px_rgba(0,0,0,0.15)] transition-all duration-300 group">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#F4FBF6]">
+      <div className="relative z-10 max-w-md w-full bg-white border border-[#D7EEDD] rounded-3xl shadow-lg p-8 rounded-3xl transition-all duration-300">
         {/* header */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-16 h-16 bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
             <FaPaperPlane
               className="transition-transform duration-300 group-hover:rotate-12"
               size={22}
             />
           </div>
 
-          <h2 className="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
+          <h2 className="text-2xl font-extrabold text-[#4CAF50] tracking-tight">
             Quên mật khẩu?
           </h2>
 
@@ -46,15 +43,15 @@ const ForgotPassword = () => {
 
         {/* form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium mx-1 text-gray-700">
               Email đã đăng ký
             </label>
 
             <input
               {...register("email", { required: true })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 shadow-sm focus:shadow-md"
-              placeholder="name@example.com"
+              className="w-full px-4 py-2.5 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all duration-200 shadow-sm focus:shadow-md mb-4"
+              placeholder="Email của bạn"
             />
           </div>
 
@@ -62,7 +59,7 @@ const ForgotPassword = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 rounded-xl hover:scale-[1.03] active:scale-[0.97] hover:shadow-xl transition-all duration-200"
+            className="w-full bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white font-semibold py-2.5 rounded-xl hover:scale-[1.02] hover:shadow-xl transition-all duration-200"
           >
             {isSubmitting ? "Đang gửi..." : "Gửi Link Reset"}
           </button>
@@ -71,7 +68,7 @@ const ForgotPassword = () => {
         <div className="mt-6 text-center">
           <Link
             to="/login"
-            className="flex items-center justify-center text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:underline hover:scale-105 transition"
+            className="flex items-center justify-center text-sm font-medium text-[#4CAF50] hover:underline transition"
           >
             <FaArrowLeft className="mr-2" /> Quay lại đăng nhập
           </Link>

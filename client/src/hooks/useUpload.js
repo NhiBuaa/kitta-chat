@@ -1,7 +1,10 @@
 import axios from 'axios';
 import { initUpload, getPresignedUrl, completeUpload } from '../services/api';
 
-export const uploadFile = async (file, onProgress) => {
+// BIẾN
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
+export const uploadFileChunked = async (file, onProgress) => {
     const { uploadId, key } = await initUpload(file.name, file.type, "");
 
     const CHUNK_SIZE = 5 * 1024 * 1024;
@@ -38,3 +41,33 @@ export const uploadFile = async (file, onProgress) => {
 
     return completedFile;
 };
+
+export const uploadFileSingle = async (file, onProgress) => {
+    try {
+        // Tạo form dữ liệu
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        // Lấy token để gửi kèm header
+        const token = localStorage.getItem('token');
+
+        // Gọi API upload single ở BE
+        const response = await axios.post(`${VITE_API_URL}/api/file/upload-single`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+                "Authorization": `Bearer ${token}`,
+            },
+            onUploadProgress: (progressEvent) => {
+                if (onProgress) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    onProgress(percentCompleted);
+                }
+            }
+        });
+
+        return response.data.file;
+    } catch (err) {
+        console.error("Lỗi uploadFileSingle:", err);
+        throw err;
+    }
+}

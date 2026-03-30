@@ -8,6 +8,7 @@ const messageRoutes = require("./src/routes/messages");
 const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
+const { redisClient } = require('./src/config/redis');
 
 // Import Model
 const User = require("./src/models/User");
@@ -51,6 +52,11 @@ const getOnlineUsersPayload = () =>
     socketIds: Array.from(socketIds),
   }));
 
+const buildConversationId = (senderId, receiverId) => {
+  if (!senderId || !receiverId) return null;
+  return [senderId.toString(), receiverId.toString()].sort().join("_");
+};
+
 // Allow controllers to access shared realtime state
 app.set("socketio", io);
 app.set("onlineUsers", onlineUsers);
@@ -64,7 +70,27 @@ const broadcastUserStatus = async (ioInstance, userId, status) => {
     const user = await User.findById(userId).select("friends");
     const friendIds = user?.friends ? user.friends.map((friend) => friend.toString()) : [];
 
-    const targetRooms = [...new Set([...groupIds, ...friendIds])];
+    const messages = await Message.find({
+      $or: [{ sender: userId }, { receiver: userId }],
+    })
+      .select("sender receiver")
+      .lean();
+
+    const chattedUserIds = messages.reduce((accumulator, message) => {
+      const senderId = message.sender?.toString();
+      const receiverId = message.receiver?.toString();
+
+      if (senderId && senderId !== userId) {
+        accumulator.push(senderId);
+      }
+      if (receiverId && receiverId !== userId) {
+        accumulator.push(receiverId);
+      }
+
+      return accumulator;
+    }, []);
+
+    const targetRooms = [...new Set([...groupIds, ...friendIds, ...chattedUserIds])];
 
     if (targetRooms.length > 0) {
       ioInstance.to(targetRooms).emit("userStatusChanged", { userId, status });
@@ -78,6 +104,62 @@ const broadcastUserStatus = async (ioInstance, userId, status) => {
     console.error(`[Presence] Failed to broadcast status for ${userId}:`, error);
   }
 };
+
+// LƯU LOG VÀ CACHE REDIS
+async function saveMessageInBackground(data) {
+  try {
+    const senderId = data.sender?._id || data.sender;
+    const conversationId =
+      data.conversationId ||
+      (data.isGroup ? data.receiverId : buildConversationId(senderId, data.receiverId));
+
+    if (!conversationId) return;
+
+    const cacheKey = `chat_history:${conversationId}`;
+
+    //  Chuẩn bị dữ liệu để lưu vào DB
+    let savedMessage = data;
+
+    if (!data._id) {
+      const messageToSave = {
+        conversationId,
+        sender: senderId,
+        receiver: data.receiverId || data.receiver,
+        type: data.type || "text",
+        text: data.content || data.text || "",
+        attachments: data.attachments || [],
+        isRead: false,
+      };
+
+      // Lưu
+      savedMessage = await Message.create(messageToSave);
+    }
+
+    // Cập nhật Redis Cache - lưu 50 tin mới nhất
+    if (redisClient.isOpen) {
+      const multi = redisClient.multi();
+
+      // Để Frontend hiển thị được ngay mà không cần query lại User, lưu kèm cả senderInfo vào cache
+      const dataToCache = {
+        ...(typeof savedMessage.toObject === "function"
+          ? savedMessage.toObject()
+          : savedMessage),
+        conversationId,
+        senderInfo: data.senderInfo || data.sender,
+      };
+
+      multi.lPush(cacheKey, JSON.stringify(dataToCache));
+      multi.lTrim(cacheKey, 0, 49);
+      await multi.exec();
+    }
+
+    return savedMessage;
+
+  } catch (error) {
+    console.error("Lỗi lưu tin nhắn ngầm:", error);
+    return null;
+  }
+}
 
 // SOCKET
 io.on("connection", (socket) => {
@@ -219,23 +301,38 @@ io.on("connection", (socket) => {
     io.to(senderId).emit("friendRequestRejected", { rejecterId: receiverId });
   });
 
-  socket.on("sendMessage", async (messageData) => {
-    const { sender, receiverId, isGroup } = messageData;
-    const senderId = typeof sender === "object" ? sender._id : sender;
-
+  socket.on("sendMessage", async (messageData, callBack) => {
     try {
-      const senderDoc = await User.findById(senderId).select("displayName avatar username");
-      const senderInfo = {
-        _id: senderId,
-        displayName: getSafeUserName(senderDoc),
-        avatar: senderDoc?.avatar,
-      };
+      const receiverId = messageData.receiverId || messageData.receiver;
+      const sender = messageData.sender;
+      const isGroup = messageData.isGroup;
+      const senderId = typeof sender === "object" ? sender._id : sender;
+      let senderInfo = messageData.senderInfo;
+
+      if (!receiverId) {
+        console.error("Lỗi Socket: Thiếu receiverId!", messageData);
+        if (typeof callBack === "function") callBack({ success: false });
+        return;
+      }
+
+      if (!senderInfo) {
+        const senderDoc = await User.findById(senderId).select("displayName avatar username");
+        senderInfo = {
+          _id: senderId,
+          displayName: getSafeUserName(senderDoc),
+          avatar: senderDoc?.avatar,
+        };
+      }
 
       const payloadToEmit = { ...messageData, sender: senderInfo };
 
       if (isGroup) {
-        const groupDoc = await Group.findById(receiverId).select("name displayName");
-        payloadToEmit.groupName = groupDoc?.displayName || groupDoc?.name || "Nhom chat";
+        let groupName = messageData.groupName;
+        if (!groupName) {
+          const groupDoc = await Group.findById(receiverId).select("name displayName");
+          groupName = groupDoc?.displayName || groupDoc?.name || "Nhom chat";
+        }
+        payloadToEmit.groupName = groupName;
 
         io.to(receiverId).emit("getMessage", payloadToEmit);
         console.log(`Group message sent to room ${receiverId}`);
@@ -244,8 +341,35 @@ io.on("connection", (socket) => {
         io.to(senderId).emit("getMessage", payloadToEmit);
         console.log(`1-1 message sent to ${senderId} and ${receiverId}`);
       }
+
+      let conversationId = messageData.conversationId;
+
+      if (!conversationId) {
+        if (isGroup) {
+          conversationId = receiverId;
+        } else {
+          conversationId = buildConversationId(senderId, receiverId);
+        }
+      }
+
+      const savedMessage = await saveMessageInBackground({
+        ...payloadToEmit,
+        conversationId: conversationId,
+        receiverId: receiverId
+      });
+
+      if (typeof callBack === "function") {
+        callBack({
+          success: true,
+          realId: savedMessage?._id
+        });
+      }
+
     } catch (err) {
       console.error("Socket sendMessage error:", err);
+      if (typeof callBack === "function") {
+        callBack({ success: false });
+      }
     }
   });
 
@@ -312,18 +436,13 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId, mediaStatus }) => {
-    console.log(`[SERVER] callUser from ${callerDbId} to ${userToCall}`);
+  socket.on("callUser", (data) => {
+    console.log(`[SERVER] callUser from ${data.callerDbId} to ${data.userToCall}`);
 
-    const room = io.sockets.adapter.rooms.get(userToCall);
+    const room = io.sockets.adapter.rooms.get(data.userToCall);
+
     if (room && room.size > 0) {
-      io.to(userToCall).emit("callUser", {
-        signal: signalData,
-        from,
-        name,
-        callerDbId,
-        mediaStatus,
-      });
+      io.to(data.userToCall).emit("callUser", data);
     } else {
       socket.emit("callRejected", { reason: "User offline" });
     }

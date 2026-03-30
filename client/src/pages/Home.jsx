@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from 'uuid';
 
 // COMPONENTS
 import Sidebar from "../components/Sidebar";
@@ -11,6 +12,7 @@ import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
 import ChatInput from "../components/ChatInput";
 import { FilePicker } from "../components/FilePicker";
+import Loader from "../components/deco/Loader";
 
 // CONTEXT & SERVICE
 import { sendFriendRequest } from "../services/userService";
@@ -43,6 +45,9 @@ const Home = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
   const [sentRequests, setSentRequests] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasNewUnread, setHasNewUnread] = useState(false);
 
   // CONTEXT
   const { onlineUsers, socket } = useSocket();
@@ -53,16 +58,17 @@ const Home = () => {
   const scrollRef = useRef();
   const bottomRef = useRef();
   const typingTimeoutRef = useRef(null);
+  const isLoadingMoreRef = useRef(false);
+  const isFirstLoad = useRef(true);
 
   // BIẾN
   const API_URL = import.meta.env.VITE_API_URL;
 
   // HOOK
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
-    useUploader();
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
 
-  // HÀM XỬ LÝ GỌI VIDEO
-  const handleVideoCall = () => {
+  // HÀM XỬ LÝ GỌI
+  const handleCall = (type = "video") => {
     if (!currentChatUser) return;
 
     if (currentChatUser.members || currentChatUser.isGroup) {
@@ -71,10 +77,10 @@ const Home = () => {
     }
 
     const chatUserId = currentChatUser._id || currentChatUser.id;
-    const url = `/video-call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}`;
+    const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}`;
 
     localStorage.setItem("activePartnerUserId", chatUserId);
-    window.open(url, "_blank", "noopener,noreferrer");
+    window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
   // CÁC BIẾN TÍNH TOÁN
@@ -84,25 +90,13 @@ const Home = () => {
       : users.find((u) => u._id === activeChat._id) || activeChat
     : null;
 
-  const isFriend =
-    currentChatUser &&
-    !currentChatUser.members &&
-    (currentChatUser.isFriend ||
-      users.some((u) => u._id === currentChatUser._id));
+  const activeChatId = activeChat?._id || null;
+  const activeChatIsGroup = Boolean(activeChat?.members);
+  const activeChatKey = activeChatId
+    ? `${activeChatIsGroup ? "group" : "user"}:${activeChatId}`
+    : null;
 
   // USE EFFECTS
-  useEffect(() => {
-    if (scrollRef.current) {
-      setTimeout(() => {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }, 100);
-    }
-  }, [messages, activeChat, isTyping]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "auto" });
-  }, [messages]);
-
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
@@ -113,15 +107,15 @@ const Home = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const isGroup = activeChat?.members ? true : false;
-    if (isGroup) {
-      socket.emit("joinGroup", activeChat._id);
+    if (activeChatIsGroup && activeChatId) {
+      socket.emit("joinGroup", activeChatId);
     } else if (activeChatRef.current?.members) {
       socket.emit("leaveGroup", activeChatRef.current._id);
     }
-  }, [activeChat, socket]);
+  }, [activeChatId, activeChatIsGroup, socket]);
 
   // CÁC HÀM HELPER & API
+  // Hàm cập nhật lại bên thanh sidebar
   const fetchNewConversation = useCallback(
     async (targetId, isGroup, messageData) => {
       try {
@@ -148,6 +142,7 @@ const Home = () => {
               isRead: false,
             },
             hasUnread: true,
+            unreadCount: 1,
           };
           setUsers((prev) => [newItemWithMsg, ...prev]);
         }
@@ -155,7 +150,7 @@ const Home = () => {
         console.error("Không thể load conversation mới:", error);
       }
     },
-    [API_URL],
+    [API_URL, currentUser?._id],
   );
 
   const renderLastMessage = (user, currentUserId) => {
@@ -206,11 +201,11 @@ const Home = () => {
       setActiveChat((prevChat) =>
         prevChat
           ? {
-              ...prevChat,
-              ...incomingGroup,
-              members: incomingGroup.members || prevChat.members,
-              admin: incomingGroup.admin || prevChat.admin,
-            }
+            ...prevChat,
+            ...incomingGroup,
+            members: incomingGroup.members || prevChat.members,
+            admin: incomingGroup.admin || prevChat.admin,
+          }
           : prevChat,
       );
     }
@@ -224,11 +219,105 @@ const Home = () => {
     [upsertGroup],
   );
 
+  const patchUserEverywhere = useCallback((targetUserId, updater) => {
+    if (!targetUserId) return;
+
+    const applyPatch = (list = []) =>
+      list.map((user) => (user?._id === targetUserId ? updater(user) : user));
+
+    setUsers((prevUsers) => applyPatch(prevUsers));
+    setSearchResult((prevUsers) => applyPatch(prevUsers));
+    setActiveChat((prevChat) => {
+      if (!prevChat || prevChat.members || prevChat._id !== targetUserId) {
+        return prevChat;
+      }
+
+      return updater(prevChat);
+    });
+  }, []);
+
+  const markFriendshipActive = useCallback((friendData) => {
+    if (!friendData?._id) return;
+
+    const buildFriendState = (user = {}) => ({
+      ...user,
+      ...friendData,
+      isFriend: true,
+      isIncomingRequest: false,
+      isReceived: false,
+      isSent: false,
+      lastMessage: user.lastMessage ?? friendData.lastMessage ?? null,
+      hasUnread: user.hasUnread ?? false,
+    });
+
+    setSentRequests((prev) => prev.filter((id) => id !== friendData._id));
+    setUsers((prevUsers) => {
+      const existingIndex = prevUsers.findIndex((user) => user._id === friendData._id);
+
+      if (existingIndex === -1) {
+        return [
+          buildFriendState({
+            _id: friendData._id,
+            displayName: friendData.displayName,
+            avatar: friendData.avatar,
+          }),
+          ...prevUsers,
+        ];
+      }
+
+      const nextUsers = [...prevUsers];
+      nextUsers[existingIndex] = buildFriendState(nextUsers[existingIndex]);
+      return nextUsers;
+    });
+    setSearchResult((prevUsers) =>
+      prevUsers.map((user) =>
+        user._id === friendData._id ? buildFriendState(user) : user,
+      ),
+    );
+    setActiveChat((prevChat) => {
+      if (!prevChat || prevChat.members || prevChat._id !== friendData._id) {
+        return prevChat;
+      }
+
+      return buildFriendState(prevChat);
+    });
+  }, []);
+
+  const markFriendRequestSent = useCallback(
+    (receiverId) => {
+      if (!receiverId) return;
+
+      setSentRequests((prev) =>
+        prev.includes(receiverId) ? prev : [...prev, receiverId],
+      );
+      patchUserEverywhere(receiverId, (user) => ({
+        ...user,
+        isSent: true,
+        isIncomingRequest: false,
+      }));
+    },
+    [patchUserEverywhere],
+  );
+
+  const clearSentFriendRequest = useCallback(
+    (targetUserId) => {
+      if (!targetUserId) return;
+
+      setSentRequests((prev) => prev.filter((id) => id !== targetUserId));
+      patchUserEverywhere(targetUserId, (user) => ({
+        ...user,
+        isSent: false,
+        isIncomingRequest: false,
+      }));
+    },
+    [patchUserEverywhere],
+  );
+
   const handleAddFriend = async (e, user) => {
     e.stopPropagation();
     try {
       await sendFriendRequest(user._id);
-      setSentRequests((prev) => [...prev, user._id]);
+      markFriendRequestSent(user._id);
       toast.success("Đã gửi lời mời kết bạn");
     } catch (error) {
       console.error(error);
@@ -336,6 +425,10 @@ const Home = () => {
   useEffect(() => {
     if (!socket || !currentUser) return;
 
+    const handleFriendRequestSent = ({ receiverId }) => {
+      markFriendRequestSent(receiverId);
+    };
+
     const handleNewFriendRequest = (data) => {
       setRequestCount((prevCount) => prevCount + 1);
       toast.info(`${data.senderName} đã gửi lời mời kết bạn`, {
@@ -343,14 +436,14 @@ const Home = () => {
         position: "top-right",
         autoClose: 5000,
       });
-      setUsers((prevUsers) =>
-        prevUsers.map((u) => {
-          if (u._id === data.senderId) {
-            return { ...u, isIncomingRequest: true };
-          }
-          return u;
-        }),
-      );
+      patchUserEverywhere(data.senderId, (user) => ({
+        ...user,
+        displayName: data.senderName || user.displayName,
+        avatar: data.avatar ?? user.avatar,
+        isIncomingRequest: true,
+        isReceived: true,
+        isSent: false,
+      }));
     };
 
     const handleFriendRequestAccepted = (data) => {
@@ -359,88 +452,78 @@ const Home = () => {
         position: "top-right",
         autoClose: 3000,
       });
-      setUsers((prev) => {
-        const updatedUsers = prev.map((user) => {
-          if (user._id === data.newFriendId) {
-            return {
-              ...user,
-              isFriend: true,
-              isIncomingRequest: false,
-            };
-          }
-          return user;
-        });
-
-        const userExists = updatedUsers.some((u) => u._id === data.newFriendId);
-        if (!userExists) {
-          updatedUsers.push({
-            _id: data.newFriendId,
-            displayName: data.newFriendName,
-            avatar: data.newFriendAvatar,
-            isFriend: true,
-            lastMessage: null,
-            hasUnread: false,
-          });
-        }
-        return updatedUsers;
+      markFriendshipActive({
+        _id: data.newFriendId,
+        displayName: data.newFriendName,
+        avatar: data.newFriendAvatar,
       });
     };
 
     const handleFriendRequestRejected = (data) => {
-      setSentRequests((prev) => prev.filter((id) => id !== data.rejecterId));
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id === data.rejecterId) {
-            return {
-              ...user,
-              isSent: false,
-              isIncomingRequest: false,
-            };
-          }
-          return user;
-        }),
-      );
+      clearSentFriendRequest(data.rejecterId);
+    };
+
+    const handleFriendRequestHandled = (data) => {
+      setRequestCount((prevCount) => Math.max(prevCount - 1, 0));
+
+      if (data.action === "accepted" && data.friend) {
+        markFriendshipActive(data.friend);
+        return;
+      }
+
+      patchUserEverywhere(data.senderId, (user) => ({
+        ...user,
+        isIncomingRequest: false,
+        isReceived: false,
+      }));
     };
 
     const handleUserStatusChanged = ({ userId, status }) => {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => {
-          if (user._id !== userId) return user;
-
-          if (status === "online") {
-            return {
-              ...user,
-              activityStatus: {
-                ...(user.activityStatus || {}),
-                state: "online",
-              },
-            };
-          }
-
+      patchUserEverywhere(userId, (user) => {
+        if (status === "online") {
           return {
             ...user,
             activityStatus: {
               ...(user.activityStatus || {}),
-              state: "offline",
-              lastSeen: new Date().toISOString(),
+              state: "online",
             },
           };
-        }),
-      );
+        }
+
+        return {
+          ...user,
+          activityStatus: {
+            ...(user.activityStatus || {}),
+            state: "offline",
+            lastSeen: new Date().toISOString(),
+          },
+        };
+      });
     };
 
     socket.on("userStatusChanged", handleUserStatusChanged);
+    socket.on("friendRequestSent", handleFriendRequestSent);
     socket.on("newFriendRequest", handleNewFriendRequest);
     socket.on("friendRequestAccepted", handleFriendRequestAccepted);
     socket.on("friendRequestRejected", handleFriendRequestRejected);
+    socket.on("friendRequestHandled", handleFriendRequestHandled);
 
     return () => {
       socket.off("userStatusChanged", handleUserStatusChanged);
+      socket.off("friendRequestSent", handleFriendRequestSent);
       socket.off("newFriendRequest", handleNewFriendRequest);
       socket.off("friendRequestAccepted", handleFriendRequestAccepted);
       socket.off("friendRequestRejected", handleFriendRequestRejected);
+      socket.off("friendRequestHandled", handleFriendRequestHandled);
     };
-  }, [socket, currentUser]);
+  }, [
+    socket,
+    currentUser,
+    clearSentFriendRequest,
+    markFriendRequestSent,
+    markFriendshipActive,
+    patchUserEverywhere,
+  ]);
 
   useEffect(() => {
     if (users.length > 0) {
@@ -538,61 +621,31 @@ const Home = () => {
 
     const handleUnifiedMessage = (data) => {
       const currentActiveChat = activeChatRef.current;
-      setUsers((prevUsers) => {
-        const updatedUsers = [...prevUsers];
-        const targetId = data.isGroup
-          ? data.receiverId
-          : data.senderId === currentUser._id
-            ? data.receiverId
-            : data.senderId;
-        const index = updatedUsers.findIndex((u) => u._id === targetId);
+      const senderId = data.senderId || data.sender?._id || data.sender;
+      const receiverId = data.receiverId || data.receiver;
+      const isMeSender = senderId === currentUser._id;
 
-        if (index !== -1) {
-          const userToUpdate = updatedUsers[index];
-          let previewContent = data.text;
-          if (!previewContent && data.image) previewContent = "[Hình ảnh]";
-          if (!previewContent && data.attachments?.length > 0)
-            previewContent = "[Tệp đính kèm]";
+      const targetId = data.isGroup
+        ? receiverId
+        : isMeSender
+          ? receiverId
+          : senderId;
 
-          const updatedUser = {
-            ...userToUpdate,
-            lastMessage: {
-              content: previewContent,
-              senderId: data.senderId,
-              createdAt: data.createdAt || new Date().toISOString(),
-              isRead: false,
-            },
-            hasUnread: currentActiveChat?._id !== targetId,
-            unreadCount:
-              currentActiveChat?._id !== targetId
-                ? (userToUpdate.unreadCount || 0) + 1
-                : 0,
-          };
-
-          updatedUsers.splice(index, 1);
-          updatedUsers.unshift(updatedUser);
-          return updatedUsers;
-        } else {
-          fetchNewConversation(targetId, data.isGroup, data);
-          return prevUsers;
-        }
-      });
-
+      // KIỂM TRA CÓ ĐANG MỞ KHUNG CHAT KHÔNG
       const isViewingChat =
-        (data.isGroup && currentActiveChat?._id === data.receiverId) ||
+        (data.isGroup && currentActiveChat?._id === receiverId) ||
         (!data.isGroup &&
-          (currentActiveChat?._id === data.senderId ||
-            currentActiveChat?._id === data.receiverId));
+          (currentActiveChat?._id === senderId || currentActiveChat?._id === receiverId));
 
-      if (isViewingChat) {
-        const isMeSender = data.senderId === currentUser._id;
-        const computedIsRead = data.isGroup ? true : !isMeSender;
+      const isUnread = !isViewingChat && !isMeSender;
 
+      // XỬ LÝ KHUNG CHAT BÊN PHẢI
+      if (isViewingChat && !isMeSender) {
         setMessages((prev) => [
           ...prev,
           {
             sender: data.sender || {
-              _id: data.senderId,
+              _id: senderId,
               displayName: "Người dùng",
               avatar: null,
             },
@@ -600,58 +653,95 @@ const Home = () => {
             image: data.image,
             type: data.type,
             files: data.files,
-            attachments: data.attachments,
+            attachments: data.attachmentsData || data.attachments,
             createdAt: data.createdAt,
-            isRead: computedIsRead,
+            isRead: true,
           },
         ]);
 
-        if (data.senderId !== currentUser._id) {
-          if (data.isGroup) {
-            socket.emit("markRead", {
-              isGroup: true,
-              groupId: data.receiverId,
-              readerId: currentUser._id,
-            });
-          } else {
-            socket.emit("markRead", {
-              senderId: data.senderId,
-              receiverId: currentUser._id,
-              readerId: currentUser._id,
-            });
-          }
+        if (data.isGroup) {
+          socket.emit("markRead", { isGroup: true, groupId: receiverId, readerId: currentUser._id });
+        } else {
+          socket.emit("markRead", { senderId: senderId, receiverId: currentUser._id });
         }
+
         setTimeout(() => {
-          bottomRef.current?.scrollIntoView({ behavior: "auto" });
-        }, 100);
-      } else {
-        if (data.type !== "system" && data.senderId !== currentUser._id) {
-          try {
-            let messageToast = "";
+          const container = scrollRef.current;
+          if (container) {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            const distanceToBottom = scrollHeight - scrollTop - clientHeight;
 
-            if (data.isGroup) {
-              const groupName = data.groupName;
-              const senderName = data.sender?.displayName;
-
-              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
+            if (distanceToBottom > 150) {
+              setHasNewUnread(true);
             } else {
-              const sender = users.find((u) => u._id === data.senderId);
-              const senderName = sender
-                ? sender.displayName
-                : data.sender?.displayName || "Ai đó";
-
-              messageToast = `Tin nhắn mới từ ${senderName}`;
+              container.scrollTo({ top: scrollHeight, behavior: "smooth" });
             }
-
-            toast.info(messageToast, {
-              position: "top-right",
-              autoClose: 3000,
-              hideProgressBar: true,
-            });
-          } catch (error) {
-            console.error("Lỗi không hiển thị toast: ", error);
-            console.log("Dữ liệu tin nhắn bị lỗi:", data);
           }
+        }, 100);
+      }
+
+      // CHUẨN BỊ NỘI DUNG PREVIEW CHO SIDEBAR
+      let previewContent = data.text;
+      if (!previewContent && data.image) previewContent = "[Hình ảnh]";
+      if (!previewContent && data.attachments?.length > 0) previewContent = "[Tệp đính kèm]";
+
+      // Hàm helper dùng chung cho cả Users list và Search list
+      const updateListWithPreview = (list = []) => {
+        const updatedList = [...list];
+        const index = updatedList.findIndex((item) => item._id === targetId);
+
+        if (index === -1) return null; 
+
+        const itemToUpdate = updatedList[index];
+        const updatedItem = {
+          ...itemToUpdate,
+          lastMessage: {
+            content: previewContent,
+            senderId: senderId,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: !isUnread,
+          },
+          hasUnread: isUnread,
+          unreadCount: isUnread ? (itemToUpdate.unreadCount || 0) + 1 : 0,
+        };
+
+        updatedList.splice(index, 1);
+        updatedList.unshift(updatedItem);
+        return updatedList;
+      };
+
+      // CẬP NHẬT SIDEBAR CHÍNH
+      setUsers((prevUsers) => {
+        const newList = updateListWithPreview(prevUsers);
+        if (newList) return newList;
+
+        // NẾU KHÔNG TÌM THẤY
+        fetchNewConversation(targetId, data.isGroup, data);
+        return prevUsers;
+      });
+
+      // CẬP NHẬT DANH SÁCH TÌM KIẾM
+      setSearchResult((prevResult) => {
+        if (!prevResult || prevResult.length === 0) return prevResult;
+        const newList = updateListWithPreview(prevResult);
+        return newList || prevResult;
+      });
+
+      // HIỂN THỊ TOAST THÔNG BÁO
+      if (isUnread && data.type !== "system") {
+        try {
+          const senderName = data.sender?.displayName || "Ai đó";
+          const messageToast = data.isGroup
+            ? `${senderName} vừa gửi tin nhắn tới nhóm ${data.groupName || ""}`
+            : `Tin nhắn mới từ ${senderName}`;
+
+          toast.info(messageToast, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: true,
+          });
+        } catch (error) {
+          console.error("Lỗi không hiển thị toast: ", error);
         }
       }
     };
@@ -661,14 +751,23 @@ const Home = () => {
     return () => {
       socket.off("getMessage", handleUnifiedMessage);
     };
-  }, [socket, currentUser, users, fetchNewConversation]);
+  }, [socket, currentUser, fetchNewConversation]);
 
   useEffect(() => {
     const fetchMessages = async () => {
       if (!activeChat || !currentUser) return;
+
+      // Reset lại khi đổi đoạn chat
+      setHasMore(true);
       setMessages([]);
+      isFirstLoad.current = true;
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+
       try {
         const isGroup = activeChat.members ? true : false;
+
+        // Gọi API lần đầu
         const url = isGroup
           ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true`
           : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
@@ -676,22 +775,29 @@ const Home = () => {
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        const sorted = res.data.sort(
-          (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-        );
 
-        setMessages(sorted);
+        if (res.data && res.data.success) {
+          setMessages(res.data.data);
+          setHasMore(res.data.hasMore);
+          setUsers((prev) =>
+            prev.map((u) =>
+              u._id === activeChat._id
+                ? { ...u, unreadCount: 0, hasUnread: false }
+                : u,
+            ),
+          );
 
+        }
         if (socket) {
-          if (isGroup) {
+          if (activeChatIsGroup) {
             socket.emit("markRead", {
               isGroup: true,
-              groupId: activeChat._id,
+              groupId: activeChatId,
               readerId: currentUser._id,
             });
           } else {
             socket.emit("markRead", {
-              senderId: activeChat._id,
+              senderId: activeChatId,
               receiverId: currentUser._id,
             });
           }
@@ -701,7 +807,7 @@ const Home = () => {
       }
     };
     fetchMessages();
-  }, [activeChat, currentUser, API_URL, socket]);
+  }, [activeChatId, activeChatIsGroup, currentUser?._id, API_URL, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -745,12 +851,13 @@ const Home = () => {
     setIsTyping(false);
     setTypingUserName("");
     setTypingUserAvatar(null);
-  }, [activeChat]);
+  }, [activeChatKey]);
 
-  // --- HANDLERS CHÍNH ---
+  // HANDLERS
   const handleScrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      setHasNewUnread(false);
     }
   };
 
@@ -907,8 +1014,19 @@ const Home = () => {
     }, 2000);
   };
 
+  // Gửi tin nhắn
   const handleSendMessage = async (e) => {
     e.preventDefault();
+
+    // CHẶN NẾU TRÌNH DUYỆT MẤT MẠNG INTERNET
+    if (!navigator.onLine) {
+      toast.error("Bạn đang mất kết nối mạng. Vui lòng kiểm tra lại!");
+    }
+
+    // CHẶN NẾU BỊ ĐỨT KẾT NỐI VỚI SERVER SOCKET
+    if (!socket || !socket.connected) {
+      toast.error("Đang mất kết nối với máy chủ chat. Đang thử kết nối lại...");
+    }
 
     const isUploading = uploadQueue.some((item) => item.status === "uploading");
     if (isUploading) {
@@ -916,9 +1034,8 @@ const Home = () => {
       return;
     }
 
-    const attachmentIds = uploadQueue
-      .filter((item) => item.status === "completed" && item.dbFileId)
-      .map((item) => item.dbFileId);
+    const completedAttachments = uploadQueue.filter((item) => item.status === "completed" && item.dbFileId);
+    const attachmentIds = completedAttachments.map((item) => item.dbFileId);
 
     // Nếu không có text và không có file nào thì dừng
     if (!newMessage.trim() && attachmentIds.length === 0) return;
@@ -937,38 +1054,87 @@ const Home = () => {
 
     try {
       const isGroup = activeChat.members ? true : false;
+      const tempId = `temp_${uuidv4()}`;
+      let currentConvId = activeChat.conversationId;
+
+      if (isGroup) {
+        currentConvId = activeChat._id;
+      }
+
       const messagePayload = {
+        conversationId: currentConvId,
         sender: currentUser._id,
         receiver: activeChat._id,
+        receiverId: activeChat._id,
         text: newMessage,
         attachments: attachmentIds,
+        attachmentsData: completedAttachments,
         isGroup: isGroup,
         type: attachmentIds.length > 0 ? "file" : "text",
+        senderInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName,
+          avatar: currentUser.avatar
+        }
       };
 
-      // GỌI API LƯU TIN NHẮN
-      const res = await axios.post(`${API_URL}/api/messages`, messagePayload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const savedMessage = res.data;
-
-      // BẮN SOCKET CHO NGƯỜI NHẬN
-      socket.emit("sendMessage", {
-        ...savedMessage,
-        createdAt: savedMessage.createdAt,
-        senderId: currentUser._id,
-        receiverId: activeChat._id,
+      //  Hiển thị lên màn hình ngay lập tức
+      const optimisticMessage = {
+        _id: tempId,
+        conversationId: currentConvId,
+        sender: currentUser,
+        text: newMessage,
+        attachments: completedAttachments,
         isGroup: isGroup,
-        text: savedMessage.text,
-        image: savedMessage.image,
-        files: savedMessage.files,
-        attachments: savedMessage.attachments,
-      });
+        type: messagePayload.type,
+        createdAt: new Date().toISOString(),
+        status: "sending",
+        rawPayload: messagePayload
+      };
 
-      // CẬP NHẬT GIAO DIỆN
+      setMessages((prev) => [...prev, optimisticMessage]);
       setNewMessage("");
       clearUploads();
       setShowEmoji(false);
+
+      // Khi vừa gửi tin nhắn thì kéo xuống để hiển thị cho chính mình luôn
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: "smooth"
+          });
+        }
+      }, 50);
+
+      // Sau 15s nếu server không phản hồi thì đánh dấu là lỗi
+      const timeoutId = setTimeout(() => {
+        setMessages(prev => prev.map(msg =>
+          (msg._id === tempId && msg.status === "sending")
+            ? { ...msg, status: "error" } : msg
+        ));
+      }, 15000);
+
+      // Gửi tin nhắn qua socket
+      socket.emit("sendMessage", messagePayload, (res) => {
+        clearTimeout(timeoutId);
+        if (res && res.success) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === tempId
+                ? { ...msg, _id: res.realId, status: "sent", rawPayload: undefined } : msg
+            )
+          );
+        } else {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === tempId ? { ...msg, status: "error" } : msg
+            )
+          );
+          toast.error("Không thể gửi tin nhắn. Vui lòng thử lại!");
+        }
+      })
+
     } catch (err) {
       console.error(err);
       toast.error("Lỗi gửi tin nhắn");
@@ -995,39 +1161,157 @@ const Home = () => {
     setCurrentUser(updatedUser);
   };
 
+  const handleRetryMessage = (failedMessage) => {
+    // Không có payload thì không thể gửi lại
+    if (!failedMessage.rawPayload) {
+      toast.error("Dữ liệu tin nhắn đã mất, không thể thử lại.");
+      return;
+    }
+
+    // Đổi trạng thái UI quay lại thành "Đang gửi..."
+    setMessages((prev) => prev.map((msg) =>
+      msg._id === failedMessage._id ? { ...msg, status: "sending" } : msg
+    ));
+
+    // Khởi tạo lại một Timeout 15s mới cho lần thử lại này
+    const retryTimeoutId = setTimeout(() => {
+      setMessages(prev => prev.map(msg =>
+        (msg._id === failedMessage._id && msg.status === "sending")
+          ? { ...msg, status: "error" } : msg
+      ));
+    }, 15000);
+
+    // Bắn Socket gửi lại với payload cũ
+    socket.emit("sendMessage", failedMessage.rawPayload, (res) => {
+      clearTimeout(retryTimeoutId); // Có phản hồi thì hủy hẹn giờ
+
+      if (res && res.success) {
+        setMessages((prev) => prev.map((msg) =>
+          msg._id === failedMessage._id
+            ? { ...msg, _id: res.realId, status: "sent", rawPayload: undefined }
+            : msg
+        ));
+      } else {
+        setMessages((prev) => prev.map((msg) =>
+          msg._id === failedMessage._id ? { ...msg, status: "error" } : msg
+        ));
+      }
+    });
+  };
+
+  // Hiển thị thêm tin nhắn khi cuộn lên
+  const loadMoreMessages = async () => {
+    // Chặn nếu đang tải, hoặc đã hết tin nhắn, hoặc chưa có tin nào
+    if (isLoadingMoreRef.current || !hasMore || messages.length === 0) return;
+
+    isLoadingMoreRef.current = true;
+
+    setIsLoadingMore(true);
+    const container = scrollRef.current;
+    const previousScrollHeight = container?.scrollHeight; // Lưu chiều cao cũ
+
+    try {
+      const isGroup = activeChat.members ? true : false;
+      const oldestMessageId = messages[0]._id; // Lấy ID của tin nhắn cũ nhất đang hiển thị
+
+      // Thêm cursor vào URL
+      const url = isGroup
+        ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true&cursor=${oldestMessageId}`
+        : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}?cursor=${oldestMessageId}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      if (res.data && res.data.success) {
+        const oldMessages = res.data.data;
+
+        if (oldMessages.length === 0) {
+          setHasMore(false);
+          isLoadingMoreRef.current = false;
+          setIsLoadingMore(false);
+          return;
+        }
+
+        // Nối tin cũ lên trước mảng tin nhắn hiện tại
+        setMessages(prev => [...oldMessages, ...prev]);
+        setHasMore(res.data.hasMore);
+
+        // Chống giật màn hình
+        setTimeout(() => {
+          if (container) {
+            const newScrollHeight = container.scrollHeight;
+            container.scrollTop = newScrollHeight - previousScrollHeight;
+          }
+
+          isLoadingMoreRef.current = false;
+          setIsLoadingMore(false);
+        }, 50);
+      }
+    } catch (error) {
+      console.error("Lỗi tải thêm tin nhắn:", error);
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  };
+
+  useLayoutEffect(() => {
+    // Chỉ chạy nếu đây là lần tải đầu tiên và đã có tin nhắn để cuộn
+    if (isFirstLoad.current && messages.length > 0) {
+      const container = scrollRef.current;
+      if (container) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "auto",
+        });
+
+        isFirstLoad.current = false;
+      }
+    }
+  }, [messages]);
+
   if (isLoading)
     return (
       <div className="h-screen flex items-center justify-center">
-        Loading...
+        <Loader />
       </div>
     );
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* SIDEBAR */}
-      <Sidebar
-        currentUser={currentUser}
-        setShowProfile={setShowProfile}
-        getAvatarUrl={getAvatarUrl}
-        setShowCreateGroup={setShowCreateGroup}
-        setShowRequestModal={setShowRequestModal}
-        requestCount={requestCount}
-        handleLogout={handleLogout}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        isSearching={isSearching}
-        groups={groups}
-        handleSelectUser={handleSelectUser}
-        usersToDisplay={usersToDisplay}
-        users={users}
-        sentRequests={sentRequests}
-        checkIsOnline={checkIsOnline}
-        renderLastMessage={renderLastMessage}
-        handleAddFriend={handleAddFriend}
-      />
+      <div
+        className={`${activeChat ? "hidden sm:flex" : "flex"
+          } w-full sm:w-auto h-full`}
+      >
+        <Sidebar
+          currentUser={currentUser}
+          setShowProfile={setShowProfile}
+          getAvatarUrl={getAvatarUrl}
+          setShowCreateGroup={setShowCreateGroup}
+          setShowRequestModal={setShowRequestModal}
+          requestCount={requestCount}
+          handleLogout={handleLogout}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          isSearching={isSearching}
+          groups={groups}
+          handleSelectUser={handleSelectUser}
+          usersToDisplay={usersToDisplay}
+          users={users}
+          sentRequests={sentRequests}
+          checkIsOnline={checkIsOnline}
+          renderLastMessage={renderLastMessage}
+          handleAddFriend={handleAddFriend}
+        />
+      </div>
 
       {/* CHAT WINDOW */}
-      <div className="flex-1 flex flex-col bg-gray-50 h-full">
+      <div
+        className={`${activeChat ? "flex" : "hidden sm:flex"
+          } flex-1 flex-col bg-gray-50 h-full`}
+      >
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
@@ -1037,11 +1321,11 @@ const Home = () => {
           >
             <ChatWindow
               activeChat={activeChat}
+              setActiveChat={setActiveChat}
               currentChatUser={currentChatUser}
               currentUser={currentUser}
               messages={messages}
               users={users}
-              isFriend={isFriend}
               isTyping={isTyping}
               typingUserName={typingUserName}
               typingUserAvatar={typingUserAvatar}
@@ -1050,9 +1334,14 @@ const Home = () => {
               API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
-              handleVideoCall={handleVideoCall}
+              handleCall={handleCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
+              handleRetryMessage={handleRetryMessage}
+              loadMoreMessages={loadMoreMessages}
+              isLoadingMore={isLoadingMore}
+              setHasNewUnread={setHasNewUnread}
+              hasNewUnread={hasNewUnread}
             />
 
             <ChatInput
@@ -1069,7 +1358,11 @@ const Home = () => {
           </FilePicker>
         ) : (
           /* Màn hình chờ khi chưa chọn ai để chat */
-          <ChatWindow activeChat={null} currentChatUser={null} />
+          <ChatWindow
+            activeChat={null}
+            setActiveChat={setActiveChat}
+            currentChatUser={null}
+          />
         )}
       </div>
 
@@ -1091,9 +1384,7 @@ const Home = () => {
       {showRequestModal && (
         <FriendRequestModal
           onClose={() => setShowRequestModal(false)}
-          onSuccess={fetchData}
           setRequestCount={setRequestCount}
-          currentUser={currentUser}
         />
       )}
       {showGroupMembers && activeChat?.members && currentUser && (
@@ -1103,7 +1394,6 @@ const Home = () => {
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
             upsertGroup(updatedGroup);
-            setActiveChat(updatedGroup);
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);
