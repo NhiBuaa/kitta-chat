@@ -60,6 +60,8 @@ const Home = () => {
   const typingTimeoutRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
   const isFirstLoad = useRef(true);
+  const shouldAutoScrollOnMediaLoadRef = useRef(false);
+  const autoScrollReleaseTimeoutRef = useRef(null);
 
   // BIẾN
   const API_URL = import.meta.env.VITE_API_URL;
@@ -338,6 +340,25 @@ const Home = () => {
     if (!user || !onlineUsers || onlineUsers.length === 0) return false;
     return onlineUsers.some((u) => u.userId === user._id);
   };
+
+  const releaseAutoScrollLock = useCallback(() => {
+    shouldAutoScrollOnMediaLoadRef.current = false;
+    if (autoScrollReleaseTimeoutRef.current) {
+      clearTimeout(autoScrollReleaseTimeoutRef.current);
+      autoScrollReleaseTimeoutRef.current = null;
+    }
+  }, []);
+
+  const armAutoScrollLock = useCallback(() => {
+    shouldAutoScrollOnMediaLoadRef.current = true;
+    if (autoScrollReleaseTimeoutRef.current) {
+      clearTimeout(autoScrollReleaseTimeoutRef.current);
+    }
+    autoScrollReleaseTimeoutRef.current = setTimeout(() => {
+      shouldAutoScrollOnMediaLoadRef.current = false;
+      autoScrollReleaseTimeoutRef.current = null;
+    }, 2000);
+  }, []);
 
   const normalizeAttachmentForMessage = useCallback((attachment) => ({
     _id: attachment?.dbFileId || attachment?._id,
@@ -793,6 +814,7 @@ const Home = () => {
       isFirstLoad.current = true;
       isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
+      armAutoScrollLock();
 
       try {
         const isGroup = activeChat.members ? true : false;
@@ -884,14 +906,48 @@ const Home = () => {
   }, [activeChatKey]);
 
   // HANDLERS
-  const handleScrollToBottom = () => {
+  const scrollChatToBottom = useCallback((behavior = "auto") => {
+    if (bottomRef.current?.scrollIntoView) {
+      bottomRef.current.scrollIntoView({
+        block: "end",
+        behavior,
+      });
+      setHasNewUnread(false);
+      return;
+    }
+
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior,
+      });
       setHasNewUnread(false);
     }
+  }, []);
+
+  const handleScrollToBottom = () => {
+    armAutoScrollLock();
+    scrollChatToBottom("smooth");
   };
 
+  const handleMediaContentLoad = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const distanceToBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    if (shouldAutoScrollOnMediaLoadRef.current || distanceToBottom <= 150) {
+      scrollChatToBottom("auto");
+    }
+  }, [scrollChatToBottom]);
+
+  const handleUserMovedAwayFromBottom = useCallback(() => {
+    releaseAutoScrollLock();
+  }, [releaseAutoScrollLock]);
+
   const handleSelectUser = (user) => {
+    armAutoScrollLock();
     setActiveChat(user);
     setUsers((prev) =>
       prev.map((u) => {
@@ -1272,7 +1328,8 @@ const Home = () => {
         setTimeout(() => {
           if (container) {
             const newScrollHeight = container.scrollHeight;
-            container.scrollTop = newScrollHeight - previousScrollHeight;
+            const restoredScrollTop = newScrollHeight - previousScrollHeight;
+            container.scrollTop = Math.max(restoredScrollTop, 80);
           }
 
           isLoadingMoreRef.current = false;
@@ -1290,17 +1347,16 @@ const Home = () => {
   useLayoutEffect(() => {
     // Chỉ chạy nếu đây là lần tải đầu tiên và đã có tin nhắn để cuộn
     if (isFirstLoad.current && messages.length > 0) {
-      const container = scrollRef.current;
-      if (container) {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: "auto",
-        });
-
-        isFirstLoad.current = false;
-      }
+      scrollChatToBottom("auto");
+      isFirstLoad.current = false;
     }
-  }, [messages]);
+  }, [messages, scrollChatToBottom]);
+
+  useEffect(() => () => {
+    if (autoScrollReleaseTimeoutRef.current) {
+      clearTimeout(autoScrollReleaseTimeoutRef.current);
+    }
+  }, []);
 
   if (isLoading)
     return (
@@ -1370,6 +1426,8 @@ const Home = () => {
               handleCall={handleCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
+              onMediaContentLoad={handleMediaContentLoad}
+              onUserMovedAwayFromBottom={handleUserMovedAwayFromBottom}
               handleRetryMessage={handleRetryMessage}
               loadMoreMessages={loadMoreMessages}
               isLoadingMore={isLoadingMore}
