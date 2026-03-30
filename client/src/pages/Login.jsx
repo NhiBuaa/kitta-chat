@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { login } from "../services/authService";
+import { login, loginWithGoogle } from "../services/authService";
+import { loginWithGoogleFirebase } from "../firebase";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -35,6 +36,27 @@ const Login = () => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const user = await loginWithGoogleFirebase();
+
+      const res = await loginWithGoogle({
+        email: user.email,
+        displayName: user.displayName,
+        avatar: user.photoURL,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      window.dispatchEvent(new Event("auth-changed"));
+
+      toast.success(`Chào mừng ${res.data.user.displayName}!`);
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      toast.error("Đăng nhập Google thất bại");
+    }
+  };
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F4FBF6]">
       <div className="bg-white border border-[#D7EEDD] rounded-3xl shadow-lg flex w-full max-w-4xl overflow-hidden">
@@ -156,6 +178,24 @@ const Login = () => {
               {isSubmitting ? "Đang xử lý..." : "Đăng Nhập"}
             </button>
           </form>
+          <div className="my-4 flex items-center">
+            <div className="flex-grow border-t"></div>
+            <span className="mx-2 text-gray-400 text-sm">hoặc</span>
+            <div className="flex-grow border-t"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full border border-gray-300 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+          >
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+              className="w-5 h-5"
+            />
+            Đăng nhập với Google
+          </button>
 
           <div className="mt-6 text-center text-sm text-gray-600">
             Chưa có tài khoản?{" "}

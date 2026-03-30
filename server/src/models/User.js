@@ -9,6 +9,11 @@ const userSchema = new mongoose.Schema(
     isOnline: { type: Boolean, default: false },
     displayName: { type: String, default: "" },
     avatar: { type: String, default: DEFAULT_AVATAR },
+    provider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
     status: {
       type: String,
       default: "Hey there! I am using KittaChat.",

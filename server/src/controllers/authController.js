@@ -87,7 +87,13 @@ exports.login = async (req, res) => {
     const cleanEmail = email.trim().toLowerCase();
 
     // Tìm bằng email
-    const user = await User.findOne({ email: cleanEmail });
+    const user = await User.findOne({ email });
+    if (user && user.provider === "google") {
+      return res.status(400).json({
+        success: false,
+        message: "Tài khoản này đăng nhập bằng Google",
+      });
+    }
     if (!user) {
       return res
         .status(400)
@@ -126,6 +132,68 @@ exports.login = async (req, res) => {
   }
 };
 
+// dnhap bang gg
+exports.googleLogin = async (req, res) => {
+  try {
+    const { email, displayName, avatar } = req.body;
+
+    // validate
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu email từ Google",
+      });
+    }
+
+    const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=22c55e&color=fff&size=128`;
+    // 2. tim ng dung co email
+    let user = await User.findOne({ email });
+
+    // 3. ch co thi tao moi
+    if (!user) {
+      user = new User({
+        email,
+        displayName,
+        avatar:
+          avatar && avatar !== ""
+            ? avatar.replace("=s96-c", "=s256-c")
+            : defaultAvatarUrl,
+        password: "GOOGLE_LOGIN",
+        provider: "google",
+      });
+
+      await user.save();
+    }
+
+    // 4. tạo tolen như login
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "1d" },
+    );
+
+    // 5. gui ve fe
+    res.json({
+      success: true,
+      message: "Đăng nhập bằng Google thành công",
+      token,
+      user: {
+        id: user._id,
+        displayName: user.displayName,
+        email: user.email,
+        avatar: user.avatar,
+      },
+    });
+  } catch (error) {
+    console.error("Google Login Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+    });
+  }
+};
+
+// quen mk
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
