@@ -62,10 +62,11 @@ const Sidebar = ({
           >
             <FaBell
               size={16}
-              className={`transition-all duration-300 ${requestCount > 0
-                ? "text-yellow-300 animate-pulse"
-                : "hover:text-blue-200"
-                }`}
+              className={`transition-all duration-300 ${
+                requestCount > 0
+                  ? "text-yellow-300 animate-pulse"
+                  : "hover:text-blue-200"
+              }`}
             />
             {requestCount > 0 && (
               <span className="absolute top-0 right-0 h-4 w-4 bg-red-600 text-[10px] flex items-center justify-center rounded-full border border-blue-600 text-white font-bold">
@@ -147,9 +148,9 @@ const Sidebar = ({
             const isFriend = Boolean(user.isFriend);
             const isPendingRequest = Boolean(
               user.isSent ||
-                user.isIncomingRequest ||
-                user.isReceived ||
-                sentRequests.includes(user._id),
+              user.isIncomingRequest ||
+              user.isReceived ||
+              sentRequests.includes(user._id),
             );
             const hasUnread = Boolean(user.hasUnread);
 
@@ -157,10 +158,11 @@ const Sidebar = ({
               <div
                 key={user._id}
                 onClick={() => handleSelectUser(user)}
-                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer ${hasUnread
+                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer ${
+                  hasUnread
                     ? "bg-blue-50 hover:bg-blue-100"
                     : "hover:bg-gray-100"
-                  }`}
+                }`}
               >
                 <div className="relative flex-shrink-0">
                   <img
@@ -177,19 +179,21 @@ const Sidebar = ({
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <div className="flex items-center justify-between gap-2">
                     <h3
-                      className={`text-sm truncate pr-2 ${hasUnread
-                        ? "font-bold text-gray-900"
-                        : "font-semibold text-gray-800"
-                        }`}
+                      className={`text-sm truncate pr-2 ${
+                        hasUnread
+                          ? "font-bold text-gray-900"
+                          : "font-semibold text-gray-800"
+                      }`}
                     >
                       {user.displayName}
                     </h3>
                     {user.lastMessage && (
                       <span
-                        className={`text-[10px] flex-shrink-0 ${hasUnread
-                          ? "text-blue-600 font-bold"
-                          : "text-gray-400"
-                          }`}
+                        className={`text-[10px] flex-shrink-0 ${
+                          hasUnread
+                            ? "text-blue-600 font-bold"
+                            : "text-gray-400"
+                        }`}
                       >
                         {new Date(
                           user.lastMessage.createdAt,
@@ -234,7 +238,7 @@ const Sidebar = ({
                 )}
                 {hasUnread && isFriend && (
                   <div className="ml-2 flex-shrink-0">
-                    <span className=" bg-red-500 text-white text-[11px] font-semibold px-2 py-[2px]  rounded-full  min-w-[20px] text-center  leading-none">
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow animate-bounce">
                       {user.unreadCount > 9 ? "9+" : user.unreadCount}
                     </span>
                   </div>
@@ -244,7 +248,7 @@ const Sidebar = ({
           })
         ) : (
           <div className="flex flex-col items-center justify-center flex-1 flex flex-col items-center justify-center text-gray-500 px-6 text-center">
-            <FaSearch className="text-3xl text-gray-300 mb-3" />
+            <FaSearch className="mt-3 text-3xl text-gray-300 mb-3" />
 
             {searchTerm ? (
               <>

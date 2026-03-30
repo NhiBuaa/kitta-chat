@@ -86,7 +86,9 @@ const createGroup = async (req, res) => {
 const getMyGroups = async (req, res) => {
   try {
     const currentUserId = req.user.id;
-    const groups = await populateGroup(Group.find({ members: currentUserId })).sort({
+    const groups = await populateGroup(
+      Group.find({ members: currentUserId }),
+    ).sort({
       updatedAt: -1,
     });
 
@@ -101,21 +103,24 @@ const addMember = async (req, res) => {
   try {
     const { groupId } = req.params;
     const { memberId } = req.body;
-    const adminId = req.user.id;
+    const userId = req.user.id;
     const io = req.app.get("socketio");
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ success: false, message: "Nhóm không tồn tại" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Nhóm không tồn tại" });
     }
 
-    if (group.admin.toString() !== adminId) {
+    if (!group.members.some((id) => id.toString() === userId)) {
       return res.status(403).json({
         success: false,
-        message: "Chỉ admin mới có thể thêm thành viên",
+        message: "Bạn không có quyền thêm thành viên vào nhóm",
       });
     }
 
+    // ko dc them trùng
     if (group.members.some((id) => id.toString() === memberId)) {
       return res.status(400).json({
         success: false,
@@ -127,13 +132,13 @@ const addMember = async (req, res) => {
     await group.save();
 
     const updatedGroup = await populateGroup(Group.findById(groupId));
-    const [admin, newMember] = await Promise.all([
-      User.findById(adminId).select("displayName username"),
+    const [actor, newMember] = await Promise.all([
+      User.findById(userId).select("displayName username"),
       User.findById(memberId).select("displayName username"),
     ]);
     const systemMessage = await createSystemMessage(
       groupId,
-      `${getSafeUserName(admin)} đã thêm ${getSafeUserName(newMember)} vào nhóm`,
+      `${getSafeUserName(actor)} đã thêm ${getSafeUserName(newMember)} vào nhóm`,
     );
 
     io.to(groupId).emit("getMessage", {
@@ -148,7 +153,7 @@ const addMember = async (req, res) => {
 
     emitGroupUpsert(io, updatedGroup, {
       action: "member-added",
-      actorId: adminId,
+      actorId: userId,
       addedMemberId: memberId,
     });
 
@@ -173,11 +178,15 @@ const removeMember = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ success: false, message: "Nhóm không tồn tại" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Nhóm không tồn tại" });
     }
 
     if (group.admin.toString() !== adminId && memberId !== adminId) {
-      return res.status(403).json({ success: false, message: "Không có quyền" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền" });
     }
 
     if (!group.members.some((id) => id.toString() === memberId)) {
@@ -188,7 +197,9 @@ const removeMember = async (req, res) => {
     }
 
     const previousMemberIds = group.members.map((id) => id.toString());
-    const removedMember = await User.findById(memberId).select("displayName username");
+    const removedMember = await User.findById(memberId).select(
+      "displayName username",
+    );
     const actionType = memberId === adminId ? "rời" : "bị xóa khỏi";
     const systemMessage = await createSystemMessage(
       groupId,
@@ -235,7 +246,9 @@ const renameGroup = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ success: false, message: "Nhóm không tồn tại" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Nhóm không tồn tại" });
     }
 
     if (group.admin.toString() !== adminId) {
@@ -292,7 +305,9 @@ const transferAdmin = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ success: false, message: "Nhóm không tồn tại" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Nhóm không tồn tại" });
     }
 
     if (group.admin.toString() !== currentAdminId) {
@@ -342,7 +357,11 @@ const transferAdmin = async (req, res) => {
     };
     emitToUserRooms(io, memberIds, "groupAdminChanged", payload);
 
-    res.json({ success: true, message: "Chuyển quyền thành công", group: updatedGroup });
+    res.json({
+      success: true,
+      message: "Chuyển quyền thành công",
+      group: updatedGroup,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Lỗi server" });
@@ -358,7 +377,9 @@ const deleteGroup = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ success: false, message: "Nhóm không tồn tại" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Nhóm không tồn tại" });
     }
 
     if (group.admin.toString() !== adminId) {
@@ -405,7 +426,9 @@ const getGroupById = async (req, res) => {
     const group = await populateGroup(Group.findById(groupId));
 
     if (!group) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy group" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy group" });
     }
 
     res.status(200).json(group);

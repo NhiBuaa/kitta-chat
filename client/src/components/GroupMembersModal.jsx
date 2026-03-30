@@ -31,7 +31,9 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   const token = localStorage.getItem("token");
 
   const adminId =
-    group.admin && typeof group.admin === "object" ? group.admin._id : group.admin;
+    group.admin && typeof group.admin === "object"
+      ? group.admin._id
+      : group.admin;
   const isAdmin = currentUser._id === adminId;
 
   useEffect(() => {
@@ -75,7 +77,9 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
               onClose();
             } else {
               toast.success("Xóa thành viên thành công");
-              const updatedMembers = members.filter((member) => member._id !== memberId);
+              const updatedMembers = members.filter(
+                (member) => member._id !== memberId,
+              );
               setMembers(updatedMembers);
               onGroupUpdated?.({ ...group, members: updatedMembers });
             }
@@ -171,7 +175,9 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg w-150 max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-lg font-bold">Thành viên nhóm ({members.length})</h2>
+          <h2 className="text-lg font-bold">
+            Thành viên nhóm ({members.length})
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -195,7 +201,9 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
                 />
                 <div className="min-w-0">
                   <p className="text-sm font-medium flex items-center whitespace-nowrap">
-                    <span className="truncate">{getUserDisplayName(member)}</span>
+                    <span className="truncate">
+                      {getUserDisplayName(member)}
+                    </span>
                     {member._id === adminId && (
                       <span className="ml-2 text-yellow-500 flex items-center gap-1 text-xs flex-shrink-0">
                         <FaCrown size={12} /> Trưởng nhóm
@@ -227,20 +235,22 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
                   </>
                 )}
 
-                {isAdmin && member._id === currentUser._id && members.length > 1 && (
-                  <button
-                    onClick={() =>
-                      transferringAdmin
-                        ? toast.info("Vui lòng chọn người nhận quyền trước")
-                        : handleRemoveMember(member._id)
-                    }
-                    className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors"
-                    title="Rời nhóm"
-                    disabled={loading}
-                  >
-                    <FaUserMinus size={14} />
-                  </button>
-                )}
+                {isAdmin &&
+                  member._id === currentUser._id &&
+                  members.length > 1 && (
+                    <button
+                      onClick={() =>
+                        transferringAdmin
+                          ? toast.info("Vui lòng chọn người nhận quyền trước")
+                          : handleRemoveMember(member._id)
+                      }
+                      className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors"
+                      title="Rời nhóm"
+                      disabled={loading}
+                    >
+                      <FaUserMinus size={14} />
+                    </button>
+                  )}
 
                 {!isAdmin && member._id === currentUser._id && (
                   <button
@@ -258,16 +268,14 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
         </div>
 
         <div className="border-t p-4 flex gap-2">
-          {isAdmin && (
-            <button
-              onClick={() => setShowAddMember(true)}
-              className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors font-medium"
-              disabled={loading}
-            >
-              <FaUserPlus size={14} />
-              Thêm thành viên
-            </button>
-          )}
+          <button
+            onClick={() => setShowAddMember(true)}
+            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors font-medium"
+            disabled={loading}
+          >
+            <FaUserPlus size={14} />
+            Thêm thành viên
+          </button>
           {isAdmin && (
             <button
               onClick={handleDeleteGroup}

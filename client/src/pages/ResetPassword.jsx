@@ -12,6 +12,7 @@ const ResetPassword = () => {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm();
 
@@ -30,6 +31,7 @@ const ResetPassword = () => {
   const hasLower = /[a-z]/.test(password || "");
   const hasNumber = /\d/.test(password || "");
   const hasSpecial = /[@$!%*?&]/.test(password || "");
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -84,13 +86,28 @@ const ResetPassword = () => {
                   type={showPassword ? "text" : "password"}
                   {...register("newPassword", {
                     required: "Vui lòng nhập mật khẩu mới",
+                    validate: (value) => {
+                      if (/\s/.test(value)) {
+                        return "Mật khẩu không được chứa khoảng trắng";
+                      }
+
+                      if (!passwordRegex.test(value)) {
+                        return "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
+                      }
+
+                      return true;
+                    },
                   })}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\s/g, "");
+                    setValue("newPassword", value, { shouldValidate: true });
+                  }}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all shadow-sm focus:shadow-md"
                   placeholder="Mật khẩu mới của bạn"
                 />
 
                 <div
-                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-purple-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#66BB6A] hover:text-[#4CAF50] transition"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -154,14 +171,24 @@ const ResetPassword = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   {...register("confirmPassword", {
                     required: "Vui lòng xác nhận mật khẩu",
-                    validate: (v) => v === password || "Mật khẩu không khớp",
+                    validate: (v) => {
+                      if (/\s/.test(v)) return "Không được chứa khoảng trắng";
+                      if (v !== password) return "Mật khẩu không khớp";
+                      return true;
+                    },
                   })}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\s/g, "");
+                    setValue("confirmPassword", value, {
+                      shouldValidate: true,
+                    });
+                  }}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#D7EEDD] bg-white focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] outline-none transition-all shadow-sm focus:shadow-md"
                   placeholder="Xác nhận mật khẩu mới"
                 />
 
                 <div
-                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-purple-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#66BB6A] hover:text-[#4CAF50] transition"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}

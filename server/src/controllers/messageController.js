@@ -62,23 +62,41 @@ exports.createMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
+    const { isGroup, cursor, limit = 20 } = req.query;
     let conversationId;
 
-    if (req.query.isGroup === "true") {
+    // Lấy conversationId;
+    if (isGroup === "true") {
       conversationId = userId2;
     } else {
       conversationId = [userId1, userId2].sort().join("_");
     }
 
-    const messages = await Message.find({
-      conversationId: conversationId,
-    })
-      .sort({ createdAt: 1 })
+    const query = { conversationId: conversationId };
+
+    // Nếu Fe có gửi cursor
+    if (cursor) {
+      query._id = { $lt: cursor };
+    }
+
+    // Truy vấn DB
+    let messages = await Message.find(query)
+      .sort({ _id: -1 }) // Lấy từ mới nhất lùi về quá khứ
+      .limit(parseInt(limit, 10)) // Giới hạn lại số lượng
       .populate("sender", "displayName avatar username")
       .populate("attachments");
 
-    res.status(200).json(messages);
+    // Kiểm tra xem còn tin nhắn nào mới hơn không
+    const hasMore = messages.length === parseInt(limit, 10);
+    messages = messages.reverse();
+
+    res.status(200).json({
+      success: true,
+      data: messages,
+      hasMore: hasMore
+    });
   } catch (err) {
+    console.error("Lỗi getMessages:", err);
     res.status(500).json(err);
   }
 };
