@@ -9,11 +9,13 @@ import {
   FaCheckDouble,
   FaPaperclip,
   FaArrowDown,
+  FaExclamationTriangle
 } from "react-icons/fa";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
-import MessageSeenBy from './MessageSeenBy'; 
+import Loader from "./deco/Loader";
+import MessageSeenBy from './MessageSeenBy';
 
 const ChatWindow = ({
   activeChat,
@@ -31,6 +33,11 @@ const ChatWindow = ({
   handleCall,
   setShowGroupMembers,
   handleScrollToBottom,
+  handleRetryMessage,
+  loadMoreMessages,
+  isLoadingMore,
+  setHasNewUnread,
+  hasNewUnread
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -50,8 +57,15 @@ const ChatWindow = ({
       setShowScrollButton(true);
     } else {
       setShowScrollButton(false);
+      setHasNewUnread(false)
+    }
+
+    // Nếu kéo lên trên thì hiện load thêm tin nhắn
+    if (scrollTop <= 50) {
+      loadMoreMessages();
     }
   };
+
 
   if (!activeChat || !currentChatUser) {
     return (
@@ -101,7 +115,6 @@ const ChatWindow = ({
         </div>
 
         <div className="flex space-x-4 text-blue-600">
-
           {/* Gọi audio */}
           <button
             onClick={() => handleCall("audio")}
@@ -139,18 +152,26 @@ const ChatWindow = ({
         ref={scrollRef}
         onScroll={handleScroll}
       >
-        {messages.map((message, index) => {
-          const senderId =
-            typeof message.sender === "object"
-              ? message.sender?._id
-              : message.sender;
+        {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
+        {isLoadingMore && (
+          <div className="flex flex-col items-center justify-center py-4 bg-transparent">
+            <div className="scale-[0.3] origin-center h-12 flex items-center justify-center">
+              <Loader />
+            </div>
+          </div>
+        )}
+
+        {/* Cứu cánh: Kiểm tra Array.isArray */}
+        {Array.isArray(messages) && messages.map((message, index) => {
+          const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
           const isMe = senderId === currentUser._id;
           const isGroup = Boolean(activeChat.members);
-          const senderInfo =
-            typeof message.sender === "object" ? message.sender : null;
+          const senderInfo = typeof message.sender === "object" ? message.sender : null;
           const senderName = getUserDisplayName(senderInfo);
           const senderAvatar = senderInfo?.avatar || activeChat.avatar;
           const isSystemMessage = message.type === "system";
+          const isSending = message.status === "sending";
+          const isError = message.status === "error";
 
           if (isSystemMessage) {
             return (
@@ -190,12 +211,13 @@ const ChatWindow = ({
                 )}
 
                 <div
-                  className={`p-3 max-w-xs shadow-sm text-sm ${
-                    isMe
+                  className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${isMe
                       ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
                       : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
-                  }`}
+                    } ${isSending ? "opacity-70" : "opacity-100"} ${isError ? "border-2 border-red-400" : ""
+                    }`}
                 >
+                  {/* Render files */}
                   {message.attachments && message.attachments.length > 0 && (
                     <div className="flex flex-col gap-2 mb-2">
                       {message.attachments.map((file) => {
@@ -226,11 +248,10 @@ const ChatWindow = ({
                             href={file.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${
-                              isMe
+                            className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
                                 ? "bg-green-700 hover:bg-green-800 text-white"
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                            }`}
+                              }`}
                           >
                             <FaPaperclip className="text-lg" />
                             <span className="truncate">
@@ -241,23 +262,49 @@ const ChatWindow = ({
                       })}
                     </div>
                   )}
-                  {message.text && <span>{message.text}</span>}
+
+                  {/* Render tin nhắn */}
+                  {message.text && (
+                    <div className="break-words overflow-hidden whitespace-pre-wrap leading-relaxed">
+                      {message.text}
+                    </div>
+                  )}
+
                   {isMe && (
-                    <div className="self-end mt-1 text-right">
-                      {!isGroup ? (
-                        message.isRead ? (
-                          <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                        ) : (
-                          <FaCheck className="text-xs text-gray-300 inline-block" />
-                        )
-                      ) : message.readBy && message.readBy.length > 0 ? (
-                        <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                      ) : (
-                        <FaCheck className="text-xs text-gray-300 inline-block" />
+                    <div className="self-end mt-1 flex justify-end items-center gap-1">
+                      {isSending && (
+                        <span className="text-[10px] text-green-200 italic">Đang gửi...</span>
+                      )}
+
+                      {isError && (
+                        <span
+                          onClick={() => handleRetryMessage(message)}
+                          title="Gửi lại"
+                          className="text-[10px] text-red-200 font-bold flex items-center gap-1 cursor-pointer">
+                          <FaExclamationTriangle />
+                          Lỗi gửi
+                        </span>
+                      )}
+
+                      {(!message.status || message.status === "sent") && (
+                        <>
+                          {!isGroup ? (
+                            message.isRead ? (
+                              <FaCheckDouble className="text-xs text-blue-200 inline-block" />
+                            ) : (
+                              <FaCheck className="text-xs text-green-200 inline-block" />
+                            )
+                          ) : message.readBy && message.readBy.length > 0 ? (
+                            <FaCheckDouble className="text-xs text-blue-200 inline-block" />
+                          ) : (
+                            <FaCheck className="text-xs text-green-200 inline-block" />
+                          )}
+                        </>
                       )}
                     </div>
                   )}
 
+                  {/* Những người đã xem trong group */}
                   {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
                     // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
                     const fullViewersData = message.readBy.map(reader => {
@@ -283,9 +330,8 @@ const ChatWindow = ({
                 </div>
               </div>
               <div
-                className={`text-[10px] text-gray-400 mt-1 ${
-                  isMe ? "text-right" : "text-left ml-10"
-                }`}
+                className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
+                  }`}
               >
                 {formatTimeAgo(message.createdAt)}
               </div>
@@ -325,6 +371,12 @@ const ChatWindow = ({
             title="Cuộn xuống tin nhắn mới nhất"
           >
             <FaArrowDown size={16} />
+            {hasNewUnread && (
+              <span className="absolute top-0 right-0 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
           </button>
         )}
       </div>

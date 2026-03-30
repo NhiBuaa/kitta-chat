@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from 'uuid';
 
 // COMPONENTS
 import Sidebar from "../components/Sidebar";
@@ -11,6 +12,7 @@ import FriendRequestModal from "../components/FriendRequestModal";
 import GroupMembersModal from "../components/GroupMembersModal";
 import ChatInput from "../components/ChatInput";
 import { FilePicker } from "../components/FilePicker";
+import Loader from "../components/deco/Loader";
 
 // CONTEXT & SERVICE
 import { sendFriendRequest } from "../services/userService";
@@ -43,6 +45,9 @@ const Home = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
   const [sentRequests, setSentRequests] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasNewUnread, setHasNewUnread] = useState(false);
 
   // CONTEXT
   const { onlineUsers, socket } = useSocket();
@@ -52,6 +57,8 @@ const Home = () => {
   const groupsRef = useRef([]);
   const scrollRef = useRef();
   const typingTimeoutRef = useRef(null);
+  const isLoadingMoreRef = useRef(false);
+  const isFirstLoad = useRef(true);
 
   // BIẾN
   const API_URL = import.meta.env.VITE_API_URL;
@@ -90,14 +97,6 @@ const Home = () => {
 
   // USE EFFECTS
   useEffect(() => {
-    if (scrollRef.current) {
-      setTimeout(() => {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }, 100);
-    }
-  }, [messages, activeChatKey, isTyping]);
-
-  useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
 
@@ -115,6 +114,7 @@ const Home = () => {
   }, [activeChatId, activeChatIsGroup, socket]);
 
   // CÁC HÀM HELPER & API
+  // Hàm cập nhật lại bên thanh sidebar
   const fetchNewConversation = useCallback(
     async (targetId, isGroup, messageData) => {
       try {
@@ -620,97 +620,32 @@ const Home = () => {
 
     const handleUnifiedMessage = (data) => {
       const currentActiveChat = activeChatRef.current;
+      const senderId = data.senderId || data.sender?._id || data.sender;
+      const receiverId = data.receiverId || data.receiver;
+      const isMeSender = senderId === currentUser._id;
+
+      // 1. XÁC ĐỊNH ID ĐỐI TÁC (Để biết cập nhật ai trên Sidebar)
       const targetId = data.isGroup
-        ? data.receiverId
-        : data.senderId === currentUser._id
-          ? data.receiverId
-          : data.senderId;
-      let previewContent = data.text;
-      if (!previewContent && data.image) previewContent = "[HÃ¬nh áº£nh]";
-      if (!previewContent && data.attachments?.length > 0)
-        previewContent = "[Tá»‡p Ä‘Ã­nh kÃ¨m]";
+        ? receiverId
+        : isMeSender
+          ? receiverId
+          : senderId;
 
-      const applyPreviewUpdate = (list = []) => {
-        const updatedList = [...list];
-        const index = updatedList.findIndex((item) => item._id === targetId);
-
-        if (index === -1) return null;
-
-        const itemToUpdate = updatedList[index];
-        const updatedItem = {
-          ...itemToUpdate,
-          lastMessage: {
-            content: previewContent,
-            senderId: data.senderId,
-            createdAt: data.createdAt || new Date().toISOString(),
-            isRead: false,
-          },
-          hasUnread:
-            data.senderId !== currentUser._id &&
-            currentActiveChat?._id !== targetId,
-        };
-
-        updatedList.splice(index, 1);
-        updatedList.unshift(updatedItem);
-        return updatedList;
-      };
-      setUsers((prevUsers) => {
-        const updatedUsers = [...prevUsers];
-
-        const targetId = data.isGroup
-          ? data.receiverId
-          : data.senderId === currentUser._id
-            ? data.receiverId
-            : data.senderId;
-        const index = updatedUsers.findIndex((u) => u._id === targetId);
-
-        if (index !== -1) {
-          const userToUpdate = updatedUsers[index];
-          let previewContent = data.text;
-          if (!previewContent && data.image) previewContent = "[Hình ảnh]";
-          if (!previewContent && data.attachments?.length > 0)
-            previewContent = "[Tệp đính kèm]";
-
-          const isUnread =
-            !currentActiveChat || currentActiveChat._id !== targetId;
-
-          const updatedUser = {
-            ...userToUpdate,
-            lastMessage: {
-              content: previewContent,
-              senderId: data.senderId,
-              createdAt: data.createdAt || new Date().toISOString(),
-              isRead: false,
-            },
-            hasUnread: isUnread,
-            unreadCount: isUnread ? (userToUpdate.unreadCount || 0) + 1 : 0,
-          };
-
-          updatedUsers.splice(index, 1);
-          updatedUsers.unshift(updatedUser);
-          return updatedUsers;
-        } else {
-          fetchNewConversation(targetId, data.isGroup, data);
-          return prevUsers;
-        }
-      });
-      setSearchResult((prevUsers) => applyPreviewUpdate(prevUsers) || prevUsers);
-
+      // 2. KIỂM TRA CÓ ĐANG MỞ KHUNG CHAT KHÔNG
       const isViewingChat =
-        (data.isGroup && currentActiveChat?._id === data.receiverId) ||
+        (data.isGroup && currentActiveChat?._id === receiverId) ||
         (!data.isGroup &&
-          (currentActiveChat?._id === data.senderId ||
-            currentActiveChat?._id === data.receiverId));
+          (currentActiveChat?._id === senderId || currentActiveChat?._id === receiverId));
 
-      if (isViewingChat) {
-        const isMeSender = data.senderId === currentUser._id;
-        const computedIsRead = data.isGroup ? true : !isMeSender;
+      const isUnread = !isViewingChat && !isMeSender;
 
+      // 3. XỬ LÝ KHUNG CHAT BÊN PHẢI (Nếu đang mở)
+      if (isViewingChat && !isMeSender) {
         setMessages((prev) => [
           ...prev,
           {
             sender: data.sender || {
-              _id: data.senderId,
+              _id: senderId,
               displayName: "Người dùng",
               avatar: null,
             },
@@ -718,55 +653,95 @@ const Home = () => {
             image: data.image,
             type: data.type,
             files: data.files,
-            attachments: data.attachments,
+            attachments: data.attachmentsData || data.attachments,
             createdAt: data.createdAt,
-            isRead: computedIsRead,
+            isRead: true, // Coi như đã đọc
           },
         ]);
 
-        if (data.senderId !== currentUser._id) {
-          if (data.isGroup) {
-            socket.emit("markRead", {
-              isGroup: true,
-              groupId: data.receiverId,
-              readerId: currentUser._id,
-            });
-          } else {
-            socket.emit("markRead", {
-              senderId: data.senderId,
-              receiverId: currentUser._id,
-            });
-          }
+        if (data.isGroup) {
+          socket.emit("markRead", { isGroup: true, groupId: receiverId, readerId: currentUser._id });
+        } else {
+          socket.emit("markRead", { senderId: senderId, receiverId: currentUser._id });
         }
-        setTimeout(
-          () => scrollRef.current?.scrollIntoView({ behavior: "smooth" }),
-          100,
-        );
-      } else {
-        if (data.type !== "system" && data.senderId !== currentUser._id) {
-          try {
-            let messageToast = "";
 
-            if (data.isGroup) {
-              const groupName = data.groupName;
-              const senderName = data.sender?.displayName;
+        setTimeout(() => {
+          const container = scrollRef.current;
+          if (container) {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            const distanceToBottom = scrollHeight - scrollTop - clientHeight;
 
-              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
+            if (distanceToBottom > 150) {
+              setHasNewUnread(true);
             } else {
-              const senderName = data.sender?.displayName || "Ai đó";
-
-              messageToast = `Tin nhắn mới từ ${senderName}`;
+              container.scrollTo({ top: scrollHeight, behavior: "smooth" });
             }
-
-            toast.info(messageToast, {
-              position: "top-right",
-              autoClose: 3000,
-              hideProgressBar: true,
-            });
-          } catch (error) {
-            console.error("Lỗi không hiển thị toast: ", error);
-            console.log("Dữ liệu tin nhắn bị lỗi:", data);
           }
+        }, 100);
+      }
+
+      // 4. CHUẨN BỊ NỘI DUNG PREVIEW CHO SIDEBAR
+      let previewContent = data.text;
+      if (!previewContent && data.image) previewContent = "[Hình ảnh]";
+      if (!previewContent && data.attachments?.length > 0) previewContent = "[Tệp đính kèm]";
+
+      // Hàm helper dùng chung cho cả Users list và Search list
+      const updateListWithPreview = (list = []) => {
+        const updatedList = [...list];
+        const index = updatedList.findIndex((item) => item._id === targetId);
+
+        if (index === -1) return null; // Trả về null nếu không tìm thấy
+
+        const itemToUpdate = updatedList[index];
+        const updatedItem = {
+          ...itemToUpdate,
+          lastMessage: {
+            content: previewContent,
+            senderId: senderId,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: !isUnread,
+          },
+          hasUnread: isUnread,
+          unreadCount: isUnread ? (itemToUpdate.unreadCount || 0) + 1 : 0,
+        };
+
+        updatedList.splice(index, 1);
+        updatedList.unshift(updatedItem); // Đưa lên đầu
+        return updatedList;
+      };
+
+      // 5. CẬP NHẬT SIDEBAR CHÍNH
+      setUsers((prevUsers) => {
+        const newList = updateListWithPreview(prevUsers);
+        if (newList) return newList;
+
+        // NẾU KHÔNG TÌM THẤY (Người lạ nhắn tin)
+        fetchNewConversation(targetId, data.isGroup, data);
+        return prevUsers;
+      });
+
+      // 6. CẬP NHẬT DANH SÁCH TÌM KIẾM (Nếu đang mở)
+      setSearchResult((prevResult) => {
+        if (!prevResult || prevResult.length === 0) return prevResult;
+        const newList = updateListWithPreview(prevResult);
+        return newList || prevResult;
+      });
+
+      // 7. HIỂN THỊ TOAST THÔNG BÁO (Nếu không mở chat và không phải mình gửi)
+      if (isUnread && data.type !== "system") {
+        try {
+          const senderName = data.sender?.displayName || "Ai đó";
+          const messageToast = data.isGroup
+            ? `${senderName} vừa gửi tin nhắn tới nhóm ${data.groupName || ""}`
+            : `Tin nhắn mới từ ${senderName}`;
+
+          toast.info(messageToast, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: true,
+          });
+        } catch (error) {
+          console.error("Lỗi không hiển thị toast: ", error);
         }
       }
     };
@@ -776,29 +751,43 @@ const Home = () => {
     return () => {
       socket.off("getMessage", handleUnifiedMessage);
     };
-  }, [socket, currentUser, users, fetchNewConversation]);
+  }, [socket, currentUser, fetchNewConversation]); // Xóa 'users' khỏi dependency để tránh re-render liên tục
 
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!activeChatId || !currentUser?._id) return;
+      if (!activeChat || !currentUser) return;
+
+      // Reset lại khi đổi đoạn chat
+      setHasMore(true);
       setMessages([]);
+      isFirstLoad.current = true;
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+
       try {
-        const url = activeChatIsGroup
-          ? `${API_URL}/api/messages/none/${activeChatId}?isGroup=true`
-          : `${API_URL}/api/messages/${currentUser._id}/${activeChatId}`;
+        const isGroup = activeChat.members ? true : false;
+
+        // Gọi API lần đầu
+        const url = isGroup
+          ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true`
+          : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
 
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        setMessages(res.data);
 
-        setUsers((prev) =>
-          prev.map((u) =>
-            u._id === activeChat._id
-              ? { ...u, unreadCount: 0, hasUnread: false }
-              : u,
-          ),
-        );
+        if (res.data && res.data.success) {
+          setMessages(res.data.data);
+          setHasMore(res.data.hasMore);
+          setUsers((prev) =>
+            prev.map((u) =>
+              u._id === activeChat._id
+                ? { ...u, unreadCount: 0, hasUnread: false }
+                : u,
+            ),
+          );
+
+        }
         if (socket) {
           if (activeChatIsGroup) {
             socket.emit("markRead", {
@@ -864,10 +853,11 @@ const Home = () => {
     setTypingUserAvatar(null);
   }, [activeChatKey]);
 
-  // --- HANDLERS CHÍNH ---
+  // HANDLERS
   const handleScrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      setHasNewUnread(false);
     }
   };
 
@@ -1028,8 +1018,19 @@ const Home = () => {
     }, 2000);
   };
 
+  // Gửi tin nhắn
   const handleSendMessage = async (e) => {
     e.preventDefault();
+
+    // CHẶN NẾU TRÌNH DUYỆT MẤT MẠNG INTERNET
+    if (!navigator.onLine) {
+      toast.error("Bạn đang mất kết nối mạng. Vui lòng kiểm tra lại!");
+    }
+
+    // CHẶN NẾU BỊ ĐỨT KẾT NỐI VỚI SERVER SOCKET
+    if (!socket || !socket.connected) {
+      toast.error("Đang mất kết nối với máy chủ chat. Đang thử kết nối lại...");
+    }
 
     const isUploading = uploadQueue.some((item) => item.status === "uploading");
     if (isUploading) {
@@ -1037,9 +1038,8 @@ const Home = () => {
       return;
     }
 
-    const attachmentIds = uploadQueue
-      .filter((item) => item.status === "completed" && item.dbFileId)
-      .map((item) => item.dbFileId);
+    const completedAttachments = uploadQueue.filter((item) => item.status === "completed" && item.dbFileId);
+    const attachmentIds = completedAttachments.map((item) => item.dbFileId);
 
     // Nếu không có text và không có file nào thì dừng
     if (!newMessage.trim() && attachmentIds.length === 0) return;
@@ -1058,38 +1058,87 @@ const Home = () => {
 
     try {
       const isGroup = activeChat.members ? true : false;
+      const tempId = `temp_${uuidv4()}`;
+      let currentConvId = activeChat.conversationId;
+
+      if (isGroup) {
+        currentConvId = activeChat._id;
+      }
+
       const messagePayload = {
+        conversationId: currentConvId,
         sender: currentUser._id,
         receiver: activeChat._id,
+        receiverId: activeChat._id,
         text: newMessage,
         attachments: attachmentIds,
+        attachmentsData: completedAttachments,
         isGroup: isGroup,
         type: attachmentIds.length > 0 ? "file" : "text",
+        senderInfo: {
+          _id: currentUser._id,
+          displayName: currentUser.displayName,
+          avatar: currentUser.avatar
+        }
       };
 
-      // GỌI API LƯU TIN NHẮN
-      const res = await axios.post(`${API_URL}/api/messages`, messagePayload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const savedMessage = res.data;
-
-      // BẮN SOCKET CHO NGƯỜI NHẬN
-      socket.emit("sendMessage", {
-        ...savedMessage,
-        createdAt: savedMessage.createdAt,
-        senderId: currentUser._id,
-        receiverId: activeChat._id,
+      //  Hiển thị lên màn hình ngay lập tức
+      const optimisticMessage = {
+        _id: tempId,
+        conversationId: currentConvId,
+        sender: currentUser,
+        text: newMessage,
+        attachments: completedAttachments,
         isGroup: isGroup,
-        text: savedMessage.text,
-        image: savedMessage.image,
-        files: savedMessage.files,
-        attachments: savedMessage.attachments,
-      });
+        type: messagePayload.type,
+        createdAt: new Date().toISOString(),
+        status: "sending",
+        rawPayload: messagePayload
+      };
 
-      // CẬP NHẬT GIAO DIỆN
+      setMessages((prev) => [...prev, optimisticMessage]);
       setNewMessage("");
       clearUploads();
       setShowEmoji(false);
+
+      // Khi vừa gửi tin nhắn thì kéo xuống để hiển thị cho chính mình luôn
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: "smooth"
+          });
+        }
+      }, 50);
+
+      // Sau 15s nếu server không phản hồi thì đánh dấu là lỗi
+      const timeoutId = setTimeout(() => {
+        setMessages(prev => prev.map(msg =>
+          (msg._id === tempId && msg.status === "sending")
+            ? { ...msg, status: "error" } : msg
+        ));
+      }, 15000);
+
+      // Gửi tin nhắn qua socket
+      socket.emit("sendMessage", messagePayload, (res) => {
+        clearTimeout(timeoutId);
+        if (res && res.success) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === tempId
+                ? { ...msg, _id: res.realId, status: "sent", rawPayload: undefined } : msg
+            )
+          );
+        } else {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === tempId ? { ...msg, status: "error" } : msg
+            )
+          );
+          toast.error("Không thể gửi tin nhắn. Vui lòng thử lại!");
+        }
+      })
+
     } catch (err) {
       console.error(err);
       toast.error("Lỗi gửi tin nhắn");
@@ -1116,10 +1165,120 @@ const Home = () => {
     setCurrentUser(updatedUser);
   };
 
+  const handleRetryMessage = (failedMessage) => {
+    // Không có payload thì không thể gửi lại
+    if (!failedMessage.rawPayload) {
+      toast.error("Dữ liệu tin nhắn đã mất, không thể thử lại.");
+      return;
+    }
+
+    // Đổi trạng thái UI quay lại thành "Đang gửi..."
+    setMessages((prev) => prev.map((msg) =>
+      msg._id === failedMessage._id ? { ...msg, status: "sending" } : msg
+    ));
+
+    // Khởi tạo lại một Timeout 15s mới cho lần thử lại này
+    const retryTimeoutId = setTimeout(() => {
+      setMessages(prev => prev.map(msg =>
+        (msg._id === failedMessage._id && msg.status === "sending")
+          ? { ...msg, status: "error" } : msg
+      ));
+    }, 15000);
+
+    // Bắn Socket gửi lại với payload cũ
+    socket.emit("sendMessage", failedMessage.rawPayload, (res) => {
+      clearTimeout(retryTimeoutId); // Có phản hồi thì hủy hẹn giờ
+
+      if (res && res.success) {
+        setMessages((prev) => prev.map((msg) =>
+          msg._id === failedMessage._id
+            ? { ...msg, _id: res.realId, status: "sent", rawPayload: undefined }
+            : msg
+        ));
+      } else {
+        setMessages((prev) => prev.map((msg) =>
+          msg._id === failedMessage._id ? { ...msg, status: "error" } : msg
+        ));
+      }
+    });
+  };
+
+  // Hiển thị thêm tin nhắn khi cuộn lên
+  const loadMoreMessages = async () => {
+    // Chặn nếu đang tải, hoặc đã hết tin nhắn, hoặc chưa có tin nào
+    if (isLoadingMoreRef.current || !hasMore || messages.length === 0) return;
+
+    isLoadingMoreRef.current = true;
+
+    setIsLoadingMore(true);
+    const container = scrollRef.current;
+    const previousScrollHeight = container?.scrollHeight; // Lưu chiều cao cũ
+
+    try {
+      const isGroup = activeChat.members ? true : false;
+      const oldestMessageId = messages[0]._id; // Lấy ID của tin nhắn cũ nhất đang hiển thị
+
+      // Thêm cursor vào URL
+      const url = isGroup
+        ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true&cursor=${oldestMessageId}`
+        : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}?cursor=${oldestMessageId}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      if (res.data && res.data.success) {
+        const oldMessages = res.data.data;
+
+        if (oldMessages.length === 0) {
+          setHasMore(false);
+          isLoadingMoreRef.current = false;
+          setIsLoadingMore(false);
+          return;
+        }
+
+        // Nối tin cũ lên trước mảng tin nhắn hiện tại
+        setMessages(prev => [...oldMessages, ...prev]);
+        setHasMore(res.data.hasMore);
+
+        // Chống giật màn hình
+        setTimeout(() => {
+          if (container) {
+            const newScrollHeight = container.scrollHeight;
+            container.scrollTop = newScrollHeight - previousScrollHeight;
+          }
+
+          isLoadingMoreRef.current = false;
+          setIsLoadingMore(false);
+        }, 50);
+      }
+    } catch (error) {
+      console.error("Lỗi tải thêm tin nhắn:", error);
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  };
+
+  useLayoutEffect(() => {
+    // Chỉ chạy nếu đây là lần tải đầu tiên và đã có tin nhắn để cuộn
+    if (isFirstLoad.current && messages.length > 0) {
+      const container = scrollRef.current;
+      if (container) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "auto",
+        });
+
+        isFirstLoad.current = false;
+      }
+    }
+  }, [messages]);
+
   if (isLoading)
     return (
       <div className="h-screen flex items-center justify-center">
-        Loading...
+        <Loader />
       </div>
     );
 
@@ -1181,6 +1340,11 @@ const Home = () => {
               handleCall={handleCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
+              handleRetryMessage={handleRetryMessage}
+              loadMoreMessages={loadMoreMessages}
+              isLoadingMore={isLoadingMore}
+              setHasNewUnread={setHasNewUnread}
+              hasNewUnread={hasNewUnread}
             />
 
             <ChatInput
