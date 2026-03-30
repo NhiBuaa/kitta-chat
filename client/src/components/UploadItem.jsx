@@ -12,7 +12,7 @@ const formatBytes = (bytes, decimals = 2) => {
 };
 
 export const UploadItem = ({ item }) => {
-    const { file, progress, status, url } = item;
+    const { file, progress, status } = item;
 
     const getProgressColor = () => {
         switch (status) {
@@ -69,18 +69,6 @@ export const UploadItem = ({ item }) => {
                         style={{ width: `${progress}%` }}
                     />
                 </div>
-
-                {/* URL trả về */}
-                {status === 'completed' && url && (
-                    <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-2 text-xs text-blue-500 hover:text-blue-700 hover:underline truncate w-full"
-                    >
-                        {url}
-                    </a>
-                )}
             </div>
 
         </div>

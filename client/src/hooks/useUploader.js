@@ -30,8 +30,11 @@ export const useUploader = () => {
 
             updateFileStatus(id, {
                 status: 'completed',
-                url: result.cdnUrl,
-                dbFileId: result._id
+                url: result.cdnUrl || result.url || null,
+                dbFileId: result._id,
+                originalName: result.originalName || result.name || file.name,
+                mimeType: result.mimeType || result.type || file.type,
+                size: result.size || file.size
             });
 
             return result;
