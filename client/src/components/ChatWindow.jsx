@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FaPaperPlane,
   FaArrowLeft,
@@ -34,19 +34,65 @@ const ChatWindow = ({
   handleCall,
   setShowGroupMembers,
   handleScrollToBottom,
+  onMediaContentLoad,
+  onUserMovedAwayFromBottom,
   handleRetryMessage,
   loadMoreMessages,
   isLoadingMore,
+  isChatBootstrapping = false,
   setHasNewUnread,
   hasNewUnread
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const topSentinelRef = useRef(null);
+  const canLoadMoreFromTopRef = useRef(true);
 
   // BIẾN
   const isGroupChat = Boolean(activeChat?.members);
   const shouldShowOnlineStatus =
     !isGroupChat && Boolean(currentChatUser?.isFriend);
+
+  useEffect(() => {
+    canLoadMoreFromTopRef.current = true;
+  }, [activeChat?._id]);
+
+  useEffect(() => {
+    const root = scrollRef?.current;
+    const target = topSentinelRef.current;
+
+    if (!root || !target || isChatBootstrapping) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+
+        if (!entry) return;
+
+        if (!entry.isIntersecting) {
+          canLoadMoreFromTopRef.current = true;
+          return;
+        }
+
+        if (canLoadMoreFromTopRef.current && !isLoadingMore) {
+          canLoadMoreFromTopRef.current = false;
+          loadMoreMessages();
+        }
+      },
+      {
+        root,
+        threshold: 0.1,
+      },
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeChat?._id, isChatBootstrapping, isLoadingMore, loadMoreMessages, scrollRef]);
 
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
@@ -56,15 +102,13 @@ const ChatWindow = ({
     // Nếu cách đáy hơn 150px thì hiện nút
     if (distanceToBottom > 150) {
       setShowScrollButton(true);
+      onUserMovedAwayFromBottom?.();
     } else {
       setShowScrollButton(false);
       setHasNewUnread(false)
     }
 
     // Nếu kéo lên trên thì hiện load thêm tin nhắn
-    if (scrollTop <= 50) {
-      loadMoreMessages();
-    }
   };
 
 
@@ -153,6 +197,15 @@ const ChatWindow = ({
         ref={scrollRef}
         onScroll={handleScroll}
       >
+        <div ref={topSentinelRef} className="h-px w-full" />
+        {isChatBootstrapping && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-50/90">
+            <div className="scale-[0.45] origin-center">
+              <Loader />
+            </div>
+          </div>
+        )}
+        <div className={isChatBootstrapping ? "opacity-0 pointer-events-none" : "opacity-100"}>
         {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
         {isLoadingMore && (
           <div className="flex flex-col items-center justify-center py-4 bg-transparent">
@@ -228,6 +281,7 @@ const ChatWindow = ({
                               src={file.url}
                               alt="img"
                               className="w-full h-auto rounded-lg cursor-pointer hover:opacity-90 bg-gray-100"
+                              onLoad={onMediaContentLoad}
                               onClick={() => window.open(file.url, "_blank")}
                             />
                           );
@@ -239,6 +293,7 @@ const ChatWindow = ({
                               src={file.url}
                               controls
                               className="w-full h-auto rounded-lg bg-black"
+                              onLoadedMetadata={onMediaContentLoad}
                             />
                           );
                         }
@@ -375,6 +430,7 @@ const ChatWindow = ({
             )}
           </button>
         )}
+        </div>
       </div>
     </>
   );

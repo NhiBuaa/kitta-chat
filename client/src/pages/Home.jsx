@@ -48,6 +48,8 @@ const Home = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasNewUnread, setHasNewUnread] = useState(false);
+  const [isChatBootstrapping, setIsChatBootstrapping] = useState(false);
+  const [hasFetchedActiveChat, setHasFetchedActiveChat] = useState(false);
 
   // CONTEXT
   const { onlineUsers, socket } = useSocket();
@@ -60,6 +62,8 @@ const Home = () => {
   const typingTimeoutRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
   const isFirstLoad = useRef(true);
+  const shouldAutoScrollOnMediaLoadRef = useRef(false);
+  const autoScrollReleaseTimeoutRef = useRef(null);
 
   // BIẾN
   const API_URL = import.meta.env.VITE_API_URL;
@@ -338,6 +342,25 @@ const Home = () => {
     if (!user || !onlineUsers || onlineUsers.length === 0) return false;
     return onlineUsers.some((u) => u.userId === user._id);
   };
+
+  const releaseAutoScrollLock = useCallback(() => {
+    shouldAutoScrollOnMediaLoadRef.current = false;
+    if (autoScrollReleaseTimeoutRef.current) {
+      clearTimeout(autoScrollReleaseTimeoutRef.current);
+      autoScrollReleaseTimeoutRef.current = null;
+    }
+  }, []);
+
+  const armAutoScrollLock = useCallback(() => {
+    shouldAutoScrollOnMediaLoadRef.current = true;
+    if (autoScrollReleaseTimeoutRef.current) {
+      clearTimeout(autoScrollReleaseTimeoutRef.current);
+    }
+    autoScrollReleaseTimeoutRef.current = setTimeout(() => {
+      shouldAutoScrollOnMediaLoadRef.current = false;
+      autoScrollReleaseTimeoutRef.current = null;
+    }, 2000);
+  }, []);
 
   const normalizeAttachmentForMessage = useCallback((attachment) => ({
     _id: attachment?.dbFileId || attachment?._id,
@@ -784,6 +807,9 @@ const Home = () => {
   }, [socket, currentUser, fetchNewConversation]);
 
   useEffect(() => {
+    let isCancelled = false;
+    const controller = new AbortController();
+
     const fetchMessages = async () => {
       if (!activeChat || !currentUser) return;
 
@@ -793,6 +819,7 @@ const Home = () => {
       isFirstLoad.current = true;
       isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
+      armAutoScrollLock();
 
       try {
         const isGroup = activeChat.members ? true : false;
@@ -804,7 +831,10 @@ const Home = () => {
 
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          signal: controller.signal,
         });
+
+        if (isCancelled) return;
 
         if (res.data && res.data.success) {
           setMessages(res.data.data);
@@ -832,11 +862,26 @@ const Home = () => {
             });
           }
         }
+
+        setHasFetchedActiveChat(true);
       } catch (err) {
+        if (
+          err?.code === "ERR_CANCELED" ||
+          err?.name === "CanceledError" ||
+          axios.isCancel?.(err)
+        ) {
+          return;
+        }
+        setHasFetchedActiveChat(true);
         console.error("Lỗi fetch tin nhắn:", err);
       }
     };
     fetchMessages();
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
   }, [activeChatId, activeChatIsGroup, currentUser?._id, API_URL, socket]);
 
   useEffect(() => {
@@ -883,15 +928,74 @@ const Home = () => {
     setTypingUserAvatar(null);
   }, [activeChatKey]);
 
+  useEffect(() => {
+    if (!activeChatKey) {
+      setIsChatBootstrapping(false);
+      setHasFetchedActiveChat(false);
+      return;
+    }
+
+    setIsChatBootstrapping(true);
+    setHasFetchedActiveChat(false);
+  }, [activeChatKey]);
+
   // HANDLERS
-  const handleScrollToBottom = () => {
+  const scrollChatToBottom = useCallback((behavior = "auto") => {
+    if (bottomRef.current?.scrollIntoView) {
+      bottomRef.current.scrollIntoView({
+        block: "end",
+        behavior,
+      });
+      setHasNewUnread(false);
+      return;
+    }
+
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior,
+      });
       setHasNewUnread(false);
     }
+  }, []);
+
+  const handleScrollToBottom = () => {
+    armAutoScrollLock();
+    scrollChatToBottom("smooth");
   };
 
+  const handleMediaContentLoad = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const distanceToBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    if (shouldAutoScrollOnMediaLoadRef.current || distanceToBottom <= 150) {
+      scrollChatToBottom("auto");
+    }
+  }, [scrollChatToBottom]);
+
+  const handleUserMovedAwayFromBottom = useCallback(() => {
+    releaseAutoScrollLock();
+  }, [releaseAutoScrollLock]);
+
   const handleSelectUser = (user) => {
+    const currentChat = activeChatRef.current;
+    const isSelectingSameChat =
+      currentChat?._id === user?._id &&
+      Boolean(currentChat?.members) === Boolean(user?.members);
+
+    if (isSelectingSameChat) {
+      return;
+    }
+
+    setMessages([]);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    isLoadingMoreRef.current = false;
+    isFirstLoad.current = true;
+    armAutoScrollLock();
     setActiveChat(user);
     setUsers((prev) =>
       prev.map((u) => {
@@ -1272,7 +1376,8 @@ const Home = () => {
         setTimeout(() => {
           if (container) {
             const newScrollHeight = container.scrollHeight;
-            container.scrollTop = newScrollHeight - previousScrollHeight;
+            const restoredScrollTop = newScrollHeight - previousScrollHeight;
+            container.scrollTop = Math.max(restoredScrollTop, 80);
           }
 
           isLoadingMoreRef.current = false;
@@ -1288,19 +1393,41 @@ const Home = () => {
   };
 
   useLayoutEffect(() => {
+    if (!activeChatKey || !hasFetchedActiveChat || !isChatBootstrapping) {
+      return;
+    }
     // Chỉ chạy nếu đây là lần tải đầu tiên và đã có tin nhắn để cuộn
     if (isFirstLoad.current && messages.length > 0) {
-      const container = scrollRef.current;
-      if (container) {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: "auto",
-        });
-
-        isFirstLoad.current = false;
-      }
+      scrollChatToBottom("auto");
+      isFirstLoad.current = false;
     }
-  }, [messages]);
+
+    let revealFrameId = null;
+    const settleFrameId = requestAnimationFrame(() => {
+      revealFrameId = requestAnimationFrame(() => {
+        setIsChatBootstrapping(false);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(settleFrameId);
+      if (revealFrameId) {
+        cancelAnimationFrame(revealFrameId);
+      }
+    };
+  }, [
+    activeChatKey,
+    hasFetchedActiveChat,
+    isChatBootstrapping,
+    messages.length,
+    scrollChatToBottom,
+  ]);
+
+  useEffect(() => () => {
+    if (autoScrollReleaseTimeoutRef.current) {
+      clearTimeout(autoScrollReleaseTimeoutRef.current);
+    }
+  }, []);
 
   if (isLoading)
     return (
@@ -1348,11 +1475,13 @@ const Home = () => {
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
+            key={activeChatKey || "empty-chat-picker"}
             onFilesSelected={addFiles}
             disableClick={true}
             className="flex-1 flex flex-col h-full overflow-hidden"
           >
             <ChatWindow
+              key={activeChatKey || "empty-chat-window"}
               activeChat={activeChat}
               setActiveChat={setActiveChat}
               currentChatUser={currentChatUser}
@@ -1370,9 +1499,12 @@ const Home = () => {
               handleCall={handleCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
+              onMediaContentLoad={handleMediaContentLoad}
+              onUserMovedAwayFromBottom={handleUserMovedAwayFromBottom}
               handleRetryMessage={handleRetryMessage}
               loadMoreMessages={loadMoreMessages}
               isLoadingMore={isLoadingMore}
+              isChatBootstrapping={isChatBootstrapping}
               setHasNewUnread={setHasNewUnread}
               hasNewUnread={hasNewUnread}
             />
@@ -1392,6 +1524,7 @@ const Home = () => {
         ) : (
           /* Màn hình chờ khi chưa chọn ai để chat */
           <ChatWindow
+            key="empty-chat-window"
             activeChat={null}
             setActiveChat={setActiveChat}
             currentChatUser={null}
