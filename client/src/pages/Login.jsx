@@ -12,6 +12,7 @@ const Login = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm();
   const navigate = useNavigate();
@@ -78,8 +79,8 @@ const Login = () => {
 
         {/* Cột phải: Form */}
         <div className="w-full md:w-1/2 p-8 md:p-12">
-          <h2 className="text-3xl font-bold text-gray-800 text-center mb-2">
-            Đăng Nhập
+          <h2 className="text-3xl font-extrabold text-[#4CAF50] text-center mb-2">
+            Đăng nhập
           </h2>
           <p className="text-gray-500 text-center mt-2 mb-8">
             Điền thông tin để truy cập vào tài khoản
@@ -95,12 +96,25 @@ const Login = () => {
                   <FaEnvelope className="text-[#66BB6A]" />
                 </div>
                 <input
-                  {...register("email", { required: "Email là bắt buộc" })}
+                  {...register("email", {
+                    required: "Email là bắt buộc",
+                    pattern: {
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    },
+                    validate: (value) =>
+                      !/\s/.test(value) || "Email không được chứa khoảng trắng",
+                  })}
+                  onChange={(e) => {
+                    const value = e.target.value
+                      .replace(/\s/g, "")
+                      .toLowerCase();
+                    setValue("email", value, { shouldValidate: true });
+                  }}
                   className={inputClass}
                   placeholder="Email của bạn"
                 />
               </div>
-              <p className="text-red-500 text-xs min-h-[18px]">
+              <p className="text-red-500 text-xs mt-1 min-h-[18px]">
                 {errors.email?.message || ""}
               </p>
             </div>
@@ -119,7 +133,14 @@ const Login = () => {
                     type={showPassword ? "text" : "password"}
                     {...register("password", {
                       required: "Vui lòng nhập mật khẩu",
+                      validate: (value) =>
+                        !/\s/.test(value) ||
+                        "Mật khẩu không được chứa khoảng trắng",
                     })}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\s/g, "");
+                      setValue("password", value, { shouldValidate: true });
+                    }}
                     className={inputClass + " pr-10"}
                     placeholder="Mật khẩu của bạn"
                   />
@@ -128,9 +149,9 @@ const Login = () => {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <FaEyeSlash className="text-gray-500 hover:text-gray-700" />
+                      <FaEyeSlash className="text-[#66BB6A] hover:text-[#4CAF50] transition" />
                     ) : (
-                      <FaEye className="text-gray-500 hover:text-gray-700" />
+                      <FaEye className="text-[#66BB6A] hover:text-[#4CAF50] transition" />
                     )}
                   </div>
                 </div>
