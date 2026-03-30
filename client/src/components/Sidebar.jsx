@@ -16,14 +16,13 @@ const Sidebar = ({
   groups,
   handleSelectUser,
   usersToDisplay,
-  users,
   sentRequests,
   checkIsOnline,
   renderLastMessage,
   handleAddFriend,
 }) => {
   return (
-    <div className=" hidden sm:flex w-[280px] md:w-[320px] lg:w-[360px] min-w-[240px] flex-shrink h-full bg-white border-r border-gray-200 flex-col">
+    <div className="w-full sm:w-[280px] md:w-[320px] lg:w-[360px] min-w-0 sm:min-w-[240px] h-full bg-white border-r border-gray-200 flex flex-col">
       {/* tên app với avt */}
       <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-blue-600 text-white relative z-10 shadow-md h-16">
         <div className="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0 mr-2">
@@ -63,11 +62,10 @@ const Sidebar = ({
           >
             <FaBell
               size={16}
-              className={`transition-all duration-300 ${
-                requestCount > 0
-                  ? "text-yellow-300 animate-pulse"
-                  : "hover:text-blue-200"
-              }`}
+              className={`transition-all duration-300 ${requestCount > 0
+                ? "text-yellow-300 animate-pulse"
+                : "hover:text-blue-200"
+                }`}
             />
             {requestCount > 0 && (
               <span className="absolute top-0 right-0 h-4 w-4 bg-red-600 text-[10px] flex items-center justify-center rounded-full border border-blue-600 text-white font-bold">
@@ -146,20 +144,23 @@ const Sidebar = ({
             const isMe = user._id === currentUser?._id;
             if (isMe) return null;
 
-            const isFriend =
-              user.isFriend || users.some((u) => u._id === user._id);
-            const isSent = user.isSent || sentRequests.includes(user._id);
-            const hasUnread = isFriend && user.hasUnread;
+            const isFriend = Boolean(user.isFriend);
+            const isPendingRequest = Boolean(
+              user.isSent ||
+                user.isIncomingRequest ||
+                user.isReceived ||
+                sentRequests.includes(user._id),
+            );
+            const hasUnread = Boolean(user.hasUnread);
 
             return (
               <div
                 key={user._id}
                 onClick={() => handleSelectUser(user)}
-                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer${
-                  hasUnread
+                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer ${hasUnread
                     ? "bg-blue-50 hover:bg-blue-100"
-                    : "hover:bg-gray-50"
-                }`}
+                    : "hover:bg-gray-100"
+                  }`}
               >
                 <div className="relative flex-shrink-0">
                   <img
@@ -167,29 +168,28 @@ const Sidebar = ({
                     alt="Avt"
                     className="w-12 h-12 rounded-full object-cover border border-gray-200"
                   />
+                  {/* DOT */}
                   {isFriend && checkIsOnline(user) && (
                     <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center justify-between gap-2">
                     <h3
-                      className={`text-sm truncate pr-2 ${
-                        hasUnread
-                          ? "font-bold text-gray-900"
-                          : "font-semibold text-gray-800"
-                      }`}
+                      className={`text-sm truncate pr-2 ${hasUnread
+                        ? "font-bold text-gray-900"
+                        : "font-semibold text-gray-800"
+                        }`}
                     >
                       {user.displayName}
                     </h3>
                     {user.lastMessage && (
                       <span
-                        className={`text-[10px] flex-shrink-0 ${
-                          hasUnread
-                            ? "text-blue-600 font-bold"
-                            : "text-gray-400"
-                        }`}
+                        className={`text-[10px] flex-shrink-0 ${hasUnread
+                          ? "text-blue-600 font-bold"
+                          : "text-gray-400"
+                          }`}
                       >
                         {new Date(
                           user.lastMessage.createdAt,
@@ -215,7 +215,7 @@ const Sidebar = ({
 
                 {!isFriend && (
                   <div className="ml-2 flex-shrink-0">
-                    {isSent ? (
+                    {isPendingRequest ? (
                       <button
                         disabled
                         className="flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-500 rounded-full cursor-not-allowed"
@@ -232,10 +232,10 @@ const Sidebar = ({
                     )}
                   </div>
                 )}
-                {isFriend && hasUnread && (
+                {hasUnread && isFriend && (
                   <div className="ml-2 flex-shrink-0">
-                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                      N
+                    <span className=" bg-red-500 text-white text-[11px] font-semibold px-2 py-[2px]  rounded-full  min-w-[20px] text-center  leading-none">
+                      {user.unreadCount > 9 ? "9+" : user.unreadCount}
                     </span>
                   </div>
                 )}

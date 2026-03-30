@@ -1,5 +1,6 @@
 const s3Service = require('../service/s3.service');
 const FileModel = require('../models/File');
+const sharp = require('sharp');
 
 module.exports = {
     init: async (req, res) => {
@@ -61,6 +62,62 @@ module.exports = {
                 await s3Service.abortUpload(req.body.uploadId, req.body.key).catch(e => console.error("Lỗi hủy S3:", e));
             }
             res.status(500).json({ message: "Ghép file thất bại", error: error.message });
+        }
+    },
+
+    uploadSingleFile: async (req, res) => {
+        try {
+            if (!req.file) return res.status(400).json({ message: "Không tìm thấy file upload" });
+
+            let fileBuffer = req.file.buffer;
+            let fileName = req.file.originalname;
+            let mimeType = req.file.mimetype;
+            let fileSize = req.file.size;
+
+            if (mimeType.startsWith('image/')) {
+                fileBuffer = await sharp(fileBuffer)
+                    .resize({ width: 1920, withoutEnlargement: true })
+                    .webp({ quality: 80 })
+                    .toBuffer()
+
+                const originalNameWithoutExt = fileName.split('.')[0];
+                fileName = originalNameWithoutExt + ".webp";
+                mimeType = 'image/webp';
+                fileSize = fileBuffer.length;
+            }
+
+            const s3Url = await s3Service.uploadSingleFile(fileBuffer, fileName, mimeType, 'uploads');
+
+            const urlObject = new URL(s3Url);
+            const key = urlObject.pathname.substring(1);
+
+            const userId = req.user?.id || req.user?._id;
+            if (!userId) throw new Error("Không lấy được id người dùng từ token");
+
+            const newFile = await FileModel.create({
+                ownerId: userId,
+                originalName: fileName,
+                mimeType: mimeType,
+                size: fileSize,
+                s3Key: key,
+                url: s3Url,
+                fileHash: ""
+            })
+
+            res.status(200).json({
+                success: true,
+                file: {
+                    _id: newFile._id,
+                    cdnUrl: s3Url,
+                    name: fileName,
+                    type: mimeType,
+                    size: fileSize
+                }
+            })
+
+        } catch (err) {
+            console.error("Lỗi uploadSingleFile: ", err);
+            res.status(500).json({ message: "Lỗi server khi xử lý file tải lên" });
         }
     }
 };

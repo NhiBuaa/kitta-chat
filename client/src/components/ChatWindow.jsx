@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   FaPaperPlane,
+  FaArrowLeft,
   FaPhone,
   FaVideo,
   FaInfoCircle,
@@ -14,21 +15,22 @@ import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
 import Loader from "./deco/Loader";
+import MessageSeenBy from './MessageSeenBy';
 
 const ChatWindow = ({
   activeChat,
+  setActiveChat,
   currentChatUser,
   currentUser,
   messages,
   users,
-  isFriend,
   isTyping,
   typingUserName,
   typingUserAvatar,
   scrollRef,
   getAvatarUrl,
   checkIsOnline,
-  handleVideoCall,
+  handleCall,
   setShowGroupMembers,
   handleScrollToBottom,
   handleRetryMessage,
@@ -39,6 +41,11 @@ const ChatWindow = ({
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
+
+  // BIẾN
+  const isGroupChat = Boolean(activeChat?.members);
+  const shouldShowOnlineStatus =
+    !isGroupChat && Boolean(currentChatUser?.isFriend);
 
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
@@ -76,6 +83,13 @@ const ChatWindow = ({
       {/* CHAT HEADER */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
+          {/* chỉ hiện ở màn nhỏ */}
+          <button
+            onClick={() => setActiveChat(null)}
+            className="sm:hidden mr-3 text-gray-600 hover:text-blue-600"
+          >
+            <FaArrowLeft size={18} />
+          </button>
           <img
             src={getAvatarUrl(currentChatUser.avatar)}
             className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200"
@@ -85,12 +99,12 @@ const ChatWindow = ({
             <h3 className="font-bold text-gray-800">
               {getUserDisplayName(currentChatUser)}
             </h3>
-            {!currentChatUser.members && isFriend ? (
+            {shouldShowOnlineStatus && (
               <UserStatus
                 user={currentChatUser}
                 isOnline={checkIsOnline(currentChatUser)}
               />
-            ) : null}
+            )}
 
             {currentChatUser.members && (
               <span className="text-xs text-gray-500">
@@ -101,15 +115,19 @@ const ChatWindow = ({
         </div>
 
         <div className="flex space-x-4 text-blue-600">
+          {/* Gọi audio */}
           <button
-            className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-            onClick={() => alert("Tính năng gọi thoại đang phát triển")}
+            onClick={() => handleCall("audio")}
+            className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
+            title="Gọi Audio"
+            disabled={currentChatUser.members}
           >
             <FaPhone />
           </button>
 
+          {/* Gọi video */}
           <button
-            onClick={handleVideoCall}
+            onClick={() => handleCall("video")}
             className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
             title="Gọi Video"
             disabled={currentChatUser.members}
@@ -134,7 +152,6 @@ const ChatWindow = ({
         ref={scrollRef}
         onScroll={handleScroll}
       >
-
         {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
         {isLoadingMore && (
           <div className="flex flex-col items-center justify-center py-4 bg-transparent">
@@ -144,7 +161,8 @@ const ChatWindow = ({
           </div>
         )}
 
-        {messages.map((message, index) => {
+        {/* Cứu cánh: Kiểm tra Array.isArray */}
+        {Array.isArray(messages) && messages.map((message, index) => {
           const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
           const isMe = senderId === currentUser._id;
           const isGroup = Boolean(activeChat.members);
@@ -194,8 +212,8 @@ const ChatWindow = ({
 
                 <div
                   className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${isMe
-                    ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
-                    : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
+                      ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
+                      : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
                     } ${isSending ? "opacity-70" : "opacity-100"} ${isError ? "border-2 border-red-400" : ""
                     }`}
                 >
@@ -231,12 +249,14 @@ const ChatWindow = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
-                              ? "bg-green-700 hover:bg-green-800 text-white"
-                              : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                                ? "bg-green-700 hover:bg-green-800 text-white"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                               }`}
                           >
                             <FaPaperclip className="text-lg" />
-                            <span className="truncate">{file.originalName}</span>
+                            <span className="truncate">
+                              {file.originalName}
+                            </span>
                           </a>
                         );
                       })}
@@ -249,6 +269,7 @@ const ChatWindow = ({
                       {message.text}
                     </div>
                   )}
+
                   {isMe && (
                     <div className="self-end mt-1 flex justify-end items-center gap-1">
                       {isSending && (
@@ -284,28 +305,28 @@ const ChatWindow = ({
                   )}
 
                   {/* Những người đã xem trong group */}
-                  {isMe &&
-                    isGroup &&
-                    message.readBy &&
-                    message.readBy.length > 0 &&
-                    (() => {
-                      const readerIds = message.readBy.map((reader) =>
-                        typeof reader === "object" ? reader._id : reader,
-                      );
-                      const readerNames = readerIds.map((id) => {
-                        const member =
-                          activeChat?.members?.find((groupMember) => groupMember._id === id) ||
-                          users.find((user) => user._id === id);
-                        return getUserDisplayName(member);
-                      });
+                  {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
+                    // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
+                    const fullViewersData = message.readBy.map(reader => {
+                      const readerId = typeof reader === "object" ? reader._id : reader;
+                      // Tìm user từ danh sách members hoặc users
+                      const userObj = activeChat?.members?.find(m => m._id === readerId) ||
+                        users.find(u => u._id === readerId);
 
-                      return (
-                        <div className="text-[11px] mt-1 text-gray-200/90">
-                          <span className="text-white/70">Đã xem:</span>{" "}
-                          <span className="font-medium">{readerNames.join(", ")}</span>
-                        </div>
-                      );
-                    })()}
+                      // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
+                      return userObj ? userObj : { _id: readerId, displayName: "User", avatar: "" };
+                    });
+
+                    return (
+                      <div className="mt-1 flex justify-end">
+                        <MessageSeenBy
+                          seenByList={fullViewersData}
+                          currentUser={currentUser}
+                          getAvatarUrl={getAvatarUrl}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
               <div
@@ -346,7 +367,7 @@ const ChatWindow = ({
         {showScrollButton && (
           <button
             onClick={handleScrollToBottom}
-            className="sticky bottom-4 left-full z-50 bg-white border border-gray-200 text-green-600 hover:bg-blue-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
+            className="sticky bottom-4 left-full z-50 bg-white border border-gray-200 text-green-600 hover:bg-green-50 hover:text-green-700 rounded-full p-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center opacity-90 hover:opacity-100"
             title="Cuộn xuống tin nhắn mới nhất"
           >
             <FaArrowDown size={16} />

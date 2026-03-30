@@ -1,5 +1,6 @@
-const { S3Client, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand } = require("@aws-sdk/client-s3");
+const { S3Client, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+require('dotenv').config();
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -12,15 +13,19 @@ const s3Client = new S3Client({
 const BUCKET = process.env.AWS_S3_BUCKET_NAME;
 
 const validateFile = (mimeType) => {
+  const safeMimeType = mimeType || "application/octet-stream";
   const allowedTypes = [
     "image/", "video/", "audio/", "application/pdf", "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "text/plain"
+    "text/plain",
+    "application/zip",
+    "application/x-rar-compressed",
+    "application/octet-stream"
   ];
   const isAllowed = allowedTypes.some((type) => mimeType.startsWith(type));
-  if (!isAllowed) throw new Error("Định dạng file không được hỗ trợ!");
+  if (!isAllowed) throw new Error(`Định dạng file không được hỗ trợ! (${safeMimeType})`);
 };
 
 module.exports = {
@@ -35,7 +40,7 @@ module.exports = {
     const command = new CreateMultipartUploadCommand({
       Bucket: BUCKET,
       Key: key,
-      ContentType: mimeType,
+      ContentType: mimeType || "application/octet-stream",
     });
 
     const response = await s3Client.send(command);
@@ -64,7 +69,7 @@ module.exports = {
     });
 
     const response = await s3Client.send(command);
-    return response.Location; // Trả về link S3 mặc định
+    return response.Location;
   },
 
   abortUpload: async (uploadId, key) => {
@@ -74,5 +79,25 @@ module.exports = {
       UploadId: uploadId
     });
     await s3Client.send(command);
+  },
+
+  uploadSingleFile: async (fileBuffer, fileName, mimeType, folder = 'uploads') => {
+    // Chỉ dành cho ảnh
+    if (!mimeType?.startsWith("image/")) throw new Error("Chỉ hổ trợ định dạng ảnh.");
+
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '-');
+    const key = `${folder}/${uniqueSuffix}-${safeName}`;
+
+    const command = new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: fileBuffer,
+      ContentType: mimeType || "image/jpeg",
+    });
+
+    await s3Client.send(command);
+
+    return `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
   }
 };

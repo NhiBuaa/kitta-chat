@@ -24,7 +24,7 @@ exports.createMessage = async (req, res) => {
     if (type === "system") {
       const savedSystemMsg = await exports.createSystemMessage(
         conversationId,
-        text
+        text,
       );
 
       if (savedSystemMsg) {
@@ -109,7 +109,7 @@ exports.createSystemMessage = async (groupId, text) => {
       sender: null,
       receiver: null,
       text: text,
-      attachments: []
+      attachments: [],
     });
     await systemMessage.save();
     return systemMessage;

@@ -29,13 +29,14 @@ exports.register = async (req, res) => {
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
-        message: "Mật khẩu phải có ít nhất 6 ký tự và bao gồm cả chữ và số.",
+        message:
+          "Mật khẩu phải có ít nhất 8 ký tự bao gồm cả chữ và số và kí tự đặc biệt",
       });
     }
     if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "Mật khẩu xác nhận không khớp.",
+        message: "Mật khẩu xác nhận không khớp",
       });
     }
     if (userExists) {
@@ -191,13 +192,14 @@ exports.resetPassword = async (req, res) => {
     // Lấy token từ URL
     const { id, token } = req.params;
     const { newPassword, confirmPassword } = req.body;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
     // check empty
     if (!newPassword || !confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng nhập đầy đủ mật khẩu.",
+        message: "Vui lòng nhập đầy đủ mật khẩu",
       });
     }
     // Validate cơ bản
@@ -210,7 +212,8 @@ exports.resetPassword = async (req, res) => {
     if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: "Mật khẩu phải có ít nhất 6 ký tự và bao gồm cả chữ và số.",
+        message:
+          "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
       });
     }
 
@@ -225,21 +228,31 @@ exports.resetPassword = async (req, res) => {
     const secret = process.env.JWT_SECRET + user.password;
 
     try {
-      const payload = jwt.verify(token, secret);
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(newPassword, salt);
-
-      await user.save();
-      res.json({
-        success: true,
-        message: "Mật khẩu đã được thay đổi thành công!",
-      });
+      jwt.verify(token, secret);
     } catch (err) {
       return res.status(400).json({
         success: false,
-        message: "Link không hợp lệ hoặc đã hết hạn.",
+        message: "Link reset đã hết hạn hoặc không hợp lệ",
       });
     }
+
+    const isSame = await bcrypt.compare(newPassword, user.password);
+
+    if (isSame) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu mới không được trùng với mật khẩu cũ",
+      });
+    }
+
+    // hash password mới
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+    res.json({
+      success: true,
+      message: "Mật khẩu đã được thay đổi thành công!",
+    });
   } catch (err) {
     console.error("Reset Password Error:", err);
     // Phân loại lỗi để báo cho client

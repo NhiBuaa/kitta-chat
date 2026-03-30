@@ -64,11 +64,10 @@ const Home = () => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // HOOK
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
-    useUploader();
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
 
-  // HÀM XỬ LÝ GỌI VIDEO
-  const handleVideoCall = () => {
+  // HÀM XỬ LÝ GỌI
+  const handleCall = (type = "video") => {
     if (!currentChatUser) return;
 
     if (currentChatUser.members || currentChatUser.isGroup) {
@@ -77,10 +76,10 @@ const Home = () => {
     }
 
     const chatUserId = currentChatUser._id || currentChatUser.id;
-    const url = `/video-call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}`;
+    const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}`;
 
     localStorage.setItem("activePartnerUserId", chatUserId);
-    window.open(url, "_blank", "noopener,noreferrer");
+    window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
   // CÁC BIẾN TÍNH TOÁN
@@ -90,11 +89,11 @@ const Home = () => {
       : users.find((u) => u._id === activeChat._id) || activeChat
     : null;
 
-  const isFriend =
-    currentChatUser &&
-    !currentChatUser.members &&
-    (currentChatUser.isFriend ||
-      users.some((u) => u._id === currentChatUser._id));
+  const activeChatId = activeChat?._id || null;
+  const activeChatIsGroup = Boolean(activeChat?.members);
+  const activeChatKey = activeChatId
+    ? `${activeChatIsGroup ? "group" : "user"}:${activeChatId}`
+    : null;
 
   // USE EFFECTS
   useEffect(() => {
@@ -107,13 +106,12 @@ const Home = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const isGroup = activeChat?.members ? true : false;
-    if (isGroup) {
-      socket.emit("joinGroup", activeChat._id);
+    if (activeChatIsGroup && activeChatId) {
+      socket.emit("joinGroup", activeChatId);
     } else if (activeChatRef.current?.members) {
       socket.emit("leaveGroup", activeChatRef.current._id);
     }
-  }, [activeChat, socket]);
+  }, [activeChatId, activeChatIsGroup, socket]);
 
   // CÁC HÀM HELPER & API
   // Hàm cập nhật lại bên thanh sidebar
@@ -143,6 +141,7 @@ const Home = () => {
               isRead: false,
             },
             hasUnread: true,
+            unreadCount: 1,
           };
           setUsers((prev) => [newItemWithMsg, ...prev]);
         }
@@ -150,7 +149,7 @@ const Home = () => {
         console.error("Không thể load conversation mới:", error);
       }
     },
-    [API_URL],
+    [API_URL, currentUser?._id],
   );
 
   const renderLastMessage = (user, currentUserId) => {
@@ -244,6 +243,7 @@ const Home = () => {
       ...friendData,
       isFriend: true,
       isIncomingRequest: false,
+      isReceived: false,
       isSent: false,
       lastMessage: user.lastMessage ?? friendData.lastMessage ?? null,
       hasUnread: user.hasUnread ?? false,
@@ -353,7 +353,13 @@ const Home = () => {
       if (sidebarRes.data.success) {
         const fetchedList =
           sidebarRes.data.users || sidebarRes.data.friends || [];
-        setUsers(fetchedList);
+
+        const usersWithUnread = fetchedList.map((user) => ({
+          ...user,
+          unreadCount: 0,
+        }));
+
+        setUsers(usersWithUnread);
       }
       if (requestRes.data.success)
         setRequestCount(requestRes.data.requests.length);
@@ -435,6 +441,7 @@ const Home = () => {
         displayName: data.senderName || user.displayName,
         avatar: data.avatar ?? user.avatar,
         isIncomingRequest: true,
+        isReceived: true,
         isSent: false,
       }));
     };
@@ -467,6 +474,7 @@ const Home = () => {
       patchUserEverywhere(data.senderId, (user) => ({
         ...user,
         isIncomingRequest: false,
+        isReceived: false,
       }));
     };
 
@@ -523,8 +531,10 @@ const Home = () => {
         prevUsers.map((u) => ({
           ...u,
           // Kiểm tra xem ID của user có nằm trong mảng online của socket không
-          isOnline: onlineUsers.some((onlineUser) => onlineUser.userId === u._id)
-        }))
+          isOnline: onlineUsers.some(
+            (onlineUser) => onlineUser.userId === u._id,
+          ),
+        })),
       );
     }
   }, [onlineUsers, users.length]);
@@ -540,7 +550,7 @@ const Home = () => {
             const lm = u.lastMessage
               ? { ...u.lastMessage, isRead: true }
               : u.lastMessage;
-            return { ...u, hasUnread: false, lastMessage: lm };
+            return { ...u, hasUnread: false, unreadCount: 0, lastMessage: lm };
           }
           return u;
         }),
@@ -612,130 +622,126 @@ const Home = () => {
       const currentActiveChat = activeChatRef.current;
       const senderId = data.senderId || data.sender?._id || data.sender;
       const receiverId = data.receiverId || data.receiver;
+      const isMeSender = senderId === currentUser._id;
 
-      // Cập nhật Sidebar
-      setUsers((prevUsers) => {
-        const updatedUsers = [...prevUsers];
+      // 1. XÁC ĐỊNH ID ĐỐI TÁC (Để biết cập nhật ai trên Sidebar)
+      const targetId = data.isGroup
+        ? receiverId
+        : isMeSender
+          ? receiverId
+          : senderId;
 
-        // Xác định ID của đối tác để đưa lên đầu
-        const targetId = data.isGroup ? receiverId : senderId === currentUser._id ? receiverId : senderId;
-
-        const index = updatedUsers.findIndex((u) => u._id === targetId);
-
-        if (index !== -1) {
-          const userToUpdate = updatedUsers[index];
-          let previewContent = data.text;
-          if (!previewContent && data.image) previewContent = "[Hình ảnh]";
-          if (!previewContent && data.attachments?.length > 0)
-            previewContent = "[Tệp đính kèm]";
-
-          const updatedUser = {
-            ...userToUpdate,
-            lastMessage: {
-              content: previewContent,
-              senderId: senderId,
-              createdAt: data.createdAt || new Date().toISOString(),
-              isRead: false,
-            },
-            hasUnread: currentActiveChat?._id !== targetId,
-          };
-
-          updatedUsers.splice(index, 1);
-          updatedUsers.unshift(updatedUser);
-          return updatedUsers;
-        } else {
-          // Nếu có tin nhắn từ người lạ, gọi hàm lấy data
-          fetchNewConversation(targetId, data.isGroup, data);
-          return prevUsers;
-        }
-      });
-
-      // Kiểm tra xem có đang mở đúng khung chat này không
+      // 2. KIỂM TRA CÓ ĐANG MỞ KHUNG CHAT KHÔNG
       const isViewingChat =
         (data.isGroup && currentActiveChat?._id === receiverId) ||
         (!data.isGroup &&
-          (currentActiveChat?._id === senderId ||
-            currentActiveChat?._id === receiverId));
+          (currentActiveChat?._id === senderId || currentActiveChat?._id === receiverId));
 
-      if (isViewingChat) {
-        const isMeSender = senderId === currentUser._id;
+      const isUnread = !isViewingChat && !isMeSender;
 
-        // Chỉ chèn thêm tin nhắn vào màn hình nếu người gửi KHÔNG PHẢI LÀ MÌNH
-        if (!isMeSender) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              sender: data.sender || {
-                _id: senderId,
-                displayName: "Người dùng",
-                avatar: null,
-              },
-              text: data.text,
-              image: data.image,
-              type: data.type,
-              files: data.files,
-              attachments: data.attachmentsData || data.attachments,
-              createdAt: data.createdAt,
-              isRead: data.isGroup ? true : false,
+      // 3. XỬ LÝ KHUNG CHAT BÊN PHẢI (Nếu đang mở)
+      if (isViewingChat && !isMeSender) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: data.sender || {
+              _id: senderId,
+              displayName: "Người dùng",
+              avatar: null,
             },
-          ]);
+            text: data.text,
+            image: data.image,
+            type: data.type,
+            files: data.files,
+            attachments: data.attachmentsData || data.attachments,
+            createdAt: data.createdAt,
+            isRead: true, // Coi như đã đọc
+          },
+        ]);
 
-          // Bắn sự kiện đã đọc
-          if (data.isGroup) {
-            socket.emit("markRead", {
-              isGroup: true,
-              groupId: receiverId,
-              readerId: currentUser._id,
-            });
-          } else {
-            socket.emit("markRead", {
-              senderId: senderId,
-              receiverId: currentUser._id,
-            });
-          }
-
-          setTimeout(() => {
-            const container = scrollRef.current;
-            if (container) {
-              const { scrollTop, scrollHeight, clientHeight } = container;
-
-              // Tính toán khoảng cách từ vị trí cuộn hiện tại tới đáy
-              const distanceToBottom = scrollHeight - scrollTop - clientHeight;
-
-              // Nếu người dùng đang mải đọc tin cũ
-              if (distanceToBottom > 150) {
-                setHasNewUnread(true);
-              } else {
-                // Nếu đang ở gần đáy, mượt mà cuộn thẳng xuống tin mới nhất
-                container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
-              }
-            }
-          }, 100);
+        if (data.isGroup) {
+          socket.emit("markRead", { isGroup: true, groupId: receiverId, readerId: currentUser._id });
+        } else {
+          socket.emit("markRead", { senderId: senderId, receiverId: currentUser._id });
         }
-      } else {
-        // Xử lý thông báo
-        if (data.type !== "system" && senderId !== currentUser._id) {
-          try {
-            let messageToast = "";
 
-            if (data.isGroup) {
-              const groupName = data.groupName;
-              const senderName = data.sender?.displayName;
-              messageToast = `${senderName} vừa gửi một tin nhắn tới nhóm ${groupName}`;
+        setTimeout(() => {
+          const container = scrollRef.current;
+          if (container) {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+
+            if (distanceToBottom > 150) {
+              setHasNewUnread(true);
             } else {
-              const sender = users.find((u) => u._id === senderId);
-              const senderName = sender ? sender.displayName : (data.sender?.displayName || "Ai đó");
-              messageToast = `Tin nhắn mới từ ${senderName}`;
+              container.scrollTo({ top: scrollHeight, behavior: "smooth" });
             }
-
-            toast.info(messageToast, {
-              position: "top-right",
-              autoClose: 3000,
-              hideProgressBar: true,
-            });
-          } catch (error) {
-            console.error("Lỗi không hiển thị toast: ", error);
           }
+        }, 100);
+      }
+
+      // 4. CHUẨN BỊ NỘI DUNG PREVIEW CHO SIDEBAR
+      let previewContent = data.text;
+      if (!previewContent && data.image) previewContent = "[Hình ảnh]";
+      if (!previewContent && data.attachments?.length > 0) previewContent = "[Tệp đính kèm]";
+
+      // Hàm helper dùng chung cho cả Users list và Search list
+      const updateListWithPreview = (list = []) => {
+        const updatedList = [...list];
+        const index = updatedList.findIndex((item) => item._id === targetId);
+
+        if (index === -1) return null; // Trả về null nếu không tìm thấy
+
+        const itemToUpdate = updatedList[index];
+        const updatedItem = {
+          ...itemToUpdate,
+          lastMessage: {
+            content: previewContent,
+            senderId: senderId,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: !isUnread,
+          },
+          hasUnread: isUnread,
+          unreadCount: isUnread ? (itemToUpdate.unreadCount || 0) + 1 : 0,
+        };
+
+        updatedList.splice(index, 1);
+        updatedList.unshift(updatedItem); // Đưa lên đầu
+        return updatedList;
+      };
+
+      // 5. CẬP NHẬT SIDEBAR CHÍNH
+      setUsers((prevUsers) => {
+        const newList = updateListWithPreview(prevUsers);
+        if (newList) return newList;
+
+        // NẾU KHÔNG TÌM THẤY (Người lạ nhắn tin)
+        fetchNewConversation(targetId, data.isGroup, data);
+        return prevUsers;
+      });
+
+      // 6. CẬP NHẬT DANH SÁCH TÌM KIẾM (Nếu đang mở)
+      setSearchResult((prevResult) => {
+        if (!prevResult || prevResult.length === 0) return prevResult;
+        const newList = updateListWithPreview(prevResult);
+        return newList || prevResult;
+      });
+
+      // 7. HIỂN THỊ TOAST THÔNG BÁO (Nếu không mở chat và không phải mình gửi)
+      if (isUnread && data.type !== "system") {
+        try {
+          const senderName = data.sender?.displayName || "Ai đó";
+          const messageToast = data.isGroup
+            ? `${senderName} vừa gửi tin nhắn tới nhóm ${data.groupName || ""}`
+            : `Tin nhắn mới từ ${senderName}`;
+
+          toast.info(messageToast, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: true,
+          });
+        } catch (error) {
+          console.error("Lỗi không hiển thị toast: ", error);
         }
       }
     };
@@ -745,7 +751,7 @@ const Home = () => {
     return () => {
       socket.off("getMessage", handleUnifiedMessage);
     };
-  }, [socket, currentUser, users, fetchNewConversation]);
+  }, [socket, currentUser, fetchNewConversation]); // Xóa 'users' khỏi dependency để tránh re-render liên tục
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -773,18 +779,25 @@ const Home = () => {
         if (res.data && res.data.success) {
           setMessages(res.data.data);
           setHasMore(res.data.hasMore);
-        }
+          setUsers((prev) =>
+            prev.map((u) =>
+              u._id === activeChat._id
+                ? { ...u, unreadCount: 0, hasUnread: false }
+                : u,
+            ),
+          );
 
+        }
         if (socket) {
-          if (isGroup) {
+          if (activeChatIsGroup) {
             socket.emit("markRead", {
               isGroup: true,
-              groupId: activeChat._id,
+              groupId: activeChatId,
               readerId: currentUser._id,
             });
           } else {
             socket.emit("markRead", {
-              senderId: activeChat._id,
+              senderId: activeChatId,
               receiverId: currentUser._id,
             });
           }
@@ -794,7 +807,7 @@ const Home = () => {
       }
     };
     fetchMessages();
-  }, [activeChat, currentUser, API_URL, socket]);
+  }, [activeChatId, activeChatIsGroup, currentUser?._id, API_URL, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -838,7 +851,7 @@ const Home = () => {
     setIsTyping(false);
     setTypingUserName("");
     setTypingUserAvatar(null);
-  }, [activeChat]);
+  }, [activeChatKey]);
 
   // HANDLERS
   const handleScrollToBottom = () => {
@@ -856,7 +869,12 @@ const Home = () => {
           const lm = u.lastMessage
             ? { ...u.lastMessage, isRead: true }
             : u.lastMessage;
-          return { ...u, hasUnread: false, lastMessage: lm };
+          return {
+            ...u,
+            hasUnread: false,
+            unreadCount: 0,
+            lastMessage: lm,
+          };
         }
         return u;
       }),
@@ -1260,36 +1278,44 @@ const Home = () => {
   if (isLoading)
     return (
       <div className="h-screen flex items-center justify-center">
-        <Loader/>
+        <Loader />
       </div>
     );
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* SIDEBAR */}
-      <Sidebar
-        currentUser={currentUser}
-        setShowProfile={setShowProfile}
-        getAvatarUrl={getAvatarUrl}
-        setShowCreateGroup={setShowCreateGroup}
-        setShowRequestModal={setShowRequestModal}
-        requestCount={requestCount}
-        handleLogout={handleLogout}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        isSearching={isSearching}
-        groups={groups}
-        handleSelectUser={handleSelectUser}
-        usersToDisplay={usersToDisplay}
-        users={users}
-        sentRequests={sentRequests}
-        checkIsOnline={checkIsOnline}
-        renderLastMessage={renderLastMessage}
-        handleAddFriend={handleAddFriend}
-      />
+      <div
+        className={`${activeChat ? "hidden sm:flex" : "flex"
+          } w-full sm:w-auto h-full`}
+      >
+        <Sidebar
+          currentUser={currentUser}
+          setShowProfile={setShowProfile}
+          getAvatarUrl={getAvatarUrl}
+          setShowCreateGroup={setShowCreateGroup}
+          setShowRequestModal={setShowRequestModal}
+          requestCount={requestCount}
+          handleLogout={handleLogout}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          isSearching={isSearching}
+          groups={groups}
+          handleSelectUser={handleSelectUser}
+          usersToDisplay={usersToDisplay}
+          users={users}
+          sentRequests={sentRequests}
+          checkIsOnline={checkIsOnline}
+          renderLastMessage={renderLastMessage}
+          handleAddFriend={handleAddFriend}
+        />
+      </div>
 
       {/* CHAT WINDOW */}
-      <div className="flex-1 flex flex-col bg-gray-50 h-full">
+      <div
+        className={`${activeChat ? "flex" : "hidden sm:flex"
+          } flex-1 flex-col bg-gray-50 h-full`}
+      >
         {/*Cho phép kéo thả file*/}
         {activeChat && currentChatUser ? (
           <FilePicker
@@ -1299,11 +1325,11 @@ const Home = () => {
           >
             <ChatWindow
               activeChat={activeChat}
+              setActiveChat={setActiveChat}
               currentChatUser={currentChatUser}
               currentUser={currentUser}
               messages={messages}
               users={users}
-              isFriend={isFriend}
               isTyping={isTyping}
               typingUserName={typingUserName}
               typingUserAvatar={typingUserAvatar}
@@ -1311,7 +1337,7 @@ const Home = () => {
               API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
-              handleVideoCall={handleVideoCall}
+              handleCall={handleCall}
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
               handleRetryMessage={handleRetryMessage}
@@ -1335,7 +1361,11 @@ const Home = () => {
           </FilePicker>
         ) : (
           /* Màn hình chờ khi chưa chọn ai để chat */
-          <ChatWindow activeChat={null} currentChatUser={null} />
+          <ChatWindow
+            activeChat={null}
+            setActiveChat={setActiveChat}
+            currentChatUser={null}
+          />
         )}
       </div>
 
@@ -1367,7 +1397,6 @@ const Home = () => {
           onClose={() => setShowGroupMembers(false)}
           onGroupUpdated={(updatedGroup) => {
             upsertGroup(updatedGroup);
-            setActiveChat(updatedGroup);
             if (!updatedGroup.members.some((m) => m._id === currentUser._id)) {
               setShowGroupMembers(false);
               setActiveChat(null);
