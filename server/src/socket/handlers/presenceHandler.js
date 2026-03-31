@@ -119,16 +119,55 @@ const registerPresenceHandlers = (socket, io) => {
     });
 
     // joinGroup / leaveGroup 
-    socket.on("joinGroup", (groupId) => {
-        if (!groupId) return;
-        socket.join(groupId);
-        console.log(`[Socket] ${socket.id} joined group ${groupId}`);
+    socket.on("joinGroup", async (groupId) => {
+        try {
+            if (!groupId) return;
+
+            const userId = socket.userId;
+
+            // Kiểm tra xem socket này đã có danh tính chưa
+            if (!userId) {
+                console.warn(`[Security Warning] Socket ${socket.id} tried to join group ${groupId} without a valid userId.`);
+                socket.emit("error", { message: "Bạn chưa xác thực danh tính." });
+                return;
+            }
+
+            // Query DB để xác thực quyền
+            // Tìm xem có Group nào khớp ID và có chứa userId này trong mảng members không
+            const isMember = await Group.exists({
+                _id: groupId,
+                members: userId
+            });
+
+            if (!isMember) {
+                // NẾU KHÔNG PHẢI THÀNH VIÊN -> Chặn đứng và ghi log cảnh báo
+                console.warn(`[Security Breach] User ${userId} attempted to join group ${groupId} without permission!`);
+                socket.emit("error", { message: "Bạn không có quyền tham gia nhóm này." });
+                return;
+            }
+
+            // Nếu qua được bài kiểm tra, cho phép join
+            socket.join(groupId);
+            console.log(`[Socket] User ${userId} (${socket.id}) securely joined group ${groupId}`);
+
+        } catch (error) {
+            console.error(`[Socket Error] joining group ${groupId}:`, error);
+            socket.emit("error", { message: "Lỗi hệ thống khi tham gia nhóm." });
+        }
     });
 
     socket.on("leaveGroup", (groupId) => {
-        if (!groupId) return;
-        socket.leave(groupId);
-        console.log(`[Socket] ${socket.id} left group ${groupId}`);
+        try {
+            if (!groupId) return;
+
+            const userId = socket.userId;
+            if (!userId) return;
+
+            socket.leave(groupId);
+            console.log(`[Socket] User ${userId} (${socket.id}) left group ${groupId}`);
+        } catch (error) {
+            console.error(`[Socket Error] leaving group ${groupId}:`, error);
+        }
     });
 
     // Disconnect 
