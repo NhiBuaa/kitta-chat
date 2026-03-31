@@ -50,6 +50,8 @@ const initSocket = (httpServer, app) => {
     app.set("socketio", io);
     app.set("redisClient", pubClient);
 
+    io.redisClient = pubClient;
+
     io.on("connection", (socket) => {
         console.log(`[Socket] Connected: ${socket.id}`);
 

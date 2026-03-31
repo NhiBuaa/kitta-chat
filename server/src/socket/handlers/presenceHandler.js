@@ -5,7 +5,7 @@ const Group = require("../../models/Group");
  * Lấy đối tượng Redis Client đã được khởi tạo từ Server
  * Hàm này dùng để lấy redisClient động mỗi khi cần truy vấn
  */
-const getRedisClient = (io) => io.engine.server.app?.get("redisClient");
+const getRedisClient = (io) => io.redisClient;
 
 /**
  * Trả về payload danh sách online để emit cho client
@@ -87,31 +87,25 @@ const registerPresenceHandlers = (socket, io) => {
             // ==============================
             // LOGIC REDI
             // ==============================
-
             // Xóa flag "đang chờ offline" (nếu có) do user vừa reconnect (tránh flicker khi F5)
             await redisClient.del(`offline_timer:${userId}`);
 
+            // Thêm socket.id vào Set chứa các kết nối của user này
+            await redisClient.sAdd(`user_sockets:${userId}`, socket.id);
+
+            // Đếm số lượng thiết bị/tab đang kết nối của user này
             // Lấy danh sách SocketId hiện tại của User trong Redis
-            let currentSocketsStr = await redisClient.hGet("online_users", userId);
-            let currentSockets = currentSocketsStr ? currentSocketsStr.split(',').filter(id => id) : [];
-
-            const isFirstConnection = currentSockets.length === 0;
-
-            // Thêm socketId mới vào mảng
-            if (!currentSockets.includes(socket.id)) {
-                currentSockets.push(socket.id);
-                await redisClient.hSet("online_users", userId, currentSockets.join(','));
-            }
+            const socketCount = await redisClient.sCard(`user_sockets:${userId}`);
+            const isFirstConnection = socketCount === 1;
 
             // Chỉ broadcast "online" nếu đây là kết nối đầu tiên của User trên toàn hệ thống
             if (isFirstConnection) {
+                await redisClient.sAdd("global_online_users", userId);
+
+                // [DELTA UPDATE] Chỉ phát thông báo người này vừa online cho bạn bè/nhóm
                 broadcastUserStatus(io, userId, "online");
                 await User.findByIdAndUpdate(userId, { "activityStatus.state": "active" });
             }
-
-            // Lấy danh sách payload từ Redis và gửi cho Client
-            const payload = await getOnlineUsersPayload(redisClient);
-            socket.emit("getOnlineUsers", payload);
 
         } catch (err) {
             console.error(`[Presence] Error joining rooms for ${userId}:`, err);
@@ -176,50 +170,41 @@ const registerPresenceHandlers = (socket, io) => {
         if (!userId) return;
 
         socket.userRegistered = false;
-
         const redisClient = getRedisClient(io);
         if (!redisClient) return;
 
         try {
-            //  Xóa SocketId hiện tại khỏi danh sách của User trong Redis
-            let currentSocketsStr = await redisClient.hGet("online_users", userId);
-            if (currentSocketsStr) {
-                let currentSockets = currentSocketsStr.split(',');
-                currentSockets = currentSockets.filter(id => id !== socket.id);
+            // Xóa socket.id này khỏi Set của User
+            await redisClient.sRem(`user_sockets:${userId}`, socket.id);
 
-                if (currentSockets.length > 0) {
-                    // Nếu User vẫn còn tab/thiết bị khác đang mở
-                    await redisClient.hSet("online_users", userId, currentSockets.join(','));
-                } else {
-                    // Nếu User đã đóng hết toàn bộ tab/thiết bị
-                    await redisClient.hDel("online_users", userId);
+            // Đếm xem User còn tab/thiết bị nào khác đang mở không
+            const socketCount = await redisClient.sCard(`user_sockets:${userId}`);
 
-                    // Thay vì dùng setTimeout (chỉ chạy trên 1 Server), ta dùng cơ chế Cache tạm trên Redis
-                    // Đặt cờ "offline_timer" với thời gian hết hạn (TTL) là 5 giây
-                    await redisClient.setEx(`offline_timer:${userId}`, 5, "pending");
+            if (socketCount === 0) {
+                // Đặt cờ chờ 5s nếu user reload trang
+                await redisClient.setEx(`offline_timer:${userId}`, 5, "pending");
 
-                    // Đặt một timer cục bộ để sau 5s kiểm tra lại cờ này trên Redis
-                    setTimeout(async () => {
-                        try {
-                            // Kiểm tra xem cờ còn tồn tại hay không (hay là user đã reconnect và xóa nó rồi)
-                            const isPending = await redisClient.get(`offline_timer:${userId}`);
-                            const isStillOffline = !(await redisClient.hExists("online_users", userId));
+                setTimeout(async () => {
+                    try {
+                        const isPending = await redisClient.get(`offline_timer:${userId}`);
+                        const finalCount = await redisClient.sCard(`user_sockets:${userId}`);
 
-                            // Nếu cờ chờ đã hết hạn HOẶC không có kết nối mới nào
-                            if (!isPending && isStillOffline) {
-                                console.log(`[Presence] Confirmed offline: ${userId}`);
-                                broadcastUserStatus(io, userId, "offline");
-                                await User.findByIdAndUpdate(userId, {
-                                    activityStatus: { state: "offline", lastSeen: new Date() },
-                                });
-                            } else {
-                                console.log(`[Presence] Cancelled offline for ${userId} - reconnected on another tab/server`);
-                            }
-                        } catch (err) {
-                            console.error("[Presence] Error resolving offline status:", err);
+                        if (!isPending && finalCount === 0) {
+                            console.log(`[Presence] Confirmed offline: ${userId}`);
+
+                            // Xóa khỏi danh sách online tổng
+                            await redisClient.sRem("global_online_users", userId);
+
+                            // Broadcast cho bạn bè biết người này đã offline
+                            broadcastUserStatus(io, userId, "offline");
+                            await User.findByIdAndUpdate(userId, {
+                                activityStatus: { state: "offline", lastSeen: new Date() },
+                            });
                         }
-                    }, 5500);
-                }
+                    } catch (err) {
+                        console.error("[Presence] Error resolving offline status:", err);
+                    }
+                }, 5500);
             }
         } catch (err) {
             console.error(`[Presence] Disconnect error for ${userId}:`, err);
