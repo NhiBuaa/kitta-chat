@@ -1,4 +1,8 @@
 const { Server } = require("socket.io");
+const { createClient } = require("redis");
+const { createAdapter } = require("@socket.io/redis-adapter");
+
+// Khởi tạo handelers cho từng nhóm chức năng
 const { registerPresenceHandlers, onlineUsers } = require("./handlers/presenceHandler");
 const { registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
@@ -19,6 +23,28 @@ const initSocket = (httpServer, app) => {
             methods: ["GET", "POST"],
         },
     });
+
+    // ==============
+    // CẤU HÌNH REDIS ADAPTER CHO SCALING SOCKET.IO
+    // =============
+    const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+    const pubClient = createClient({ url: redisUrl });
+    const subClient = pubClient.duplicate();
+
+    // Bắt sự kiện lỗi Redis để debug
+    pubClient.on("error", (err) => console.error("[Redis PubClient] Error:", err));
+    subClient.on("error", (err) => console.error("[Redis SubClient] Error:", err));
+
+    // Kết nối Redis và gắn Adapter
+    Promise.all([pubClient.connect(), subClient.connect()])
+        .then(() => {
+            io.adapter(createAdapter(pubClient, subClient));
+            const port = process.env.PORT || 3000;
+            console.log(`[Socket] Redis adapter connected. Socket.IO server is running on port ${port}`);
+        })
+        .catch((err) => {
+            console.error("[Socket] Failed to connect to Redis:", err);
+        })
 
     // Gán io và onlineUsers vào app để controllers có thể dùng nếu cần
     app.set("socketio", io);
