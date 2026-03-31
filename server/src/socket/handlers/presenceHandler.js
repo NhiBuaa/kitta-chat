@@ -1,20 +1,32 @@
 const User = require("../../models/User");
 const Group = require("../../models/Group");
 
-// Shared presence state (module-level singleton)
-const onlineUsers = new Map();      // userId -> Set<socketId>
-const userConnections = new Map();  // userId -> connection count
-const disconnectTimers = new Map(); // userId -> setTimeout handle
+/**
+ * Lấy đối tượng Redis Client đã được khởi tạo từ Server
+ * Hàm này dùng để lấy redisClient động mỗi khi cần truy vấn
+ */
+const getRedisClient = (io) => io.engine.server.app?.get("redisClient");
 
 /**
  * Trả về payload danh sách online để emit cho client
  */
-const getOnlineUsersPayload = () =>
-    Array.from(onlineUsers.entries()).map(([userId, socketIds]) => ({
-        userId,
-        socketId: Array.from(socketIds)[socketIds.size - 1] || null,
-        socketIds: Array.from(socketIds),
-    }));
+const getOnlineUsersPayload = async (redisClient) => {
+    // Lấy toàn bộ danh sách users từ Hash "online_users" trong Redis
+    const onlineUsersHash = await redisClient.hGetAll("online_users");
+
+    const payload = [];
+    for (const [userId, socketIdsStr] of Object.entries(onlineUsersHash)) {
+        const socketIds = socketIdsStr.split(',').filter(id => id);
+        if (socketIds.length > 0) {
+            payload.push({
+                userId,
+                socketId: socketIds[socketIds.length - 1],
+                socketIds: socketIds,
+            });
+        }
+    }
+    return payload;
+};
 
 /**
  * Broadcast trạng thái online/offline đến các room liên quan
@@ -32,7 +44,7 @@ const broadcastUserStatus = async (io, userId, status) => {
 
         if (targetRooms.length > 0) {
             io.to(targetRooms).emit("userStatusChanged", { userId, status });
-            console.log(`[Presence] Broadcast "${status}" for ${userId} → ${targetRooms.length} rooms`);
+            console.log(`[Presence] Broadcast "${status}" for ${userId} -> ${targetRooms.length} rooms`);
         } else {
             console.log(`[Presence] User ${userId} is ${status} but has no related rooms`);
         }
@@ -48,18 +60,16 @@ const broadcastUserStatus = async (io, userId, status) => {
  * @param {import("socket.io").Server} io
  */
 const registerPresenceHandlers = (socket, io) => {
-    // addNewUser 
+    // Kết nối mới / Đăng ký User
     socket.on("addNewUser", async (userId) => {
         if (!userId || userId === "undefined") return;
 
+        const redisClient = getRedisClient(io);
         // Tránh đăng ký lại nếu socket đã join cùng userId
-        if (socket.userRegistered && socket.userId === userId) {
-            socket.emit("getOnlineUsers", getOnlineUsersPayload());
+        if (!redisClient) {
+            console.error("[Presence] Redis client not available");
             return;
         }
-
-        const hadPendingOfflineTimer = disconnectTimers.has(userId);
-        const currentCount = userConnections.get(userId) || 0;
 
         try {
             socket.userId = userId;
@@ -73,31 +83,39 @@ const registerPresenceHandlers = (socket, io) => {
             userGroups.forEach((group) => {
                 socket.join(group._id.toString());
             });
+
+            // ==============================
+            // LOGIC REDI
+            // ==============================
+
+            // Xóa flag "đang chờ offline" (nếu có) do user vừa reconnect (tránh flicker khi F5)
+            await redisClient.del(`offline_timer:${userId}`);
+
+            // Lấy danh sách SocketId hiện tại của User trong Redis
+            let currentSocketsStr = await redisClient.hGet("online_users", userId);
+            let currentSockets = currentSocketsStr ? currentSocketsStr.split(',').filter(id => id) : [];
+
+            const isFirstConnection = currentSockets.length === 0;
+
+            // Thêm socketId mới vào mảng
+            if (!currentSockets.includes(socket.id)) {
+                currentSockets.push(socket.id);
+                await redisClient.hSet("online_users", userId, currentSockets.join(','));
+            }
+
+            // Chỉ broadcast "online" nếu đây là kết nối đầu tiên của User trên toàn hệ thống
+            if (isFirstConnection) {
+                broadcastUserStatus(io, userId, "online");
+                await User.findByIdAndUpdate(userId, { "activityStatus.state": "active" });
+            }
+
+            // Lấy danh sách payload từ Redis và gửi cho Client
+            const payload = await getOnlineUsersPayload(redisClient);
+            socket.emit("getOnlineUsers", payload);
+
         } catch (err) {
             console.error(`[Presence] Error joining rooms for ${userId}:`, err);
         }
-
-        // Cập nhật onlineUsers map
-        const existingSocketIds = onlineUsers.get(userId) || new Set();
-        existingSocketIds.add(socket.id);
-        onlineUsers.set(userId, existingSocketIds);
-
-        // Hủy timer offline nếu user kết nối lại trong vòng 5s
-        if (hadPendingOfflineTimer) {
-            clearTimeout(disconnectTimers.get(userId));
-            disconnectTimers.delete(userId);
-            console.log(`[Presence] Cancelled offline timer for ${userId}`);
-        }
-
-        userConnections.set(userId, currentCount + 1);
-
-        // Chỉ broadcast "online" lần đầu tiên kết nối
-        if (!hadPendingOfflineTimer && currentCount === 0) {
-            broadcastUserStatus(io, userId, "online");
-            await User.findByIdAndUpdate(userId, { "activityStatus.state": "active" });
-        }
-
-        socket.emit("getOnlineUsers", getOnlineUsersPayload());
     });
 
     // joinGroup / leaveGroup 
@@ -113,56 +131,61 @@ const registerPresenceHandlers = (socket, io) => {
         console.log(`[Socket] ${socket.id} left group ${groupId}`);
     });
 
-    // disconnect 
-    socket.on("disconnect", () => {
+    // Disconnect 
+    socket.on("disconnect", async () => {
         const userId = socket.userId;
         if (!userId) return;
 
         socket.userRegistered = false;
 
-        // Xóa socketId này khỏi onlineUsers
-        const existingSocketIds = onlineUsers.get(userId);
-        if (existingSocketIds) {
-            existingSocketIds.delete(socket.id);
-            if (existingSocketIds.size === 0) {
-                onlineUsers.delete(userId);
-            }
-        }
+        const redisClient = getRedisClient(io);
+        if (!redisClient) return;
 
-        const currentCount = userConnections.get(userId) || 0;
-        const newCount = Math.max(0, currentCount - 1);
-        userConnections.set(userId, newCount);
+        try {
+            //  Xóa SocketId hiện tại khỏi danh sách của User trong Redis
+            let currentSocketsStr = await redisClient.hGet("online_users", userId);
+            if (currentSocketsStr) {
+                let currentSockets = currentSocketsStr.split(',');
+                currentSockets = currentSockets.filter(id => id !== socket.id);
 
-        console.log(`[Presence] User ${userId} disconnected. Count: ${currentCount} → ${newCount}`);
+                if (currentSockets.length > 0) {
+                    // Nếu User vẫn còn tab/thiết bị khác đang mở
+                    await redisClient.hSet("online_users", userId, currentSockets.join(','));
+                } else {
+                    // Nếu User đã đóng hết toàn bộ tab/thiết bị
+                    await redisClient.hDel("online_users", userId);
 
-        // Đặt timer 5s để xác nhận offline (tránh flicker khi reload trang)
-        if (newCount === 0) {
-            const timerId = setTimeout(async () => {
-                try {
-                    const finalCount = userConnections.get(userId) || 0;
-                    const finalSocketCount = onlineUsers.get(userId)?.size || 0;
+                    // Thay vì dùng setTimeout (chỉ chạy trên 1 Server), ta dùng cơ chế Cache tạm trên Redis
+                    // Đặt cờ "offline_timer" với thời gian hết hạn (TTL) là 5 giây
+                    await redisClient.setEx(`offline_timer:${userId}`, 5, "pending");
 
-                    if (finalCount === 0 && finalSocketCount === 0) {
-                        console.log(`[Presence] Confirmed offline: ${userId}`);
+                    // Đặt một timer cục bộ để sau 5s kiểm tra lại cờ này trên Redis
+                    setTimeout(async () => {
+                        try {
+                            // Kiểm tra xem cờ còn tồn tại hay không (hay là user đã reconnect và xóa nó rồi)
+                            const isPending = await redisClient.get(`offline_timer:${userId}`);
+                            const isStillOffline = !(await redisClient.hExists("online_users", userId));
 
-                        broadcastUserStatus(io, userId, "offline");
-                        await User.findByIdAndUpdate(userId, {
-                            activityStatus: { state: "offline", lastSeen: new Date() },
-                        });
-
-                        userConnections.delete(userId);
-                        disconnectTimers.delete(userId);
-                    } else {
-                        console.log(`[Presence] Cancelled offline for ${userId} - reconnected`);
-                    }
-                } catch (error) {
-                    console.error("[Presence] Timer offline error:", error);
+                            // Nếu cờ chờ đã hết hạn HOẶC không có kết nối mới nào
+                            if (!isPending && isStillOffline) {
+                                console.log(`[Presence] Confirmed offline: ${userId}`);
+                                broadcastUserStatus(io, userId, "offline");
+                                await User.findByIdAndUpdate(userId, {
+                                    activityStatus: { state: "offline", lastSeen: new Date() },
+                                });
+                            } else {
+                                console.log(`[Presence] Cancelled offline for ${userId} - reconnected on another tab/server`);
+                            }
+                        } catch (err) {
+                            console.error("[Presence] Error resolving offline status:", err);
+                        }
+                    }, 5500);
                 }
-            }, 5000);
-
-            disconnectTimers.set(userId, timerId);
+            }
+        } catch (err) {
+            console.error(`[Presence] Disconnect error for ${userId}:`, err);
         }
     });
 };
 
-module.exports = { registerPresenceHandlers, getOnlineUsersPayload, onlineUsers };
+module.exports = { registerPresenceHandlers, getOnlineUsersPayload };

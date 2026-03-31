@@ -3,7 +3,7 @@ const { createClient } = require("redis");
 const { createAdapter } = require("@socket.io/redis-adapter");
 
 // Khởi tạo handelers cho từng nhóm chức năng
-const { registerPresenceHandlers, onlineUsers } = require("./handlers/presenceHandler");
+const { registerPresenceHandlers } = require("./handlers/presenceHandler");
 const { registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
@@ -48,7 +48,7 @@ const initSocket = (httpServer, app) => {
 
     // Gán io và onlineUsers vào app để controllers có thể dùng nếu cần
     app.set("socketio", io);
-    app.set("onlineUsers", onlineUsers);
+    app.set("redisClient", pubClient);
 
     io.on("connection", (socket) => {
         console.log(`[Socket] Connected: ${socket.id}`);
