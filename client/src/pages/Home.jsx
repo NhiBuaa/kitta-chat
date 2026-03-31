@@ -26,6 +26,7 @@ import { useTyping } from "../hooks/useTyping";
 import { useFriendSocket } from "../hooks/useFriendSocket";
 import { useGroupSocket } from "../hooks/useGroupSocket";
 import { useMessageSocket } from "../hooks/useMessageSocket";
+import { usePresence } from '../hooks/usePresence';
 
 const Home = () => {
   // Core state
@@ -81,10 +82,7 @@ const Home = () => {
     return `${API_URL}${avatarPath}`;
   }, [API_URL]);
 
-  const checkIsOnline = useCallback((user) => {
-    if (!user || !onlineUsers?.length) return false;
-    return onlineUsers.some((u) => u.userId === user._id);
-  }, [onlineUsers]);
+  const { checkIsOnline } = usePresence();
 
   const renderLastMessage = (user, currentUserId) => {
     if (!user.lastMessage)
@@ -236,7 +234,7 @@ const Home = () => {
     setUsers((prev) =>
       prev.map((u) => ({
         ...u,
-        isOnline: onlineUsers.some((ou) => ou.userId === u._id),
+        isOnline: onlineUsers.some((ou) => String(ou.userId) === String(u._id)),
       }))
     );
   }, [onlineUsers, users.length]);

@@ -12,11 +12,13 @@ const {
   getFriendRequests,
   getSidebarUsers,
   rejectFriendRequest,
+  getOnlineFriends
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/auth");
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() })
 
+router.get("/online-friends", authMiddleware, getOnlineFriends);
 router.get("/profile", authMiddleware, getUserProfile);
 router.put("/profile", authMiddleware, upload.single('avatar'), updateUserProfile);
 router.get("/friends", authMiddleware, getFriends);

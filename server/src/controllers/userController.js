@@ -241,6 +241,37 @@ const getFriends = async (req, res) => {
   }
 };
 
+// [GET] /api/users/online-friends
+const getOnlineFriends = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const redisClient = req.app.get("redisClient");
+
+    if (!redisClient) {
+      return res.status(500).json({ success: false, message: "Redis client không sẵn sàng" });
+    }
+
+    // Lấy tất cả user đang online trên toàn hệ thống từ Redis
+    const globalOnlineUsers = await redisClient.sMembers("global_online_users");
+
+    // Lấy danh sách bạn bè của user hiện tại từ DB
+    const currentUser = await User.findById(currentUserId).select("friends");
+    if (!currentUser || !currentUser.friends) {
+      return res.json({ success: true, onlineUsers: [] });
+    }
+
+    const friendIds = currentUser.friends.map(id => id.toString());
+
+    // Lọc ra những người vừa là bạn, vừa nằm trong danh sách online
+    const onlineFriends = friendIds.filter(friendId => globalOnlineUsers.includes(friendId));
+
+    res.json({ success: true, onlineUsers: onlineFriends });
+  } catch (error) {
+    console.error("Lỗi lấy danh sách bạn bè online:", error);
+    res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+};
+
 // Lấy danh sách lời mời kết bạn đang chờ
 const getFriendRequests = async (req, res) => {
   try {
@@ -519,4 +550,5 @@ module.exports = {
   getSidebarUsers,
   sendFriendRequest,
   rejectFriendRequest,
+  getOnlineFriends
 };
