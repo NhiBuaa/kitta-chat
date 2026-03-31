@@ -49,6 +49,19 @@ export const useFriendSocket = ({
                 position: "top-right",
                 autoClose: 3000,
             });
+
+            // Cập nhật cả searchResult (trang tìm kiếm) và users list
+            patchUserEverywhere(data.newFriendId, (user) => ({
+                ...user,
+                _id: data.newFriendId,
+                displayName: data.newFriendName ?? user?.displayName,
+                avatar: data.newFriendAvatar ?? user?.avatar,
+                isFriend: true,
+                isIncomingRequest: false,
+                isReceived: false,
+                isSent: false,
+            }));
+
             markFriendshipActive({
                 _id: data.newFriendId,
                 displayName: data.newFriendName,
@@ -65,6 +78,15 @@ export const useFriendSocket = ({
         const handleFriendRequestHandled = (data) => {
             setRequestCount((prev) => Math.max(prev - 1, 0));
             if (data.action === "accepted" && data.friend) {
+                patchUserEverywhere(data.friend._id, (user) => ({
+                    ...user,
+                    displayName: data.friend.displayName ?? user?.displayName,
+                    avatar: data.friend.avatar ?? user?.avatar,
+                    isFriend: true,
+                    isIncomingRequest: false,
+                    isReceived: false,
+                    isSent: false,
+                }));
                 markFriendshipActive(data.friend);
                 return;
             }
