@@ -4,8 +4,9 @@ const {
   login,
   forgotPassword,
   resetPassword,
+  googleLogin,
 } = require("../controllers/authController");
-const { googleLogin } = require("../controllers/authController");
+
 router.post("/register", register);
 router.post("/login", login);
 router.post("/google", googleLogin);

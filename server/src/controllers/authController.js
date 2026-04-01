@@ -2,6 +2,8 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const axios = require("axios");
+const { uploadSingleFile } = require("../service/s3.service");
 
 // Hàm helper để validate email
 const validateEmail = (email) => {
@@ -148,20 +150,43 @@ exports.googleLogin = async (req, res) => {
     const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=22c55e&color=fff&size=128`;
     // 2. tim ng dung co email
     let user = await User.findOne({ email });
+    let avatarUrl = defaultAvatarUrl;
+    if (avatar) {
+      try {
+        const response = await axios.get(avatar, {
+          responseType: "arraybuffer",
+        });
+
+        const buffer = Buffer.from(response.data, "binary");
+
+        const fileName = `google-${Date.now()}.jpg`;
+
+        avatarUrl = await uploadSingleFile(
+          buffer,
+          fileName,
+          "image/jpeg",
+          "avatars",
+        );
+      } catch (err) {
+        console.error("Upload Google avatar failed:", err.message);
+      }
+    }
 
     // 3. ch co thi tao moi
     if (!user) {
       user = new User({
         email,
         displayName,
-        avatar:
-          avatar && avatar !== ""
-            ? avatar.replace("=s96-c", "=s256-c")
-            : defaultAvatarUrl,
+        avatar: avatarUrl,
         password: "GOOGLE_LOGIN",
         provider: "google",
       });
 
+      await user.save();
+    } else {
+      // update avt va ten moi nhat tu gg
+      user.avatar = avatarUrl;
+      user.displayName = displayName || user.displayName;
       await user.save();
     }
 
