@@ -75,6 +75,38 @@ export const useMessageSocket = ({
             const receiverId = data.receiverId || data.receiver;
             const isMeSender = senderId === currentUser._id;
 
+            /**
+             * Deduplicate: khi retry thành công, sender nhận lại getMessage từ server
+             * (server emit cho cả senderId). Kiểm tra xem đã có message với cùng
+             * idempotencyKey trong UI chưa – nếu có thì bỏ qua (đã xử lý qua callback).
+             */
+            if (isMeSender && data.idempotencyKey) {
+                setMessages((prev) => {
+                    const existingIdx = prev.findIndex(
+                        (m) => m.idempotencyKey === data.idempotencyKey
+                    );
+                    if (existingIdx !== -1) {
+                        const existing = prev[existingIdx];
+                        // Nếu đã có real _id (được server update qua callback) -> bỏ qua
+                        if (existing._id && !String(existing._id).startsWith("temp_")) {
+                            return prev;
+                        }
+                        // Nếu vẫn còn tempId -> cập nhật thành real message (từ server)
+                        return prev.map((m) =>
+                            m.idempotencyKey === data.idempotencyKey
+                                ? {
+                                      ...m,
+                                      _id: data._id || m._id,
+                                      status: "sent",
+                                      rawPayload: undefined,
+                                  }
+                                : m
+                        );
+                    }
+                    return prev;
+                });
+            }
+
             const resolvedAttachments = Array.isArray(data.attachmentsData)
                 ? data.attachmentsData
                 : Array.isArray(data.attachments)

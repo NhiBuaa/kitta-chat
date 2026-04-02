@@ -16,6 +16,7 @@ import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
 import Loader from "./deco/Loader";
 import MessageSeenBy from './MessageSeenBy';
+import OfflineBanner from "./OfflineBanner";
 
 const ChatWindow = ({
   activeChat,
@@ -125,6 +126,9 @@ const ChatWindow = ({
 
   return (
     <>
+      {/* OFFLINE BANNER */}
+      <OfflineBanner />
+
       {/* CHAT HEADER */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
@@ -225,6 +229,8 @@ const ChatWindow = ({
             const isSystemMessage = message.type === "system";
             const isSending = message.status === "sending";
             const isError = message.status === "error";
+            const retryCount = message.retryCount || 0;
+            const isMaxRetry = retryCount >= 3;
 
             if (isSystemMessage) {
               return (
@@ -331,13 +337,31 @@ const ChatWindow = ({
                           <span className="text-[10px] text-green-200 italic">Đang gửi...</span>
                         )}
 
-                        {isError && (
-                          <span
+                        {isError && !isMaxRetry && (
+                          <button
                             onClick={() => handleRetryMessage(message)}
-                            title="Gửi lại"
-                            className="text-[10px] text-red-200 font-bold flex items-center gap-1 cursor-pointer">
+                            title="Nhấn để gửi lại"
+                            className="flex items-center gap-1 text-[10px] text-red-300 font-semibold hover:text-red-200 transition-colors cursor-pointer bg-transparent border-none p-0"
+                          >
                             <FaExclamationTriangle />
-                            Lỗi gửi
+                            Gửi lại
+                          </button>
+                        )}
+
+                        {isError && isMaxRetry && (
+                          <span className="flex items-center gap-1 text-[10px] text-red-300 italic">
+                            <FaExclamationTriangle />
+                            Không gửi được
+                            {message.text && (
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(message.text);
+                                }}
+                                className="underline hover:text-red-200 ml-1 bg-transparent border-none cursor-pointer p-0"
+                              >
+                                Sao chép
+                              </button>
+                            )}
                           </span>
                         )}
 

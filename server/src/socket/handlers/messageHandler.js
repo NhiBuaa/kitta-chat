@@ -39,7 +39,12 @@ const registerMessageHandlers = (socket, io) => {
                 };
             }
 
-            const payloadToEmit = { ...messageData, sender: senderInfo };
+            const payloadToEmit = {
+                ...messageData,
+                sender: senderInfo,
+                // Gửi kèm idempotencyKey để client có thể dedupe khi nhận getMessage
+                idempotencyKey: messageData.idempotencyKey || null,
+            };
 
             if (isGroup) {
                 // Lấy tên nhóm nếu chưa có trong payload
@@ -64,13 +69,17 @@ const registerMessageHandlers = (socket, io) => {
                 (isGroup ? receiverId : buildConversationId(senderId, receiverId));
 
             // Lưu vào DB + Redis (chạy ngầm)
-            const savedMessage = await saveMessageInBackground({
+            const { doc: savedMessage, isDuplicate } = await saveMessageInBackground({
                 ...payloadToEmit,
                 conversationId,
                 receiverId,
             });
 
-            callBack?.({ success: true, realId: savedMessage?._id });
+            callBack?.({
+                success: true,
+                realId: savedMessage?._id,
+                isDuplicate: Boolean(isDuplicate),
+            });
         } catch (err) {
             console.error("[Message] sendMessage error:", err);
             callBack?.({ success: false });

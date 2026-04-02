@@ -3,6 +3,13 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { normalizeAttachment } from "../utils/normalizeAttachment";
+import {
+    pendingQueueAdd,
+    pendingQueueRemove,
+    pendingQueueIncrementRetry,
+    pendingQueueGetStaleAndClean,
+    MAX_RETRY,
+} from "../utils/pendingQueue";
 
 /**
  * Quản lý toàn bộ vòng đời tin nhắn:
@@ -136,15 +143,14 @@ export const useChatMessages = ({
         };
     }, [activeChatKey, hasFetchedActiveChat, isChatBootstrapping, messages.length, scrollChatToBottom]);
 
-    // Gửi tin nhắn (optimistic UI) 
+    // Gửi tin nhắn (optimistic UI)
     const handleSendMessage = useCallback(async (e) => {
         e.preventDefault();
 
-        if (!navigator.onLine) {
-            toast.error("Bạn đang mất kết nối mạng. Vui lòng kiểm tra lại!");
-        }
-        if (!socket || !socket.connected) {
-            toast.error("Đang mất kết nối với máy chủ chat. Đang thử kết nối lại...");
+        // Kiểm tra socket trước khi gửi
+        if (!socket) {
+            toast.error("Đang mất kết nối với máy chủ chat.");
+            return;
         }
 
         const isUploading = uploadQueue.some((item) => item.status === "uploading");
@@ -171,6 +177,7 @@ export const useChatMessages = ({
 
         const isGroup = Boolean(activeChat.members);
         const tempId = `temp_${uuidv4()}`;
+        const idempotencyKey = uuidv4(); // STABLE key – dùng cho deduplicate ở server
         const currentConvId = isGroup ? activeChat._id : activeChat.conversationId;
 
         const messagePayload = {
@@ -183,6 +190,7 @@ export const useChatMessages = ({
             attachmentsData: attachmentMetas,
             isGroup,
             type: attachmentIds.length > 0 ? "file" : "text",
+            idempotencyKey,
             senderInfo: {
                 _id: currentUser._id,
                 displayName: currentUser.displayName,
@@ -200,6 +208,8 @@ export const useChatMessages = ({
             type: messagePayload.type,
             createdAt: new Date().toISOString(),
             status: "sending",
+            idempotencyKey,
+            retryCount: 0,
             rawPayload: messagePayload,
         };
 
@@ -212,18 +222,19 @@ export const useChatMessages = ({
             scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
         }, 50);
 
-        // Timeout 15s nếu server không phản hồi
-        const timeoutId = setTimeout(() => {
-            setMessages((prev) =>
-                prev.map((msg) =>
-                    msg._id === tempId && msg.status === "sending" ? { ...msg, status: "error" } : msg
-                )
-            );
-        }, 15000);
+        // Lưu vào PendingQueue (localStorage) reload detection
+        pendingQueueAdd({
+            idempotencyKey,
+            tempId,
+            payload: messagePayload,
+            retryCount: 0,
+        });
 
-        socket.emit("sendMessage", messagePayload, (res) => {
-            clearTimeout(timeoutId);
+        // Hàm xử lý khi server phản hồi
+        const handleServerResponse = (res) => {
             if (res?.success) {
+                // Thành công -> xóa khỏi PendingQueue
+                pendingQueueRemove(idempotencyKey);
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg._id === tempId
@@ -232,53 +243,92 @@ export const useChatMessages = ({
                     )
                 );
             } else {
+                // Server trả lỗi -> giữ status error (không toast – inline indicator)
+                pendingQueueRemove(idempotencyKey);
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg._id === tempId ? { ...msg, status: "error" } : msg
                     )
                 );
-                toast.error("Không thể gửi tin nhắn. Vui lòng thử lại!");
             }
+        };
+
+        // Timeout 15s – không nhận được response -> auto error
+        const timeoutId = setTimeout(() => {
+            // Kiểm tra xem message còn trong trạng thái "sending" không
+            setMessages((prev) => {
+                const msg = prev.find((m) => m._id === tempId && m.status === "sending");
+                if (!msg) return prev;
+                return prev.map((m) =>
+                    m._id === tempId ? { ...m, status: "error" } : m
+                );
+            });
+        }, 15000);
+
+        // emit – callback chỉ được gọi khi server xử lý xong
+        socket.emit("sendMessage", messagePayload, (res) => {
+            clearTimeout(timeoutId);
+            handleServerResponse(res);
         });
     }, [activeChat, currentUser, socket, uploadQueue, clearUploads, newMessage, scrollRef, setShowEmoji]);
 
-    // Gửi lại tin nhắn lỗi 
+    // Gửi lại tin nhắn lỗi (tap trực tiếp trên bubble)
     const handleRetryMessage = useCallback((failedMessage) => {
-        if (!failedMessage.rawPayload) {
+        if (!failedMessage.rawPayload) return;
+
+        const tempId = failedMessage._id;
+        const idempotencyKey = failedMessage.idempotencyKey;
+
+        if (!idempotencyKey) {
             toast.error("Dữ liệu tin nhắn đã mất, không thể thử lại.");
+            return;
+        }
+
+        // Kiểm tra retry count – pendingQueueIncrementRetry trả về null khi đã đạt MAX_RETRY
+        const entryAfterIncrement = pendingQueueIncrementRetry(idempotencyKey);
+        if (entryAfterIncrement === null) {
+            // retryCount đã đạt MAX_RETRY -> không retry nữa
+            // rawPayload vẫn giữ nguyên để user có thể "Sao chép nội dung"
+            toast.info("Đã thử gửi nhiều lần. Bạn có thể sao chép nội dung.");
             return;
         }
 
         setMessages((prev) =>
             prev.map((msg) =>
-                msg._id === failedMessage._id ? { ...msg, status: "sending" } : msg
+                msg._id === tempId
+                    ? { ...msg, status: "sending", retryCount: (msg.retryCount || 0) + 1 }
+                    : msg
             )
         );
 
+        // Timeout 15s
         const retryTimeoutId = setTimeout(() => {
             setMessages((prev) =>
                 prev.map((msg) =>
-                    msg._id === failedMessage._id && msg.status === "sending"
+                    msg._id === tempId && msg.status === "sending"
                         ? { ...msg, status: "error" }
                         : msg
                 )
             );
         }, 15000);
 
+        // Gửi lại với cùng idempotencyKey (server sẽ dedupe bằng upsert)
         socket.emit("sendMessage", failedMessage.rawPayload, (res) => {
             clearTimeout(retryTimeoutId);
             if (res?.success) {
+                pendingQueueRemove(idempotencyKey);
                 setMessages((prev) =>
                     prev.map((msg) =>
-                        msg._id === failedMessage._id
+                        msg._id === tempId
                             ? { ...msg, _id: res.realId, status: "sent", rawPayload: undefined }
                             : msg
                     )
                 );
             } else {
+                pendingQueueRemove(idempotencyKey);
                 setMessages((prev) =>
                     prev.map((msg) =>
-                        msg._id === failedMessage._id ? { ...msg, status: "error" } : msg
+                        msg._id === tempId ? { ...msg, status: "error" } : msg
                     )
                 );
             }
@@ -335,7 +385,7 @@ export const useChatMessages = ({
         }
     }, [activeChat, currentUser, API_URL, hasMore, messages, scrollRef]);
 
-    // Reset nhanh khi chọn chat mới (gọi từ handleSelectUser) 
+    // Reset nhanh khi chọn chat mới (gọi từ handleSelectUser)
     const resetChatState = useCallback(() => {
         setMessages([]);
         setNewMessage("");
@@ -344,6 +394,32 @@ export const useChatMessages = ({
         isLoadingMoreRef.current = false;
         isFirstLoad.current = true;
     }, []);
+
+    /**
+     * App startup: kiểm tra PendingQueue trong localStorage.
+     * Những tin đang "sending" mà còn tồn đọng (app reload khi đang gửi)
+     * -> set status = "error" để hiện inline retry indicator.
+     *
+     * Chỉ check khi có activeChat vì cần biết tin nhắn thuộc conversation nào.
+     */
+    useEffect(() => {
+        if (!activeChatId || !currentUser?._id) return;
+
+        const { stale } = pendingQueueGetStaleAndClean();
+
+        if (stale.length === 0) return;
+
+        // Map stale items theo tempId và cập nhật UI
+        setMessages((prev) => {
+            const staleIds = new Set(stale.map((item) => item.tempId));
+            return prev.map((msg) => {
+                if (staleIds.has(msg._id)) {
+                    return { ...msg, status: "error", rawPayload: undefined };
+                }
+                return msg;
+            });
+        });
+    }, [activeChatId, currentUser?._id]);
 
     return {
         messages,

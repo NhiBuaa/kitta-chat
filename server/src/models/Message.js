@@ -30,11 +30,25 @@ const messageSchema = new mongoose.Schema(
 
     isRead: { type: Boolean, default: false },
     readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+    idempotencyKey: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
 messageSchema.index({ conversationId: 1, createdAt: -1 });
+
+messageSchema.index(
+  { sender: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: { idempotencyKey: { $exists: true, $ne: null } },
+  }
+);
 
 const Message = mongoose.model('Message', messageSchema);
 
