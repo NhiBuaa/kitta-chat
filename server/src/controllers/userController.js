@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
-const { uploadAvatar } = require("../service/s3.service");
+const { uploadSingleFile } = require("../service/s3.service");
 const sharp = require("sharp");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
@@ -102,7 +102,7 @@ const updateUserProfile = async (req, res) => {
       const OriginalNameWithoutExt = req.file.originalname.split(".")[0];
       const newName = OriginalNameWithoutExt + ".webp";
 
-      const avatarUrl = await uploadAvatar(
+      const avatarUrl = await uploadSingleFile(
         compressedBuffer,
         newName,
         "image/webp",
@@ -248,7 +248,9 @@ const getOnlineFriends = async (req, res) => {
     const redisClient = req.app.get("redisClient");
 
     if (!redisClient) {
-      return res.status(500).json({ success: false, message: "Redis client không sẵn sàng" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Redis client không sẵn sàng" });
     }
 
     // Lấy tất cả user đang online trên toàn hệ thống từ Redis
@@ -260,10 +262,12 @@ const getOnlineFriends = async (req, res) => {
       return res.json({ success: true, onlineUsers: [] });
     }
 
-    const friendIds = currentUser.friends.map(id => id.toString());
+    const friendIds = currentUser.friends.map((id) => id.toString());
 
     // Lọc ra những người vừa là bạn, vừa nằm trong danh sách online
-    const onlineFriends = friendIds.filter(friendId => globalOnlineUsers.includes(friendId));
+    const onlineFriends = friendIds.filter((friendId) =>
+      globalOnlineUsers.includes(friendId),
+    );
 
     res.json({ success: true, onlineUsers: onlineFriends });
   } catch (error) {
@@ -550,5 +554,5 @@ module.exports = {
   getSidebarUsers,
   sendFriendRequest,
   rejectFriendRequest,
-  getOnlineFriends
+  getOnlineFriends,
 };
