@@ -1,19 +1,28 @@
 const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 const { createClient } = require("redis");
 const { createAdapter } = require("@socket.io/redis-adapter");
 
-// Khởi tạo handelers cho từng nhóm chức năng
+// Handlers
 const { registerPresenceHandlers } = require("./handlers/presenceHandler");
 const { registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
 const { registerCallHandlers } = require("./handlers/callHandler");
 
+// =========================================================
+// CRITICAL: Validate environment variables at startup
+// =========================================================
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error("FATAL: JWT_SECRET environment variable is missing");
+}
+
 /**
- * Khởi tạo Socket.IO server và đăng ký tất cả event handlers
+ * Khởi tạo Socket.IO server với JWT auth + Redis Adapter
  *
- * @param {import("http").Server} httpServer - HTTP server từ Express
- * @param {import("express").Application} app - Express app (để gán io vào app.set)
+ * @param {import("http").Server} httpServer
+ * @param {import("express").Application} app
  * @returns {import("socket.io").Server} io
  */
 const initSocket = (httpServer, app) => {
@@ -22,43 +31,74 @@ const initSocket = (httpServer, app) => {
             origin: process.env.URL_FRONTEND,
             methods: ["GET", "POST"],
         },
+        pingTimeout: 20000,
+        pingInterval: 25000,
     });
 
-    // ==============
-    // CẤU HÌNH REDIS ADAPTER CHO SCALING SOCKET.IO
-    // =============
-    const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+    // =========================================================
+    // REDIS ADAPTER CHO MULTI-CONTAINER SCALING
+    // =========================================================
+    const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
     const pubClient = createClient({ url: redisUrl });
     const subClient = pubClient.duplicate();
 
-    // Bắt sự kiện lỗi Redis để debug
     pubClient.on("error", (err) => console.error("[Redis PubClient] Error:", err));
     subClient.on("error", (err) => console.error("[Redis SubClient] Error:", err));
 
-    // Kết nối Redis và gắn Adapter
     Promise.all([pubClient.connect(), subClient.connect()])
         .then(() => {
             io.adapter(createAdapter(pubClient, subClient));
-            const port = process.env.PORT || 3000;
-            console.log(`[Socket] Redis adapter connected. Socket.IO server is running on port ${port}`);
+            console.log("[Socket] Redis adapter connected");
         })
         .catch((err) => {
-            console.error("[Socket] Failed to connect to Redis:", err);
-        })
+            // FAIL FAST: Redis là core dependency, không chạy nếu không có Redis
+            console.error(`[Socket] FATAL: Redis connection failed: ${err.message}`);
+            process.exit(1);
+        });
 
-    // Gán io và onlineUsers vào app để controllers có thể dùng nếu cần
     app.set("socketio", io);
     app.set("redisClient", pubClient);
-
     io.redisClient = pubClient;
 
-    io.on("connection", (socket) => {
-        console.log(`[Socket] Connected: ${socket.id}`);
+    // =========================================================
+    // MIDDLEWARE: JWT Authentication
+    // Verify token TRƯỚC KHI cho connection
+    // =========================================================
+    io.use((socket, next) => {
+        const token = socket.handshake.auth?.token;
 
-        // Thông báo cho client biết socketId của mình
+        if (!token) {
+            console.warn(`[Socket Auth] No token: ${socket.id}`);
+            return next(new Error("Authentication required"));
+        }
+
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            socket.userId = decoded.id || decoded._id;
+            socket.userEmail = decoded.email;
+
+            if (!socket.userId) {
+                console.warn(`[Socket Auth] Token missing user ID: ${socket.id}`);
+                return next(new Error("Invalid token payload"));
+            }
+
+            console.log(`[Socket Auth] OK: ${socket.userId} (${socket.id})`);
+            next();
+        } catch (err) {
+            console.warn(`[Socket Auth] Invalid token ${socket.id}: ${err.message}`);
+            return next(new Error("Invalid or expired token"));
+        }
+    });
+
+    // =========================================================
+    // CONNECTION HANDLER
+    // =========================================================
+    io.on("connection", (socket) => {
+        const userId = socket.userId;
+        console.log(`[Socket] Connected: ${socket.id} (user: ${userId})`);
+
         socket.emit("me", socket.id);
 
-        // Đăng ký handlers theo từng nhóm chức năng
         registerPresenceHandlers(socket, io);
         registerMessageHandlers(socket, io);
         registerFriendHandlers(socket, io);

@@ -16,11 +16,11 @@ import { sendFriendRequest } from "../services/userService";
 export const useFriendActions = ({ API_URL, setUsers, setActiveChat, setSentRequests }) => {
 
     // Fetch conversation mới khi sidebar chưa có entry
-    const fetchNewConversation = useCallback(async (targetId, isGroup, messageData) => {
+    // Nhận fullURL thay vì tự ghép — tránh double /api/
+    const fetchNewConversation = useCallback(async (fullUrl, messageData) => {
         try {
             const token = localStorage.getItem("token");
-            const endpoint = isGroup ? `/api/groups/${targetId}` : `/api/users/${targetId}`;
-            const res = await axios.get(`${API_URL}${endpoint}`, {
+            const res = await axios.get(fullUrl, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

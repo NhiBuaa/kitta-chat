@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL_FILES || '/api/files';
 
 // Hàm lấy Token từ LocalStorage
 const getAuthHeaders = () => {
@@ -13,7 +13,7 @@ const getAuthHeaders = () => {
 };
 
 export const initUpload = async (fileName, fileType, fileHash) => {
-    const res = await axios.post(`${API_URL}/api/files/init`, {
+    const res = await axios.post(`${API_URL}/init`, {
         fileName,
         fileType,
         fileHash
@@ -23,7 +23,7 @@ export const initUpload = async (fileName, fileType, fileHash) => {
 };
 
 export const getPresignedUrl = async (uploadId, key, partNumber) => {
-    const res = await axios.post(`${API_URL}/api/files/get-presigned-url`, {
+    const res = await axios.post(`${API_URL}/get-presigned-url`, {
         uploadId,
         key,
         partNumber
@@ -33,7 +33,7 @@ export const getPresignedUrl = async (uploadId, key, partNumber) => {
 };
 
 export const completeUpload = async (uploadId, key, parts, fileInfo) => {
-    const res = await axios.post(`${API_URL}/api/files/complete`, {
+    const res = await axios.post(`${API_URL}/complete`, {
         uploadId,
         key,
         parts,

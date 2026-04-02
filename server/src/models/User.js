@@ -36,4 +36,14 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Index cho truy vấn bạn bè (friend list, online friends)
+// Array field index - chậm hơn compound index nhưng cần thiết
+userSchema.index({ friends: 1 });
+
+// Index cho truy vấn lời mời kết bạn
+userSchema.index({ friendRequests: 1 });
+
+// Index cho tìm kiếm theo displayName (nếu cần search users)
+userSchema.index({ displayName: 1 });
+
 module.exports = mongoose.model("User", userSchema);
