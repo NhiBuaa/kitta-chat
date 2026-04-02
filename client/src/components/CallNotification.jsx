@@ -20,6 +20,8 @@ const CallNotification = () => {
         const avatar = call.avatar || "";
         const url = `/call/${call.from}?incoming=true&name=${encodeURIComponent(call.name)}&avatar=${encodeURIComponent(avatar)}&type=${type}`;
 
+        localStorage.setItem("tempCallType", type);
+
         window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
 
         setCall((prev) => ({ ...prev, isReceivingCall: false }));

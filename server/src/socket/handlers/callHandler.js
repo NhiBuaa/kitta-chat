@@ -6,8 +6,8 @@
  */
 const registerCallHandlers = (socket, io) => {
     // Gọi đến user khác
-    socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId, mediaStatus }) => {
-        console.log(`[Call] ${callerDbId} → ${userToCall}`);
+    socket.on("callUser", ({ userToCall, signalData, from, name, callerDbId, mediaStatus, typeCall }) => {
+        console.log(`[Call] ${callerDbId} -> ${userToCall} (${typeCall})`);
 
         const room = io.sockets.adapter.rooms.get(userToCall);
 
@@ -18,9 +18,10 @@ const registerCallHandlers = (socket, io) => {
                 name,
                 callerDbId,
                 mediaStatus,
+                typeCall,
             });
         } else {
-            // User offline → thông báo lại cho người gọi
+            // User offline -> thông báo lại cho người gọi
             socket.emit("callRejected", { reason: "User offline" });
         }
     });

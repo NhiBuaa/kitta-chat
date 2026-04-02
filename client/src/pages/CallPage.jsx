@@ -21,7 +21,9 @@ const VideoCallPage = () => {
     const isIncoming = searchParams.get("incoming") === "true";
     const urlName = searchParams.get("name") || "Nguoi dung";
     const urlAvatar = searchParams.get("avatar");
-    const callType = searchParams.get("type") || localStorage.getItem("tempCallType") || "video";
+    const urlType = searchParams.get("type");
+    const storedType = localStorage.getItem("tempCallType");
+    const callType = urlType || storedType || "video";
     const isVideoCall = callType === "video";
     const partnerAvatar = urlAvatar && urlAvatar !== "undefined" && urlAvatar !== "null"
             ? urlAvatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(urlName)}&background=random`;

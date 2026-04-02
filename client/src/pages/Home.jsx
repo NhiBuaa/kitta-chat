@@ -287,6 +287,7 @@ const Home = () => {
     const chatUserId = currentChatUser._id || currentChatUser.id;
     const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}`;
     localStorage.setItem("activePartnerUserId", chatUserId);
+    localStorage.setItem("tempCallType", type);
     window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
