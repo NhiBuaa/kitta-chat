@@ -237,12 +237,12 @@ const ChatWindow = ({
                   alt="avatar"
                 />
 
-                <h2 className="text-gray-700 font-semibold">
+                <h2 className="text-gray-800 font-semibold">
                   {getUserDisplayName(currentChatUser)}
                 </h2>
 
-                <p className="text-sm text-gray-400 mt-1">
-                  Các bạn đã là bạn bè trên KittaChat
+                <p className="text-sm text-gray-500 mt-1">
+                  Bắt đầu cuộc trò chuyện bằng những câu chuyện hay!
                 </p>
               </div>
             )}
