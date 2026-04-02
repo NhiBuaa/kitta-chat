@@ -267,7 +267,7 @@ const ChatWindow = ({
                 return (
                   <div key={index} className="flex justify-center my-4">
                     <div className="bg-gray-200 text-gray-600 text-xs px-4 py-1 rounded-full flex items-center shadow-sm">
-                      {message.text}
+                      {message.text.replace(/^\s+/, "").replace(/\s+$/, "")}
                     </div>
                   </div>
                 );
@@ -364,7 +364,7 @@ const ChatWindow = ({
                       {/* Render tin nhắn */}
                       {message.text && (
                         <div className="break-words overflow-hidden whitespace-pre-wrap leading-relaxed">
-                          {message.text}
+                          {message.text.replace(/^\s+/, "").replace(/\s+$/, "")}
                         </div>
                       )}
 
