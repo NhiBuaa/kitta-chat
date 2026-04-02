@@ -36,6 +36,11 @@ const ChatInput = ({
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  useEffect(() => {
+    if (!newMessage && textareaRef.current) {
+      textareaRef.current.style.height = "20px";
+    }
+  }, [newMessage]);
   return (
     <div className="bg-white p-4 border-t border-gray-200 relative shrink-0">
       {/* KHU VỰC HIỂN THỊ FILE ĐANG TẢI LÊN */}
@@ -109,15 +114,22 @@ const ChatInput = ({
           ref={textareaRef}
           placeholder="Nhập tin nhắn..."
           //gõ quá dài thì sẽ tăng h, dài quá thì có thể cuộn
-          className="flex-1 self-center bg-transparent focus:outline-none text-sm px-2 leading-[20px] resize-none overflow-y-auto max-h-[80px] break-all"
+          className="flex-1 self-center bg-transparent focus:outline-none text-sm px-2 leading-[20px] resize-none overflow-y-auto max-h-[80px] break-words"
           value={newMessage}
           onChange={(e) => {
+            const value = e.target.value;
+
+            if (!value.trim()) {
+              e.target.style.height = "20px";
+            }
             handleInputChange(e);
             setShowEmoji(false);
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault(); //chặn xún dòng khi enter shift
+              // chặn spam rỗng
+              if (!newMessage.trim() && uploadQueue.length === 0) return;
               handleSendMessage(e);
             }
           }}

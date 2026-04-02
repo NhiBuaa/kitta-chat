@@ -301,7 +301,7 @@ const ChatWindow = ({
                     )}
 
                     <div
-                      className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${
+                      className={`p-3 max-w-xs w-fit shadow-sm text-sm transition-opacity duration-300 ${
                         isMe
                           ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
                           : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
