@@ -6,8 +6,7 @@ import { useSocket } from "../context/SocketContext";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
 
 const API_URL =
-  import.meta.env.VITE_API_URL_USERS || "http://localhost:3000/api/users";
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_URL_USERS || "/api/users";
 
 const FriendRequestModal = ({ onClose, setRequestCount }) => {
   const [requests, setRequests] = useState([]);
@@ -17,7 +16,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
     if (avatarPath.startsWith("http")) return avatarPath;
-    return `${API_BASE}${avatarPath}`;
+    return `/uploads${avatarPath}`;
   };
 
   const handleAccept = async (senderId) => {

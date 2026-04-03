@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
 
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
-  const URL_UPDATE_PROFILE = "http://localhost:3000/api/users/profile";
+  const URL_UPDATE_PROFILE = `${import.meta.env.VITE_API_URL_USERS || '/api/users'}/profile`;
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
   // Khởi tạo state cho form
   const [formData, setFormData] = useState({

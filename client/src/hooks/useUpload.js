@@ -2,7 +2,7 @@ import axios from 'axios';
 import { initUpload, getPresignedUrl, completeUpload } from '../services/api';
 
 // BIẾN
-const VITE_API_URL = import.meta.env.VITE_API_URL;
+const VITE_API_URL_FILES = import.meta.env.VITE_API_URL_FILES || '/api/files';
 
 export const uploadFileChunked = async (file, onProgress) => {
     const { uploadId, key } = await initUpload(file.name, file.type, "");
@@ -52,7 +52,7 @@ export const uploadFileSingle = async (file, onProgress) => {
         const token = localStorage.getItem('token');
 
         // Gọi API upload single ở BE
-        const response = await axios.post(`${VITE_API_URL}/api/file/upload-single`, formData, {
+        const response = await axios.post(`${VITE_API_URL_FILES}/upload-single`, formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
                 "Authorization": `Bearer ${token}`,
