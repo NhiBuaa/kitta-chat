@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const http = require("http");
-const path = require("path");
 
 const authRoutes = require("./src/routes/auth");
 const userRoutes = require("./src/routes/user");
@@ -93,11 +92,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/groups", require("./src/routes/group"));
 app.use("/api/files", require("./src/routes/file"));
-
-// Fallback static file serving (Dev + Prod đã có Nginx)
-// Prod: Nginx serve /uploads → Express không bao giờ được gọi
-// Dev: Express serve để test trực tiếp
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // =========================================================
 // 404 HANDLER - Phải đặt TRƯỚC global error handler

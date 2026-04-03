@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(dir \"d:\\\\Study\\\\HK5\\\\NodeJS\\\\Midterm\\\\web-socket\\\\\")",
-      "Bash(docker compose:*)"
-    ]
-  }
-}

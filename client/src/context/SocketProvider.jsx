@@ -36,12 +36,11 @@ export const SocketProvider = ({ children }) => {
 
     // =========================================================
     // Lưu last_message_id với debounce (5s) + clear on unmount
-    // Tránh ghi localStorage liên tục khi group chat sôi động
+    // Tránh ghi localStorage quá nhiều lần khi nhận nhiều tin nhắn
     // =========================================================
     const saveLastMessageId = useCallback((messageId) => {
         lastMessageIdRef.current = messageId;
 
-        // Xóa timeout cũ nếu có
         if (saveLastIdTimer.current) {
             clearTimeout(saveLastIdTimer.current);
         }
@@ -54,7 +53,6 @@ export const SocketProvider = ({ children }) => {
 
     // =========================================================
     // Sync tin nhắn bị miss (Redis Pub/Sub fire-and-forget backup)
-    // Đặt TRƯỚC socket useEffect để tránh Temporal Dead Zone
     // =========================================================
     const syncMissedMessages = useCallback(async (afterId) => {
         if (!socketRef.current) return;
@@ -69,7 +67,6 @@ export const SocketProvider = ({ children }) => {
 
             if (res.data.success && res.data.messages?.length > 0) {
                 // Dùng CustomEvent để giao tiếp giữa các React component
-                // KHÔNG dùng socket.emit (gửi lên server thay vì component khác)
                 window.dispatchEvent(
                     new CustomEvent(SYNC_MESSAGE_EVENT, {
                         detail: { messages: res.data.messages },
@@ -92,7 +89,7 @@ export const SocketProvider = ({ children }) => {
     // Dùng useState để Context trigger re-render
     // =========================================================
     useEffect(() => {
-        // Không có user → không tạo socket
+        // Không có user -> không tạo socket
         if (!userId) {
             if (socketRef.current) {
                 socketRef.current.disconnect();
@@ -110,16 +107,13 @@ export const SocketProvider = ({ children }) => {
         // Tạo socket mới
         const newSocket = io(SERVER_URL || undefined, {
             // Chỉ dùng WebSocket - không long-polling
-            // → Không cần sticky session trên Nginx
-            // → WebSocket stateful, tự gắn với 1 container
+            // -> Không cần sticky session trên Nginx
+            // -> WebSocket stateful, tự gắn với 1 container
             transports: ["websocket"],
 
             // Dùng auth object - server verify JWT để lấy userId
-            // KHÔNG tin userId từ query string (chống spoofing)
             auth: { token },
 
-            // Exponential backoff: delay tăng dần + random jitter
-            // randomizationFactor = 0.5 → delay: 1s × (0.5-1.5)
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,

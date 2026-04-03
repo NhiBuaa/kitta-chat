@@ -60,9 +60,7 @@ const Home = () => {
   // Context / global hooks
   const { onlineUsers, socket } = useSocket();
   const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
-  // Individual API base paths - dùng cho hooks con
-  // VITE_API_URL = '/' → nối với '/api/...' = '//api/...' (sai)
-  // → dùng '' cho empty base, '/api' cho /api prefix
+
   const API_URL_USERS = import.meta.env.VITE_API_URL_USERS || '/api/users';
   const API_URL_MESSAGES = import.meta.env.VITE_API_URL_MESSAGES || '/api/messages';
   const API_URL_GROUPS = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';

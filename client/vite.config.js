@@ -5,7 +5,6 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import process from 'node:process'
 
 export default defineConfig(({ mode }) => {
-  // Nạp toàn bộ biến môi trường từ file .env lên
   const env = loadEnv(mode, process.cwd(), '')
 
   // VITE_PROXY_TARGET:

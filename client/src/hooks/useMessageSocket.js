@@ -163,7 +163,7 @@ export const useMessageSocket = ({
             setUsers((prevUsers) => {
                 const newList = updateListWithPreview(prevUsers);
                 if (newList) return newList;
-                // Conversation chưa có trong sidebar → fetch thêm
+                // Conversation chưa có trong sidebar -> fetch thêm
                 fetchNewConversation(
                     data.isGroup ? `/api/groups/${targetId}` : `/api/users/${targetId}`,
                     data

@@ -27,7 +27,7 @@ export const getPresignedUrl = async (uploadId, key, partNumber) => {
         uploadId,
         key,
         partNumber
-    }, getAuthHeaders()); // <--- ĐÍNH KÈM TOKEN VÀO ĐÂY
+    }, getAuthHeaders());
 
     return res.data.url;
 };
