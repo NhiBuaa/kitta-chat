@@ -16,16 +16,14 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-      mongo:
-        condition: service_healthy
     networks:
       - chat-network
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/healthz" ]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 30s
 
   # =========================================================
   # BACKEND
@@ -95,18 +93,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  # =========================================================
-  # CLIENT
-  # =========================================================
-  client:
-    image: nginx:alpine
-    container_name: chat_client
-    restart: always
-    volumes:
-      - ./client/dist:/usr/share/nginx/html:ro
-    networks:
-      - chat-network
 
 networks:
   chat-network:
