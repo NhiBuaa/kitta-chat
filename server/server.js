@@ -94,7 +94,7 @@ app.use("/api/groups", require("./src/routes/group"));
 app.use("/api/files", require("./src/routes/file"));
 
 // =========================================================
-// 404 HANDLER - Phải đặt TRƯỚC global error handler
+// 404 HANDLER
 // =========================================================
 app.use((req, res, next) => {
   res.status(404).json({
