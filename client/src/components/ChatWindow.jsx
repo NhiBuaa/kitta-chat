@@ -486,7 +486,6 @@ const ChatWindow = ({
               )}
             </button>
           )}
-          )
         </div>
       </div>
     </>
