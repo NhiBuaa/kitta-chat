@@ -77,8 +77,8 @@ export const useChatMessages = ({
             try {
                 const isGroup = Boolean(activeChat.members);
                 const url = isGroup
-                    ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true`
-                    : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}`;
+                    ? `${API_URL}/none/${activeChat._id}?isGroup=true`
+                    : `${API_URL}/${currentUser._id}/${activeChat._id}`;
 
                 const res = await axios.get(url, {
                     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -350,8 +350,8 @@ export const useChatMessages = ({
             const oldestMessageId = messages[0]._id;
 
             const url = isGroup
-                ? `${API_URL}/api/messages/none/${activeChat._id}?isGroup=true&cursor=${oldestMessageId}`
-                : `${API_URL}/api/messages/${currentUser._id}/${activeChat._id}?cursor=${oldestMessageId}`;
+                ? `${API_URL}/none/${activeChat._id}?isGroup=true&cursor=${oldestMessageId}`
+                : `${API_URL}/${currentUser._id}/${activeChat._id}?cursor=${oldestMessageId}`;
 
             const res = await axios.get(url, {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

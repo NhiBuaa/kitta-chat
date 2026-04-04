@@ -7,7 +7,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
   const [groupName, setGroupName] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
 
   if (!isOpen) return null;
 
@@ -22,7 +22,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
     if (avatarPath.startsWith("http")) return avatarPath;
-    return `${API_URL}${avatarPath}`;
+    return `/uploads${avatarPath}`;
   };
 
   const handleSubmit = async () => {
@@ -34,7 +34,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        `${API_URL}/api/groups`,
+        `${API_URL}/`,
         {
           name: groupName,
           members: selectedMembers,

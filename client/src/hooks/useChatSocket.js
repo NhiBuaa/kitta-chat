@@ -78,7 +78,10 @@ export const useChatSocket = ({
                     updatedUsers.unshift(updatedUser);
                     return updatedUsers;
                 } else {
-                    fetchNewConversation(targetId, data.isGroup, data);
+                    fetchNewConversation(
+                        data.isGroup ? `/api/groups/${targetId}` : `/api/users/${targetId}`,
+                        data
+                    );
                     return prevUsers;
                 }
             });

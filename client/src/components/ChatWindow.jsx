@@ -9,7 +9,7 @@ import {
   FaCheckDouble,
   FaPaperclip,
   FaArrowDown,
-  FaExclamationTriangle
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
@@ -42,7 +42,7 @@ const ChatWindow = ({
   isLoadingMore,
   isChatBootstrapping = false,
   setHasNewUnread,
-  hasNewUnread
+  hasNewUnread,
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -93,7 +93,13 @@ const ChatWindow = ({
     return () => {
       observer.disconnect();
     };
-  }, [activeChat?._id, isChatBootstrapping, isLoadingMore, loadMoreMessages, scrollRef]);
+  }, [
+    activeChat?._id,
+    isChatBootstrapping,
+    isLoadingMore,
+    loadMoreMessages,
+    scrollRef,
+  ]);
 
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
@@ -106,12 +112,11 @@ const ChatWindow = ({
       onUserMovedAwayFromBottom?.();
     } else {
       setShowScrollButton(false);
-      setHasNewUnread(false)
+      setHasNewUnread(false);
     }
 
     // Nếu kéo lên trên thì hiện load thêm tin nhắn
   };
-
 
   if (!activeChat || !currentChatUser) {
     return (
@@ -197,7 +202,7 @@ const ChatWindow = ({
       </div>
 
       <div
-        className="flex-1 overflow-y-auto p-6 space-y-4 relative"
+        className="flex-1 overflow-y-auto p-6 space-y-4 relative bg-gradient-to-b from-gray-50 via-white to-gray-100"
         ref={scrollRef}
         onScroll={handleScroll}
       >
@@ -209,7 +214,13 @@ const ChatWindow = ({
             </div>
           </div>
         )}
-        <div className={isChatBootstrapping ? "opacity-0 pointer-events-none" : "opacity-100"}>
+        <div
+          className={
+            isChatBootstrapping
+              ? "opacity-0 pointer-events-none"
+              : "opacity-100"
+          }
+        >
           {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
           {isLoadingMore && (
             <div className="flex flex-col items-center justify-center py-4 bg-transparent">
@@ -218,6 +229,27 @@ const ChatWindow = ({
               </div>
             </div>
           )}
+
+          {/* hiện hình với tên như ở fb khi chưa chat */}
+          {Array.isArray(messages) &&
+            messages.length === 0 &&
+            !isChatBootstrapping && (
+              <div className="flex flex-col items-center mt-16 opacity-80">
+                <img
+                  src={getAvatarUrl(currentChatUser.avatar)}
+                  className="w-16 h-16 rounded-full mb-3 shadow"
+                  alt="avatar"
+                />
+
+                <h2 className="text-gray-700 font-semibold">
+                  {getUserDisplayName(currentChatUser)}
+                </h2>
+
+                <p className="text-sm text-gray-400 mt-1">
+                  Các bạn đã là bạn bè trên KittaChat
+                </p>
+              </div>
+            )}
 
           {Array.isArray(messages) && messages.map((message, index) => {
             const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
@@ -454,6 +486,7 @@ const ChatWindow = ({
               )}
             </button>
           )}
+          )
         </div>
       </div>
     </>

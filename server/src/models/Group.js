@@ -7,4 +7,10 @@ const groupSchema = new mongoose.Schema({
     avatar: { type: String, default: "" },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Group', groupSchema);
+// Index cho truy vấn "user nằm trong nhóm nào"
+// Used in presenceHandler và syncMissedMessages
+groupSchema.index({ members: 1 });
+
+const Group = mongoose.model('Group', groupSchema);
+
+module.exports = Group;

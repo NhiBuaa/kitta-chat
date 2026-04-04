@@ -60,7 +60,10 @@ const Home = () => {
   // Context / global hooks
   const { onlineUsers, socket } = useSocket();
   const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
-  const API_URL = import.meta.env.VITE_API_URL;
+
+  const API_URL_USERS = import.meta.env.VITE_API_URL_USERS || '/api/users';
+  const API_URL_MESSAGES = import.meta.env.VITE_API_URL_MESSAGES || '/api/messages';
+  const API_URL_GROUPS = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
 
   // Computed values
   const currentChatUser = activeChat
@@ -79,8 +82,8 @@ const Home = () => {
   const getAvatarUrl = useCallback((avatarPath) => {
     if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
     if (avatarPath.startsWith("http")) return avatarPath;
-    return `${API_URL}${avatarPath}`;
-  }, [API_URL]);
+    return `/uploads${avatarPath}`;
+  }, []);
 
   const { checkIsOnline } = usePresence();
 
@@ -130,7 +133,7 @@ const Home = () => {
     markFriendRequestSent,
     clearSentFriendRequest,
     handleAddFriend,
-  } = useFriendActions({ API_URL, setUsers, setActiveChat, setSentRequests });
+  } = useFriendActions({ API_URL: API_URL_USERS, setUsers, setActiveChat, setSentRequests });
 
   // Compose patchUserEverywhere: patches users + searchResult + activeChat
   const patchUserEverywhere = useCallback((targetUserId, updater) => {
@@ -141,7 +144,7 @@ const Home = () => {
 
   // Search hook
   const { searchTerm, setSearchTerm, isSearching, usersToDisplay } = useSearch({
-    API_URL, users, searchResult, setSearchResult,
+    API_URL: API_URL_USERS, users, searchResult, setSearchResult,
   });
 
   // Scroll hook
@@ -157,7 +160,7 @@ const Home = () => {
     isLoadingMore, isChatBootstrapping,
     handleSendMessage, handleRetryMessage, loadMoreMessages, resetChatState,
   } = useChatMessages({
-    activeChat, currentUser, socket, API_URL,
+    activeChat, currentUser, socket, API_URL: API_URL_MESSAGES,
     uploadQueue, clearUploads, armAutoScrollLock, scrollRef,
     setHasNewUnread, setUsers, fetchNewConversation, scrollChatToBottom, setShowEmoji,
   });
@@ -192,9 +195,9 @@ const Home = () => {
         if (!token) { window.location.href = "/login"; return; }
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const [profileRes, sidebarRes, requestRes] = await Promise.all([
-          axios.get(`${API_URL}/api/users/profile`, config),
-          axios.get(`${API_URL}/api/users/sidebar-list`, config),
-          axios.get(`${API_URL}/api/users/friend-requests`, config),
+          axios.get(`/api/users/profile`, config),
+          axios.get(`/api/users/sidebar-list`, config),
+          axios.get(`/api/users/friend-requests`, config),
         ]);
         if (profileRes.data.success) setCurrentUser(profileRes.data.user);
         if (sidebarRes.data.success) {
@@ -217,7 +220,7 @@ const Home = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await axios.get(`${API_URL}/api/groups`, {
+        const res = await axios.get(`/api/groups`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) setGroups(res.data.groups);
@@ -226,7 +229,7 @@ const Home = () => {
 
     fetchData();
     fetchGroups();
-  }, [API_URL]);
+  }, [API_URL_USERS, API_URL_MESSAGES, API_URL_GROUPS]);
 
   // Sync online status vào users list
   useEffect(() => {
@@ -363,7 +366,6 @@ const Home = () => {
               typingUserAvatar={typingUserAvatar}
               scrollRef={scrollRef}
               bottomRef={bottomRef}
-              API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
               handleCall={handleCall}

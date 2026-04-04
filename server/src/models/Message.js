@@ -39,7 +39,15 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-messageSchema.index({ conversationId: 1, createdAt: -1 });
+// Index cho phân trang tin nhắn (cursor-based pagination)
+messageSchema.index({ conversationId: 1, _id: -1 });
+
+// Index cho sync: sort theo _id (tương đương createdAt nhưng dùng sẵn index)
+// Kết hợp với $in trên conversationId
+messageSchema.index({ conversationId: 1 });
+
+// Index cho truy vấn theo người gửi
+messageSchema.index({ sender: 1, createdAt: -1 });
 
 messageSchema.index(
   { sender: 1, idempotencyKey: 1 },
