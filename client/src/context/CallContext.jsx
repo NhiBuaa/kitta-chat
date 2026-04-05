@@ -216,6 +216,19 @@ export const CallProvider = ({ children }) => {
         return true;
     };
 
+    const rejectCall = () => {
+        const callerUserId =
+            localStorage.getItem("tempCallerUserId") ||
+            localStorage.getItem("tempCallerId");
+
+        if (socket && callerUserId) {
+            socket.emit("rejectCall", { to: callerUserId });
+        }
+
+        setCall((prev) => ({ ...prev, isReceivingCall: false }));
+        clearStoredCallState();
+    };
+
     const leaveCall = () => {
         if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
         const partnerUserId =
@@ -310,6 +323,7 @@ export const CallProvider = ({ children }) => {
                 callUser,
                 answerCall,
                 leaveCall,
+                rejectCall,
                 isCalling,
                 setCall,
                 remoteStream,

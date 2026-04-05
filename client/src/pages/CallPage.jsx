@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 import {
     FaMicrophone,
     FaMicrophoneSlash,
@@ -432,6 +433,8 @@ const VideoCallPage = () => {
                     Hủy cuộc gọi
                 </button>
             </div>
+
+            <ToastContainer position="top-center" autoClose={3000} />
         </div>
     );
 };
