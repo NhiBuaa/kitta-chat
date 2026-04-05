@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { toast } from "react-toastify";
+import { audioManager } from "../utils/AudioManager";
 
 /**
  * Đăng ký socket listeners liên quan đến tin nhắn:
@@ -209,9 +210,10 @@ export const useMessageSocket = ({
                 return updateListWithPreview(prev) || prev;
             });
 
-            // Toast thông báo
+            // Toast thông báo + phát âm thanh
             if (isUnread && data.type !== "system") {
                 try {
+                    audioManager.playMessageNotification();
                     const senderName = data.sender?.displayName || "Ai đó";
                     const messageToast = data.isGroup
                         ? `${senderName} vừa gửi tin nhắn tới nhóm ${data.groupName || ""}`
