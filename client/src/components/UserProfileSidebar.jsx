@@ -106,6 +106,9 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
 
       if (res.data.success) {
         toast.success("Cập nhật hồ sơ thành công!");
+
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+
         // Gọi callback để Home cập nhật lại UI ngay lập tức
         if (onUpdateSuccess) onUpdateSuccess(res.data.user);
       }

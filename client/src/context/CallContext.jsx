@@ -42,6 +42,7 @@ export const CallProvider = ({ children }) => {
     const connectionRef = useRef(null);
     const streamRef = useRef(null);
     const callTimeoutRef = useRef(null);
+    const localStreamRef = useRef(null);
 
     const updateStream = (newStream) => {
         streamRef.current = newStream;
@@ -59,13 +60,19 @@ export const CallProvider = ({ children }) => {
 
     const cleanupConnection = () => {
         if (connectionRef.current) {
-            connectionRef.current.destroy();
+            try { connectionRef.current.destroy(); } catch {/* loop */ }
             connectionRef.current = null;
         }
 
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
+        }
+
+        // FIX LỖI KẸT ĐÈN CAMERA
+        if (window.localStream) {
+            window.localStream.getTracks().forEach((track) => { try { track.stop() } catch {/* loop */ } });
+            window.localStream = null;
         }
 
         setStream(null);
@@ -89,6 +96,9 @@ export const CallProvider = ({ children }) => {
     const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = "video") => {
         const userStr = localStorage.getItem("user");
         const freshUser = userStr ? JSON.parse(userStr) : null;
+        if (!freshUser) { toast.error("Phiên đăng nhập hết hạn."); return; }
+        if (!receiverUserId || !localStream) return;
+        if (!socket?.id) { toast.error("Mất kết nối máy chủ."); return; }
 
         if (!freshUser) {
             toast.error("Phiên đăng nhập hết hạn.");
@@ -106,12 +116,12 @@ export const CallProvider = ({ children }) => {
         }
 
         updateStream(localStream);
+        localStreamRef.current = localStream;
         setCallAccepted(false);
         setCallEnded(false);
         setIsCalling(true);
         setPartnerMediaStatus({ cam: true, mic: true });
         setCall((prev) => ({ ...prev, userToCall: receiverUserId }));
-
         localStorage.setItem("activePartnerUserId", receiverUserId);
 
         if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
@@ -162,6 +172,7 @@ export const CallProvider = ({ children }) => {
             peer.signal(signal);
         };
 
+        socket.off("callAccepted");
         socket.once("callAccepted", handleCallAccepted);
         connectionRef.current = peer;
     };
@@ -175,6 +186,7 @@ export const CallProvider = ({ children }) => {
             return false;
         }
 
+        localStreamRef.current = currentStream;
         localStorage.setItem("activePartnerUserId", callerUserId);
 
         const signalToUse = JSON.parse(savedSignal);
