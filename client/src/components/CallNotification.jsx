@@ -48,8 +48,12 @@ const CallNotification = () => {
 
     return (
         <>
-            {/* Thẻ Audio nhúng Base64 (Nếu bạn có file mp3 thì sửa src thành /ringtone.mp3) */}
-            <audio ref={audioRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleRQKQaG92qVZDgA4ovDauGQiDSeb0N7OlT0ZMj2b0N3Lj0QqasjZ4cqbOzQ0ZrnR3cedO0I5bLXM5dGZREw9cMTb4syYQjM5bcjf4c2ZOTk8asve4dCXQEBBc8Tg4NKTREZDc8bk5NaXQ0dFdcjm6NqZRkhGd8vp7d+bSk1JfM3t8eCfTVJMhNLu9OqhUFRPh9bz+uyiWldSh9j2/PCnXllXitn4/fKmYV5djNz6/fOmZ2Bfk+L8/fOnaGJhl+T9/vOpbWYAAAA=" loop preload="auto" />
+            <audio 
+                ref={audioRef}
+                src="/audio/audio-call.mp3"
+                loop
+                preload="auto"
+            />
 
             <div className="fixed bottom-4 right-4 z-[9999] font-sans">
                 <div className="bg-white p-4 rounded-xl shadow-2xl border border-blue-100 animate-bounce w-72">
