@@ -29,11 +29,17 @@ const CallNotification = () => {
         if (call.signal && call.from) {
             localStorage.setItem('tempCallSignal', JSON.stringify(call.signal));
             localStorage.setItem('tempCallerId', call.from);
+            // Lưu callId để CallPage / CallContext có thể gửi lên server khi reject/answer
+            if (call.callId) {
+                localStorage.setItem('tempCallId', call.callId);
+            }
         }
 
         const type = call.callType || "video";
         const avatar = call.avatar || "";
-        const url = `/call/${call.from}?incoming=true&name=${encodeURIComponent(call.name)}&avatar=${encodeURIComponent(avatar)}&type=${type}`;
+        // Truyền callId qua URL param để CallPage đọc được ngay cả khi localStorage chưa kịp sync
+        const callIdParam = call.callId ? `&callId=${encodeURIComponent(call.callId)}` : "";
+        const url = `/call/${call.from}?incoming=true&name=${encodeURIComponent(call.name)}&avatar=${encodeURIComponent(avatar)}&type=${type}${callIdParam}`;
 
         localStorage.setItem("tempCallType", type);
         window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");

@@ -42,6 +42,7 @@ export const CallProvider = ({ children }) => {
     const [stream, setStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
     const [call, setCall] = useState({});
+    const [callId, setCallId] = useState(null); // Lưu callId từ server
     const [callAccepted, setCallAccepted] = useState(false);
     const [callEnded, setCallEnded] = useState(false);
     const [isCalling, setIsCalling] = useState(false);
@@ -68,6 +69,7 @@ export const CallProvider = ({ children }) => {
         localStorage.removeItem("tempCallerMediaStatus");
         localStorage.removeItem("tempCallType");
         localStorage.removeItem("callStartTime");
+        localStorage.removeItem("tempCallId");
     };
 
     const cleanupConnection = () => {
@@ -120,6 +122,7 @@ export const CallProvider = ({ children }) => {
         isOutgoingCallRef.current = true;
         setPartnerMediaStatus({ cam: true, mic: true });
         setCall((prev) => ({ ...prev, userToCall: receiverUserId }));
+        setCallId(null); // reset khi bắt đầu cuộc gọi mới
 
         localStorage.setItem("activePartnerUserId", receiverUserId);
         localStorage.setItem("callStartTime", new Date().getTime().toString());
@@ -137,8 +140,6 @@ export const CallProvider = ({ children }) => {
                 userToCall: receiverUserId,
                 signalData: data,
                 from: socket.id,
-                name: freshUser.displayName || "Người dùng",
-                avatar: freshUser.avatar || "",
                 callerDbId: freshUser._id || freshUser.id,
                 mediaStatus: { cam: isCamOn, mic: isMicOn },
                 typeCall: callType
@@ -205,6 +206,7 @@ export const CallProvider = ({ children }) => {
                 signal: data,
                 to: callerUserId,
                 mediaStatus: { cam: isCamOn, mic: isMicOn },
+                callId: localStorage.getItem("tempCallId") || null,
             });
         });
 
@@ -236,13 +238,15 @@ export const CallProvider = ({ children }) => {
         const callerUserId =
             localStorage.getItem("tempCallerUserId") ||
             localStorage.getItem("tempCallerId");
+        const callId = localStorage.getItem("tempCallId") || null;
 
         if (socket && callerUserId) {
-            socket.emit("rejectCall", { to: callerUserId });
+            socket.emit("rejectCall", { to: callerUserId, callId, reason: "rejected" });
         }
 
         setCall((prev) => ({ ...prev, isReceivingCall: false }));
         clearStoredCallState();
+        cleanupConnection();
     };
 
     const leaveCall = () => {
@@ -250,9 +254,10 @@ export const CallProvider = ({ children }) => {
         const partnerUserId =
             localStorage.getItem("activePartnerUserId") ||
             localStorage.getItem("tempCallerUserId");
+        const callId = localStorage.getItem("tempCallId") || null;
 
         if (socket && partnerUserId) {
-            socket.emit("endCall", { to: partnerUserId });
+            socket.emit("endCall", { to: partnerUserId, callId });
         }
 
         clearStoredCallState();
@@ -336,8 +341,12 @@ export const CallProvider = ({ children }) => {
             // ==========================================
             // NGƯỜI THỨ 3 GỌI KHI ĐANG BẬN
             // ==========================================
+            // Lưu callId TRƯỚC check busy để rejectCall có callId ngay
+            if (data.callId) {
+                localStorage.setItem("tempCallId", data.callId);
+            }
             if (callStateRef.current === CALL_STATES.CONNECTED || callStateRef.current === CALL_STATES.RINGING) {
-                socket.emit("rejectCall", { to: callerId, reason: "Người dùng đang bận." });
+                socket.emit("rejectCall", { to: callerId, callId: data.callId || null, reason: "Người dùng đang bận." });
                 return;
             }
 
@@ -350,6 +359,12 @@ export const CallProvider = ({ children }) => {
             localStorage.setItem("tempCallerId", data.from);
             localStorage.setItem("tempCallSignal", JSON.stringify(validSignal));
             localStorage.setItem("tempCallType", incomingCallType);
+
+            // Lưu callId ngay để cả "busy" block lẫn answer/reject đều có thể dùng
+            if (data.callId) {
+                localStorage.setItem("tempCallId", data.callId);
+                setCallId(data.callId);
+            }
 
             if (data.callerDbId) {
                 localStorage.setItem("tempCallerUserId", data.callerDbId);
@@ -369,7 +384,8 @@ export const CallProvider = ({ children }) => {
                 name: data.name,
                 avatar: data.avatar,
                 signal: validSignal,
-                callType: incomingCallType
+                callType: incomingCallType,
+                callId: data.callId || null,
             });
         };
 
@@ -396,11 +412,19 @@ export const CallProvider = ({ children }) => {
             setPartnerMediaStatus({ cam, mic });
         };
 
+        // Lưu callId từ server khi nhận callHistorySync (outgoing call)
+        const handleCallHistorySync = (data) => {
+            if (data.callId && data.direction === "outgoing") {
+                setCallId(data.callId);
+            }
+        };
+
         socket.on("me", handleMe);
         socket.on("callUser", handleIncomingCall);
         socket.on("callEnded", handleCallEnded);
         socket.on("callRejected", handleCallRejected);
         socket.on("updateMediaStatus", handleUpdateMediaStatus);
+        socket.on("callHistorySync", handleCallHistorySync);
 
         return () => {
             socket.off("me", handleMe);
@@ -408,6 +432,7 @@ export const CallProvider = ({ children }) => {
             socket.off("callEnded", handleCallEnded);
             socket.off("callRejected", handleCallRejected);
             socket.off("updateMediaStatus", handleUpdateMediaStatus);
+            socket.off("callHistorySync", handleCallHistorySync);
         };
     }, [socket]);
 
@@ -417,7 +442,7 @@ export const CallProvider = ({ children }) => {
                 call, callAccepted, callState, isPreparingCall, setIsPreparingCall,
                 myVideo, userVideo, stream, setStream: updateStream, callEnded,
                 me, callUser, answerCall, leaveCall, rejectCall, isCalling,
-                setCall, remoteStream, partnerMediaStatus,
+                setCall, remoteStream, partnerMediaStatus, callId, setCallId,
             }}
         >
             {children}

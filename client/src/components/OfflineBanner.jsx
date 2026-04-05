@@ -26,7 +26,7 @@ const OfflineBanner = () => {
     return (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center gap-2 text-amber-700 text-xs">
             <FiWifiOff />
-            <span>Mất kết nối mạng. Tin nhắn đang chờ gửi...</span>
+            <span>Mất kết nối mạng...</span>
         </div>
     );
 };

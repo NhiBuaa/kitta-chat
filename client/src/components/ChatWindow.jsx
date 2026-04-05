@@ -171,7 +171,7 @@ const ChatWindow = ({
         <div className="flex space-x-4 text-blue-600">
           {/* Gọi audio */}
           <button
-            onClick={() => handleCall("audio")}
+            onClick={() => handleCall("voice")}
             className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
             title="Gọi Audio"
             disabled={currentChatUser.members}
@@ -263,10 +263,11 @@ const ChatWindow = ({
             const isError = message.status === "error";
             const retryCount = message.retryCount || 0;
             const isMaxRetry = retryCount >= 3;
+            const uniqueKey = message._id || `temp-${index}`;
 
             if (isSystemMessage) {
               return (
-                <div key={index} className="flex justify-center my-4">
+                <div key={uniqueKey} className="flex justify-center my-4">
                   <div className="bg-gray-200 text-gray-600 text-xs px-4 py-1 rounded-full flex items-center shadow-sm">
                     {message.text}
                   </div>

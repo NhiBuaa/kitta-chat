@@ -24,7 +24,7 @@ const callHistorySchema = new mongoose.Schema(
     //  Call metadata 
     type: {
       type: String,
-      enum: ["video", "voice"],
+      enum: ["video", "audio"],
       required: true,
     },
     status: {
@@ -69,7 +69,7 @@ const callHistorySchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "call-histories" }
 );
 
 // COMPOUND INDEXES
