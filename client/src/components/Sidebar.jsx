@@ -21,7 +21,6 @@ const Sidebar = ({
   renderLastMessage,
   handleAddFriend,
 }) => {
-
   return (
     <div className="w-full sm:w-[280px] md:w-[320px] lg:w-[360px] min-w-0 sm:min-w-[240px] h-full bg-white border-r border-gray-200 flex flex-col">
       {/* tên app với avt */}
@@ -63,10 +62,11 @@ const Sidebar = ({
           >
             <FaBell
               size={16}
-              className={`transition-all duration-300 ${requestCount > 0
+              className={`transition-all duration-300 ${
+                requestCount > 0
                   ? "text-yellow-300 animate-pulse"
                   : "hover:text-blue-200"
-                }`}
+              }`}
             />
             {requestCount > 0 && (
               <span className="absolute top-0 right-0 h-4 w-4 bg-red-600 text-[10px] flex items-center justify-center rounded-full border border-blue-600 text-white font-bold">
@@ -158,10 +158,11 @@ const Sidebar = ({
               <div
                 key={user._id}
                 onClick={() => handleSelectUser(user)}
-                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer ${hasUnread
+                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer ${
+                  hasUnread
                     ? "bg-blue-50 hover:bg-blue-100"
                     : "hover:bg-gray-100"
-                  }`}
+                }`}
               >
                 <div className="relative flex-shrink-0">
                   <img
@@ -178,19 +179,21 @@ const Sidebar = ({
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <div className="flex items-center justify-between gap-2">
                     <h3
-                      className={`text-sm truncate pr-2 ${hasUnread
+                      className={`text-sm truncate pr-2 ${
+                        hasUnread
                           ? "font-bold text-gray-900"
                           : "font-semibold text-gray-800"
-                        }`}
+                      }`}
                     >
                       {user.displayName}
                     </h3>
                     {user.lastMessage && (
                       <span
-                        className={`text-[10px] flex-shrink-0 ${hasUnread
+                        className={`text-[10px] flex-shrink-0 ${
+                          hasUnread
                             ? "text-blue-600 font-bold"
                             : "text-gray-400"
-                          }`}
+                        }`}
                       >
                         {new Date(
                           user.lastMessage.createdAt,

@@ -13,6 +13,7 @@ const validateEmail = (email) => {
 };
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
+// dang ky----------------------------------------
 exports.register = async (req, res) => {
   try {
     const { displayName, email, password, confirmPassword } = req.body;
@@ -83,13 +84,14 @@ exports.register = async (req, res) => {
   }
 };
 
+// dang nhap------------------------------------------
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const cleanEmail = email.trim().toLowerCase();
 
     // Tìm bằng email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (user && user.provider === "google") {
       return res.status(400).json({
         success: false,
@@ -134,7 +136,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// dnhap bang gg
+// dnhap bang gg------------------------------------------
 exports.googleLogin = async (req, res) => {
   try {
     const { email, displayName, avatar } = req.body;
@@ -147,35 +149,37 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
     const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=22c55e&color=fff&size=128`;
     // 2. tim ng dung co email
-    let user = await User.findOne({ email });
-    let avatarUrl = defaultAvatarUrl;
-    if (avatar) {
-      try {
-        const response = await axios.get(avatar, {
-          responseType: "arraybuffer",
-        });
-
-        const buffer = Buffer.from(response.data, "binary");
-
-        const fileName = `google-${Date.now()}.jpg`;
-
-        avatarUrl = await uploadSingleFile(
-          buffer,
-          fileName,
-          "image/jpeg",
-          "avatars",
-        );
-      } catch (err) {
-        console.error("Upload Google avatar failed:", err.message);
-      }
-    }
+    let user = await User.findOne({ email: cleanEmail });
 
     // 3. ch co thi tao moi
     if (!user) {
+      let avatarUrl = defaultAvatarUrl;
+      // chỉ tải avt lần đầu
+      if (avatar) {
+        try {
+          const response = await axios.get(avatar, {
+            responseType: "arraybuffer",
+          });
+
+          const buffer = Buffer.from(response.data, "binary");
+
+          const fileName = `google-${Date.now()}.jpg`;
+
+          avatarUrl = await uploadSingleFile(
+            buffer,
+            fileName,
+            "image/jpeg",
+            "avatars",
+          );
+        } catch (err) {
+          console.error("Upload Google avatar failed:", err.message);
+        }
+      }
       user = new User({
-        email,
+        email: cleanEmail,
         displayName,
         avatar: avatarUrl,
         password: "GOOGLE_LOGIN",
@@ -184,8 +188,6 @@ exports.googleLogin = async (req, res) => {
 
       await user.save();
     } else {
-      // update avt va ten moi nhat tu gg
-      user.avatar = avatarUrl;
       user.displayName = displayName || user.displayName;
       await user.save();
     }
@@ -218,7 +220,7 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
-// quen mk
+// quen mk------------------------------------------
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -255,7 +257,7 @@ exports.forgotPassword = async (req, res) => {
     const mailOptions = {
       from: `"KittaChat Support" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Yêu cầu đặt lại mật khẩu - Chat App",
+      subject: "Yêu cầu đặt lại mật khẩu - KittaChat",
       html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
                     <h2 style="color: #097bc7ff; text-align: center;">Yêu cầu Reset Mật khẩu</h2>
@@ -276,7 +278,7 @@ exports.forgotPassword = async (req, res) => {
             `,
     };
 
-    // Gửi mail
+    // Gửi mail------------------------------
     await transporter.sendMail(mailOptions);
 
     return res.json({
@@ -291,6 +293,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+// resetPass------------------------------------------------
 exports.resetPassword = async (req, res) => {
   try {
     // Lấy token từ URL
