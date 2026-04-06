@@ -84,4 +84,4 @@ database/__pycache__/
 *.bak
 *.tmp
 
-firebase-service-account.json
+server/src/config/firebase-service.json
