@@ -4,13 +4,14 @@ import './index.css'
 import App from './App.jsx'
 import { SocketProvider } from './context/SocketProvider.jsx'
 import { CallProvider } from './context/CallContext.jsx'
+import { CallHistoryProvider } from "./context/CallHistoryProvider.jsx";
 
 createRoot(document.getElementById('root')).render(
-  // <StrictMode>
   <SocketProvider>
     <CallProvider>
-      <App />
+      <CallHistoryProvider>
+        <App />
+      </CallHistoryProvider>
     </CallProvider>
   </SocketProvider>
-  // </StrictMode>,
 )
