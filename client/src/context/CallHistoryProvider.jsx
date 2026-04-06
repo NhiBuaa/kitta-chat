@@ -16,7 +16,13 @@ export const CallHistoryProvider = ({ children }) => {
             }
             const response = await getMissedCalls();
             if (response.data.success) {
-                setMissedCount(response.data.data.missedCalls);
+                const data = response.data.data;
+
+                const finalCount = data.count !== undefined
+                    ? data.count
+                    : (data.missedCalls?.length || 0);
+
+                setMissedCount(finalCount);
             }
         } catch (error) {
             console.error("Failed to fetch missed calls:", error);

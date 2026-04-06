@@ -122,7 +122,7 @@ export const CallProvider = ({ children }) => {
         isOutgoingCallRef.current = true;
         setPartnerMediaStatus({ cam: true, mic: true });
         setCall((prev) => ({ ...prev, userToCall: receiverUserId }));
-        setCallId(null); // reset khi bắt đầu cuộc gọi mới
+        setCallId(null);
 
         localStorage.setItem("activePartnerUserId", receiverUserId);
         localStorage.setItem("callStartTime", new Date().getTime().toString());

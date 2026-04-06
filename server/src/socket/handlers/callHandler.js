@@ -154,7 +154,6 @@ const runCleanup = async () => {
 };
 
 // HANDLERS
-
 const registerCallHandlers = (socket, io) => {
   const userId = socket.userId;
 
@@ -208,25 +207,27 @@ const registerCallHandlers = (socket, io) => {
           callId: callRecordId,
         });
       } else {
-        // Receiver offline -> ghi nhận unreachable NGAY LẬP TỨC, không chờ timeout
-        await callRecord.updateOne({ status: "unreachable", endedAt: new Date() });
-        await createCallLogMessage(callRecord);
-        socket.emit("callRejected", { reason: "User offline" });
-        return;
+        console.log(`[Call] Receiver ${userToCall} is offline. Ringing for 45s...`);
       }
 
       // Server-side timeout: 45s -> "missed"
       const timeoutId = setTimeout(async () => {
         try {
-          const call = await CallHistory.findById(callRecordId).populate([
+          const updatedCall = await CallHistory.findOneAndUpdate(
+            { _id: callRecordId, status: "pending" },
+            { status: "missed", endedAt: new Date() },
+            { returnDocument: "after" }
+          ).populate([
             { path: "callerId", select: "_id displayName avatar username" },
             { path: "receiverId", select: "_id displayName avatar username" },
           ]);
-          if (call && call.status === "pending") {
-            await call.updateOne({ status: "missed", endedAt: new Date() });
-            const updated = await CallHistory.findById(callRecordId);
-            await createCallLogMessage(updated);
-            emitCallHistorySync(io, updated, authenticatedCallerId);
+
+          if (updatedCall) {
+            await createCallLogMessage(updatedCall);
+            emitCallHistorySync(io, updatedCall, authenticatedCallerId);
+
+            io.to(authenticatedCallerId).emit("callRejected", { reason: "Không có phản hồi." });
+            io.to(userToCall).emit("callEnded");
           }
         } catch (err) {
           console.error("[CallHandler] Timeout callback error:", err);
@@ -358,7 +359,7 @@ const registerCallHandlers = (socket, io) => {
   });
 
   // [disconnect]
-  // ⚠️ KHÔNG cancel timeout ở đây - call vẫn có thể tiếp tục từ thiết bị khác
+  // KHÔNG cancel timeout ở đây - call vẫn có thể tiếp tục từ thiết bị khác
   // (multi-device: user có thể có nhiều socket cùng lúc)
   socket.on("disconnect", () => {
     console.log(`[CallHandler] Socket disconnect: ${socket.id} (user: ${userId})`);

@@ -40,7 +40,7 @@ const messageSchema = new mongoose.Schema(
       },
       type: {
         type: String,
-        enum: ["video", "voice"],
+        enum: ["video", "audio"],
         default: "video",
       },
       status: {
