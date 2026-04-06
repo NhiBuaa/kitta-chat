@@ -83,3 +83,5 @@ database/__pycache__/
 *.7z
 *.bak
 *.tmp
+
+firebase-service-account.json
