@@ -32,10 +32,16 @@ export const formatTimeAgo = (dateString) => {
 
 // Dùng để sử lý bộ đếm thời gian khi gọi
 export const formatDuration = (totalSecond) => {
-    if(isNaN(totalSecond) || totalSecond < 0) return "00:00";
+    if (isNaN(totalSecond) || totalSecond < 0) return "00:00";
 
     const minutes = Math.floor(totalSecond / 60).toString().padStart(2, '0');
     const seconds = (totalSecond % 60).toString().padStart(2, '0');
 
     return `${minutes}:${seconds}`
 }
+
+export const formatCallTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};

@@ -17,6 +17,8 @@ import { getUserDisplayName } from "../utils/getUserDisplayName";
 import Loader from "./deco/Loader";
 import MessageSeenBy from './MessageSeenBy';
 import OfflineBanner from "./OfflineBanner";
+import CallLogItem from "./CallLogItem";
+
 
 const ChatWindow = ({
   activeChat,
@@ -221,7 +223,7 @@ const ChatWindow = ({
               : "opacity-100"
           }
         >
-          {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
+          {/* Hiển thị Loader */}
           {isLoadingMore && (
             <div className="flex flex-col items-center justify-center py-4 bg-transparent">
               <div className="scale-[0.3] origin-center h-12 flex items-center justify-center">
@@ -259,6 +261,7 @@ const ChatWindow = ({
             const senderName = getUserDisplayName(senderInfo);
             const senderAvatar = senderInfo?.avatar || activeChat.avatar;
             const isSystemMessage = message.type === "system";
+            const isCallLogMessage = message.type === "call_log" && message.callData;
             const isSending = message.status === "sending";
             const isError = message.status === "error";
             const retryCount = message.retryCount || 0;
@@ -275,8 +278,27 @@ const ChatWindow = ({
               );
             }
 
+            if (isCallLogMessage) {
+              return (
+                <div key={uniqueKey}>
+                  <CallLogItem
+                    log={message}
+                    currentUser={currentUser}
+                    chatPartner={currentChatUser}
+                    onRecall={(_, callType) => handleCall(callType)}
+                  />
+                  <div
+                    className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
+                      }`}
+                  >
+                    {formatTimeAgo(message.createdAt)}
+                  </div>
+                </div>
+              );
+            }
+
             return (
-              <div key={index}>
+              <div key={uniqueKey}>
                 {isGroup && !isMe && senderInfo && (
                   <div className="flex items-center ml-2 mb-1">
                     <span className="text-xs font-semibold text-gray-600">
