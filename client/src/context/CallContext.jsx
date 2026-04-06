@@ -127,11 +127,7 @@ export const CallProvider = ({ children }) => {
         localStorage.setItem("activePartnerUserId", receiverUserId);
         localStorage.setItem("callStartTime", new Date().getTime().toString());
 
-        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
-        callTimeoutRef.current = setTimeout(() => {
-            toast.error("Không có phản hồi từ đối phương.");
-            leaveCall();
-        }, 45000);
+        // Client-side timeout đã bỏ — dùng timeout từ BE qua event "callTimeout"
 
         const peer = new Peer({ initiator: true, trickle: false, stream: localStream, config: ICE_SERVERS });
 
@@ -390,18 +386,22 @@ export const CallProvider = ({ children }) => {
         };
 
         const handleCallEnded = () => {
-            if (callStateRef.current === CALL_STATES.IDLE) {
-                return;
-            }
+            if (callStateRef.current === CALL_STATES.IDLE) return;
+            cleanupConnection();
+            clearStoredCallState();
+        };
+
+        const handleCallTimeout = ({ callId: timeoutCallId }) => {
+            if (callStateRef.current === CALL_STATES.IDLE) return;
+            const currentCallId = localStorage.getItem("tempCallId");
+            if (timeoutCallId && currentCallId && timeoutCallId !== currentCallId) return;
+            toast.error("Không có phản hồi từ đối phương.");
             cleanupConnection();
             clearStoredCallState();
         };
 
         const handleCallRejected = () => {
-            if (callStateRef.current === CALL_STATES.IDLE) {
-                return;
-            }
-            if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+            if (callStateRef.current === CALL_STATES.IDLE) return;
             setIsCalling(false);
             toast.info("Người dùng bận hoặc từ chối.");
             cleanupConnection();
@@ -422,6 +422,7 @@ export const CallProvider = ({ children }) => {
         socket.on("me", handleMe);
         socket.on("callUser", handleIncomingCall);
         socket.on("callEnded", handleCallEnded);
+        socket.on("callTimeout", handleCallTimeout);
         socket.on("callRejected", handleCallRejected);
         socket.on("updateMediaStatus", handleUpdateMediaStatus);
         socket.on("callHistorySync", handleCallHistorySync);
@@ -430,6 +431,7 @@ export const CallProvider = ({ children }) => {
             socket.off("me", handleMe);
             socket.off("callUser", handleIncomingCall);
             socket.off("callEnded", handleCallEnded);
+            socket.off("callTimeout", handleCallTimeout);
             socket.off("callRejected", handleCallRejected);
             socket.off("updateMediaStatus", handleUpdateMediaStatus);
             socket.off("callHistorySync", handleCallHistorySync);

@@ -226,8 +226,8 @@ const registerCallHandlers = (socket, io) => {
             await createCallLogMessage(updatedCall);
             emitCallHistorySync(io, updatedCall, authenticatedCallerId);
 
-            io.to(authenticatedCallerId).emit("callRejected", { reason: "Không có phản hồi." });
-            io.to(userToCall).emit("callEnded");
+            io.to(authenticatedCallerId).emit("callTimeout", { callId: callRecordId });
+            io.to(userToCall).emit("callTimeout", { callId: callRecordId });
           }
         } catch (err) {
           console.error("[CallHandler] Timeout callback error:", err);
