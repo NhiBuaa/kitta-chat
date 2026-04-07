@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const CallHistory = require("../../../models/CallHistory");
+const CallHistory = require("../../../../models/CallHistory");
 const { activeTimeouts, tempIdToDbId, unbindSocketFromCall } = require("../state");
 const { createCallLogMessage, emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync, emitCallEndedToParticipants } = require("../emitters");
@@ -31,7 +31,7 @@ const registerEndCall = (socket, io) => {
                 return;
             }
 
-            // Idempotent: already ended → just re-emit so the UI closes
+            // Idempotent: already ended -> just re-emit so the UI closes
             if (call.endedBy) {
                 console.log(`[endCall] Idempotent: ${actualCallId} already ended`);
                 emitCallEndedToParticipants(io, call, actualCallId);
@@ -41,18 +41,25 @@ const registerEndCall = (socket, io) => {
             _cancelTimeout(actualCallId);
 
             const now = new Date();
-            const duration = call.answeredAt
+            // Nếu chưa answered -> status là "missed" (không trả lời / bỏ cuộc).
+            // Chỉ "completed" khi cuộc gọi đã được kết nối (có answeredAt).
+            const isAnswered = Boolean(call.answeredAt);
+            const status = isAnswered ? "completed" : "missed";
+            const duration = isAnswered
                 ? Math.round((now - call.answeredAt) / 1000)
                 : null;
 
             const updated = await CallHistory.findByIdAndUpdate(
                 actualCallId,
-                { status: "completed", endedBy: new mongoose.Types.ObjectId(userId), endedAt: now, duration },
+                { status, endedBy: new mongoose.Types.ObjectId(userId), endedAt: now, duration },
                 { returnDocument: "after" },
             ).populate(POPULATE);
 
             if (updated) {
-                console.log(`[endCall] ${actualCallId} -> completed (${duration}s)`);
+                const callerIdStr = updated.callerId?._id?.toString() ?? updated.callerId?.toString();
+                const receiverIdStr = updated.receiverId?._id?.toString() ?? updated.receiverId?.toString();
+                console.log(`[endCall] ${actualCallId} -> ${status} (answered=${isAnswered}, duration=${duration}s)`);
+                console.log(`[endCall] Emitting callHistorySync to caller=${callerIdStr} receiver=${receiverIdStr}, trigger=${userId}`);
                 const msg = await createCallLogMessage(updated);
                 emitCallHistorySync(io, updated, userId);
                 emitCallLogMessage(io, msg);
@@ -68,7 +75,6 @@ const registerEndCall = (socket, io) => {
 };
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
-
 const _cancelTimeout = (callId) => {
     const t = activeTimeouts.get(callId);
     if (t) { clearTimeout(t); activeTimeouts.delete(callId); }

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
-const CallHistory = require("../../../models/CallHistory");
-const User = require("../../../models/User");
-const buildConversationId = require("../../../utils/buildConversationId");
+const CallHistory = require("../../../../models/CallHistory");
+const User = require("../../../../models/User");
+const buildConversationId = require("../../../../utils/buildConversationId");
 const { activeTimeouts, tempIdToDbId, bindSocketToCall } = require("../state");
 const { CALL_TIMEOUT_MS } = require("../constants");
 const { checkRateLimit } = require("../rateLimit");

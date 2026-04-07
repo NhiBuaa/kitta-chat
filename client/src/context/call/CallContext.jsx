@@ -1,6 +1,5 @@
 /**
  * Polyfill cho simple-peer trong môi trường browser
- * (giữ nguyên từ file gốc)
  */
 window.global = window;
 window.process = { env: { DEBUG: undefined }, version: '', nextTick: (cb) => setTimeout(cb, 0) };

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const CallHistory = require("../../models/CallHistory");
+const CallHistory = require("../../../models/CallHistory");
 const { unbindSocketFromCall, activeTimeouts } = require("./state");
 const { createCallLogMessage } = require("./callLog");
 const { emitCallLogMessage } = require("./callLog");

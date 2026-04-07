@@ -5,20 +5,19 @@
  * of the Node process and are intentionally shared.
  */
 
-/** callId → NodeJS timeout handle */
+/** callId -> NodeJS timeout handle */
 const activeTimeouts = new Map();
 
-/** socketId → callId (real DB _id) */
+/** socketId -> callId (real DB _id) */
 const activeSocketCalls = new Map();
 
-/** temp client callId → real CallHistory _id */
+/** temp client callId -> real CallHistory _id */
 const tempIdToDbId = new Map();
 
-/** userId → { count, windowStart } for rate-limiting */
+/** userId -> { count, windowStart } for rate-limiting */
 const callRateLimit = new Map();
 
-// ─── socket ↔ call binding ────────────────────────────────────────────────
-
+// Socket call binding helpers
 const bindSocketToCall = (socketId, callId) => {
     if (!socketId || !callId) return;
     activeSocketCalls.set(socketId, callId);

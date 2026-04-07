@@ -35,8 +35,13 @@ export const CallHistoryProvider = ({ children }) => {
         if (!socket) return;
 
         const handleCallHistorySync = (data) => {
-            // Chỉ tăng badge khi: chưa đọc VÀ là loại missed/rejected/unreachable/busy
-            if (data.isReadByCurrentUser === false) {
+            // DEBUG
+            console.log("[CallHistoryProvider] callHistorySync received:", JSON.stringify(data));
+
+            // Chỉ receiver (direction === 'incoming') mới tăng badge.
+            // Realtime: cả caller và receiver đều nhận isReadByCurrentUser === false
+            // nhưng chỉ receiver mới được tính là "missed" (API /missed chỉ đếm receiver).
+            if (data.direction === 'incoming' && data.isReadByCurrentUser === false) {
                 const missedStatuses = ['missed', 'rejected', 'unreachable', 'busy'];
                 if (missedStatuses.includes(data.status)) {
                     setMissedCount((prev) => prev + 1);
@@ -75,42 +80,32 @@ export const CallHistoryProvider = ({ children }) => {
         return () => socket.off('callHistorySync', handleCallHistorySync);
     }, [socket]);
 
-    // Effect 3: lắng nghe callTimeout để tăng badge trực tiếp (phòng trường hợp
-    // server emit callTimeout mà không emit callHistorySync cùng lúc)
+    // Effect 3: FALLBACK — lắng nghe callLogMessage để tăng badge.
+    // Phòng trường hợp callHistorySync không gửi được (ví dụ B mất kết nối tạm thời).
+    // callLogMessage được emit cùng lúc với callHistorySync nên đây là backup.
     useEffect(() => {
         if (!socket) return;
 
-        const handleCallTimeout = () => {
+        const handleCallLogMessage = (data) => {
+            if (data.type !== 'call_log') return;
+            const missedStatuses = ['missed', 'rejected', 'unreachable', 'busy'];
+            if (!missedStatuses.includes(data.callData?.status)) return;
+
+            // Kiểm tra: mình là receiver (không phải sender)
+            const currentUserId = JSON.parse(localStorage.getItem('user') || '{}')._id || JSON.parse(localStorage.getItem('user') || '{}').id;
+            const senderId = typeof data.senderId === 'string' ? data.senderId : data.sender?._id?.toString();
+            if (senderId === currentUserId) return; // mình là caller → không tăng
+
             setMissedCount((prev) => prev + 1);
         };
 
-        socket.on('callTimeout', handleCallTimeout);
-        return () => socket.off('callTimeout', handleCallTimeout);
+        socket.on('callLogMessage', handleCallLogMessage);
+        return () => socket.off('callLogMessage', handleCallLogMessage);
     }, [socket]);
 
-    // Effect 4: lắng nghe callRejected (B từ chối / busy) → tăng badge cho A
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleCallRejected = () => {
-            setMissedCount((prev) => prev + 1);
-        };
-
-        socket.on('callRejected', handleCallRejected);
-        return () => socket.off('callRejected', handleCallRejected);
-    }, [socket]);
-
-    // Effect 5: lắng nghe callCancelled (A tự hủy) → tăng badge cho B
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleCallCancelled = () => {
-            setMissedCount((prev) => prev + 1);
-        };
-
-        socket.on('callCancelled', handleCallCancelled);
-        return () => socket.off('callCancelled', handleCallCancelled);
-    }, [socket]);
+    // Effect 4: callHistorySync là NGUỒN DUY NHẤT tăng badge.
+    // KHÔNG dùng callTimeout/callRejected/callCancelled/callEnded
+    // vì chúng đều emit cùng callHistorySync → double increment.
 
     const clearMissedCount = useCallback(() => setMissedCount(0), []);
 

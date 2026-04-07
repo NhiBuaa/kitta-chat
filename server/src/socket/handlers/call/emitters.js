@@ -1,15 +1,10 @@
 const { activeSocketCalls } = require("./state");
 
-// ─── callEnded ────────────────────────────────────────────────────────────────
-
 /**
- * Emit "callEnded" to both participants via three escalating strategies:
- *  1. userId rooms  (primary)
- *  2. bound socketIds (fallback)
- *  3. Redis user_sockets sets (multi-device fallback)
+ * Emit a "callEnded" tới tất cả các socket liên quan
  *
  * @param {import("socket.io").Server} io
- * @param {import("mongoose").Document} callRecord - populated CallHistory doc
+ * @param {import("mongoose").Document} callRecord
  * @param {string} [callId]
  */
 const emitCallEndedToParticipants = (io, callRecord, callId = null) => {
@@ -21,11 +16,11 @@ const emitCallEndedToParticipants = (io, callRecord, callId = null) => {
 
         let emittedCount = 0;
 
-        // 1 — userId rooms
+        // userId rooms
         if (callerId) { io.to(callerId).emit("callEnded"); emittedCount++; }
         if (receiverId) { io.to(receiverId).emit("callEnded"); emittedCount++; }
 
-        // 2 — bound socket IDs
+        // bound socket IDs
         if (callId) {
             let boundCount = 0;
             for (const [socketId, boundCallId] of activeSocketCalls.entries()) {
@@ -39,7 +34,7 @@ const emitCallEndedToParticipants = (io, callRecord, callId = null) => {
             }
         }
 
-        // 3 — Redis multi-device fallback
+        // Redis multi-device fallback
         if (callerId && receiverId) {
             const redisClient = io.redisClient;
             if (redisClient) {
@@ -62,15 +57,14 @@ const emitCallEndedToParticipants = (io, callRecord, callId = null) => {
     }
 };
 
-// ─── callHistorySync ──────────────────────────────────────────────────────────
 
 /**
- * Push a callHistorySync event to both call participants so their
- * history UI stays up-to-date without a full reload.
+ * Gửi sự kiện callHistorySync đến cả hai người tham gia cuộc gọi để 
+ * giao diện lịch sử cuộc gọi của họ luôn được cập nhật mà không cần tải lại toàn bộ.
  *
  * @param {import("socket.io").Server} io
- * @param {import("mongoose").Document} callRecord - populated CallHistory doc
- * @param {string} triggerUserId - userId of the user who triggered the update
+ * @param {import("mongoose").Document} callRecord
+ * @param {string} triggerUserId
  */
 const emitCallHistorySync = (io, callRecord, triggerUserId) => {
     try {
@@ -80,6 +74,8 @@ const emitCallHistorySync = (io, callRecord, triggerUserId) => {
         const isReadByCurrentUser = callRecord.readBy?.some(
             (id) => id.toString() === triggerUserId,
         ) ?? false;
+
+        console.log(`[Emitters] emitCallHistorySync: triggerUserId=${triggerUserId}, caller=${callerIdStr}, receiver=${receiverIdStr}, isReadByCurrentUser=${isReadByCurrentUser}, status=${callRecord.status}, type=${callRecord.type}`);
 
         const base = {
             callId: callRecord._id.toString(),
@@ -99,11 +95,13 @@ const emitCallHistorySync = (io, callRecord, triggerUserId) => {
             ...base,
             direction: callerIdStr === triggerUserId ? "outgoing" : "incoming",
         });
+        console.log(`[Emitters] -> emitted to caller (direction=outgoing)`);
 
         io.to(receiverIdStr).emit("callHistorySync", {
             ...base,
             direction: receiverIdStr === triggerUserId ? "incoming" : "outgoing",
         });
+        console.log(`[Emitters] -> emitted to receiver (direction=incoming)`);
     } catch (err) {
         console.error("[Emitters] emitCallHistorySync error:", err);
     }

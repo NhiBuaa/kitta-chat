@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const CallHistory = require("../../models/CallHistory");
+const CallHistory = require("../../../models/CallHistory");
 
 const CLEANUP_INTERVAL_MS = 60_000;
 const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes

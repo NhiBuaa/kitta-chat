@@ -1,15 +1,11 @@
 /**
- * call/index.js
  *
  * Registers all WebRTC call signalling and call-history socket handlers.
  * Import cleanup as a side-effect so the periodic cleanup starts on module load.
  *
- * Usage:
- *   const { registerCallHandlers } = require("./call");
- *   io.on("connection", (socket) => registerCallHandlers(socket, io));
  */
 
-require("./cleanup"); // side-effect: starts the periodic cleanup interval
+require("./cleanup");
 
 const { registerInitCall } = require("./handlers/initCall");
 const { registerCallUser } = require("./handlers/callUser");
@@ -31,9 +27,8 @@ const registerCallHandlers = (socket, io) => {
     registerRejectCall(socket, io);
     registerToggleMedia(socket, io);
 
-    // Finalize any in-progress call when the socket disconnects unexpectedly
-    socket.on("disconnect", () => {
-        console.log(`[CallHandler] Socket disconnect: ${socket.id} (user: ${socket.userId})`);
+    socket.on("disconnect", (reason) => {
+        console.log(`[CallHandler] Socket disconnect: ${socket.id} (user: ${socket.userId}) reason=${reason}`);
         finalizeCallFromDisconnect({ socketId: socket.id, userId: socket.userId, io });
     });
 };

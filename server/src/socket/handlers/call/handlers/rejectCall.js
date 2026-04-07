@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const CallHistory = require("../../../models/CallHistory");
+const CallHistory = require("../../../../models/CallHistory");
 const { activeTimeouts, tempIdToDbId, unbindSocketFromCall } = require("../state");
 const { createCallLogMessage, emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync, emitCallEndedToParticipants } = require("../emitters");
@@ -50,10 +50,12 @@ const registerRejectCall = (socket, io) => {
 
             if (updated) {
                 console.log(`[rejectCall] ${actualCallId} -> "${status}"`);
+                console.log(`[rejectCall] Will emit callHistorySync to caller=${userId} receiver=${to}`);
                 const msg = await createCallLogMessage(updated);
                 emitCallHistorySync(io, updated, userId);
                 emitCallLogMessage(io, msg);
                 _broadcastEnd({ io, updated, actualCallId, to, reason, userId });
+                console.log(`[rejectCall] Finished emitting all events`);
             }
         } catch (err) {
             console.error("[rejectCall] error:", err);
