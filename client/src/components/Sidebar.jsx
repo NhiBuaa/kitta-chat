@@ -58,7 +58,7 @@ const Sidebar = ({
           </button>
 
           <button
-            onClick={() => setShowCallHistoryModal?.(false)}
+            onClick={() => setShowCallHistoryModal?.(true)}
             className="relative p-1 hover:text-blue-200"
             title="Lịch sử cuộc gọi"
           >
