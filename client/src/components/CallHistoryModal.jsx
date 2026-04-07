@@ -35,7 +35,7 @@ const getStatusColor = (status) => {
 
 // Item nhỏ gọn cho sidebar modal
 const CallHistoryItem = ({ call, currentUserId, onRecall }) => {
-  const { callerId, receiverId, type, status, startedAt, answeredAt, duration } = call;
+  const { callerId, receiverId, type, status, startedAt, duration } = call;
 
   // Xác định direction
   const callerIdStr = typeof callerId === "object" ? callerId?._id : callerId;
@@ -50,17 +50,11 @@ const CallHistoryItem = ({ call, currentUserId, onRecall }) => {
 
   // Call time display
   const callTime = formatCallTime(startedAt);
-  const ringingTime =
-    answeredAt && startedAt
-      ? Math.round((new Date(answeredAt) - new Date(startedAt)) / 1000)
-      : null;
 
   // Duration display
   let durationLabel = "";
   if (status === "completed" && duration > 0) {
     durationLabel = formatDuration(duration);
-  } else if (status === "missed") {
-    durationLabel = `Đổ chuông ${formatDuration(ringingTime)}`;
   }
 
   const getFallbackAvatar = (name) =>
@@ -102,11 +96,6 @@ const CallHistoryItem = ({ call, currentUserId, onRecall }) => {
           </span>
           {durationLabel && (
             <span className="text-xs text-gray-500">{durationLabel}</span>
-          )}
-          {isOutgoing ? (
-            <span className="text-[10px] text-gray-400">Đi</span>
-          ) : (
-            <span className="text-[10px] text-gray-400">Đến</span>
           )}
         </div>
       </div>
