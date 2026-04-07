@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 import { getMissedCalls } from '../services/callService';
 import { CallHistoryContext } from './CallHistoryContext';
+import { showMissedCallToast } from '../utils/toastUtils';
 
 export const CallHistoryProvider = ({ children }) => {
     const { socket } = useSocket();
@@ -35,24 +36,29 @@ export const CallHistoryProvider = ({ children }) => {
         fetchMissedCount();
     }, [fetchMissedCount]);
 
-    // Lắng nghe sự kiện call_missed từ server để cập nhật số cuộc gọi nhỡ theo thời gian thực
+    // Lắng nghe "callMissed" để tăng badge + hiện Toast
+    // (server emit callMissed kèm callerName/callerAvatar để toast hiển thị đúng)
     useEffect(() => {
         if (!socket) return;
 
-        const handleCallHistorySync = (data) => {
-            if (data.direction === 'incoming') {
-                const isMissedStatus = ['missed', 'unanswered', 'rejected', 'busy'].includes(data.status);
+        const handleCallMissed = (data) => {
+            // Tăng badge
+            fetchMissedCount();
 
-                if (isMissedStatus && !data.isReadByCurrentUser) {
-                    fetchMissedCount();
-                }
-            }
+            // Hiện toast với callerName thật từ server
+            showMissedCallToast({
+                callerName: data.callerName || 'Người dùng',
+                callerAvatar: data.callerAvatar || '',
+                callType: data.type === 'video' ? 'video' : 'audio',
+                timeLabel: 'Vừa xong',
+                toastId: `missed-call-toast-${data.callId}`,
+            });
         };
 
-        socket.on('callHistorySync', handleCallHistorySync);
+        socket.on('callMissed', handleCallMissed);
 
         return () => {
-            socket.off('callHistorySync', handleCallHistorySync);
+            socket.off('callMissed', handleCallMissed);
         };
     }, [socket, fetchMissedCount]);
 
