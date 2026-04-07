@@ -7,6 +7,7 @@ const http = require("http");
 const authRoutes = require("./src/routes/auth");
 const userRoutes = require("./src/routes/user");
 const messageRoutes = require("./src/routes/messages");
+const callHistoryRoutes = require("./src/routes/callHistory");
 const { initSocket } = require("./src/socket");
 
 dotenv.config();
@@ -26,7 +27,7 @@ app.disable("x-powered-by");
 // SECURITY: Giới hạn JSON payload (chặn OOM attack)
 app.use(express.json({ limit: "10kb" }));
 
-// CORS HELPER: Nginx forward Origin as "Accept" header → restore sang req.headers.origin
+// CORS HELPER: Nginx forward Origin as "Accept" header -> restore sang req.headers.origin
 // để cors package đọc được. Đặt TRƯỚC cors() middleware.
 app.use((req, res, next) => {
   if (req.headers.accept && !req.headers.origin) {
@@ -90,6 +91,7 @@ app.get("/readyz", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/calls", callHistoryRoutes);
 app.use("/api/groups", require("./src/routes/group"));
 app.use("/api/files", require("./src/routes/file"));
 
@@ -155,18 +157,18 @@ const gracefulShutdown = async (signal, err = null) => {
     process.exit(1);
   }
 
-  // 1. Stop accepting new connections
+  // Stop accepting new connections
   server.close(async () => {
     console.log("[Server] HTTP server closed");
 
-    // 2. Disconnect Socket.IO gracefully
+    // Disconnect Socket.IO gracefully
     if (global.io) {
       global.io.close(() => {
         console.log("[Socket.IO] Adapter closed");
       });
     }
 
-    // 3. Close MongoDB
+    // Close MongoDB
     try {
       await mongoose.connection.close();
       console.log("[MongoDB] Connection closed");
@@ -178,7 +180,7 @@ const gracefulShutdown = async (signal, err = null) => {
     process.exit(0);
   });
 
-  // 4. Force exit after 30s
+  // Force exit
   setTimeout(() => {
     console.error("[Server] Forced shutdown after 30s timeout");
     process.exit(1);

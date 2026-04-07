@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { toast } from "react-toastify";
+import { audioManager } from "../utils/AudioManager";
 
 export const useChatSocket = ({
     socket,
@@ -107,6 +108,7 @@ export const useChatSocket = ({
                 }
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             } else if (data.type !== "system") {
+                audioManager.playMessageNotification();
                 const senderName = data.sender?.displayName || "Ai đó";
                 toast.info(`Tin nhắn mới từ ${senderName}`, { autoClose: 3000, hideProgressBar: true });
             }

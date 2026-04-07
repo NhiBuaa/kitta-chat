@@ -12,6 +12,7 @@ import GroupMembersModal from "../components/GroupMembersModal";
 import ChatInput from "../components/ChatInput";
 import { FilePicker } from "../components/FilePicker";
 import Loader from "../components/deco/Loader";
+import CallHistoryModal from "../components/CallHistoryModal";
 
 // Context & Services
 import { useSocket } from "../context/SocketContext";
@@ -49,6 +50,7 @@ const Home = () => {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showGroupMembers, setShowGroupMembers] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showCallHistoryModal, setShowCallHistoryModal] = useState(false);
 
   // Refs (dùng trong closures của socket handlers)
   const activeChatRef = useRef(null);
@@ -184,7 +186,7 @@ const Home = () => {
   useMessageSocket({
     socket, currentUser, activeChatRef,
     setMessages, setUsers, setGroups, setHasNewUnread,
-    scrollRef, fetchNewConversation, setSearchResult,
+    scrollRef, scrollChatToBottom, fetchNewConversation, setSearchResult,
   });
 
   // Initial data fetch
@@ -242,6 +244,21 @@ const Home = () => {
     );
   }, [onlineUsers, users.length]);
 
+  // Listen for "open-chat-with" event from MissedCallToast → open conversation
+  useEffect(() => {
+    const handler = (e) => {
+      const { userId } = e.detail || {};
+      if (!userId) return;
+      const target = users.find((u) => u._id === userId || u.id === userId);
+      if (target) {
+        setActiveChat(target);
+        setShowCallHistoryModal(false);
+      }
+    };
+    window.addEventListener('open-chat-with', handler);
+    return () => window.removeEventListener('open-chat-with', handler);
+  }, [users]);
+
   // Join / leave group socket room khi đổi chat
   useEffect(() => {
     if (!socket) return;
@@ -288,8 +305,10 @@ const Home = () => {
       return;
     }
     const chatUserId = currentChatUser._id || currentChatUser.id;
-    const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}`;
+    const sessionId = Date.now();
+    const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}&session=${sessionId}`;
     localStorage.setItem("activePartnerUserId", chatUserId);
+    localStorage.setItem("tempCallType", type);
     window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
@@ -340,6 +359,7 @@ const Home = () => {
           checkIsOnline={checkIsOnline}
           renderLastMessage={renderLastMessage}
           handleAddFriend={handleAddFriend}
+          setShowCallHistoryModal={setShowCallHistoryModal}
         />
       </div>
 
@@ -439,6 +459,12 @@ const Home = () => {
           }}
         />
       )}
+
+      <CallHistoryModal
+        isOpen={showCallHistoryModal}
+        onClose={() => setShowCallHistoryModal(false)}
+        currentUser={currentUser}
+      />
     </div>
   );
 };

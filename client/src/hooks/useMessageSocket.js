@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { toast } from "react-toastify";
+import { audioManager } from "../utils/AudioManager";
 
 /**
  * Đăng ký socket listeners liên quan đến tin nhắn:
@@ -15,11 +16,62 @@ export const useMessageSocket = ({
     setGroups,
     setHasNewUnread,
     scrollRef,
+    scrollChatToBottom,
     fetchNewConversation,
     setSearchResult,
 }) => {
     useEffect(() => {
         if (!socket) return;
+
+        const appendCallLogIfViewing = (data) => {
+            const currentActiveChat = activeChatRef.current;
+            const senderId = data.senderId || data.sender?._id || data.sender;
+            const receiverId = data.receiverId || data.receiver?._id || data.receiver;
+            const isViewingChat =
+                currentActiveChat &&
+                !currentActiveChat.members &&
+                (currentActiveChat._id === senderId || currentActiveChat._id === receiverId);
+
+            if (!isViewingChat) return false;
+
+            setMessages((prev) => {
+                const isDuplicate = prev.some((m) =>
+                    m._id === data._id ||
+                    (m.callData?.callHistoryId &&
+                        m.callData.callHistoryId === data.callData?.callHistoryId)
+                );
+
+                if (isDuplicate) return prev;
+
+                return [
+                    ...prev,
+                    {
+                        _id: data._id,
+                        sender: data.sender,
+                        receiver: data.receiver,
+                        text: data.text || "",
+                        type: "call_log",
+                        attachments: [],
+                        callData: data.callData,
+                        createdAt: data.createdAt || new Date().toISOString(),
+                        isRead: true,
+                    },
+                ];
+            });
+
+            setTimeout(() => {
+                if (typeof scrollChatToBottom === "function") {
+                    scrollChatToBottom("smooth");
+                    return;
+                }
+                const container = scrollRef.current;
+                if (container) {
+                    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+                }
+            }, 50);
+
+            return true;
+        };
 
         // userReadMessages
         const handleUserRead = ({ readerId }) => {
@@ -74,6 +126,37 @@ export const useMessageSocket = ({
             const senderId = data.senderId || data.sender?._id || data.sender;
             const receiverId = data.receiverId || data.receiver;
             const isMeSender = senderId === currentUser._id;
+            const isCallLog = data.type === "call_log";
+
+            /**
+             * Deduplicate: khi retry thành công, sender nhận lại getMessage từ server
+             * (server emit cho cả senderId). Kiểm tra xem đã có message với cùng
+             * idempotencyKey trong UI chưa – nếu có thì bỏ qua (đã xử lý qua callback).
+             */
+            if (isMeSender && data.idempotencyKey) {
+                setMessages((prev) => {
+                    const existingIdx = prev.findIndex(
+                        (m) => m.idempotencyKey === data.idempotencyKey
+                    );
+                    if (existingIdx !== -1) {
+                        const existing = prev[existingIdx];
+                        if (existing._id && !String(existing._id).startsWith("temp_")) {
+                            return prev;
+                        }
+                        return prev.map((m) =>
+                            m.idempotencyKey === data.idempotencyKey
+                                ? {
+                                    ...m,
+                                    _id: data._id || m._id,
+                                    status: "sent",
+                                    rawPayload: undefined,
+                                }
+                                : m
+                        );
+                    }
+                    return prev;
+                });
+            }
 
             const resolvedAttachments = Array.isArray(data.attachmentsData)
                 ? data.attachmentsData
@@ -94,21 +177,34 @@ export const useMessageSocket = ({
 
             const isUnread = !isViewingChat && !isMeSender;
 
-            // Cập nhật khung chat bên phải
-            if (isViewingChat && !isMeSender) {
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        sender: data.sender || { _id: senderId, displayName: "Người dùng", avatar: null },
-                        text: data.text,
-                        image: data.image,
-                        type: data.type,
-                        files: data.files,
-                        attachments: resolvedAttachments,
-                        createdAt: data.createdAt,
-                        isRead: true,
-                    },
-                ]);
+            if (isViewingChat && (!isMeSender || isCallLog)) {
+                setMessages((prev) => {
+                    const isDuplicate = prev.some((m) =>
+                        m._id === data._id ||
+                        (isCallLog &&
+                            m.callData?.callHistoryId &&
+                            m.callData.callHistoryId === data.callData?.callHistoryId)
+                    );
+
+                    if (isDuplicate) return prev;
+
+                    return [
+                        ...prev,
+                        {
+                            _id: data._id,
+                            sender: data.sender || { _id: senderId, displayName: "Người dùng", avatar: null },
+                            receiver: data.receiver,
+                            text: data.text,
+                            image: data.image,
+                            type: data.type,
+                            files: data.files,
+                            attachments: resolvedAttachments,
+                            callData: data.callData,
+                            createdAt: data.createdAt,
+                            isRead: true,
+                        },
+                    ];
+                });
 
                 if (data.isGroup) {
                     socket.emit("markRead", { isGroup: true, groupId: receiverId, readerId: currentUser._id });
@@ -129,8 +225,12 @@ export const useMessageSocket = ({
                 }, 100);
             }
 
-            // Chuẩn bị nội dung preview cho sidebar
             let previewContent = data.text;
+            if (!previewContent && isCallLog) {
+                previewContent = data.callData?.type === "video"
+                    ? "[Cuộc gọi video]"
+                    : "[Cuộc gọi thoại]";
+            }
             if (!previewContent && data.image) previewContent = "[Hình ảnh]";
             if (!previewContent && resolvedAttachments.length > 0) {
                 previewContent = resolvedAttachments.some((f) => f?.mimeType?.startsWith("image/"))
@@ -159,11 +259,9 @@ export const useMessageSocket = ({
                 return updatedList;
             };
 
-            // Cập nhật sidebar chính
             setUsers((prevUsers) => {
                 const newList = updateListWithPreview(prevUsers);
                 if (newList) return newList;
-                // Conversation chưa có trong sidebar -> fetch thêm
                 fetchNewConversation(
                     data.isGroup ? `/api/groups/${targetId}` : `/api/users/${targetId}`,
                     data
@@ -171,15 +269,14 @@ export const useMessageSocket = ({
                 return prevUsers;
             });
 
-            // Cập nhật danh sách tìm kiếm (nếu đang mở)
             setSearchResult((prev) => {
                 if (!prev?.length) return prev;
                 return updateListWithPreview(prev) || prev;
             });
 
-            // Toast thông báo
-            if (isUnread && data.type !== "system") {
+            if (isUnread && data.type !== "system" && data.type !== "call_log") {
                 try {
+                    audioManager.playMessageNotification();
                     const senderName = data.sender?.displayName || "Ai đó";
                     const messageToast = data.isGroup
                         ? `${senderName} vừa gửi tin nhắn tới nhóm ${data.groupName || ""}`
@@ -191,14 +288,20 @@ export const useMessageSocket = ({
             }
         };
 
+        const handleCallLogMessage = (data) => {
+            appendCallLogIfViewing(data);
+        };
+
         socket.on("userReadMessages", handleUserRead);
         socket.on("groupUserRead", handleGroupUserRead);
         socket.on("getMessage", handleUnifiedMessage);
+        socket.on("callLogMessage", handleCallLogMessage);
 
         return () => {
             socket.off("userReadMessages", handleUserRead);
             socket.off("groupUserRead", handleGroupUserRead);
             socket.off("getMessage", handleUnifiedMessage);
+            socket.off("callLogMessage", handleCallLogMessage);
         };
-    }, [socket, currentUser, activeChatRef, setMessages, setUsers, setGroups, setHasNewUnread, scrollRef, fetchNewConversation, setSearchResult]);
+    }, [socket, currentUser, activeChatRef, setMessages, setUsers, setGroups, setHasNewUnread, scrollRef, scrollChatToBottom, fetchNewConversation, setSearchResult]);
 };

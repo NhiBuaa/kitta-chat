@@ -15,7 +15,10 @@ import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
 import Loader from "./deco/Loader";
-import MessageSeenBy from "./MessageSeenBy";
+import MessageSeenBy from './MessageSeenBy';
+import OfflineBanner from "./OfflineBanner";
+import CallLogItem from "./CallLogItem";
+
 
 const ChatWindow = ({
   activeChat,
@@ -130,6 +133,9 @@ const ChatWindow = ({
 
   return (
     <>
+      {/* OFFLINE BANNER */}
+      <OfflineBanner />
+
       {/* CHAT HEADER */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
@@ -217,7 +223,7 @@ const ChatWindow = ({
               : "opacity-100"
           }
         >
-          {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
+          {/* Hiển thị Loader */}
           {isLoadingMore && (
             <div className="flex flex-col items-center justify-center py-4 bg-transparent">
               <div className="scale-[0.3] origin-center h-12 flex items-center justify-center">
@@ -247,202 +253,220 @@ const ChatWindow = ({
               </div>
             )}
 
-          {Array.isArray(messages) &&
-            messages.map((message, index) => {
-              const senderId =
-                typeof message.sender === "object"
-                  ? message.sender?._id
-                  : message.sender;
-              const isMe = senderId === currentUser._id;
-              const isGroup = Boolean(activeChat.members);
-              const senderInfo =
-                typeof message.sender === "object" ? message.sender : null;
-              const senderName = getUserDisplayName(senderInfo);
-              const senderAvatar = senderInfo?.avatar || activeChat.avatar;
-              const isSystemMessage = message.type === "system";
-              const isSending = message.status === "sending";
-              const isError = message.status === "error";
+          {Array.isArray(messages) && messages.map((message, index) => {
+            const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
+            const isMe = senderId === currentUser._id;
+            const isGroup = Boolean(activeChat.members);
+            const senderInfo = typeof message.sender === "object" ? message.sender : null;
+            const senderName = getUserDisplayName(senderInfo);
+            const senderAvatar = senderInfo?.avatar || activeChat.avatar;
+            const isSystemMessage = message.type === "system";
+            const isCallLogMessage = message.type === "call_log" && message.callData;
+            const isSending = message.status === "sending";
+            const isError = message.status === "error";
+            const retryCount = message.retryCount || 0;
+            const isMaxRetry = retryCount >= 3;
+            const uniqueKey = message._id || `temp-${index}`;
 
-              if (isSystemMessage) {
-                return (
-                  <div key={index} className="flex justify-center my-4">
-                    <div className="bg-gray-200 text-gray-600 text-xs px-4 py-1 rounded-full flex items-center shadow-sm">
-                      {message.text}
-                    </div>
-                  </div>
-                );
-              }
-
+            if (isSystemMessage) {
               return (
-                <div key={index}>
-                  {isGroup && !isMe && senderInfo && (
-                    <div className="flex items-center ml-2 mb-1">
-                      <span className="text-xs font-semibold text-gray-600">
-                        {senderName}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className={`flex ${isMe ? "justify-end" : ""}`}>
-                    {!isMe && !isGroup && (
-                      <img
-                        src={getAvatarUrl(activeChat.avatar)}
-                        className="w-8 h-8 rounded-full mr-2 mt-1 object-cover"
-                        alt="avt"
-                      />
-                    )}
-
-                    {!isMe && isGroup && (
-                      <img
-                        src={getAvatarUrl(senderAvatar)}
-                        className="w-8 h-8 rounded-full mr-2 mt-1 object-cover"
-                        alt="avt"
-                      />
-                    )}
-
-                    <div
-                      className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${
-                        isMe
-                          ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
-                          : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
-                      } ${isSending ? "opacity-70" : "opacity-100"} ${
-                        isError ? "border-2 border-red-400" : ""
-                      }`}
-                    >
-                      {/* Render files */}
-                      {message.attachments &&
-                        message.attachments.length > 0 && (
-                          <div className="flex flex-col gap-2 mb-2">
-                            {message.attachments.map((file) => {
-                              if (file.mimeType?.startsWith("image/")) {
-                                return (
-                                  <img
-                                    key={file._id}
-                                    src={file.url}
-                                    alt="img"
-                                    className="w-full h-auto rounded-lg cursor-pointer hover:opacity-90 bg-gray-100"
-                                    onLoad={onMediaContentLoad}
-                                    onClick={() =>
-                                      window.open(file.url, "_blank")
-                                    }
-                                  />
-                                );
-                              }
-                              if (file.mimeType?.startsWith("video/")) {
-                                return (
-                                  <video
-                                    key={file._id}
-                                    src={file.url}
-                                    controls
-                                    className="w-full h-auto rounded-lg bg-black"
-                                    onLoadedMetadata={onMediaContentLoad}
-                                  />
-                                );
-                              }
-                              return (
-                                <a
-                                  key={file._id}
-                                  href={file.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${
-                                    isMe
-                                      ? "bg-green-700 hover:bg-green-800 text-white"
-                                      : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                                  }`}
-                                >
-                                  <FaPaperclip className="text-lg" />
-                                  <span className="truncate">
-                                    {file.originalName}
-                                  </span>
-                                </a>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                      {/* Render tin nhắn */}
-                      {message.text && (
-                        <div className="break-words overflow-hidden whitespace-pre-wrap leading-relaxed">
-                          {message.text}
-                        </div>
-                      )}
-
-                      {isMe && (
-                        <div className="self-end mt-1 flex justify-end items-center gap-1">
-                          {isSending && (
-                            <span className="text-[10px] text-green-200 italic">
-                              Đang gửi...
-                            </span>
-                          )}
-
-                          {isError && (
-                            <span
-                              onClick={() => handleRetryMessage(message)}
-                              title="Gửi lại"
-                              className="text-[10px] text-red-200 font-bold flex items-center gap-1 cursor-pointer"
-                            >
-                              <FaExclamationTriangle />
-                              Lỗi gửi
-                            </span>
-                          )}
-
-                          {(!message.status || message.status === "sent") && (
-                            <>
-                              {!isGroup &&
-                                (message.isRead ? (
-                                  <FaCheckDouble className="text-xs text-blue-200 inline-block" />
-                                ) : (
-                                  <FaCheck className="text-xs text-green-200 inline-block" />
-                                ))}
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                <div key={uniqueKey} className="flex justify-center my-4">
+                  <div className="bg-gray-200 text-gray-600 text-xs px-4 py-1 rounded-full flex items-center shadow-sm">
+                    {message.text}
                   </div>
-                  {/* Những người đã xem trong group */}
-                  {isMe &&
-                    isGroup &&
-                    message.readBy &&
-                    message.readBy.length > 0 &&
-                    (() => {
-                      // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
-                      const fullViewersData = message.readBy.map((reader) => {
-                        const readerId =
-                          typeof reader === "object" ? reader._id : reader;
-                        // Tìm user từ danh sách members hoặc users
-                        const userObj =
-                          activeChat?.members?.find(
-                            (m) => m._id === readerId,
-                          ) || users.find((u) => u._id === readerId);
+                </div>
+              );
+            }
 
-                        // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
-                        return userObj
-                          ? userObj
-                          : { _id: readerId, displayName: "User", avatar: "" };
-                      });
-
-                      return (
-                        <div className="mt-1 flex justify-end">
-                          <MessageSeenBy
-                            seenByList={fullViewersData}
-                            currentUser={currentUser}
-                            getAvatarUrl={getAvatarUrl}
-                          />
-                        </div>
-                      );
-                    })()}
+            if (isCallLogMessage) {
+              return (
+                <div key={uniqueKey}>
+                  <CallLogItem
+                    log={message}
+                    currentUser={currentUser}
+                    chatPartner={currentChatUser}
+                    onRecall={(_, callType) => handleCall(callType)}
+                  />
                   <div
-                    className={`text-[10px] text-gray-400 mt-1 ${
-                      isMe ? "text-right" : "text-left ml-10"
-                    }`}
+                    className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
+                      }`}
                   >
                     {formatTimeAgo(message.createdAt)}
                   </div>
                 </div>
               );
-            })}
+            }
+
+            return (
+              <div key={uniqueKey}>
+                {isGroup && !isMe && senderInfo && (
+                  <div className="flex items-center ml-2 mb-1">
+                    <span className="text-xs font-semibold text-gray-600">
+                      {senderName}
+                    </span>
+                  </div>
+                )}
+
+                <div className={`flex ${isMe ? "justify-end" : ""}`}>
+                  {!isMe && !isGroup && (
+                    <img
+                      src={getAvatarUrl(activeChat.avatar)}
+                      className="w-8 h-8 rounded-full mr-2 mt-1 object-cover"
+                      alt="avt"
+                    />
+                  )}
+
+                  {!isMe && isGroup && (
+                    <img
+                      src={getAvatarUrl(senderAvatar)}
+                      className="w-8 h-8 rounded-full mr-2 mt-1 object-cover"
+                      alt="avt"
+                    />
+                  )}
+
+                  <div
+                    className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${isMe
+                      ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
+                      : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
+                      } ${isSending ? "opacity-70" : "opacity-100"} ${isError ? "border-2 border-red-400" : ""
+                      }`}
+                  >
+                    {/* Render files */}
+                    {message.attachments && message.attachments.length > 0 && (
+                      <div className="flex flex-col gap-2 mb-2">
+                        {message.attachments.map((file) => {
+                          if (file.mimeType?.startsWith("image/")) {
+                            return (
+                              <img
+                                key={file._id}
+                                src={file.url}
+                                alt="img"
+                                className="w-full h-auto rounded-lg cursor-pointer hover:opacity-90 bg-gray-100"
+                                onLoad={onMediaContentLoad}
+                                onClick={() => window.open(file.url, "_blank")}
+                              />
+                            );
+                          }
+                          if (file.mimeType?.startsWith("video/")) {
+                            return (
+                              <video
+                                key={file._id}
+                                src={file.url}
+                                controls
+                                className="w-full h-auto rounded-lg bg-black"
+                                onLoadedMetadata={onMediaContentLoad}
+                              />
+                            );
+                          }
+                          return (
+                            <a
+                              key={file._id}
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
+                                ? "bg-green-700 hover:bg-green-800 text-white"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                                }`}
+                            >
+                              <FaPaperclip className="text-lg" />
+                              <span className="truncate">
+                                {file.originalName}
+                              </span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Render tin nhắn */}
+                    {message.text && (
+                      <div className="break-words overflow-hidden whitespace-pre-wrap leading-relaxed">
+                        {message.text}
+                      </div>
+                    )}
+
+                    {isMe && (
+                      <div className="self-end mt-1 flex justify-end items-center gap-1">
+                        {isSending && (
+                          <span className="text-[10px] text-green-200 italic">Đang gửi...</span>
+                        )}
+
+                        {isError && !isMaxRetry && (
+                          <button
+                            onClick={() => handleRetryMessage(message)}
+                            title="Nhấn để gửi lại"
+                            className="flex items-center gap-1 text-[10px] text-red-300 font-semibold hover:text-red-200 transition-colors cursor-pointer bg-transparent border-none p-0"
+                          >
+                            <FaExclamationTriangle />
+                            Gửi lại
+                          </button>
+                        )}
+
+                        {isError && isMaxRetry && (
+                          <span className="flex items-center gap-1 text-[10px] text-red-300 italic">
+                            <FaExclamationTriangle />
+                            Không gửi được
+                            {message.text && (
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(message.text);
+                                }}
+                                className="underline hover:text-red-200 ml-1 bg-transparent border-none cursor-pointer p-0"
+                              >
+                                Sao chép
+                              </button>
+                            )}
+                          </span>
+                        )}
+
+                        {(!message.status || message.status === "sent") && (
+                          <>
+                            {!isGroup && (
+                              message.isRead ? (
+                                <FaCheckDouble className="text-xs text-blue-200 inline-block" />
+                              ) : (
+                                <FaCheck className="text-xs text-green-200 inline-block" />
+                              )
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Những người đã xem trong group */}
+                {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
+                  // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
+                  const fullViewersData = message.readBy.map(reader => {
+                    const readerId = typeof reader === "object" ? reader._id : reader;
+                    // Tìm user từ danh sách members hoặc users
+                    const userObj = activeChat?.members?.find(m => m._id === readerId) ||
+                      users.find(u => u._id === readerId);
+
+                    // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
+                    return userObj ? userObj : { _id: readerId, displayName: "User", avatar: "" };
+                  });
+
+                  return (
+                    <div className="mt-1 flex justify-end">
+                      <MessageSeenBy
+                        seenByList={fullViewersData}
+                        currentUser={currentUser}
+                        getAvatarUrl={getAvatarUrl}
+                      />
+                    </div>
+                  );
+                })()}
+                <div
+                  className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
+                    }`}
+                >
+                  {formatTimeAgo(message.createdAt)}
+                </div>
+              </div>
+            );
+          })}
           <div ref={bottomRef}></div>
 
           {/* hiển thị trạng thái đang nhập tin nhắn */}
