@@ -15,10 +15,23 @@ const CALL_TIMEOUT_MS = 45_000;
 
 // IN-MEMORY STATE
 const activeTimeouts = new Map();
+const activeSocketCalls = new Map();
 
 const callRateLimit = new Map();
 const RATE_LIMIT_CALLS = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
+
+const bindSocketToCall = (socketId, callId) => {
+  if (!socketId || !callId) return;
+  activeSocketCalls.set(socketId, callId);
+};
+
+const unbindSocketFromCall = (socketId) => {
+  if (!socketId) return null;
+  const callId = activeSocketCalls.get(socketId) || null;
+  activeSocketCalls.delete(socketId);
+  return callId;
+};
 
 // HELPERS
 
@@ -118,6 +131,70 @@ const emitCallLogMessage = (io, messageDoc) => {
   io.to(receiverId).emit("callLogMessage", payload);
 };
 
+const emitCallEndedToParticipants = (io, callRecord, callId = null) => {
+  try {
+    const callerId = callRecord?.callerId?._id?.toString() || callRecord?.callerId?.toString();
+    const receiverId = callRecord?.receiverId?._id?.toString() || callRecord?.receiverId?.toString();
+
+    console.log(`[CallHandler] emitCallEndedToParticipants: callId=${callId}, caller=${callerId}, receiver=${receiverId}`);
+
+    let emittedCount = 0;
+
+    // Phương pháp 1: Emit đến userId rooms (thường hiệu quả)
+    if (callerId) {
+      io.to(callerId).emit("callEnded");
+      emittedCount++;
+      console.log(`[CallHandler] Emitted callEnded to caller room: ${callerId}`);
+    }
+
+    if (receiverId) {
+      io.to(receiverId).emit("callEnded");
+      emittedCount++;
+      console.log(`[CallHandler] Emitted callEnded to receiver room: ${receiverId}`);
+    }
+
+    // Phương pháp 2: Emit đến bound socket IDs (fallback để chắc chắn)
+    if (callId) {
+      let boundCount = 0;
+      for (const [socketId, boundCallId] of activeSocketCalls.entries()) {
+        if (String(boundCallId) === String(callId)) {
+          io.to(socketId).emit("callEnded");
+          boundCount++;
+          console.log(`[CallHandler] Emitted callEnded to bound socket: ${socketId}`);
+        }
+      }
+      if (boundCount > 0) {
+        console.log(`[CallHandler] Reached ${boundCount} bound sockets for callId ${callId}`);
+      }
+    }
+
+    // Phương pháp 3: Broadcast đến ALL sockets của cả 2 bên (ultimate fallback)
+    // Tìm tất cả sockets của caller và receiver trong Redis (multi-device support)
+    if (callerId && receiverId) {
+      const redisClient = io.redisClient;
+      if (redisClient) {
+        Promise.all([
+          redisClient.sMembers(`user_sockets:${callerId}`),
+          redisClient.sMembers(`user_sockets:${receiverId}`),
+        ]).then(([callerSockets, receiverSockets]) => {
+          [...callerSockets, ...receiverSockets].forEach((socketId) => {
+            io.to(socketId).emit("callEnded");
+          });
+          if (callerSockets.length + receiverSockets.length > 0) {
+            console.log(`[CallHandler] Fallback: Emitted to ${callerSockets.length + receiverSockets.length} device sockets`);
+          }
+        }).catch((err) => {
+          console.error("[CallHandler] Redis fallback error:", err);
+        });
+      }
+    }
+
+    console.log(`[CallHandler] Total emitted: ${emittedCount} user rooms, callId=${callId}`);
+  } catch (err) {
+    console.error("[CallHandler] emitCallEndedToParticipants error:", err);
+  }
+};
+
 /**
  * Emit callHistorySync event đến cả caller và receiver.
  *
@@ -162,6 +239,64 @@ const emitCallHistorySync = (io, callRecord, triggerUserId) => {
     });
   } catch (err) {
     console.error("[CallHandler] emitCallHistorySync error:", err);
+  }
+};
+
+const finalizeCallFromDisconnect = async ({ socketId, userId, io }) => {
+  const callId = unbindSocketFromCall(socketId);
+  if (!callId) return;
+
+  try {
+    const existingCall = await CallHistory.findById(callId);
+    if (!existingCall || existingCall.endedBy) return;
+
+    const terminalStatuses = ["completed", "missed", "rejected", "busy", "unreachable"];
+    if (terminalStatuses.includes(existingCall.status)) return;
+
+    const timeoutId = activeTimeouts.get(callId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      activeTimeouts.delete(callId);
+    }
+
+    const now = new Date();
+    const duration = existingCall.answeredAt
+      ? Math.round((now - existingCall.answeredAt) / 1000)
+      : null;
+    const status = existingCall.answeredAt ? "completed" : "rejected";
+
+    const updatedCall = await CallHistory.findByIdAndUpdate(
+      callId,
+      {
+        status,
+        endedBy: new mongoose.Types.ObjectId(userId),
+        endedAt: now,
+        duration,
+      },
+      { returnDocument: "after" }
+    ).populate([
+      { path: "callerId", select: "_id displayName avatar username" },
+      { path: "receiverId", select: "_id displayName avatar username" },
+    ]);
+
+    if (!updatedCall) return;
+
+    const partnerId =
+      updatedCall.callerId?._id?.toString() === String(userId)
+        ? updatedCall.receiverId?._id?.toString()
+        : updatedCall.callerId?._id?.toString();
+
+    const callLogMessage = await createCallLogMessage(updatedCall);
+    emitCallHistorySync(io, updatedCall, userId);
+    emitCallLogMessage(io, callLogMessage);
+
+    if (partnerId) {
+      io.to(partnerId).emit("callEnded");
+    }
+
+    console.log(`[CallHandler] Finalized call ${callId} after disconnect of socket ${socketId}`);
+  } catch (err) {
+    console.error("[CallHandler] finalizeCallFromDisconnect error:", err);
   }
 };
 
@@ -222,6 +357,14 @@ const registerCallHandlers = (socket, io) => {
       });
 
       const callRecordId = callRecord._id.toString();
+      bindSocketToCall(socket.id, callRecordId);
+
+      io.to(authenticatedCallerId).emit("outgoingCallCreated", {
+        callId: callRecordId,
+        userToCall,
+        conversationId,
+        type: typeCall,
+      });
 
       // Gửi signal đến receiver nếu online
       const room = io.sockets.adapter.rooms.get(userToCall);
@@ -281,6 +424,7 @@ const registerCallHandlers = (socket, io) => {
 
   // [answerCall]
   socket.on("answerCall", async ({ to, signal, mediaStatus, callId }) => {
+    bindSocketToCall(socket.id, callId);
     console.log(`[Call] answerCall: ${userId} → ${to}, callId: ${callId}`);
 
     if (callId) {
@@ -302,18 +446,24 @@ const registerCallHandlers = (socket, io) => {
 
   // [endCall]
   socket.on("endCall", async ({ to, callId }) => {
+    unbindSocketFromCall(socket.id);
     console.log(`[Call] endCall: ${userId} -> ${to}, callId: ${callId}`);
 
     if (!callId) return;
 
     try {
-      const call = await CallHistory.findById(callId);
+      // Luôn populated callRecord để có đủ thông tin cho emitCallEndedToParticipants
+      const call = await CallHistory.findById(callId).populate([
+        { path: "callerId", select: "_id displayName avatar username" },
+        { path: "receiverId", select: "_id displayName avatar username" },
+      ]);
+      
       if (!call) return;
 
-      // Đã kết thúc rồi -> ignore
+      // Đã kết thúc rồi -> ignore nhưng vẫn emit callEnded để chắc chắn
       if (call.endedBy) {
-        console.log(`[Call] endCall idempotent: call ${callId} already ended`);
-        io.to(to).emit("callEnded");
+        console.log(`[Call] endCall idempotent: call ${callId} already ended by ${call.endedBy}`);
+        emitCallEndedToParticipants(io, call, callId);
         return;
       }
 
@@ -344,10 +494,12 @@ const registerCallHandlers = (socket, io) => {
         { path: "receiverId", select: "_id displayName avatar username" },
       ]);
 
-      const callLogMessage = await createCallLogMessage(updated);
-      emitCallHistorySync(io, updated, userId);
-      emitCallLogMessage(io, callLogMessage);
-      io.to(to).emit("callEnded");
+      if (updated) {
+        const callLogMessage = await createCallLogMessage(updated);
+        emitCallHistorySync(io, updated, userId);
+        emitCallLogMessage(io, callLogMessage);
+        emitCallEndedToParticipants(io, updated, callId);
+      }
 
     } catch (err) {
       console.error("[CallHandler] endCall error:", err);
@@ -356,6 +508,7 @@ const registerCallHandlers = (socket, io) => {
 
   // [rejectCall] 
   socket.on("rejectCall", async ({ to, callId, reason }) => {
+    unbindSocketFromCall(socket.id);
     console.log(`[Call] rejectCall: ${userId} -> ${to}, callId: ${callId}, reason: ${reason}`);
 
     if (!callId) return;
@@ -363,7 +516,7 @@ const registerCallHandlers = (socket, io) => {
     const timeoutId = activeTimeouts.get(callId);
     if (timeoutId) {
       clearTimeout(timeoutId);
-      activeTimeouts.delete(callId);
+      activeTimeouts.delete(timeoutId);
     }
 
     try {
@@ -371,7 +524,7 @@ const registerCallHandlers = (socket, io) => {
 
       const updated = await CallHistory.findByIdAndUpdate(
         callId,
-        { status, endedAt: new Date() },
+        { status, endedAt: new Date(), endedBy: new mongoose.Types.ObjectId(userId) },
         { returnDocument: 'after' }
       ).populate([
         { path: "callerId", select: "_id displayName avatar username" },
@@ -382,6 +535,8 @@ const registerCallHandlers = (socket, io) => {
         const callLogMessage = await createCallLogMessage(updated);
         emitCallHistorySync(io, updated, userId);
         emitCallLogMessage(io, callLogMessage);
+        // Đảm bảo cả 2 participants đều được thông báo
+        emitCallEndedToParticipants(io, updated, callId);
       }
 
       io.to(to).emit("callRejected", { reason: reason || "User busy" });
@@ -400,6 +555,7 @@ const registerCallHandlers = (socket, io) => {
   // (multi-device: user có thể có nhiều socket cùng lúc)
   socket.on("disconnect", () => {
     console.log(`[CallHandler] Socket disconnect: ${socket.id} (user: ${userId})`);
+    finalizeCallFromDisconnect({ socketId: socket.id, userId, io });
   });
 };
 

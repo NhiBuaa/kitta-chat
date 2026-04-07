@@ -13,6 +13,7 @@ window.process = {
 window.Buffer = window.Buffer || [];
 
 const CallContext = createContext();
+const CALL_STORAGE_MAX_AGE_MS = 2 * 60 * 1000;
 
 export const CallProvider = ({ children }) => {
     const { socket } = useSocket();
@@ -70,6 +71,7 @@ export const CallProvider = ({ children }) => {
         localStorage.removeItem("tempCallType");
         localStorage.removeItem("callStartTime");
         localStorage.removeItem("tempCallId");
+        setCallId(null);
     };
 
     const cleanupConnection = () => {
@@ -90,10 +92,33 @@ export const CallProvider = ({ children }) => {
         setPartnerMediaStatus({ cam: true, mic: true });
         setCallAccepted(false);
         setIsCalling(false);
+        setCallId(null);
         setCallState(CALL_STATES.IDLE);
         setCall({});
         setCallEnded(true);
     };
+
+    useEffect(() => {
+        const startedAtRaw = localStorage.getItem("callStartTime");
+        const startedAt = Number.parseInt(startedAtRaw || "0", 10);
+        const hasDanglingCallState =
+            Boolean(localStorage.getItem("tempCallId")) ||
+            Boolean(localStorage.getItem("activePartnerUserId")) ||
+            Boolean(localStorage.getItem("tempCallerUserId")) ||
+            Boolean(localStorage.getItem("tempCallerId")) ||
+            Boolean(localStorage.getItem("tempCallSignal"));
+
+        const isExpired = startedAt > 0 && (Date.now() - startedAt > CALL_STORAGE_MAX_AGE_MS);
+        const hasBrokenState =
+            Boolean(localStorage.getItem("tempCallId")) &&
+            !localStorage.getItem("activePartnerUserId") &&
+            !localStorage.getItem("tempCallerUserId") &&
+            !localStorage.getItem("tempCallerId");
+
+        if ((hasDanglingCallState && isExpired) || hasBrokenState) {
+            clearStoredCallState();
+        }
+    }, []);
 
     const ICE_SERVERS = {
         iceServers: [
@@ -152,6 +177,14 @@ export const CallProvider = ({ children }) => {
         peer.on("error", (err) => {
             console.error("Peer Error:", err);
             leaveCall();
+        });
+
+        // Thêm monitoring cho peer close/disconnect
+        peer.on("close", () => {
+            console.log("[CallContext] Peer connection closed by other side");
+            if (callStateRef.current === CALL_STATES.CONNECTED && !callEnded) {
+                leaveCall();
+            }
         });
 
         const handleCallAccepted = (payload) => {
@@ -218,6 +251,14 @@ export const CallProvider = ({ children }) => {
             leaveCall();
         });
 
+        // Thêm monitoring cho peer close/disconnect
+        peer.on("close", () => {
+            console.log("[CallContext] Peer connection closed by other side");
+            if (callStateRef.current === CALL_STATES.CONNECTED && !callEnded) {
+                leaveCall();
+            }
+        });
+
         peer.signal(signalToUse);
         connectionRef.current = peer;
 
@@ -259,6 +300,33 @@ export const CallProvider = ({ children }) => {
         clearStoredCallState();
         cleanupConnection();
     };
+
+    // Watchdog: Giám sát kết nối Peer và tự động đóng nếu kết nối bị ngắt
+    useEffect(() => {
+        if (!callAccepted || callEnded || !connectionRef.current) return;
+
+        const watchdogInterval = setInterval(() => {
+            if (!connectionRef.current) {
+                console.warn("[CallContext] Watchdog: Peer connection không tồn tại, đóng cuộc gọi");
+                leaveCall();
+                return;
+            }
+
+            // Kiểm tra xem có remote stream không
+            if (!remoteStream || remoteStream.getTracks().length === 0) {
+                const callStartTime = parseInt(localStorage.getItem("callStartTime") || "0", 10);
+                const callDuration = Date.now() - callStartTime;
+                
+                // Chỉ cảnh báo nếu cuộc gọi đã kéo dài ít nhất 5 giây (tránh false positive lúc khởi tạo)
+                if (callDuration > 5000) {
+                    console.warn("[CallContext] Watchdog: Remote stream mất, auto-closing call");
+                    leaveCall();
+                }
+            }
+        }, 3000); // Check mỗi 3 giây
+
+        return () => clearInterval(watchdogInterval);
+    }, [callAccepted, callEnded, remoteStream]);
 
     useEffect(() => {
         if (!socket) return;
@@ -386,30 +454,46 @@ export const CallProvider = ({ children }) => {
         };
 
         const handleCallEnded = () => {
-            if (callStateRef.current === CALL_STATES.IDLE) return;
+            console.log("[CallContext] Nhận được sự kiện callEnded từ server");
+            // Đặt trạng thái cuộc gọi kết thúc ngay lập tức
+            setCallEnded(true);
+            setCall((prev) => ({ ...prev, isReceivingCall: false }));
+            
+            // Dọn dẹp kết nối và lưu trữ
             cleanupConnection();
             clearStoredCallState();
+            
+            console.log("[CallContext] Hoàn tất xử lý callEnded");
         };
 
         const handleCallTimeout = ({ callId: timeoutCallId }) => {
-            if (callStateRef.current === CALL_STATES.IDLE) return;
             const currentCallId = localStorage.getItem("tempCallId");
             if (timeoutCallId && currentCallId && timeoutCallId !== currentCallId) return;
             toast.error("Không có phản hồi từ đối phương.");
+            setCall((prev) => ({ ...prev, isReceivingCall: false }));
             cleanupConnection();
             clearStoredCallState();
         };
 
         const handleCallRejected = () => {
-            if (callStateRef.current === CALL_STATES.IDLE) return;
             setIsCalling(false);
             toast.info("Người dùng bận hoặc từ chối.");
+            setCall((prev) => ({ ...prev, isReceivingCall: false }));
             cleanupConnection();
             clearStoredCallState();
         };
 
         const handleUpdateMediaStatus = ({ cam, mic }) => {
             setPartnerMediaStatus({ cam, mic });
+        };
+
+        const handleOutgoingCallCreated = ({ callId: createdCallId, userToCall }) => {
+            if (!createdCallId) return;
+            setCallId(createdCallId);
+            localStorage.setItem("tempCallId", createdCallId);
+            if (userToCall) {
+                localStorage.setItem("activePartnerUserId", userToCall);
+            }
         };
 
         // Lưu callId từ server khi nhận callHistorySync (outgoing call)
@@ -425,6 +509,7 @@ export const CallProvider = ({ children }) => {
         socket.on("callTimeout", handleCallTimeout);
         socket.on("callRejected", handleCallRejected);
         socket.on("updateMediaStatus", handleUpdateMediaStatus);
+        socket.on("outgoingCallCreated", handleOutgoingCallCreated);
         socket.on("callHistorySync", handleCallHistorySync);
 
         return () => {
@@ -434,6 +519,7 @@ export const CallProvider = ({ children }) => {
             socket.off("callTimeout", handleCallTimeout);
             socket.off("callRejected", handleCallRejected);
             socket.off("updateMediaStatus", handleUpdateMediaStatus);
+            socket.off("outgoingCallCreated", handleOutgoingCallCreated);
             socket.off("callHistorySync", handleCallHistorySync);
         };
     }, [socket]);
