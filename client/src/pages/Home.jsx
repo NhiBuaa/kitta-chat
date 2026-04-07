@@ -12,6 +12,7 @@ import GroupMembersModal from "../components/GroupMembersModal";
 import ChatInput from "../components/ChatInput";
 import { FilePicker } from "../components/FilePicker";
 import Loader from "../components/deco/Loader";
+import CallHistoryModal from "../components/CallHistoryModal";
 
 // Context & Services
 import { useSocket } from "../context/SocketContext";
@@ -49,6 +50,7 @@ const Home = () => {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showGroupMembers, setShowGroupMembers] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showCallHistoryModal, setShowCallHistoryModal] = useState(false);
 
   // Refs (dùng trong closures của socket handlers)
   const activeChatRef = useRef(null);
@@ -63,9 +65,11 @@ const Home = () => {
 
   // Context / global hooks
   const { onlineUsers, socket } = useSocket();
-  const { uploadQueue, addFiles, clearUploads, removeUploadItem } =
-    useUploader();
-  const API_URL = import.meta.env.VITE_API_URL;
+  const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
+
+  const API_URL_USERS = import.meta.env.VITE_API_URL_USERS || '/api/users';
+  const API_URL_MESSAGES = import.meta.env.VITE_API_URL_MESSAGES || '/api/messages';
+  const API_URL_GROUPS = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
 
   // Computed values
   const currentChatUser = activeChat
@@ -81,14 +85,11 @@ const Home = () => {
     : null;
 
   // Utility fns
-  const getAvatarUrl = useCallback(
-    (avatarPath) => {
-      if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
-      if (avatarPath.startsWith("http")) return avatarPath;
-      return `${API_URL}/${avatarPath.replace(/^\/+/, "")}`;
-    },
-    [API_URL],
-  );
+  const getAvatarUrl = useCallback((avatarPath) => {
+    if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
+    if (avatarPath.startsWith("http")) return avatarPath;
+    return `/uploads${avatarPath}`;
+  }, []);
 
   const { checkIsOnline } = usePresence();
 
@@ -148,7 +149,7 @@ const Home = () => {
     markFriendRequestSent,
     clearSentFriendRequest,
     handleAddFriend,
-  } = useFriendActions({ API_URL, setUsers, setActiveChat, setSentRequests });
+  } = useFriendActions({ API_URL: API_URL_USERS, setUsers, setActiveChat, setSentRequests });
 
   // Compose patchUserEverywhere: patches users + searchResult + activeChat
   const patchUserEverywhere = useCallback(
@@ -164,10 +165,7 @@ const Home = () => {
 
   // Search hook
   const { searchTerm, setSearchTerm, isSearching, usersToDisplay } = useSearch({
-    API_URL,
-    users,
-    searchResult,
-    setSearchResult,
+    API_URL: API_URL_USERS, users, searchResult, setSearchResult,
   });
 
   // Scroll hook
@@ -196,19 +194,9 @@ const Home = () => {
     loadMoreMessages,
     resetChatState,
   } = useChatMessages({
-    activeChat,
-    currentUser,
-    socket,
-    API_URL,
-    uploadQueue,
-    clearUploads,
-    armAutoScrollLock,
-    scrollRef,
-    setHasNewUnread,
-    setUsers,
-    fetchNewConversation,
-    scrollChatToBottom,
-    setShowEmoji,
+    activeChat, currentUser, socket, API_URL: API_URL_MESSAGES,
+    uploadQueue, clearUploads, armAutoScrollLock, scrollRef,
+    setHasNewUnread, setUsers, fetchNewConversation, scrollChatToBottom, setShowEmoji,
   });
 
   // Typing hook
@@ -246,16 +234,9 @@ const Home = () => {
   });
 
   useMessageSocket({
-    socket,
-    currentUser,
-    activeChatRef,
-    setMessages,
-    setUsers,
-    setGroups,
-    setHasNewUnread,
-    scrollRef,
-    fetchNewConversation,
-    setSearchResult,
+    socket, currentUser, activeChatRef,
+    setMessages, setUsers, setGroups, setHasNewUnread,
+    scrollRef, scrollChatToBottom, fetchNewConversation, setSearchResult,
   });
 
   // Initial data fetch
@@ -269,9 +250,9 @@ const Home = () => {
         }
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const [profileRes, sidebarRes, requestRes] = await Promise.all([
-          axios.get(`${API_URL}/api/users/profile`, config),
-          axios.get(`${API_URL}/api/users/sidebar-list`, config),
-          axios.get(`${API_URL}/api/users/friend-requests`, config),
+          axios.get(`/api/users/profile`, config),
+          axios.get(`/api/users/sidebar-list`, config),
+          axios.get(`/api/users/friend-requests`, config),
         ]);
         if (profileRes.data.success) setCurrentUser(profileRes.data.user);
         if (sidebarRes.data.success) {
@@ -297,7 +278,7 @@ const Home = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await axios.get(`${API_URL}/api/groups`, {
+        const res = await axios.get(`/api/groups`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) setGroups(res.data.groups);
@@ -308,7 +289,7 @@ const Home = () => {
 
     fetchData();
     fetchGroups();
-  }, [API_URL]);
+  }, [API_URL_USERS, API_URL_MESSAGES, API_URL_GROUPS]);
 
   // Sync online status vào users list
   useEffect(() => {
@@ -320,6 +301,21 @@ const Home = () => {
       })),
     );
   }, [onlineUsers, users.length]);
+
+  // Listen for "open-chat-with" event from MissedCallToast → open conversation
+  useEffect(() => {
+    const handler = (e) => {
+      const { userId } = e.detail || {};
+      if (!userId) return;
+      const target = users.find((u) => u._id === userId || u.id === userId);
+      if (target) {
+        setActiveChat(target);
+        setShowCallHistoryModal(false);
+      }
+    };
+    window.addEventListener('open-chat-with', handler);
+    return () => window.removeEventListener('open-chat-with', handler);
+  }, [users]);
 
   // Join / leave group socket room khi đổi chat
   useEffect(() => {
@@ -370,8 +366,10 @@ const Home = () => {
       return;
     }
     const chatUserId = currentChatUser._id || currentChatUser.id;
-    const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}`;
+    const sessionId = Date.now();
+    const url = `/call/${chatUserId}?name=${encodeURIComponent(currentChatUser.displayName)}&avatar=${encodeURIComponent(currentChatUser.avatar)}&type=${type}&session=${sessionId}`;
     localStorage.setItem("activePartnerUserId", chatUserId);
+    localStorage.setItem("tempCallType", type);
     window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
@@ -427,6 +425,7 @@ const Home = () => {
           checkIsOnline={checkIsOnline}
           renderLastMessage={renderLastMessage}
           handleAddFriend={handleAddFriend}
+          setShowCallHistoryModal={setShowCallHistoryModal}
         />
       </div>
 
@@ -454,7 +453,6 @@ const Home = () => {
               typingUserAvatar={typingUserAvatar}
               scrollRef={scrollRef}
               bottomRef={bottomRef}
-              API_URL={API_URL}
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
               handleCall={handleCall}
@@ -529,6 +527,12 @@ const Home = () => {
           }}
         />
       )}
+
+      <CallHistoryModal
+        isOpen={showCallHistoryModal}
+        onClose={() => setShowCallHistoryModal(false)}
+        currentUser={currentUser}
+      />
     </div>
   );
 };

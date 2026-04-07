@@ -9,13 +9,16 @@ import {
   FaCheckDouble,
   FaPaperclip,
   FaArrowDown,
-  FaExclamationTriangle
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import UserStatus from "./UserStatus";
 import { formatTimeAgo } from "../utils/formatTime";
 import { getUserDisplayName } from "../utils/getUserDisplayName";
 import Loader from "./deco/Loader";
 import MessageSeenBy from './MessageSeenBy';
+import OfflineBanner from "./OfflineBanner";
+import CallLogItem from "./CallLogItem";
+
 
 const ChatWindow = ({
   activeChat,
@@ -41,7 +44,7 @@ const ChatWindow = ({
   isLoadingMore,
   isChatBootstrapping = false,
   setHasNewUnread,
-  hasNewUnread
+  hasNewUnread,
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -92,7 +95,13 @@ const ChatWindow = ({
     return () => {
       observer.disconnect();
     };
-  }, [activeChat?._id, isChatBootstrapping, isLoadingMore, loadMoreMessages, scrollRef]);
+  }, [
+    activeChat?._id,
+    isChatBootstrapping,
+    isLoadingMore,
+    loadMoreMessages,
+    scrollRef,
+  ]);
 
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
@@ -105,12 +114,11 @@ const ChatWindow = ({
       onUserMovedAwayFromBottom?.();
     } else {
       setShowScrollButton(false);
-      setHasNewUnread(false)
+      setHasNewUnread(false);
     }
 
     // Nếu kéo lên trên thì hiện load thêm tin nhắn
   };
-
 
   if (!activeChat || !currentChatUser) {
     return (
@@ -125,6 +133,9 @@ const ChatWindow = ({
 
   return (
     <>
+      {/* OFFLINE BANNER */}
+      <OfflineBanner />
+
       {/* CHAT HEADER */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
@@ -193,7 +204,7 @@ const ChatWindow = ({
       </div>
 
       <div
-        className="flex-1 overflow-y-auto p-6 space-y-4 relative"
+        className="flex-1 overflow-y-auto p-6 space-y-4 relative bg-gradient-to-b from-gray-50 via-white to-gray-100"
         ref={scrollRef}
         onScroll={handleScroll}
       >
@@ -205,8 +216,14 @@ const ChatWindow = ({
             </div>
           </div>
         )}
-        <div className={isChatBootstrapping ? "opacity-0 pointer-events-none" : "opacity-100"}>
-          {/* Hiển thị chú chuột Hamster khi đang kéo thêm */}
+        <div
+          className={
+            isChatBootstrapping
+              ? "opacity-0 pointer-events-none"
+              : "opacity-100"
+          }
+        >
+          {/* Hiển thị Loader */}
           {isLoadingMore && (
             <div className="flex flex-col items-center justify-center py-4 bg-transparent">
               <div className="scale-[0.3] origin-center h-12 flex items-center justify-center">
@@ -214,6 +231,27 @@ const ChatWindow = ({
               </div>
             </div>
           )}
+
+          {/* hiện hình với tên như ở fb khi chưa chat */}
+          {Array.isArray(messages) &&
+            messages.length === 0 &&
+            !isChatBootstrapping && (
+              <div className="flex flex-col items-center mt-16 opacity-80">
+                <img
+                  src={getAvatarUrl(currentChatUser.avatar)}
+                  className="w-16 h-16 rounded-full mb-3 shadow"
+                  alt="avatar"
+                />
+
+                <h2 className="text-gray-700 font-semibold">
+                  {getUserDisplayName(currentChatUser)}
+                </h2>
+
+                <p className="text-sm text-gray-400 mt-1">
+                  Các bạn đã là bạn bè trên KittaChat
+                </p>
+              </div>
+            )}
 
           {Array.isArray(messages) && messages.map((message, index) => {
             const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
@@ -223,12 +261,16 @@ const ChatWindow = ({
             const senderName = getUserDisplayName(senderInfo);
             const senderAvatar = senderInfo?.avatar || activeChat.avatar;
             const isSystemMessage = message.type === "system";
+            const isCallLogMessage = message.type === "call_log" && message.callData;
             const isSending = message.status === "sending";
             const isError = message.status === "error";
+            const retryCount = message.retryCount || 0;
+            const isMaxRetry = retryCount >= 3;
+            const uniqueKey = message._id || `temp-${index}`;
 
             if (isSystemMessage) {
               return (
-                <div key={index} className="flex justify-center my-4">
+                <div key={uniqueKey} className="flex justify-center my-4">
                   <div className="bg-gray-200 text-gray-600 text-xs px-4 py-1 rounded-full flex items-center shadow-sm">
                     {message.text}
                   </div>
@@ -236,8 +278,27 @@ const ChatWindow = ({
               );
             }
 
+            if (isCallLogMessage) {
+              return (
+                <div key={uniqueKey}>
+                  <CallLogItem
+                    log={message}
+                    currentUser={currentUser}
+                    chatPartner={currentChatUser}
+                    onRecall={(_, callType) => handleCall(callType)}
+                  />
+                  <div
+                    className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
+                      }`}
+                  >
+                    {formatTimeAgo(message.createdAt)}
+                  </div>
+                </div>
+              );
+            }
+
             return (
-              <div key={index}>
+              <div key={uniqueKey}>
                 {isGroup && !isMe && senderInfo && (
                   <div className="flex items-center ml-2 mb-1">
                     <span className="text-xs font-semibold text-gray-600">
@@ -331,13 +392,31 @@ const ChatWindow = ({
                           <span className="text-[10px] text-green-200 italic">Đang gửi...</span>
                         )}
 
-                        {isError && (
-                          <span
+                        {isError && !isMaxRetry && (
+                          <button
                             onClick={() => handleRetryMessage(message)}
-                            title="Gửi lại"
-                            className="text-[10px] text-red-200 font-bold flex items-center gap-1 cursor-pointer">
+                            title="Nhấn để gửi lại"
+                            className="flex items-center gap-1 text-[10px] text-red-300 font-semibold hover:text-red-200 transition-colors cursor-pointer bg-transparent border-none p-0"
+                          >
                             <FaExclamationTriangle />
-                            Lỗi gửi
+                            Gửi lại
+                          </button>
+                        )}
+
+                        {isError && isMaxRetry && (
+                          <span className="flex items-center gap-1 text-[10px] text-red-300 italic">
+                            <FaExclamationTriangle />
+                            Không gửi được
+                            {message.text && (
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(message.text);
+                                }}
+                                className="underline hover:text-red-200 ml-1 bg-transparent border-none cursor-pointer p-0"
+                              >
+                                Sao chép
+                              </button>
+                            )}
                           </span>
                         )}
 

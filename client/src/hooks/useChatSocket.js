@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { toast } from "react-toastify";
+import { audioManager } from "../utils/AudioManager";
 
 export const useChatSocket = ({
     socket,
@@ -78,7 +79,10 @@ export const useChatSocket = ({
                     updatedUsers.unshift(updatedUser);
                     return updatedUsers;
                 } else {
-                    fetchNewConversation(targetId, data.isGroup, data);
+                    fetchNewConversation(
+                        data.isGroup ? `/api/groups/${targetId}` : `/api/users/${targetId}`,
+                        data
+                    );
                     return prevUsers;
                 }
             });
@@ -104,6 +108,7 @@ export const useChatSocket = ({
                 }
                 setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             } else if (data.type !== "system") {
+                audioManager.playMessageNotification();
                 const senderName = data.sender?.displayName || "Ai đó";
                 toast.info(`Tin nhắn mới từ ${senderName}`, { autoClose: 3000, hideProgressBar: true });
             }

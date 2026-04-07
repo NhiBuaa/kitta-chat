@@ -27,7 +27,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
     onConfirm: null,
   });
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
   const token = localStorage.getItem("token");
 
   const adminId =
@@ -67,7 +67,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
         setLoading(true);
         try {
           const res = await axios.post(
-            `${API_URL}/api/groups/${group._id}/remove-member`,
+            `${API_URL}/${group._id}/remove-member`,
             { memberId },
             { headers: { Authorization: `Bearer ${token}` } },
           );
@@ -110,7 +110,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
         setLoading(true);
         try {
           const res = await axios.post(
-            `${API_URL}/api/groups/${group._id}/transfer-admin`,
+            `${API_URL}/${group._id}/transfer-admin`,
             { newAdminId },
             { headers: { Authorization: `Bearer ${token}` } },
           );
@@ -147,7 +147,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
       onConfirm: async () => {
         setLoading(true);
         try {
-          const res = await axios.delete(`${API_URL}/api/groups/${group._id}`, {
+          const res = await axios.delete(`${API_URL}/${group._id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -168,7 +168,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "https://via.placeholder.com/40";
     if (avatar.startsWith("http")) return avatar;
-    return `${API_URL}/../${avatar}`;
+    return `/uploads${avatar}`;
   };
 
   return (

@@ -27,7 +27,7 @@ export const useSearch = ({ API_URL, users, searchResult, setSearchResult }) => 
             try {
                 const token = localStorage.getItem("token");
                 const res = await axios.get(
-                    `${API_URL}/api/users/search?keyword=${encodeURIComponent(searchTerm)}`,
+                    `${API_URL}/search?keyword=${encodeURIComponent(searchTerm)}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 if (res.data.success) setSearchResult(res.data.users);
