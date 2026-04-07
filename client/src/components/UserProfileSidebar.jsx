@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
-const API_URL = import.meta.env.VITE_API_URL;
+const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
-  const URL_UPDATE_PROFILE = `${API_URL}/api/users/profile`;
+  const URL_UPDATE_PROFILE = `${VITE_API_URL_USERS}/profile`;
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
   // Khởi tạo state cho form
   const [formData, setFormData] = useState({
@@ -21,7 +21,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const getAvatarUrl = (avatar) => {
     if (!avatar) return defaultAvatar;
     if (avatar.startsWith("http")) return avatar;
-    return `${API_URL}/${avatar.replace(/^\/+/, "")}`;
+    return `${VITE_API_URL_USERS}/${avatar.replace(/^\/+/, "")}`;
   };
 
   useEffect(() => {
