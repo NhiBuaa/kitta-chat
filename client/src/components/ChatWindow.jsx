@@ -243,41 +243,46 @@ const ChatWindow = ({
                   alt="avatar"
                 />
 
-                <h2 className="text-gray-700 font-semibold">
+                <h2 className="text-gray-800 font-semibold">
                   {getUserDisplayName(currentChatUser)}
                 </h2>
 
-                <p className="text-sm text-gray-400 mt-1">
-                  Các bạn đã là bạn bè trên KittaChat
+                <p className="text-sm text-gray-500 mt-1">
+                  Bắt đầu cuộc trò chuyện bằng những câu chuyện hay!
                 </p>
               </div>
             )}
 
           {Array.isArray(messages) && messages.map((message, index) => {
+            // 1. KHỞI TẠO BIẾN
             const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
             const isMe = senderId === currentUser._id;
             const isGroup = Boolean(activeChat.members);
             const senderInfo = typeof message.sender === "object" ? message.sender : null;
             const senderName = getUserDisplayName(senderInfo);
             const senderAvatar = senderInfo?.avatar || activeChat.avatar;
+
             const isSystemMessage = message.type === "system";
-            const isCallLogMessage = message.type === "call_log" && message.callData;
+            const isCallLogMessage = message.type === "call_log"; // Đảm bảo biến này được khai báo
+
             const isSending = message.status === "sending";
             const isError = message.status === "error";
             const retryCount = message.retryCount || 0;
             const isMaxRetry = retryCount >= 3;
             const uniqueKey = message._id || `temp-${index}`;
 
+            // 2. RENDER: TIN NHẮN HỆ THỐNG
             if (isSystemMessage) {
               return (
                 <div key={uniqueKey} className="flex justify-center my-4">
                   <div className="bg-gray-200 text-gray-600 text-xs px-4 py-1 rounded-full flex items-center shadow-sm">
-                    {message.text}
+                    {message.text ? message.text.replace(/^\s+/, "").replace(/\s+$/, "") : ""}
                   </div>
                 </div>
               );
             }
 
+            // 3. RENDER: BONG BÓNG LỊCH SỬ CUỘC GỌI
             if (isCallLogMessage) {
               return (
                 <div key={uniqueKey}>
@@ -287,18 +292,17 @@ const ChatWindow = ({
                     chatPartner={currentChatUser}
                     onRecall={(_, callType) => handleCall(callType)}
                   />
-                  <div
-                    className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
-                      }`}
-                  >
+                  <div className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"}`}>
                     {formatTimeAgo(message.createdAt)}
                   </div>
                 </div>
               );
             }
 
+            // 4. RENDER: TIN NHẮN CHAT BÌNH THƯỜNG (MẶC ĐỊNH)
             return (
               <div key={uniqueKey}>
+                {/* Tên người gửi trong Group */}
                 {isGroup && !isMe && senderInfo && (
                   <div className="flex items-center ml-2 mb-1">
                     <span className="text-xs font-semibold text-gray-600">
@@ -308,6 +312,7 @@ const ChatWindow = ({
                 )}
 
                 <div className={`flex ${isMe ? "justify-end" : ""}`}>
+                  {/* Avatar người gửi (Chat 1-1) */}
                   {!isMe && !isGroup && (
                     <img
                       src={getAvatarUrl(activeChat.avatar)}
@@ -316,6 +321,7 @@ const ChatWindow = ({
                     />
                   )}
 
+                  {/* Avatar người gửi (Group Chat) */}
                   {!isMe && isGroup && (
                     <img
                       src={getAvatarUrl(senderAvatar)}
@@ -324,14 +330,15 @@ const ChatWindow = ({
                     />
                   )}
 
+                  {/* Nội dung Bong bóng chat */}
                   <div
-                    className={`p-3 max-w-xs shadow-sm text-sm transition-opacity duration-300 ${isMe
+                    className={`p-3 max-w-xs w-fit shadow-sm text-sm transition-opacity duration-300 ${isMe
                       ? "bg-green-600 text-white rounded-l-2xl rounded-br-2xl"
                       : "bg-white text-gray-800 border border-gray-100 rounded-r-2xl rounded-bl-2xl"
                       } ${isSending ? "opacity-70" : "opacity-100"} ${isError ? "border-2 border-red-400" : ""
                       }`}
                   >
-                    {/* Render files */}
+                    {/* Files đính kèm */}
                     {message.attachments && message.attachments.length > 0 && (
                       <div className="flex flex-col gap-2 mb-2">
                         {message.attachments.map((file) => {
@@ -370,22 +377,21 @@ const ChatWindow = ({
                                 }`}
                             >
                               <FaPaperclip className="text-lg" />
-                              <span className="truncate">
-                                {file.originalName}
-                              </span>
+                              <span className="truncate">{file.originalName}</span>
                             </a>
                           );
                         })}
                       </div>
                     )}
 
-                    {/* Render tin nhắn */}
+                    {/* Text tin nhắn */}
                     {message.text && (
                       <div className="break-words overflow-hidden whitespace-pre-wrap leading-relaxed">
-                        {message.text}
+                        {message.text.replace(/^\s+/, "").replace(/\s+$/, "")}
                       </div>
                     )}
 
+                    {/* Trạng thái gửi / Lỗi / Đã xem */}
                     {isMe && (
                       <div className="self-end mt-1 flex justify-end items-center gap-1">
                         {isSending && (
@@ -422,29 +428,26 @@ const ChatWindow = ({
 
                         {(!message.status || message.status === "sent") && (
                           <>
-                            {!isGroup && (
-                              message.isRead ? (
+                            {!isGroup &&
+                              (message.isRead ? (
                                 <FaCheckDouble className="text-xs text-blue-200 inline-block" />
                               ) : (
                                 <FaCheck className="text-xs text-green-200 inline-block" />
-                              )
-                            )}
+                              ))}
                           </>
                         )}
                       </div>
                     )}
                   </div>
                 </div>
+
                 {/* Những người đã xem trong group */}
                 {isMe && isGroup && message.readBy && message.readBy.length > 0 && (() => {
-                  // Lọc và biến đổi danh sách ID thành danh sách Object User đầy đủ
-                  const fullViewersData = message.readBy.map(reader => {
+                  const fullViewersData = message.readBy.map((reader) => {
                     const readerId = typeof reader === "object" ? reader._id : reader;
-                    // Tìm user từ danh sách members hoặc users
-                    const userObj = activeChat?.members?.find(m => m._id === readerId) ||
-                      users.find(u => u._id === readerId);
-
-                    // Nếu tìm thấy thì trả về đủ thông tin, nếu không thì trả về object mặc định chống crash
+                    const userObj =
+                      activeChat?.members?.find((m) => m._id === readerId) ||
+                      users.find((u) => u._id === readerId);
                     return userObj ? userObj : { _id: readerId, displayName: "User", avatar: "" };
                   });
 
@@ -458,6 +461,8 @@ const ChatWindow = ({
                     </div>
                   );
                 })()}
+
+                {/* Thời gian gửi */}
                 <div
                   className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"
                     }`}
@@ -467,6 +472,7 @@ const ChatWindow = ({
               </div>
             );
           })}
+
           <div ref={bottomRef}></div>
 
           {/* hiển thị trạng thái đang nhập tin nhắn */}

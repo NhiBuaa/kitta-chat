@@ -10,6 +10,12 @@ import EmojiPicker from "emoji-picker-react";
 import { UploadItem } from "../components/UploadItem";
 import { FilePicker } from "./FilePicker";
 
+const cleanMessage = (text) => {
+  return text
+    .replace(/^\s+/, "") // bỏ khoảng trắng + xuống dòng đầu
+    .replace(/\s+$/, ""); // bỏ khoảng trắng + xuống dòng cuối
+};
+
 const ChatInput = ({
   showEmoji,
   setShowEmoji,
@@ -36,6 +42,11 @@ const ChatInput = ({
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  useEffect(() => {
+    if (!newMessage && textareaRef.current) {
+      textareaRef.current.style.height = "20px";
+    }
+  }, [newMessage]);
   return (
     <div className="bg-white p-4 border-t border-gray-200 relative shrink-0">
       {/* KHU VỰC HIỂN THỊ FILE ĐANG TẢI LÊN */}
@@ -70,7 +81,15 @@ const ChatInput = ({
 
       {/* FORM NHẬP LIỆU */}
       <form
-        onSubmit={handleSendMessage}
+        onSubmit={(e) => {
+          e.preventDefault();
+
+          const cleaned = cleanMessage(newMessage);
+
+          if (!cleaned && uploadQueue.length === 0) return;
+
+          handleSendMessage(e, cleaned);
+        }}
         className="flex items-center bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm focus-within:shadow-md focus-within:border-green-400 transition"
       >
         <div className="flex items-center">
@@ -109,16 +128,26 @@ const ChatInput = ({
           ref={textareaRef}
           placeholder="Nhập tin nhắn..."
           //gõ quá dài thì sẽ tăng h, dài quá thì có thể cuộn
-          className="flex-1 self-center bg-transparent focus:outline-none text-sm px-2 leading-[20px] resize-none overflow-y-auto max-h-[80px] break-all"
+          className="flex-1 self-center bg-transparent focus:outline-none text-sm px-2 leading-[20px] resize-none overflow-y-auto max-h-[80px] break-words"
           value={newMessage}
           onChange={(e) => {
+            const value = e.target.value;
+
+            if (!value.trim()) {
+              e.target.style.height = "20px";
+            }
             handleInputChange(e);
             setShowEmoji(false);
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault(); //chặn xún dòng khi enter shift
-              handleSendMessage(e);
+              // chặn spam rỗng
+              const cleaned = cleanMessage(newMessage);
+
+              if (!cleaned && uploadQueue.length === 0) return;
+
+              handleSendMessage(e, cleaned);
             }
           }}
           onInput={(e) => {
@@ -132,10 +161,10 @@ const ChatInput = ({
         {/* nut gui  */}
         <button
           type="submit"
-          disabled={!newMessage.trim() && uploadQueue.length === 0}
+          disabled={!cleanMessage(newMessage) && uploadQueue.length === 0}
           className={`ml-3 w-9 h-9 flex items-center justify-center rounded-full shadow transition transform
     ${
-      newMessage.trim() || uploadQueue.length > 0
+      cleanMessage(newMessage) || uploadQueue.length > 0
         ? "bg-green-500 hover:bg-green-600 text-white hover:scale-110"
         : "bg-gray-300 text-gray-400 cursor-not-allowed"
     }`}
