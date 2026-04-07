@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
-
+const API_URL = import.meta.env.VITE_API_URL;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
-  const URL_UPDATE_PROFILE = `${import.meta.env.VITE_API_URL_USERS || '/api/users'}/profile`;
+  const URL_UPDATE_PROFILE = `${API_URL}/api/users/profile`;
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
   // Khởi tạo state cho form
   const [formData, setFormData] = useState({
@@ -17,6 +17,13 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
 
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const getAvatarUrl = (avatar) => {
+    if (!avatar) return defaultAvatar;
+    if (avatar.startsWith("http")) return avatar;
+    return `${API_URL}/${avatar.replace(/^\/+/, "")}`;
+  };
+
   useEffect(() => {
     if (user && isOpen) {
       setFormData({
@@ -25,7 +32,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
         isOnline:
           user.activityStatus?.state === "online" ||
           user.activityStatus?.state === "active",
-        avatarPreview: user.avatar || "",
+        avatarPreview: getAvatarUrl(user.avatar),
         avatarFile: null,
       });
     }
@@ -54,7 +61,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
         maxSizeMB: 0.2,
         maxWidthOrHeight: 512,
         useWebWorker: true,
-        fileType: "image/webp",
+        typeFile: "image/webp",
       };
 
       // Nén
@@ -223,21 +230,19 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
               <div className="flex bg-gray-100 p-1 rounded-lg">
                 <button
                   onClick={() => handleChange("isOnline", true)}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    formData.isOnline
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${formData.isOnline
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   Bật trạng thái hoạt động
                 </button>
                 <button
                   onClick={() => setShowConfirm(true)}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    !formData.isOnline
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!formData.isOnline
                       ? "bg-white text-gray-700 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   Tắt trạng thái hoạt động
                 </button>

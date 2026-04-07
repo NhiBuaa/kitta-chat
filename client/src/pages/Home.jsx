@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-// Components 
+// Components
 import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import UserProfileSidebar from "../components/UserProfileSidebar";
@@ -27,7 +27,7 @@ import { useTyping } from "../hooks/useTyping";
 import { useFriendSocket } from "../hooks/useFriendSocket";
 import { useGroupSocket } from "../hooks/useGroupSocket";
 import { useMessageSocket } from "../hooks/useMessageSocket";
-import { usePresence } from '../hooks/usePresence';
+import { usePresence } from "../hooks/usePresence";
 
 const Home = () => {
   // Core state
@@ -56,8 +56,12 @@ const Home = () => {
   const activeChatRef = useRef(null);
   const groupsRef = useRef([]);
 
-  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
-  useEffect(() => { groupsRef.current = groups; }, [groups]);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
+  useEffect(() => {
+    groupsRef.current = groups;
+  }, [groups]);
 
   // Context / global hooks
   const { onlineUsers, socket } = useSocket();
@@ -95,8 +99,13 @@ const Home = () => {
     const { content, senderId } = user.lastMessage;
     const isMe = senderId === currentUserId;
     return (
-      <span className={user.hasUnread ? "text-gray-900 font-semibold" : "text-gray-500"}>
-        {isMe ? "Bạn: " : ""}{content}
+      <span
+        className={
+          user.hasUnread ? "text-gray-900 font-semibold" : "text-gray-500"
+        }
+      >
+        {isMe ? "Bạn: " : ""}
+        {content}
       </span>
     );
   };
@@ -121,8 +130,13 @@ const Home = () => {
     if (activeChatRef.current?._id === incomingGroup._id) {
       setActiveChat((prev) =>
         prev
-          ? { ...prev, ...incomingGroup, members: incomingGroup.members || prev.members, admin: incomingGroup.admin || prev.admin }
-          : prev
+          ? {
+              ...prev,
+              ...incomingGroup,
+              members: incomingGroup.members || prev.members,
+              admin: incomingGroup.admin || prev.admin,
+            }
+          : prev,
       );
     }
   }, []);
@@ -138,11 +152,16 @@ const Home = () => {
   } = useFriendActions({ API_URL: API_URL_USERS, setUsers, setActiveChat, setSentRequests });
 
   // Compose patchUserEverywhere: patches users + searchResult + activeChat
-  const patchUserEverywhere = useCallback((targetUserId, updater) => {
-    if (!targetUserId) return;
-    patchUsers(targetUserId, updater);
-    setSearchResult((prev) => prev.map((u) => (u?._id === targetUserId ? updater(u) : u)));
-  }, [patchUsers]);
+  const patchUserEverywhere = useCallback(
+    (targetUserId, updater) => {
+      if (!targetUserId) return;
+      patchUsers(targetUserId, updater);
+      setSearchResult((prev) =>
+        prev.map((u) => (u?._id === targetUserId ? updater(u) : u)),
+      );
+    },
+    [patchUsers],
+  );
 
   // Search hook
   const { searchTerm, setSearchTerm, isSearching, usersToDisplay } = useSearch({
@@ -151,16 +170,29 @@ const Home = () => {
 
   // Scroll hook
   const {
-    scrollRef, bottomRef, hasNewUnread, setHasNewUnread,
-    scrollChatToBottom, handleScrollToBottom, armAutoScrollLock,
-    handleMediaContentLoad, handleUserMovedAwayFromBottom,
+    scrollRef,
+    bottomRef,
+    hasNewUnread,
+    setHasNewUnread,
+    scrollChatToBottom,
+    handleScrollToBottom,
+    armAutoScrollLock,
+    handleMediaContentLoad,
+    handleUserMovedAwayFromBottom,
   } = useScrollBehavior();
 
   // Messages hook
   const {
-    messages, setMessages, newMessage, setNewMessage,
-    isLoadingMore, isChatBootstrapping,
-    handleSendMessage, handleRetryMessage, loadMoreMessages, resetChatState,
+    messages,
+    setMessages,
+    newMessage,
+    setNewMessage,
+    isLoadingMore,
+    isChatBootstrapping,
+    handleSendMessage,
+    handleRetryMessage,
+    loadMoreMessages,
+    resetChatState,
   } = useChatMessages({
     activeChat, currentUser, socket, API_URL: API_URL_MESSAGES,
     uploadQueue, clearUploads, armAutoScrollLock, scrollRef,
@@ -168,19 +200,37 @@ const Home = () => {
   });
 
   // Typing hook
-  const { isTyping, typingUserName, typingUserAvatar, handleInputChange } = useTyping({
-    socket, activeChat, currentUser, activeChatRef, newMessage, setNewMessage, activeChatKey,
-  });
+  const { isTyping, typingUserName, typingUserAvatar, handleInputChange } =
+    useTyping({
+      socket,
+      activeChat,
+      currentUser,
+      activeChatRef,
+      newMessage,
+      setNewMessage,
+      activeChatKey,
+    });
 
   // Socket hooks
   useFriendSocket({
-    socket, currentUser, setRequestCount,
-    patchUserEverywhere, markFriendRequestSent, markFriendshipActive, clearSentFriendRequest,
+    socket,
+    currentUser,
+    setRequestCount,
+    patchUserEverywhere,
+    markFriendRequestSent,
+    markFriendshipActive,
+    clearSentFriendRequest,
   });
 
   useGroupSocket({
-    socket, currentUser, activeChat, groupsRef,
-    setActiveChat, setGroups, setShowGroupMembers, upsertGroup,
+    socket,
+    currentUser,
+    activeChat,
+    groupsRef,
+    setActiveChat,
+    setGroups,
+    setShowGroupMembers,
+    upsertGroup,
   });
 
   useMessageSocket({
@@ -194,7 +244,10 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) { window.location.href = "/login"; return; }
+        if (!token) {
+          window.location.href = "/login";
+          return;
+        }
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const [profileRes, sidebarRes, requestRes] = await Promise.all([
           axios.get(`/api/users/profile`, config),
@@ -204,9 +257,12 @@ const Home = () => {
         if (profileRes.data.success) setCurrentUser(profileRes.data.user);
         if (sidebarRes.data.success) {
           const list = sidebarRes.data.users || sidebarRes.data.friends || [];
-          setUsers(list.map((u) => ({ ...u, unreadCount: u.unreadCount || 0 })));
+          setUsers(
+            list.map((u) => ({ ...u, unreadCount: u.unreadCount || 0 })),
+          );
         }
-        if (requestRes.data.success) setRequestCount(requestRes.data.requests.length);
+        if (requestRes.data.success)
+          setRequestCount(requestRes.data.requests.length);
       } catch (error) {
         console.error("[Home] fetchData error:", error);
         if (error.response?.status === 401) {
@@ -226,7 +282,9 @@ const Home = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) setGroups(res.data.groups);
-      } catch (error) { console.error("[Home] fetchGroups error:", error); }
+      } catch (error) {
+        console.error("[Home] fetchGroups error:", error);
+      }
     };
 
     fetchData();
@@ -240,7 +298,7 @@ const Home = () => {
       prev.map((u) => ({
         ...u,
         isOnline: onlineUsers.some((ou) => String(ou.userId) === String(u._id)),
-      }))
+      })),
     );
   }, [onlineUsers, users.length]);
 
@@ -275,7 +333,8 @@ const Home = () => {
     if (
       currentChat?._id === user?._id &&
       Boolean(currentChat?.members) === Boolean(user?.members)
-    ) return;
+    )
+      return;
 
     resetChatState();
     armAutoScrollLock();
@@ -284,9 +343,11 @@ const Home = () => {
     setUsers((prev) =>
       prev.map((u) => {
         if (u._id !== user._id) return u;
-        const lm = u.lastMessage ? { ...u.lastMessage, isRead: true } : u.lastMessage;
+        const lm = u.lastMessage
+          ? { ...u.lastMessage, isRead: true }
+          : u.lastMessage;
         return { ...u, hasUnread: false, unreadCount: 0, lastMessage: lm };
-      })
+      }),
     );
 
     if (socket) {
@@ -312,17 +373,20 @@ const Home = () => {
     window.open(url, "CallWindow", "width=1200,height=800,noopener,noreferrer");
   };
 
-  const handleCreateGroupSuccess = useCallback((newGroup) => {
-    upsertGroup(newGroup);
-    setActiveChat(newGroup);
-  }, [upsertGroup]);
+  const handleCreateGroupSuccess = useCallback(
+    (newGroup) => {
+      upsertGroup(newGroup);
+      setActiveChat(newGroup);
+    },
+    [upsertGroup],
+  );
 
   const handleLogout = () => {
     if (socket) socket.disconnect();
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     window.dispatchEvent(new Event("auth-changed"));
-    setCurrentUser(null);
+    // setCurrentUser(null);   xóa di để ko bị reset avt khi bấm logout
     window.location.href = "/login";
   };
 
@@ -339,7 +403,9 @@ const Home = () => {
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* ── SIDEBAR ── */}
-      <div className={`${activeChat ? "hidden sm:flex" : "flex"} w-full sm:w-auto h-full`}>
+      <div
+        className={`${activeChat ? "hidden sm:flex" : "flex"} w-full sm:w-auto h-full`}
+      >
         <Sidebar
           currentUser={currentUser}
           setShowProfile={setShowProfile}
@@ -364,7 +430,9 @@ const Home = () => {
       </div>
 
       {/* CHAT AREA */}
-      <div className={`${activeChat ? "flex" : "hidden sm:flex"} flex-1 flex-col bg-gray-50 h-full`}>
+      <div
+        className={`${activeChat ? "flex" : "hidden sm:flex"} flex-1 flex-col bg-gray-50 h-full`}
+      >
         {activeChat && currentChatUser ? (
           <FilePicker
             key={activeChatKey || "empty-chat-picker"}
