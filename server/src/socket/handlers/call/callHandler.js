@@ -5,10 +5,10 @@
  * @param {import("socket.io").Server} io
  */
 const mongoose = require("mongoose");
-const CallHistory = require("../../models/CallHistory");
-const Message = require("../../models/Message");
-const User = require("../../models/User");
-const buildConversationId = require("../../utils/buildConversationId");
+const CallHistory = require("../../../models/CallHistory");
+const Message = require("../../../models/Message");
+const User = require("../../../models/User");
+const buildConversationId = require("../../../utils/buildConversationId");
 
 // CONSTAINS
 const CALL_TIMEOUT_MS = 45_000;
@@ -16,7 +16,7 @@ const CALL_TIMEOUT_MS = 45_000;
 // IN-MEMORY STATE
 const activeTimeouts = new Map();
 const activeSocketCalls = new Map();
-const tempIdToDbId = new Map(); // Map temp callId (from client) to real CallHistory _id
+const tempIdToDbId = new Map();
 
 const callRateLimit = new Map();
 const RATE_LIMIT_CALLS = 10;
