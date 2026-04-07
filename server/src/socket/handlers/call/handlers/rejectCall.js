@@ -67,8 +67,7 @@ const registerRejectCall = (socket, io) => {
     });
 };
 
-// ─── Private helpers ──────────────────────────────────────────────────────────
-
+// Private helpers
 const _cancelTimeout = (callId) => {
     const t = activeTimeouts.get(callId);
     if (t) { clearTimeout(t); activeTimeouts.delete(callId); }

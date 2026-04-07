@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from './SocketContext';
 import { getMissedCalls } from '../services/callService';
 import { CallHistoryContext } from './CallHistoryContext';
@@ -7,6 +7,9 @@ import { showMissedCallToast } from '../utils/toastUtils';
 export const CallHistoryProvider = ({ children }) => {
     const { socket } = useSocket();
     const [missedCount, setMissedCount] = useState(0);
+
+    // Track callIds đã xử lý bởi callHistorySync để tránh duplicate với callLogMessage
+    const processedCallIds = useRef(new Set());
 
     // FETCH MISSED CALLS ON MOUNT
     const fetchMissedCount = useCallback(async () => {
@@ -39,11 +42,11 @@ export const CallHistoryProvider = ({ children }) => {
             console.log("[CallHistoryProvider] callHistorySync received:", JSON.stringify(data));
 
             // Chỉ receiver (direction === 'incoming') mới tăng badge.
-            // Realtime: cả caller và receiver đều nhận isReadByCurrentUser === false
-            // nhưng chỉ receiver mới được tính là "missed" (API /missed chỉ đếm receiver).
             if (data.direction === 'incoming' && data.isReadByCurrentUser === false) {
                 const missedStatuses = ['missed', 'rejected', 'unreachable', 'busy'];
                 if (missedStatuses.includes(data.status)) {
+                    // Đánh dấu callId đã xử lý để callLogMessage không tăng trùng
+                    if (data.callId) processedCallIds.current.add(data.callId);
                     setMissedCount((prev) => prev + 1);
                 }
             }
@@ -95,6 +98,11 @@ export const CallHistoryProvider = ({ children }) => {
             const currentUserId = JSON.parse(localStorage.getItem('user') || '{}')._id || JSON.parse(localStorage.getItem('user') || '{}').id;
             const senderId = typeof data.senderId === 'string' ? data.senderId : data.sender?._id?.toString();
             if (senderId === currentUserId) return; // mình là caller → không tăng
+
+            // Bỏ qua nếu callHistorySync đã xử lý rồi (tránh duplicate)
+            const callId = data.callData?.callHistoryId || data.callId;
+            if (callId && processedCallIds.current.has(callId)) return;
+            if (callId) processedCallIds.current.add(callId);
 
             setMissedCount((prev) => prev + 1);
         };

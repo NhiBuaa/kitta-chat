@@ -93,13 +93,13 @@ const emitCallHistorySync = (io, callRecord, triggerUserId) => {
 
         io.to(callerIdStr).emit("callHistorySync", {
             ...base,
-            direction: callerIdStr === triggerUserId ? "outgoing" : "incoming",
+            direction: "outgoing",
         });
         console.log(`[Emitters] -> emitted to caller (direction=outgoing)`);
 
         io.to(receiverIdStr).emit("callHistorySync", {
             ...base,
-            direction: receiverIdStr === triggerUserId ? "incoming" : "outgoing",
+            direction: "incoming",
         });
         console.log(`[Emitters] -> emitted to receiver (direction=incoming)`);
     } catch (err) {
