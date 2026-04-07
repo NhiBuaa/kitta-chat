@@ -159,6 +159,8 @@ export const CallProvider = ({ children }) => {
     };
 
     const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = "video") => {
+        console.log(`[CallContext] callUser START: receiverId=${receiverUserId}, streamExists=${!!localStream}`);
+        
         const userStr = localStorage.getItem("user");
         const freshUser = userStr ? JSON.parse(userStr) : null;
         if (!freshUser) { toast.error("Phiên đăng nhập hết hạn."); return; }
@@ -178,23 +180,42 @@ export const CallProvider = ({ children }) => {
         isOutgoingCallRef.current = true;
         setPartnerMediaStatus({ cam: true, mic: true });
         setCall((prev) => ({ ...prev, userToCall: receiverUserId }));
-        setCallId(null);
+        
+        // Generate temp callId ngay và lưu vào localStorage trước khi peer signal
+        // Điều này đảm bảo callId sẵn sàng nếu A bấm end trước khi server phản hồi outgoingCallCreated
+        const tempCallId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem("tempCallId", tempCallId);
+        setCallId(tempCallId);
+        console.log(`[CallContext] Generated and saved tempCallId: ${tempCallId}`);
 
         localStorage.setItem("activePartnerUserId", receiverUserId);
         localStorage.setItem("callStartTime", new Date().getTime().toString());
+
+        // CRITICAL: Emit initCall event IMMEDIATELY (before peer signal)
+        // This ensures server creates the call record RIGHT NOW with tempCallId mapping
+        // If A cancels before peer.on("signal"), server still has the record
+        socket.emit("initCall", {
+            userToCall: receiverUserId,
+            typeCall: callType,
+            callId: tempCallId,
+            from: socket.id
+        });
+        console.log(`[CallContext] Emitted initCall with tempCallId=${tempCallId}`);
 
         // Client-side timeout đã bỏ — dùng timeout từ BE qua event "callTimeout"
 
         const peer = new Peer({ initiator: true, trickle: false, stream: localStream, config: ICE_SERVERS });
 
         peer.on("signal", (data) => {
+            console.log(`[CallContext] peer.on(signal) fired, emitting callUser with callId=${tempCallId}`);
             socket.emit("callUser", {
                 userToCall: receiverUserId,
                 signalData: data,
                 from: socket.id,
                 callerDbId: freshUser._id || freshUser.id,
                 mediaStatus: { cam: isCamOn, mic: isMicOn },
-                typeCall: callType
+                typeCall: callType,
+                callId: tempCallId
             });
         });
 
@@ -324,8 +345,28 @@ export const CallProvider = ({ children }) => {
             localStorage.getItem("tempCallerUserId");
         const callId = localStorage.getItem("tempCallId") || null;
 
+        console.log(`[CallContext] leaveCall: callAccepted=${callAccepted}, callId=${callId}, partnerUserId=${partnerUserId}`);
+
         if (socket && partnerUserId) {
-            socket.emit("endCall", { to: partnerUserId, callId });
+            // Nếu call chưa được pick up (callAccepted=false) → gọi reject để B nhận "missed"
+            // Nếu call đã được answer (callAccepted=true) → gọi endCall để kết thúc
+            if (!callAccepted) {
+                if (callId) {
+                    console.log("[CallContext] Caller canceled before answer - emit rejectCall with callId");
+                    socket.emit("rejectCall", { to: partnerUserId, callId, reason: "cancelled" });
+                } else {
+                    console.warn("[CallContext] Caller canceled but callId is NULL - CANNOT reject properly!");
+                }
+            } else {
+                if (callId) {
+                    console.log("[CallContext] Caller leaving active call - emit endCall");
+                    socket.emit("endCall", { to: partnerUserId, callId });
+                } else {
+                    console.warn("[CallContext] Caller leaving but callId is NULL - CANNOT end call properly!");
+                }
+            }
+        } else {
+            console.log(`[CallContext] leaveCall: socket or partnerUserId missing, socket=${!!socket}, partnerUserId=${partnerUserId}`);
         }
 
         clearStoredCallState();
@@ -532,9 +573,16 @@ export const CallProvider = ({ children }) => {
             clearStoredCallState();
         };
 
-        const handleCallRejected = () => {
+        const handleCallRejected = ({ reason } = {}) => {
+            console.log(`[CallContext] Nhận được sự kiện callRejected từ server, reason: ${reason}`);
+            
             setIsCalling(false);
-            toast.info("Người dùng bận hoặc từ chối.");
+            
+            // Nếu là "cancelled" (caller hủy trước khi pick up), không hiển thị toast
+            if (reason !== "cancelled") {
+                toast.info("Người dùng bận hoặc từ chối.");
+            }
+            
             setCall((prev) => ({ ...prev, isReceivingCall: false }));
             cleanupConnection();
             clearStoredCallState();

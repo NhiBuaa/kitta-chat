@@ -16,6 +16,7 @@ const CALL_TIMEOUT_MS = 45_000;
 // IN-MEMORY STATE
 const activeTimeouts = new Map();
 const activeSocketCalls = new Map();
+const tempIdToDbId = new Map(); // Map temp callId (from client) to real CallHistory _id
 
 const callRateLimit = new Map();
 const RATE_LIMIT_CALLS = 10;
@@ -326,9 +327,78 @@ const runCleanup = async () => {
 const registerCallHandlers = (socket, io) => {
   const userId = socket.userId;
 
+  // [initCall] - Initialize call record BEFORE peer signal
+  // Client calls this immediately to create record with tempCallId mapping
+  socket.on("initCall", async ({ userToCall, typeCall, callId, from }) => {
+    console.log(`[Call] initCall: ${userId} -> ${userToCall} (${typeCall}), tempCallId: ${callId}`);
+
+    if (!callId || !callId.startsWith("temp_")) {
+      console.warn(`[Call] initCall received invalid callId: ${callId}`);
+      return;
+    }
+
+    try {
+      const conversationId = buildConversationId(userId, userToCall);
+
+      // Create CallHistory record immediately
+      const callRecord = await CallHistory.create({
+        callerId: new mongoose.Types.ObjectId(userId),
+        receiverId: new mongoose.Types.ObjectId(userToCall),
+        conversationId,
+        type: typeCall,
+        status: "pending",
+        startedAt: new Date(),
+      });
+
+      const callRecordId = callRecord._id.toString();
+
+      // Map temp callId to real DB record ID
+      tempIdToDbId.set(callId, callRecordId);
+      console.log(`[Call] initCall: MAPPED temp ${callId} -> ${callRecordId} (record created)`);
+
+      // Bind this socket to the call (for potential later use)
+      bindSocketToCall(socket.id, callRecordId);
+
+      // Start timeout for unanswered calls
+      const timeoutId = setTimeout(async () => {
+        try {
+          const updated = await CallHistory.findOneAndUpdate(
+            { _id: callRecordId, status: "pending" },
+            { status: "missed", endedAt: new Date() },
+            { returnDocument: "after" }
+          ).populate([
+            { path: "callerId", select: "_id displayName avatar username" },
+            { path: "receiverId", select: "_id displayName avatar username" },
+          ]);
+
+          if (updated) {
+            const callLogMessage = await createCallLogMessage(updated);
+            emitCallHistorySync(io, updated, userId);
+            emitCallLogMessage(io, callLogMessage);
+            io.to(userId).emit("callTimeout", { callId: callRecordId });
+            io.to(userToCall).emit("callTimeout", { callId: callRecordId });
+          }
+        } catch (err) {
+          console.error("[Call] initCall timeout error:", err);
+        } finally {
+          activeTimeouts.delete(callRecordId);
+        }
+      }, CALL_TIMEOUT_MS);
+
+      activeTimeouts.set(callRecordId, timeoutId);
+
+    } catch (err) {
+      console.error("[Call] initCall error:", err);
+    }
+  });
+
   // [callUser]
-  socket.on("callUser", async ({ userToCall, signalData, from, name, mediaStatus, typeCall, avatar }) => {
-    console.log(`[Call] callUser: ${userId} -> ${userToCall} (${typeCall})`);
+  socket.on("callUser", async ({ userToCall, signalData, from, name, mediaStatus, typeCall, avatar, callId }) => {
+    console.log(`[Call] callUser: ${userId} -> ${userToCall} (${typeCall}), clientCallId: ${callId}`);
+    
+    if (!callId) {
+      console.warn(`[Call] callUser received WITHOUT callId! This is a problem.`);
+    }
 
     const authenticatedCallerId = userId;
 
@@ -346,18 +416,40 @@ const registerCallHandlers = (socket, io) => {
     try {
       const conversationId = buildConversationId(authenticatedCallerId, userToCall);
 
-      // Tạo CallHistory record ngay khi bắt đầu gọi
-      const callRecord = await CallHistory.create({
-        callerId: new mongoose.Types.ObjectId(authenticatedCallerId),
-        receiverId: new mongoose.Types.ObjectId(userToCall),
-        conversationId,
-        type: typeCall,
-        status: "pending",
-        startedAt: new Date(),
-      });
+      // Check if call record already created by initCall
+      let callRecordId = null;
+      if (callId && callId.startsWith("temp_")) {
+        callRecordId = tempIdToDbId.get(callId);
+        if (callRecordId) {
+          console.log(`[Call] callUser: reusing existing record ${callRecordId} from initCall`);
+        }
+      }
 
-      const callRecordId = callRecord._id.toString();
+      // Only create new record if it doesn't exist yet
+      if (!callRecordId) {
+        console.log(`[Call] callUser: creating NEW CallHistory record (no initCall record found)`);
+        
+        const callRecord = await CallHistory.create({
+          callerId: new mongoose.Types.ObjectId(authenticatedCallerId),
+          receiverId: new mongoose.Types.ObjectId(userToCall),
+          conversationId,
+          type: typeCall,
+          status: "pending",
+          startedAt: new Date(),
+        });
+
+        callRecordId = callRecord._id.toString();
+        console.log(`[Call] callUser: created record ${callRecordId}`);
+        
+        // Map if this is a temp ID (only if NOT already mapped)
+        if (callId && callId.startsWith("temp_") && !tempIdToDbId.has(callId)) {
+          tempIdToDbId.set(callId, callRecordId);
+          console.log(`[Call] callUser: NEW mapping temp ${callId} -> ${callRecordId}`);
+        }
+      }
+
       bindSocketToCall(socket.id, callRecordId);
+      console.log(`[Call] callUser: about to emit outgoingCallCreated with callId=${callRecordId}`);
 
       io.to(authenticatedCallerId).emit("outgoingCallCreated", {
         callId: callRecordId,
@@ -447,31 +539,84 @@ const registerCallHandlers = (socket, io) => {
   // [endCall]
   socket.on("endCall", async ({ to, callId }) => {
     unbindSocketFromCall(socket.id);
-    console.log(`[Call] endCall: ${userId} -> ${to}, callId: ${callId}`);
+    
+    // Resolve real callId if it's a client temp callId
+    let actualCallId = callId;
+    if (callId && callId.startsWith("temp_")) {
+      actualCallId = tempIdToDbId.get(callId);
+      if (actualCallId) {
+        console.log(`[Call] endCall: Resolved temp callId ${callId} -> ${actualCallId}`);
+        tempIdToDbId.delete(callId);
+      } else {
+        console.log(`[Call] endCall: No mapping found for temp callId ${callId}, trying search`);
+        actualCallId = null;
+      }
+    }
+    
+    console.log(`[Call] endCall: ${userId} -> ${to}, callId: ${callId}, actualCallId: ${actualCallId}`);
 
-    if (!callId) return;
+    // FALLBACK: Search for connected call if actualCallId is invalid
+    if (!actualCallId || actualCallId.startsWith("temp_")) {
+      console.log(`[Call] endCall: Invalid actualCallId "${actualCallId}", attempting fallback search...`);
+      actualCallId = null;
+
+      try {
+        const userIdObj = new mongoose.Types.ObjectId(userId);
+        const toIdObj = new mongoose.Types.ObjectId(to);
+        const sixtySecondsAgo = new Date(Date.now() - 60000);
+        
+        console.log(`[Call] endCall fallback search: userId=${userId}, to=${to}`);
+        
+        const connectedCall = await CallHistory.findOne({
+          $or: [
+            { callerId: userIdObj, receiverId: toIdObj },
+            { callerId: toIdObj, receiverId: userIdObj }
+          ],
+          status: { $in: ["pending", "ringing"] },
+          startedAt: { $gte: sixtySecondsAgo }
+        }).lean();
+        
+        if (connectedCall) {
+          actualCallId = connectedCall._id.toString();
+          console.log(`[Call] endCall fallback found: ${actualCallId}`);
+        } else {
+          console.log(`[Call] endCall fallback: NO connected call found`);
+        }
+      } catch (err) {
+        console.error("[Call] endCall fallback search error:", err);
+      }
+    }
+
+    // If still no valid actualCallId, abort
+    if (!actualCallId || actualCallId.startsWith("temp_")) {
+      console.log(`[Call] endCall: Cannot find valid callId, aborting. actualCallId="${actualCallId}"`);
+      return;
+    }
 
     try {
       // Luôn populated callRecord để có đủ thông tin cho emitCallEndedToParticipants
-      const call = await CallHistory.findById(callId).populate([
+      const call = await CallHistory.findById(actualCallId).populate([
         { path: "callerId", select: "_id displayName avatar username" },
         { path: "receiverId", select: "_id displayName avatar username" },
       ]);
       
-      if (!call) return;
+      if (!call) {
+        console.log(`[Call] endCall: CallHistory not found for ${actualCallId}`);
+        return;
+      }
 
       // Đã kết thúc rồi -> ignore nhưng vẫn emit callEnded để chắc chắn
       if (call.endedBy) {
-        console.log(`[Call] endCall idempotent: call ${callId} already ended by ${call.endedBy}`);
-        emitCallEndedToParticipants(io, call, callId);
+        console.log(`[Call] endCall idempotent: call ${actualCallId} already ended by ${call.endedBy}`);
+        emitCallEndedToParticipants(io, call, actualCallId);
         return;
       }
 
       // Cancel timeout nếu còn
-      const timeoutId = activeTimeouts.get(callId);
+      const timeoutId = activeTimeouts.get(actualCallId);
       if (timeoutId) {
         clearTimeout(timeoutId);
-        activeTimeouts.delete(callId);
+        activeTimeouts.delete(timeoutId);
       }
 
       const now = new Date();
@@ -481,7 +626,7 @@ const registerCallHandlers = (socket, io) => {
       }
 
       const updated = await CallHistory.findByIdAndUpdate(
-        callId,
+        actualCallId,
         {
           status: "completed",
           endedBy: new mongoose.Types.ObjectId(userId),
@@ -495,35 +640,156 @@ const registerCallHandlers = (socket, io) => {
       ]);
 
       if (updated) {
+        console.log(`[Call] endCall updated: ${actualCallId} status="completed" (duration=${duration}s)`);
         const callLogMessage = await createCallLogMessage(updated);
         emitCallHistorySync(io, updated, userId);
         emitCallLogMessage(io, callLogMessage);
-        emitCallEndedToParticipants(io, updated, callId);
+        emitCallEndedToParticipants(io, updated, actualCallId);
       }
 
     } catch (err) {
       console.error("[CallHandler] endCall error:", err);
+      
+      // EMERGENCY FALLBACK: If CastError, do aggressive search
+      if (err.name === "CastError" && !actualCallId) {
+        console.log("[Call] endCall CastError detected, triggering emergency fallback...");
+        try {
+          const userIdObj = new mongoose.Types.ObjectId(userId);
+          const toIdObj = new mongoose.Types.ObjectId(to);
+          const twoMinutesAgo = new Date(Date.now() - 120000);
+          
+          const connectedCall = await CallHistory.findOne({
+            $or: [
+              { callerId: userIdObj, receiverId: toIdObj },
+              { callerId: toIdObj, receiverId: userIdObj }
+            ],
+            status: { $in: ["pending", "connecting", "connected"] },
+            startedAt: { $gte: twoMinutesAgo }
+          }).lean();
+          
+          if (connectedCall) {
+            console.log(`[Call] endCall emergency fallback found: ${connectedCall._id}`);
+            
+            const now = new Date();
+            let duration = null;
+            if (connectedCall.answeredAt) {
+              duration = Math.round((now - connectedCall.answeredAt) / 1000);
+            }
+            
+            const updated = await CallHistory.findByIdAndUpdate(
+              connectedCall._id,
+              {
+                status: "completed",
+                endedBy: new mongoose.Types.ObjectId(userId),
+                endedAt: now,
+                duration,
+              },
+              { returnDocument: 'after' }
+            ).populate([
+              { path: "callerId", select: "_id displayName avatar username" },
+              { path: "receiverId", select: "_id displayName avatar username" },
+            ]);
+            
+            if (updated) {
+              console.log(`[Call] endCall emergency update: ${connectedCall._id} status="completed"`);
+              const callLogMessage = await createCallLogMessage(updated);
+              emitCallHistorySync(io, updated, userId);
+              emitCallLogMessage(io, callLogMessage);
+              emitCallEndedToParticipants(io, updated, connectedCall._id);
+            }
+          }
+        } catch (emergencyErr) {
+          console.error("[CallHandler] endCall emergency fallback error:", emergencyErr);
+        }
+      }
     }
   });
 
   // [rejectCall] 
   socket.on("rejectCall", async ({ to, callId, reason }) => {
     unbindSocketFromCall(socket.id);
-    console.log(`[Call] rejectCall: ${userId} -> ${to}, callId: ${callId}, reason: ${reason}`);
+    
+    // Resolve real callId if it's a client temp callId
+    let actualCallId = callId;
+    if (callId && callId.startsWith("temp_")) {
+      actualCallId = tempIdToDbId.get(callId);
+      if (actualCallId) {
+        console.log(`[Call] Resolved temp callId ${callId} -> ${actualCallId}`);
+        tempIdToDbId.delete(callId);
+      } else {
+        console.log(`[Call] No mapping found for temp callId ${callId}, will try search`);
+        actualCallId = null; // Force search fallback
+      }
+    }
+    
+    console.log(`[Call] rejectCall: ${userId} -> ${to}, callId: ${callId}, actualCallId: ${actualCallId}, reason: ${reason}`);
 
-    if (!callId) return;
+    // FALLBACK: Search for pending call if actualCallId is invalid
+    if (!actualCallId || actualCallId.startsWith("temp_")) {
+      console.log(`[Call] Invalid actualCallId "${actualCallId}", attempting fallback search...`);
+      actualCallId = null;
+      
+      try {
+        const userIdObj = new mongoose.Types.ObjectId(userId);
+        const toIdObj = new mongoose.Types.ObjectId(to);
+        const sixtySecondsAgo = new Date(Date.now() - 60000);
+        
+        console.log(`[Call] Fallback search: userId=${userId}, to=${to}, after=${sixtySecondsAgo}`);
+        
+        const pendingCall = await CallHistory.findOne({
+          $or: [
+            { callerId: userIdObj, receiverId: toIdObj },
+            { callerId: toIdObj, receiverId: userIdObj }
+          ],
+          status: "pending",
+          startedAt: { $gte: sixtySecondsAgo }
+        }).lean();
+        
+        if (pendingCall) {
+          actualCallId = pendingCall._id.toString();
+          console.log(`[Call] Fallback found pending call: ${actualCallId}`);
+        } else {
+          console.log(`[Call] Fallback search found NO pending call`);
+        }
+      } catch (searchErr) {
+        console.error("[Call] Fallback search error:", searchErr);
+      }
+    }
 
-    const timeoutId = activeTimeouts.get(callId);
+    // If still no valid actualCallId, abort
+    if (!actualCallId || actualCallId.startsWith("temp_")) {
+      console.log(`[Call] rejectCall: Cannot find valid callId, aborting. actualCallId="${actualCallId}"`);
+      return;
+    }
+
+    const timeoutId = activeTimeouts.get(actualCallId);
     if (timeoutId) {
       clearTimeout(timeoutId);
       activeTimeouts.delete(timeoutId);
     }
 
     try {
-      const status = reason === "busy" ? "busy" : "rejected";
+      // Fetch call record to determine proper status
+      const call = await CallHistory.findById(actualCallId);
+      if (!call) {
+        console.log(`[Call] rejectCall: CallHistory not found for ${actualCallId}`);
+        return;
+      }
+
+      // Determine status based on reason and whether call was answered
+      let status = "rejected";
+      if (reason === "busy") {
+        status = "busy";
+      } else if (reason === "cancelled") {
+        // Caller cancelled before answer → for receiver, it's "missed"
+        status = "missed";
+      } else if (call.answeredAt) {
+        // Call was answered, then rejected/ended → "completed"
+        status = "completed";
+      }
 
       const updated = await CallHistory.findByIdAndUpdate(
-        callId,
+        actualCallId,
         { status, endedAt: new Date(), endedBy: new mongoose.Types.ObjectId(userId) },
         { returnDocument: 'after' }
       ).populate([
@@ -532,16 +798,85 @@ const registerCallHandlers = (socket, io) => {
       ]);
 
       if (updated) {
+        console.log(`[Call] Updated call ${actualCallId} status to "${status}"`);
         const callLogMessage = await createCallLogMessage(updated);
         emitCallHistorySync(io, updated, userId);
         emitCallLogMessage(io, callLogMessage);
         // Đảm bảo cả 2 participants đều được thông báo
-        emitCallEndedToParticipants(io, updated, callId);
+        emitCallEndedToParticipants(io, updated, actualCallId);
       }
 
-      io.to(to).emit("callRejected", { reason: reason || "User busy" });
+      // Chỉ emit callRejected nếu không phải là "cancelled"
+      // Với "cancelled", chỉ cần callEnded để đóng notification im lặng
+      if (reason !== "cancelled") {
+        io.to(to).emit("callRejected", { reason: reason || "User busy" });
+      } else {
+        // A cancelled → B cần nhận event để tự đóng CallNotification
+        io.to(to).emit("callCancelled", { callId: actualCallId, reason: "cancelled" });
+      }
     } catch (err) {
       console.error("[CallHandler] rejectCall error:", err);
+
+      // EMERGENCY FALLBACK: If CastError (invalid ObjectId), do aggressive search
+      // Also catch when actualCallId is an unresolvable temp ID (string "temp_...")
+      const needsFallback =
+        err.name === "CastError" ||
+        (actualCallId && actualCallId.startsWith("temp_"));
+
+      if (needsFallback) {
+        console.log("[Call] CastError detected, triggering emergency fallback search...");
+        try {
+          const userIdObj = new mongoose.Types.ObjectId(userId);
+          const toIdObj = new mongoose.Types.ObjectId(to);
+          const twoMinutesAgo = new Date(Date.now() - 120000);
+          
+          const pendingCall = await CallHistory.findOne({
+            $or: [
+              { callerId: userIdObj, receiverId: toIdObj },
+              { callerId: toIdObj, receiverId: userIdObj }
+            ],
+            status: "pending",
+            startedAt: { $gte: twoMinutesAgo }
+          }).lean();
+          
+          if (pendingCall) {
+            console.log(`[Call] Emergency fallback found call: ${pendingCall._id}`);
+            
+            // Determine status
+            let status = "rejected";
+            if (reason === "busy") {
+              status = "busy";
+            } else if (reason === "cancelled") {
+              status = "missed";
+            }
+            
+            const updated = await CallHistory.findByIdAndUpdate(
+              pendingCall._id,
+              { status, endedAt: new Date(), endedBy: new mongoose.Types.ObjectId(userId) },
+              { returnDocument: 'after' }
+            ).populate([
+              { path: "callerId", select: "_id displayName avatar username" },
+              { path: "receiverId", select: "_id displayName avatar username" },
+            ]);
+            
+            if (updated) {
+              console.log(`[Call] Emergency update: call ${pendingCall._id} status to "${status}"`);
+              const callLogMessage = await createCallLogMessage(updated);
+              emitCallHistorySync(io, updated, userId);
+              emitCallLogMessage(io, callLogMessage);
+              emitCallEndedToParticipants(io, updated, pendingCall._id);
+              
+              if (reason !== "cancelled") {
+                io.to(to).emit("callRejected", { reason: reason || "User busy" });
+              } else {
+                io.to(to).emit("callCancelled", { callId: pendingCall._id.toString(), reason: "cancelled" });
+              }
+            }
+          }
+        } catch (emergencyErr) {
+          console.error("[CallHandler] Emergency fallback error:", emergencyErr);
+        }
+      }
     }
   });
 
