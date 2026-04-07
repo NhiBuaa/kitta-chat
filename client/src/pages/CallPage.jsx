@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 import {
     FaMicrophone,
     FaMicrophoneSlash,
@@ -10,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSocket } from "../context/SocketContext";
-import { CallContext } from "../context/CallContext";
+import { CallContext } from "../context/call/CallContext";
 import { useCallTimer } from "../hooks/useCallTimer";
 import { formatDuration } from "../utils/formatTime";
 
@@ -21,7 +22,10 @@ const VideoCallPage = () => {
     const isIncoming = searchParams.get("incoming") === "true";
     const urlName = searchParams.get("name") || "Nguoi dung";
     const urlAvatar = searchParams.get("avatar");
-    const callType = searchParams.get("type") || localStorage.getItem("tempCallType") || "video";
+    const urlType = searchParams.get("type");
+    const urlCallId = searchParams.get("callId"); // callId từ CallNotification URL param
+    const storedType = localStorage.getItem("tempCallType");
+    const callType = urlType || storedType || "video";
     const isVideoCall = callType === "video";
     const partnerAvatar = urlAvatar && urlAvatar !== "undefined" && urlAvatar !== "null"
             ? urlAvatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(urlName)}&background=random`;
@@ -117,24 +121,40 @@ const VideoCallPage = () => {
     useEffect(() => {
         const initMedia = async () => {
             try {
-                // XIN QUYỀN CẢ CAM VÀ MIC
-                const currentStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+                // Luôn request CẢ video + audio để đảm bảo audio track luôn tồn tại.
+                // Nếu là audio call → camera tắt bằng CSS, nhưng audio vẫn hoạt động.
+                const currentStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true,
+                });
 
-                setLocalStream(currentStream);
+                // Nếu là audio call, tắt camera ngay để tiết kiệm bandwidth
+                const hasVideoTrack = currentStream.getVideoTracks().length > 0;
+                if (!isVideoCall && hasVideoTrack) {
+                    currentStream.getVideoTracks().forEach((t) => t.stop());
+                    // Thay thế bằng stream không có video track
+                    const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    currentStream.getAudioTracks().forEach((t) => audioOnly.addTrack(t));
+                    setLocalStream(audioOnly);
+                } else {
+                    setLocalStream(currentStream);
+                }
+
                 setMediaError(false);
-                setCamOn(true);
+                setCamOn(isVideoCall);
                 setMicOn(true);
                 if (myVideo.current) myVideo.current.srcObject = currentStream;
 
-                // Sự kiện khi bị ngắt kết nối đột ngột
-                const videoTrack = currentStream.getVideoTracks()[0];
-                if (videoTrack) {
-                    videoTrack.onended = () => {
-                        toast.error("Camera bị ngắt kết nối đột ngột!");
-                        setCamOn(false);
-                        // Báo ngay cho đối phương biết mình vừa sập cam
-                        notifyMediaChange(false, micOn);
-                    };
+                // Chỉ gắn video track event khi thực sự có video track
+                if (hasVideoTrack && isVideoCall) {
+                    const videoTrack = currentStream.getVideoTracks()[0];
+                    if (videoTrack) {
+                        videoTrack.onended = () => {
+                            toast.error("Camera bị ngắt kết nối đột ngột!");
+                            setCamOn(false);
+                            notifyMediaChange(false, micOn);
+                        };
+                    }
                 }
 
             } catch (err) {
@@ -197,6 +217,11 @@ const VideoCallPage = () => {
                     signal: JSON.parse(signal),
                     callType: callType
                 });
+                // Ưu tiên callId từ URL param (CallNotification), fallback vào localStorage
+                const callIdToStore = urlCallId || localStorage.getItem("tempCallId");
+                if (callIdToStore) {
+                    localStorage.setItem("tempCallId", callIdToStore);
+                }
             }
         }
 
@@ -430,6 +455,8 @@ const VideoCallPage = () => {
                     Hủy cuộc gọi
                 </button>
             </div>
+
+            <ToastContainer position="top-center" autoClose={3000} />
         </div>
     );
 };

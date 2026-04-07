@@ -1,6 +1,7 @@
 import React from "react";
-import { FaUserPlus, FaBell, FaSearch, FaUsers, FaCheck } from "react-icons/fa";
+import { FaUserPlus, FaBell, FaSearch, FaUsers, FaCheck, FaHistory } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
+import CallHistoryBadge from './CallHistoryBadge.jsx';
 
 const Sidebar = ({
   currentUser,
@@ -20,10 +21,11 @@ const Sidebar = ({
   checkIsOnline,
   renderLastMessage,
   handleAddFriend,
+  setShowCallHistoryModal
 }) => {
-
   return (
-    <div className="w-full sm:w-[280px] md:w-[320px] lg:w-[360px] min-w-0 sm:min-w-[240px] h-full bg-white border-r border-gray-200 flex flex-col">
+
+    <div className="w-full sm:w-[280px] md:w-[320px] lg:w-[460px] min-w-0 sm:min-w-[240px] h-full bg-white border-r border-gray-200 flex flex-col">
       {/* tên app với avt */}
       <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-blue-600 text-white relative z-10 shadow-md h-16">
         <div className="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0 mr-2">
@@ -55,6 +57,15 @@ const Sidebar = ({
             <FaUsers size={18} />
           </button>
 
+          <button
+            onClick={() => setShowCallHistoryModal?.(false)}
+            className="relative p-1 hover:text-blue-200"
+            title="Lịch sử cuộc gọi"
+          >
+            <FaHistory size={16} />
+            <CallHistoryBadge />
+          </button>
+
           {/* nút addfr */}
           <button
             onClick={() => setShowRequestModal(true)}
@@ -64,8 +75,8 @@ const Sidebar = ({
             <FaBell
               size={16}
               className={`transition-all duration-300 ${requestCount > 0
-                  ? "text-yellow-300 animate-pulse"
-                  : "hover:text-blue-200"
+                ? "text-yellow-300 animate-pulse"
+                : "hover:text-blue-200"
                 }`}
             />
             {requestCount > 0 && (
@@ -159,8 +170,8 @@ const Sidebar = ({
                 key={user._id}
                 onClick={() => handleSelectUser(user)}
                 className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer ${hasUnread
-                    ? "bg-blue-50 hover:bg-blue-100"
-                    : "hover:bg-gray-100"
+                  ? "bg-blue-50 hover:bg-blue-100"
+                  : "hover:bg-gray-100"
                   }`}
               >
                 <div className="relative flex-shrink-0">
@@ -179,8 +190,8 @@ const Sidebar = ({
                   <div className="flex items-center justify-between gap-2">
                     <h3
                       className={`text-sm truncate pr-2 ${hasUnread
-                          ? "font-bold text-gray-900"
-                          : "font-semibold text-gray-800"
+                        ? "font-bold text-gray-900"
+                        : "font-semibold text-gray-800"
                         }`}
                     >
                       {user.displayName}
@@ -188,8 +199,8 @@ const Sidebar = ({
                     {user.lastMessage && (
                       <span
                         className={`text-[10px] flex-shrink-0 ${hasUnread
-                            ? "text-blue-600 font-bold"
-                            : "text-gray-400"
+                          ? "text-blue-600 font-bold"
+                          : "text-gray-400"
                           }`}
                       >
                         {new Date(

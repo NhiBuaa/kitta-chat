@@ -1,4 +1,5 @@
 const Message = require("../models/Message");
+const Group = require("../models/Group");
 
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
@@ -116,5 +117,63 @@ exports.createSystemMessage = async (groupId, text) => {
   } catch (error) {
     console.error("Lỗi tạo system message:", error);
     return null;
+  }
+};
+
+// =========================================================
+// [GET] /api/messages/sync
+// Sync tin nhắn bị miss khi client reconnect
+// Đặt trong REST API thay vì WebSocket:
+//   - Nginx rate limiting
+//   - HTTP caching
+//   - Không block WebSocket real-time channel
+//
+// IDOR-SAFE: Server tự query conversations hợp lệ
+// =========================================================
+exports.syncMissedMessages = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const { after_id, limit = 100 } = req.query;
+
+    const parsedLimit = Math.min(parseInt(limit, 10) || 100, 200);
+
+    // 1. Lấy group IDs mà user là thành viên
+    const userGroups = await Group.find({ members: userId }).select("_id");
+    const groupConversationIds = userGroups.map((g) => g._id.toString());
+
+    // 2. Query cho cả Group và 1-1 conversations
+    // Group: conversationId nằm trong danh sách group
+    // 1-1: conversationId chứa userId (format: userId1_userId2)
+    let query = {
+      $or: [
+        { conversationId: { $in: groupConversationIds } },
+        { conversationId: { $regex: userId, $options: "i" } },
+      ],
+    };
+
+    // Lấy tin nhắn mới hơn after_id
+    if (after_id) {
+      query._id = { $gt: after_id };
+    }
+
+    // Sort theo _id thay vì createdAt
+    // _id (ObjectId) chứa timestamp → y hệt sort theo createdAt
+    // _id đã có sẵn index → nhanh hơn nhiều
+    const messages = await Message.find(query)
+      .sort({ _id: 1 })
+      .limit(parsedLimit)
+      .populate("sender", "displayName avatar username")
+      .populate("attachments");
+
+    console.log(`[Sync] User ${userId} synced ${messages.length} missed messages`);
+
+    res.status(200).json({
+      success: true,
+      messages: messages,
+      count: messages.length,
+    });
+  } catch (err) {
+    console.error("Lỗi syncMissedMessages:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 };

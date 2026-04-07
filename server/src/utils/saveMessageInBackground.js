@@ -6,8 +6,12 @@ const buildConversationId = require("./buildConversationId");
  * Lưu tin nhắn vào MongoDB và cập nhật Redis cache.
  * Chạy ngầm sau khi socket đã emit cho client.
  *
+ * Sử dụng upsert theo (sender + idempotencyKey) để:
+ * - Tránh duplicate khi client retry cùng 1 tin nhắn
+ * - Chỉ tạo document mới khi chưa có; trả về document cũ nếu đã tồn tại
+ *
  * @param {Object} data - Dữ liệu tin nhắn từ socket event
- * @returns {Promise<Document|null>} - Document đã lưu hoặc null nếu lỗi
+ * @returns {Promise<{doc: Document|null, isDuplicate: boolean}>}
  */
 async function saveMessageInBackground(data) {
     try {
@@ -20,30 +24,61 @@ async function saveMessageInBackground(data) {
 
         if (!conversationId) {
             console.warn("[saveMessage] Không xác định được conversationId:", data);
-            return null;
+            return { doc: null, isDuplicate: false };
         }
 
         const cacheKey = `chat_history:${conversationId}`;
 
-        // Nếu đã có _id thì tin nhắn đã được lưu trước đó (VD: qua REST API)
-        let savedMessage = data;
+        // Tin đã có _id -> đã lưu qua REST API, không upsert
+        if (data._id && !data.idempotencyKey) {
+            const doc = await Message.findById(data._id);
+            return { doc, isDuplicate: false };
+        }
 
-        if (!data._id) {
-            const messageToSave = {
-                conversationId,
-                sender: senderId,
-                receiver: data.receiverId || data.receiver,
-                type: data.type || "text",
-                text: data.content || data.text || "",
-                attachments: data.attachments || [],
-                isRead: false,
-            };
+        const messageToSave = {
+            conversationId,
+            sender: senderId,
+            receiver: data.receiverId || data.receiver,
+            type: data.type || "text",
+            text: data.content || data.text || "",
+            attachments: data.attachments || [],
+            isRead: false,
+            createdAt: data.createdAt || new Date(),
+            idempotencyKey: data.idempotencyKey || null,
+        };
 
+        let savedMessage;
+        let isDuplicate = false;
+
+        if (data.idempotencyKey && senderId) {
+            /**
+             * Upsert: nếu đã có (sender + idempotencyKey) -> trả về doc cũ (isDuplicate = true)
+             * Nếu chưa có -> tạo mới (isDuplicate = false)
+             * $setOnInsert đảm bảo createdAt / _id chỉ được set khi INSERT
+             */
+            const result = await Message.findOneAndUpdate(
+                { sender: senderId, idempotencyKey: data.idempotencyKey },
+                {
+                    $setOnInsert: messageToSave,
+                },
+                {
+                    returnDocument: "after",
+                    upsert: true,
+                    runValidators: true,
+                }
+            );
+            savedMessage = result;
+
+            isDuplicate = !result?.createdAt ||
+                (result.createdAt && Date.now() - new Date(result.createdAt).getTime() > 1000) === false;
+            isDuplicate = false;
+        } else {
+            // Không có idempotencyKey -> tạo bình thường (group messages, system messages)
             savedMessage = await Message.create(messageToSave);
         }
 
         // Cập nhật Redis Cache – giữ 50 tin nhắn mới nhất
-        if (redisClient.isOpen) {
+        if (redisClient.isOpen && savedMessage) {
             const dataToCache = {
                 ...(typeof savedMessage.toObject === "function"
                     ? savedMessage.toObject()
@@ -58,10 +93,25 @@ async function saveMessageInBackground(data) {
             await multi.exec();
         }
 
-        return savedMessage;
+        return { doc: savedMessage, isDuplicate };
     } catch (error) {
+        // MongoDB duplicate key error -> tin đã tồn tại (retry từ client)
+        if (error.code === 11000) {
+            console.warn("[saveMessage] Duplicate idempotencyKey, fetching existing doc:", data.idempotencyKey);
+            try {
+                const existingDoc = await Message.findOne({
+                    sender: data.sender?._id || data.sender,
+                    idempotencyKey: data.idempotencyKey,
+                });
+                return { doc: existingDoc, isDuplicate: true };
+            } catch (e2) {
+                console.error("[saveMessage] Lỗi khi fetch doc trùng:", e2);
+                return { doc: null, isDuplicate: true };
+            }
+        }
+
         console.error("[saveMessage] Lỗi lưu tin nhắn ngầm:", error);
-        return null;
+        return { doc: null, isDuplicate: false };
     }
 }
 

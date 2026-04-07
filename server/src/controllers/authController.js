@@ -2,7 +2,9 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-
+const axios = require("axios");
+const { uploadSingleFile } = require("../service/s3.service");
+const admin = require("../config/firebaseAdmin");
 // Hàm helper để validate email
 const validateEmail = (email) => {
   return String(email)
@@ -11,6 +13,7 @@ const validateEmail = (email) => {
 };
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
+// dang ky----------------------------------------
 exports.register = async (req, res) => {
   try {
     const { displayName, email, password, confirmPassword } = req.body;
@@ -81,13 +84,14 @@ exports.register = async (req, res) => {
   }
 };
 
+// dang nhap------------------------------------------
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const cleanEmail = email.trim().toLowerCase();
 
     // Tìm bằng email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (user && user.provider === "google") {
       return res.status(400).json({
         success: false,
@@ -107,11 +111,9 @@ exports.login = async (req, res) => {
         .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
     }
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "1d" },
-    );
+    const token = jwt.sign({ id: user._id }, getJwtSecret(), {
+      expiresIn: "1d",
+    });
 
     res.json({
       success: true,
@@ -132,51 +134,107 @@ exports.login = async (req, res) => {
   }
 };
 
-// dnhap bang gg
+const getJwtSecret = () => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET chưa được cấu hình");
+  }
+  return process.env.JWT_SECRET;
+};
+// dnhap bang gg------------------------------------------
 exports.googleLogin = async (req, res) => {
   try {
-    const { email, displayName, avatar } = req.body;
+    const { token } = req.body;
 
     // validate
-    if (!email) {
+    if (!token) {
       return res.status(400).json({
         success: false,
-        message: "Thiếu email từ Google",
+        message: "Thiếu Firebase token từ client",
       });
     }
 
+    // Xác thực token từ Google
+    const decoded = await admin.auth().verifyIdToken(token);
+
+    const email = decoded.email;
+    const displayName = decoded.name;
+    const avatar = decoded.picture;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Token không hợp lệ",
+      });
+    }
+    const cleanEmail = email.trim().toLowerCase();
+
     const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=22c55e&color=fff&size=128`;
     // 2. tim ng dung co email
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: cleanEmail });
+
+    if (user && user.provider !== "google") {
+      return res.status(400).json({
+        success: false,
+        message: "Email này đã đăng ký bằng mật khẩu",
+      });
+    }
 
     // 3. ch co thi tao moi
     if (!user) {
+      let avatarUrl = defaultAvatarUrl;
+      // chỉ tải avt lần đầu
+      if (avatar) {
+        try {
+          const response = await axios.get(avatar, {
+            responseType: "arraybuffer",
+          });
+
+          const buffer = Buffer.from(response.data, "binary");
+
+          const fileName = `google-${Date.now()}.jpg`;
+
+          avatarUrl = await uploadSingleFile(
+            buffer,
+            fileName,
+            "image/jpeg",
+            "avatars",
+          );
+        } catch (err) {
+          console.error("Upload Google avatar failed:", err.message);
+        }
+      }
       user = new User({
-        email,
+        email: cleanEmail,
         displayName,
-        avatar:
-          avatar && avatar !== ""
-            ? avatar.replace("=s96-c", "=s256-c")
-            : defaultAvatarUrl,
-        password: "GOOGLE_LOGIN",
+        avatar: avatarUrl,
+        password: await bcrypt.hash("GOOGLE_LOGIN", 10),
         provider: "google",
       });
 
       await user.save();
+    } else {
+      // chỉ update nếu là google account
+      if (user.provider === "google") {
+        user.displayName = displayName || user.displayName;
+
+        if (!user.avatar && avatar) {
+          user.avatar = avatar;
+        }
+
+        await user.save();
+      }
     }
 
     // 4. tạo tolen như login
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "1d" },
-    );
+    const jwtToken = jwt.sign({ id: user._id }, getJwtSecret(), {
+      expiresIn: "1d",
+    });
 
     // 5. gui ve fe
     res.json({
       success: true,
       message: "Đăng nhập bằng Google thành công",
-      token,
+      token: jwtToken,
       user: {
         id: user._id,
         displayName: user.displayName,
@@ -186,14 +244,14 @@ exports.googleLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("Google Login Error:", error);
-    res.status(500).json({
+    res.status(401).json({
       success: false,
-      message: "Lỗi server",
+      message: "Token không hợp lệ",
     });
   }
 };
 
-// quen mk
+// quen mk------------------------------------------
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -230,16 +288,16 @@ exports.forgotPassword = async (req, res) => {
     const mailOptions = {
       from: `"KittaChat Support" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Yêu cầu đặt lại mật khẩu - Chat App",
+      subject: "Yêu cầu đặt lại mật khẩu - KittaChat",
       html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-                    <h2 style="color: #097bc7ff; text-align: center;">Yêu cầu Reset Mật khẩu</h2>
+                    <h2 style="color: rgb(73, 145, 28); text-align: center;">Yêu cầu Reset Mật khẩu</h2>
                     <p>Xin chào <strong>${user.displayName}</strong>,</p>
                     <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
                     <p>Vui lòng nhấn vào nút bên dưới để tạo mật khẩu mới (Link chỉ có hiệu lực trong 15 phút):</p>
                     
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="${resetUrl}" style="background-color: #097bc7ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        <a href="${resetUrl}" style="background-color: rgb(73, 145, 28); color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                             Đặt lại mật khẩu ngay
                         </a>
                     </div>
@@ -251,7 +309,7 @@ exports.forgotPassword = async (req, res) => {
             `,
     };
 
-    // Gửi mail
+    // Gửi mail------------------------------
     await transporter.sendMail(mailOptions);
 
     return res.json({
@@ -266,6 +324,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+// resetPass------------------------------------------------
 exports.resetPassword = async (req, res) => {
   try {
     // Lấy token từ URL

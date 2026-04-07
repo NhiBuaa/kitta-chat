@@ -9,7 +9,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL_USERS || '/api/users';
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -20,7 +20,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
 
   const loadFriends = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/users/friends`, {
+      const res = await axios.get(`${API_URL}/friends`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const friendsNotInGroup = res.data.friends.filter(
@@ -42,7 +42,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
     setLoading(true);
     try {
       const res = await axios.post(
-        `${API_URL}/api/groups/${group._id}/add-member`,
+        `/api/groups/${group._id}/add-member`,
         { memberId: selectedFriend._id },
         { headers: { Authorization: `Bearer ${token}` } },
       );

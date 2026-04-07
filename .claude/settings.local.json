@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Admin/OneDrive/Dev/messenger/server/src/**)",
+      "Read(//c/Users/Admin/OneDrive/Dev/messenger/client/src/**)",
+      "Read(//c/Users/Admin/OneDrive/Dev/**)",
+      "Read(//c/Users/Admin/OneDrive/**)"
+    ]
+  }
+}

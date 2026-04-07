@@ -36,14 +36,16 @@ const Login = () => {
     }
   };
 
+  // xử lý đăng nhập Google
   const handleGoogleLogin = async () => {
     try {
-      const user = await loginWithGoogleFirebase();
+      const result = await loginWithGoogleFirebase();
+      const token = await result.getIdToken();
 
+      // test lay token
+      // console.log("TOKEN:", token);
       const res = await loginWithGoogle({
-        email: user.email,
-        displayName: user.displayName,
-        avatar: user.photoURL,
+        token,
       });
 
       localStorage.setItem("token", res.data.token);
