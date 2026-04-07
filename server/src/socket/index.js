@@ -8,7 +8,7 @@ const { registerPresenceHandlers } = require("./handlers/presenceHandler");
 const { registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
-const { registerCallHandlers } = require("./handlers/callHandler");
+const { registerCallHandlers } = require("./handlers/call/callHandler");
 
 // =========================================================
 // CRITICAL: Validate environment variables at startup
