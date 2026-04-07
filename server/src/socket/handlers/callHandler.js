@@ -461,9 +461,105 @@ const registerCallHandlers = (socket, io) => {
       // Gửi signal đến receiver nếu online
       const room = io.sockets.adapter.rooms.get(userToCall);
       if (room && room.size > 0) {
+        // Fetch callerInfo trước để dùng cho cả glare và normal flow
         const callerInfo = await User.findById(authenticatedCallerId)
           .select("_id displayName avatar username")
           .lean();
+
+        // ==========================================
+        // CALL GLARE DETECTION
+        // Kiểm tra xem receiver có đang gọi ngược lại cho mình không
+        // ==========================================
+        const reverseCall = await CallHistory.findOne({
+          callerId: new mongoose.Types.ObjectId(userToCall),
+          receiverId: new mongoose.Types.ObjectId(authenticatedCallerId),
+          status: "pending",
+          startedAt: { $gte: new Date(Date.now() - 30000) }
+        }).lean();
+
+        if (reverseCall) {
+          console.log(`[Call] Call Glare DETECTED! A=${authenticatedCallerId}, B=${userToCall}, reverseCallId=${reverseCall._id}`);
+
+          // Xác định Winner dựa trên socket ID (cùng logic với client)
+          const mySocketId = from;
+          // Tìm socket ID của receiver (userToCall)
+          const reverseSockets = await io.in(userToCall).allSockets();
+          const reverseSocketId = [...reverseSockets][0] || null;
+
+          const iAmWinner = mySocketId > reverseSocketId;
+          const winnerId = iAmWinner ? authenticatedCallerId : userToCall;
+          const loserId = iAmWinner ? userToCall : authenticatedCallerId;
+
+          console.log(`[Call] Glare result: Winner=${winnerId} (socket ${iAmWinner ? mySocketId : reverseSocketId}), Loser=${loserId}`);
+
+          if (iAmWinner) {
+            // Tôi là Winner → giữ cuộc gọi của mình, reject cuộc gọi ngược lại của B
+            // Cancel timeout của reverse call để B không bị kẹt
+            const reverseTimeout = activeTimeouts.get(reverseCall._id.toString());
+            if (reverseTimeout) {
+              clearTimeout(reverseTimeout);
+              activeTimeouts.delete(reverseCall._id.toString());
+              console.log(`[Call] Cleared timeout of reverse call ${reverseCall._id}`);
+            }
+
+            // Cập nhật reverse call thành "missed" (bị glare thua)
+            await CallHistory.findByIdAndUpdate(reverseCall._id, {
+              status: "missed",
+              endedAt: new Date(),
+            });
+
+            // Emit glare cho B (Loser): báo B rằng có glare và B phải accept cuộc gọi của A
+            io.to(loserId).emit("glare", {
+              winnerSocketId: mySocketId,
+              winnerDbId: authenticatedCallerId,
+              winnerName: callerInfo?.displayName || name,
+              winnerAvatar: callerInfo?.avatar || avatar || "",
+              winnerMediaStatus: mediaStatus,
+              winnerCallId: callRecordId,
+              winnerSignal: signalData,
+              myCallId: reverseCall._id.toString(),
+              typeCall,
+            });
+            console.log(`[Call] Emitted glare to loser ${loserId}`);
+
+            // Emit outgoingCallCreated cho Winner (mình) như bình thường
+            io.to(authenticatedCallerId).emit("outgoingCallCreated", {
+              callId: callRecordId,
+              userToCall,
+              conversationId,
+              type: typeCall,
+            });
+            // Winner tiếp tục chờ B accept (qua glare event B sẽ auto-answer)
+
+          } else {
+            // Tôi là Loser → hủy cuộc gọi của mình, chấp nhận glare signal từ Winner
+            // Cancel timeout của cuộc gọi này (của mình)
+            const myTimeout = activeTimeouts.get(callRecordId);
+            if (myTimeout) {
+              clearTimeout(myTimeout);
+              activeTimeouts.delete(callRecordId);
+              console.log(`[Call] Cleared my (loser) timeout for ${callRecordId}`);
+            }
+
+            // Cập nhật cuộc gọi của tôi thành "missed"
+            await CallHistory.findByIdAndUpdate(callRecordId, {
+              status: "missed",
+              endedAt: new Date(),
+            });
+
+            // Emit glareLost cho Loser (mình): báo mình phải accept cuộc gọi từ Winner
+            io.to(authenticatedCallerId).emit("glareLost", {
+              winnerDbId: winnerId,
+              winnerSignal: signalData,
+              myCallId: callRecordId,
+              typeCall,
+            });
+            console.log(`[Call] Emitted glareLost to loser (myself) ${authenticatedCallerId}`);
+            // ĐỪNG emit outgoingCallCreated - loser không có outgoing call
+          }
+
+          return; // Kết thúc xử lý callUser — glare đã được xử lý
+        }
 
         io.to(userToCall).emit("callUser", {
           signal: signalData,
@@ -735,12 +831,12 @@ const registerCallHandlers = (socket, io) => {
         const sixtySecondsAgo = new Date(Date.now() - 60000);
         
         console.log(`[Call] Fallback search: userId=${userId}, to=${to}, after=${sixtySecondsAgo}`);
-        
+
+        // Chỉ tìm call mà người gọi là người reject (userId là caller, to là receiver)
+        // KHÔNG dùng $or để tránh match nhầm vào call ngược chiều khi xảy ra Call Glare
         const pendingCall = await CallHistory.findOne({
-          $or: [
-            { callerId: userIdObj, receiverId: toIdObj },
-            { callerId: toIdObj, receiverId: userIdObj }
-          ],
+          callerId: userIdObj,
+          receiverId: toIdObj,
           status: "pending",
           startedAt: { $gte: sixtySecondsAgo }
         }).lean();
@@ -802,8 +898,18 @@ const registerCallHandlers = (socket, io) => {
         const callLogMessage = await createCallLogMessage(updated);
         emitCallHistorySync(io, updated, userId);
         emitCallLogMessage(io, callLogMessage);
-        // Đảm bảo cả 2 participants đều được thông báo
-        emitCallEndedToParticipants(io, updated, actualCallId);
+
+        if (reason === "cancelled") {
+          // Caller hủy → chỉ báo cho receiver (callee) biết để đóng notification
+          // KHÔNG emit callEnded cho caller vì caller có thể đang trong glare (winner vẫn cần nhận offer)
+          const receiverId = updated.receiverId?._id?.toString() || updated.receiverId?.toString();
+          if (receiverId) {
+            io.to(receiverId).emit("callEnded");
+            console.log(`[Call] Emitted callEnded only to receiver (cancelled): ${receiverId}`);
+          }
+        } else {
+          emitCallEndedToParticipants(io, updated, actualCallId);
+        }
       }
 
       // Chỉ emit callRejected nếu không phải là "cancelled"
@@ -830,11 +936,10 @@ const registerCallHandlers = (socket, io) => {
           const toIdObj = new mongoose.Types.ObjectId(to);
           const twoMinutesAgo = new Date(Date.now() - 120000);
           
+          // Same strict constraint: only find call where userId is the caller (not receiver)
           const pendingCall = await CallHistory.findOne({
-            $or: [
-              { callerId: userIdObj, receiverId: toIdObj },
-              { callerId: toIdObj, receiverId: userIdObj }
-            ],
+            callerId: userIdObj,
+            receiverId: toIdObj,
             status: "pending",
             startedAt: { $gte: twoMinutesAgo }
           }).lean();

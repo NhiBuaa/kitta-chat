@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSocket } from "../context/SocketContext";
-import { CallContext } from "../context/CallContext";
+import { CallContext } from "../context/call/CallContext";
 import { useCallTimer } from "../hooks/useCallTimer";
 import { formatDuration } from "../utils/formatTime";
 

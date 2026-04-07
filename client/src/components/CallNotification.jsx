@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { CallContext } from '../context/CallContext';
+import { CallContext } from '../context/call/CallContext';
 import { FaPhone, FaVideo } from "react-icons/fa";
 
 const CallNotification = () => {
