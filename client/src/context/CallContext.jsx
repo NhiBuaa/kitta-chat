@@ -99,25 +99,56 @@ export const CallProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const startedAtRaw = localStorage.getItem("callStartTime");
-        const startedAt = Number.parseInt(startedAtRaw || "0", 10);
-        const hasDanglingCallState =
-            Boolean(localStorage.getItem("tempCallId")) ||
-            Boolean(localStorage.getItem("activePartnerUserId")) ||
-            Boolean(localStorage.getItem("tempCallerUserId")) ||
-            Boolean(localStorage.getItem("tempCallerId")) ||
-            Boolean(localStorage.getItem("tempCallSignal"));
+        // Check and reset dangling states from previous session
+        queueMicrotask(() => {
+            const startedAtRaw = localStorage.getItem("callStartTime");
+            const startedAt = Number.parseInt(startedAtRaw || "0", 10);
+            const hasDanglingCallState =
+                Boolean(localStorage.getItem("tempCallId")) ||
+                Boolean(localStorage.getItem("activePartnerUserId")) ||
+                Boolean(localStorage.getItem("tempCallerUserId")) ||
+                Boolean(localStorage.getItem("tempCallerId")) ||
+                Boolean(localStorage.getItem("tempCallSignal"));
 
-        const isExpired = startedAt > 0 && (Date.now() - startedAt > CALL_STORAGE_MAX_AGE_MS);
-        const hasBrokenState =
-            Boolean(localStorage.getItem("tempCallId")) &&
-            !localStorage.getItem("activePartnerUserId") &&
-            !localStorage.getItem("tempCallerUserId") &&
-            !localStorage.getItem("tempCallerId");
+            const isExpired = startedAt > 0 && (Date.now() - startedAt > CALL_STORAGE_MAX_AGE_MS);
+            const hasBrokenState =
+                Boolean(localStorage.getItem("tempCallId")) &&
+                !localStorage.getItem("activePartnerUserId") &&
+                !localStorage.getItem("tempCallerUserId") &&
+                !localStorage.getItem("tempCallerId");
 
-        if ((hasDanglingCallState && isExpired) || hasBrokenState) {
-            clearStoredCallState();
-        }
+            if ((hasDanglingCallState && isExpired) || hasBrokenState) {
+                // Clear all call-related localStorage
+                [
+                    "activePartnerUserId", "tempCallerId", "tempCallerUserId",
+                    "tempCallSignal", "tempCallerMediaStatus", "tempCallType",
+                    "callStartTime", "tempCallId"
+                ].forEach(key => localStorage.removeItem(key));
+            }
+        });
+    }, []);
+
+    // On-Startup Validation: Reset stale call states
+    useEffect(() => {
+        queueMicrotask(() => {
+            // Check if there's a dangling call state from a session that didn't cleanup properly
+            const callStartTime = parseInt(localStorage.getItem("callStartTime") || "0", 10);
+            const now = Date.now();
+            const age = callStartTime > 0 ? now - callStartTime : 0;
+            
+            // Nếu call state cũ nhưng hơn 2 phút, xóa nó (definitely stale)
+            if (age > 2 * 60 * 1000) {
+                console.log("[CallContext] Startup: Detected stale call state (age: " + Math.floor(age / 1000) + "s) - resetting");
+                [
+                    "activePartnerUserId", "tempCallerId", "tempCallerUserId",
+                    "tempCallSignal", "tempCallerMediaStatus", "tempCallType",
+                    "callStartTime", "tempCallId"
+                ].forEach(key => localStorage.removeItem(key));
+                
+                setCallState(CALL_STATES.IDLE);
+                setCallEnded(true);
+            }
+        });
     }, []);
 
     const ICE_SERVERS = {
@@ -326,6 +357,7 @@ export const CallProvider = ({ children }) => {
         }, 3000); // Check mỗi 3 giây
 
         return () => clearInterval(watchdogInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [callAccepted, callEnded, remoteStream]);
 
     useEffect(() => {
@@ -409,7 +441,32 @@ export const CallProvider = ({ children }) => {
             if (data.callId) {
                 localStorage.setItem("tempCallId", data.callId);
             }
-            if (callStateRef.current === CALL_STATES.CONNECTED || callStateRef.current === CALL_STATES.RINGING) {
+            
+            // Check nếu thực sự đang trong cuộc gọi active (không phải stale state)
+            // Stale state: state is CONNECTED but peer/remoteStream không còn
+            const isCallActive = 
+                connectionRef.current && 
+                remoteStream && 
+                remoteStream.getTracks().length > 0;
+            
+            const callStartTimeForCheck = parseInt(localStorage.getItem("callStartTime") || "0", 10);
+            const now = Date.now();
+            const callAge = now - callStartTimeForCheck;
+            
+            // Nếu state là CONNECTED/RINGING nhưng call cũ >10s AND không có active peer → coi như outdated
+            const isStateStale = 
+                callAge > 10000 && callAge > 0 && !isCallActive;
+            
+            // Case 1: Detect stale state → force reset và tiếp tục xử lý incoming call (không reject)
+            if (isStateStale) {
+                console.log("[CallContext] Incoming call while in stale state - auto-reset", { callAge: callAge / 1000, isCallActive });
+                setCallState(CALL_STATES.IDLE);
+                setCallEnded(true);
+                // NOT rejecting server - continue processing this call normally
+            }
+            // Case 2: Truly active call → reject incoming
+            else if (callStateRef.current === CALL_STATES.CONNECTED || callStateRef.current === CALL_STATES.RINGING) {
+                console.log("[CallContext] Reject incoming call: Already in active call (state:", callStateRef.current, ")");
                 socket.emit("rejectCall", { to: callerId, callId: data.callId || null, reason: "Người dùng đang bận." });
                 return;
             }
@@ -522,7 +579,43 @@ export const CallProvider = ({ children }) => {
             socket.off("outgoingCallCreated", handleOutgoingCallCreated);
             socket.off("callHistorySync", handleCallHistorySync);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket]);
+
+    // Cleanup on window unload/pagehide (handle popup/window close)
+    // Also sync state when storage changes (from other tabs/popups)
+    useEffect(() => {
+        const handleWindowClose = () => {
+            // Khi popup CallPage đóng, signal main window để reset state
+            if (callStateRef.current !== CALL_STATES.IDLE) {
+                console.log("[CallContext] Window close detected - cleanup call state");
+                localStorage.removeItem("callStartTime");
+                setCallState(CALL_STATES.IDLE);
+                setCallEnded(true);
+                cleanupConnection();
+            }
+        };
+
+        // Detect when callStartTime is removed (means call ended in another window/tab)
+        const handleStorageChange = (e) => {
+            if (e.key === "callStartTime" && e.newValue === null && callStateRef.current !== CALL_STATES.IDLE) {
+                console.log("[CallContext] Detected callStartTime cleared in another window - syncing state");
+                setCallState(CALL_STATES.IDLE);
+                setCallEnded(true);
+                cleanupConnection();
+            }
+        };
+
+        window.addEventListener("pagehide", handleWindowClose);
+        window.addEventListener("beforeunload", handleWindowClose);
+        window.addEventListener("storage", handleStorageChange);
+
+        return () => {
+            window.removeEventListener("pagehide", handleWindowClose);
+            window.removeEventListener("beforeunload", handleWindowClose);
+            window.removeEventListener("storage", handleStorageChange);
+        };
+    }, []);
 
     return (
         <CallContext.Provider
