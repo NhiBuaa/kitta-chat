@@ -184,7 +184,7 @@ const Home = () => {
   useMessageSocket({
     socket, currentUser, activeChatRef,
     setMessages, setUsers, setGroups, setHasNewUnread,
-    scrollRef, fetchNewConversation, setSearchResult,
+    scrollRef, scrollChatToBottom, fetchNewConversation, setSearchResult,
   });
 
   // Initial data fetch

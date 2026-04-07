@@ -56,7 +56,10 @@ const createCallLogMessage = async (callRecord) => {
         existing.callData.duration = callRecord.duration;
         await existing.save();
       }
-      return existing;
+      return await Message.findById(existing._id).populate([
+        { path: "sender", select: "_id displayName avatar username" },
+        { path: "receiver", select: "_id displayName avatar username" },
+      ]);
     }
 
     const message = new Message({
@@ -77,11 +80,42 @@ const createCallLogMessage = async (callRecord) => {
 
     const saved = await message.save();
     console.log(`[CallHandler] Created call_log message ${saved._id} for call ${callRecord._id}`);
-    return saved;
+    return await Message.findById(saved._id).populate([
+      { path: "sender", select: "_id displayName avatar username" },
+      { path: "receiver", select: "_id displayName avatar username" },
+    ]);
   } catch (err) {
     console.error("[CallHandler] createCallLogMessage error:", err);
     return null;
   }
+};
+
+const emitCallLogMessage = (io, messageDoc) => {
+  if (!messageDoc) return;
+
+  const senderId = messageDoc.sender?._id?.toString() || messageDoc.sender?.toString();
+  const receiverId = messageDoc.receiver?._id?.toString() || messageDoc.receiver?.toString();
+
+  if (!senderId || !receiverId) return;
+
+  const payload = {
+    _id: messageDoc._id,
+    conversationId: messageDoc.conversationId,
+    type: messageDoc.type,
+    sender: messageDoc.sender,
+    senderId,
+    receiver: messageDoc.receiver,
+    receiverId,
+    text: messageDoc.text || "",
+    attachments: [],
+    callData: messageDoc.callData,
+    createdAt: messageDoc.createdAt,
+  };
+
+  io.to(senderId).emit("getMessage", payload);
+  io.to(receiverId).emit("getMessage", payload);
+  io.to(senderId).emit("callLogMessage", payload);
+  io.to(receiverId).emit("callLogMessage", payload);
 };
 
 /**
@@ -223,8 +257,9 @@ const registerCallHandlers = (socket, io) => {
           ]);
 
           if (updatedCall) {
-            await createCallLogMessage(updatedCall);
+            const callLogMessage = await createCallLogMessage(updatedCall);
             emitCallHistorySync(io, updatedCall, authenticatedCallerId);
+            emitCallLogMessage(io, callLogMessage);
 
             io.to(authenticatedCallerId).emit("callTimeout", { callId: callRecordId });
             io.to(userToCall).emit("callTimeout", { callId: callRecordId });
@@ -309,8 +344,9 @@ const registerCallHandlers = (socket, io) => {
         { path: "receiverId", select: "_id displayName avatar username" },
       ]);
 
-      await createCallLogMessage(updated);
+      const callLogMessage = await createCallLogMessage(updated);
       emitCallHistorySync(io, updated, userId);
+      emitCallLogMessage(io, callLogMessage);
       io.to(to).emit("callEnded");
 
     } catch (err) {
@@ -343,8 +379,9 @@ const registerCallHandlers = (socket, io) => {
       ]);
 
       if (updated) {
-        await createCallLogMessage(updated);
+        const callLogMessage = await createCallLogMessage(updated);
         emitCallHistorySync(io, updated, userId);
+        emitCallLogMessage(io, callLogMessage);
       }
 
       io.to(to).emit("callRejected", { reason: reason || "User busy" });
