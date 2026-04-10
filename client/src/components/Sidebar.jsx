@@ -27,7 +27,7 @@ const Sidebar = ({
 
     <div className="w-full sm:w-[280px] md:w-[320px] lg:w-[460px] min-w-0 sm:min-w-[240px] h-full bg-white border-r border-gray-200 flex flex-col">
       {/* tên app với avt */}
-      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white text-white relative z-10 shadow-md h-16">
+      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white relative z-10 shadow-md h-16">
         <div className="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0 mr-2">
           {/* avt */}
           <button
@@ -38,7 +38,7 @@ const Sidebar = ({
             <img
               src={getAvatarUrl(currentUser?.avatar)}
               alt="User Avatar"
-              className="w-9 h-9 rounded-full object-cover border-2 border-blue-400"
+              className="w-9 h-9 rounded-full object-cover border-2 border-green-300"
             />
             {/* online chấm xanh hiện  */}
             <span className="absolute bottom-0 right-0 block h-2 w-2 md:h-2.5 md:w-2.5 rounded-full ring-2 ring-white bg-green-400"></span>
@@ -51,7 +51,7 @@ const Sidebar = ({
         <div className="flex items-center gap-2 sm:gap-3 flex-nowrap shrink-0">
           <button
             onClick={() => setShowCreateGroup(true)}
-            className="text-white hover:text-blue-200"
+            className="text-white hover:text-green-200 transition"
             title="Tạo nhóm trò chuyện"
           >
             <FaUsers size={18} />
@@ -76,13 +76,13 @@ const Sidebar = ({
               size={16}
               className={`transition-all duration-300 ${requestCount > 0
                 ? "text-yellow-300 animate-pulse"
-                : "hover:text-blue-200"
+                : "hover:text-green-200"
                 }`}
             />
             {requestCount > 0 && (
-              <span className="absolute top-0 right-0 h-4 w-4 bg-red-600 text-[10px] flex items-center justify-center rounded-full border border-blue-600 text-white font-bold">
+              <span className="absolute top-0 right-0 h-4 w-4 bg-red-600 text-[10px] flex items-center justify-center rounded-full border border-green-600 text-white font-bold">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-5 w-5 bg-red-600 border-2 border-blue-600 text-white text-[10px] font-bold items-center justify-center">
+                <span className="relative inline-flex rounded-full h-5 w-5 bg-red-600 border-2 border-green-600 text-white text-[10px] font-bold items-center justify-center">
                   {requestCount > 9 ? "9+" : requestCount}
                 </span>
               </span>
@@ -90,7 +90,7 @@ const Sidebar = ({
           </button>
           <button
             onClick={handleLogout}
-            className="ml-1 bg-blue-800 hover:bg-blue-900 px-2 py-1.5 rounded text-[10px] font-bold uppercase whitespace-nowrap shadow-sm flex items-center"
+            className="ml-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-2 py-1.5 rounded text-[10px] font-bold uppercase whitespace-nowrap shadow-sm flex items-center text-white"
           >
             {/* Trên màn hình lớn hiện chữ */}
             <span className="hidden md:inline">Đăng xuất</span>
