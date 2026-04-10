@@ -27,7 +27,7 @@ const Sidebar = ({
 
     <div className="w-full sm:w-[280px] md:w-[320px] lg:w-[460px] min-w-0 sm:min-w-[240px] h-full bg-white border-r border-gray-200 flex flex-col">
       {/* tên app với avt */}
-      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-blue-600 text-white relative z-10 shadow-md h-16">
+      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] text-white text-white relative z-10 shadow-md h-16">
         <div className="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0 mr-2">
           {/* avt */}
           <button
