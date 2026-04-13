@@ -6,7 +6,7 @@ import { useCallHistory } from "../context/CallHistoryContext";
 
 const TABS = [
   { key: "all", label: "Tất cả" },
-  { key: "missed", label: "Nhỡ" },
+  { key: "missed", label: "Đã bỏ lỡ" },
   { key: "outgoing", label: "Đã gọi" },
   { key: "incoming", label: "Đã nhận" },
 ];
@@ -14,7 +14,7 @@ const TABS = [
 const getStatusLabel = (status) => {
   const map = {
     completed: "Hoàn thành",
-    missed: "Nhỡ",
+    missed: "Đã bỏ lỡ",
     rejected: "Từ chối",
     unreachable: "Không thể kết nối",
     busy: "Đang bận",
@@ -72,10 +72,10 @@ const CallHistoryItem = ({ call, currentUserId, onRecall }) => {
         />
         <div
           className={`absolute -bottom-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] ${status === "completed"
-              ? "bg-green-500"
-              : status === "missed"
-                ? "bg-red-500"
-                : "bg-gray-400"
+            ? "bg-green-500"
+            : status === "missed"
+              ? "bg-red-500"
+              : "bg-gray-400"
             }`}
         >
           {isVideo ? <FaVideo size={8} /> : <FaPhone size={8} />}
@@ -105,8 +105,8 @@ const CallHistoryItem = ({ call, currentUserId, onRecall }) => {
         <button
           onClick={() => onRecall(partner, isVideo ? "video" : "audio")}
           className={`shrink-0 flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 ${status === "missed"
-              ? "bg-red-100 text-red-600 hover:bg-red-500 hover:text-white"
-              : "bg-blue-100 text-blue-600 hover:bg-blue-500 hover:text-white"
+            ? "bg-red-100 text-red-600 hover:bg-red-500 hover:text-white"
+            : "bg-emerald-100 text-emerald-600 hover:bg-emerald-500 hover:text-white"
             }`}
           title="Gọi lại"
         >
@@ -222,9 +222,9 @@ const CallHistoryModal = ({ isOpen, onClose, currentUser }) => {
       />
 
       {/* Modal panel */}
-      <div className="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-white z-50 flex flex-col shadow-2xl">
+      <div className="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-white/95 backdrop-blur z-50 flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center gap-3 p-4 bg-blue-600 text-white border-b border-blue-700">
+        <div className="flex items-center gap-3 p-4 emerald-400 border-b border-emerald-400 text-white shadow-md bg-emerald-500">
           <button onClick={onClose} className="hover:text-blue-200 transition-colors">
             <FaArrowLeft size={18} />
           </button>
@@ -238,8 +238,8 @@ const CallHistoryModal = ({ isOpen, onClose, currentUser }) => {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.key
-                  ? "text-blue-600 border-blue-600"
-                  : "text-gray-500 border-transparent hover:text-gray-700"
+                ? "text-emerald-600 border-emerald-500"
+                : "text-gray-500 border-transparent hover:text-emerald-500"
                 }`}
             >
               {tab.label}
@@ -254,7 +254,7 @@ const CallHistoryModal = ({ isOpen, onClose, currentUser }) => {
             <input
               type="text"
               placeholder="Tìm kiếm..."
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -284,12 +284,12 @@ const CallHistoryModal = ({ isOpen, onClose, currentUser }) => {
 
           {isLoading && (
             <div className="flex justify-center py-4">
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
           {!hasMore && calls.length > 0 && (
-            <p className="text-center text-xs text-gray-400 py-2">Đã hiển thị tất cả</p>
+            <p className="text-center text-xs text-gray-400 py-2"></p>
           )}
         </div>
       </div>
