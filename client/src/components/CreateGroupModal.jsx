@@ -4,10 +4,12 @@ import { toast } from "react-toastify";
 import { FaTimes, FaCheck } from "react-icons/fa";
 import { FiX, FiCheck, FiUsers } from "react-icons/fi";
 
+
 const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
   const [groupName, setGroupName] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
 
   if (!isOpen) return null;
@@ -18,6 +20,14 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
         ? prev.filter((id) => id !== userId)
         : [...prev, userId],
     );
+  };
+
+  const handleCancel = () => {
+    if (groupName || selectedMembers.length > 0) {
+      setShowConfirm(true); // mở confirm
+    } else {
+      onClose(); // đóng luôn
+    }
   };
 
   const getAvatarUrl = (avatarPath) => {
@@ -65,7 +75,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
 
-      <div className="bg-white/95 backdrop-blur rounded-2xl w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-white/95 backdrop-blur rounded-2xl w-full max-w-2xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col max-h-[85vh]">
 
         {/* phần đầu */}
         <div className="p-4 flex justify-between items-center bg-emerald-500 text-white">
@@ -108,7 +118,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
                   key={user._id}
                   onClick={() => toggleMember(user._id)}
                   className={`flex items-center p-2.5 rounded-xl cursor-pointer border transition-all duration-200 ${selectedMembers.includes(user._id)
-                    ? "bg-teal-50 border-teal-500 shadow-sm"
+                    ? "bg-emerald-50 border-emerald-400 shadow-sm"
                     : "hover:bg-gray-50 border-gray-200"
                     }`}
                 >
@@ -120,7 +130,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
                     {user.displayName}
                   </span>
                   {selectedMembers.includes(user._id) && (
-                    <FaCheck className="text-teal-500" />
+                    <FaCheck className="text-emerald-500" />
                   )}
                 </div>
               ))}
@@ -133,7 +143,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
 
 
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="flex-1 py-2.5 rounded-xl font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 hover:text-slate-900 transition"
           >
             Hủy
@@ -144,14 +154,54 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-[2] py-2.5 rounded-xl font-semibold bg-emerald-500 text-white hover:bg-teal-700 active:scale-95 transition-all duration-200 disabled:opacity-50 shadow-md"
+            className="flex-[2] py-2.5 rounded-xl font-semibold bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all duration-200 disabled:opacity-50 shadow-md"
           >
             {loading ? "Đang tạo..." : "Xác nhận tạo nhóm"}
           </button>
         </div>
       </div>
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center">
+          <div className="bg-white rounded-xl p-5 w-[300px] shadow-lg">
+
+            <h3 className="font-semibold text-gray-800 mb-2">
+              Xác nhận hủy
+            </h3>
+
+            <p className="text-sm text-gray-500 mb-4">
+              Dữ liệu bạn đã nhập sẽ bị mất. Bạn có chắc muốn hủy?
+            </p>
+
+            <div className="flex gap-2">
+              {/* ở lại */}
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300"
+              >
+                Ở lại
+              </button>
+
+              {/* hủy */}
+              <button
+                onClick={() => {
+                  setShowConfirm(false);
+                  // reset dữ liệu
+                  setGroupName("");
+                  setSelectedMembers([]);
+                  onClose();
+                }}
+                className="flex-1 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white hover:bg-red-600"
+              >
+                Hủy
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
+
 };
 
 export default CreateGroupModal;
