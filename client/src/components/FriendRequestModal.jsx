@@ -118,26 +118,30 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
   }, [requests, setRequestCount]);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-lg shadow-xl overflow-hidden transform transition-all scale-100">
-        <div className="flex justify-between items-center p-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-800">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+
+      <div className="bg-white/95 backdrop-blur w-full max-w-md rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] overflow-hidden">
+        {/* head */}
+        <div className="flex justify-between items-center p-4 bg-emerald-500 text-white">
+          <h3 className="text-lg font-semibold tracking-wide">
             Lời mời kết bạn
           </h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-red-500 transition"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-red-400 transition"
           >
-            <FaTimes size={20} />
+            <FaTimes size={16} />
           </button>
         </div>
 
-        <div className="p-4 max-h-[400px] overflow-y-auto">
+
+        {/* giữa  */}
+        <div className="p-4 max-h-[450px] overflow-y-auto">
           {loading ? (
-            <div className="text-center py-4 text-gray-500">Đang tải...</div>
+            <div className="text-center py-6 text-gray-500">Đang tải...</div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-8 flex flex-col items-center">
-              <div className="bg-gray-100 p-3 rounded-full mb-2">
+            <div className="text-center py-10 flex flex-col items-center">
+              <div className="bg-gray-100 p-3 rounded-full mb-3">
                 <FaUserTimes size={24} className="text-gray-400" />
               </div>
               <p className="text-gray-500 text-sm">
@@ -149,33 +153,33 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
               {requests.map((user) => (
                 <div
                   key={user._id}
-                  className="flex items-center justify-between bg-white p-2 hover:bg-gray-50 rounded-lg border border-gray-100 shadow-sm transition"
+                  className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-all shadow-sm"
                 >
                   <div className="flex items-center space-x-3">
                     <img
                       src={getAvatarUrl(user.avatar)}
                       alt={getUserDisplayName(user)}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                      className="w-11 h-11 rounded-full object-cover border"
                     />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">
-                        {getUserDisplayName(user)}
-                      </p>
-                    </div>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {getUserDisplayName(user)}
+                    </p>
                   </div>
 
                   <div className="flex space-x-2">
+                    {/* nút đồng ý */}
                     <button
                       onClick={() => handleAccept(user._id)}
-                      className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition"
+                      className="p-2 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-500 hover:text-white transition shadow-sm"
                       title="Đồng ý"
                     >
                       <FaUserCheck size={16} />
                     </button>
+                    {/* nút từ chối */}
                     <button
                       onClick={() => handleReject(user._id)}
-                      className="p-2 bg-red-100 text-red-500 rounded-full hover:bg-red-200 transition"
-                      title="Xóa"
+                      className="p-2 rounded-full bg-slate-200 text-slate-600 hover:bg-slate-400 hover:text-white transition shadow-sm"
+                      title="Từ chối"
                     >
                       <FaTimes size={16} />
                     </button>
@@ -184,6 +188,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
               ))}
             </div>
           )}
+
         </div>
       </div>
     </div>
