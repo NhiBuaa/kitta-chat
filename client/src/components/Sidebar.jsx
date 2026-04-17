@@ -54,7 +54,7 @@ const Sidebar = ({
             className="text-white hover:text-green-200 transition"
             title="Tạo nhóm trò chuyện"
           >
-            <FaUsers size={18} />
+            <FaUsers size={20} />
           </button>
 
           <button
@@ -62,7 +62,7 @@ const Sidebar = ({
             className="relative p-1 hover:text-blue-200"
             title="Lịch sử cuộc gọi"
           >
-            <FaHistory size={16} />
+            <FaHistory size={18} />
             <CallHistoryBadge />
           </button>
 
@@ -73,7 +73,7 @@ const Sidebar = ({
             title="Thông báo kết bạn"
           >
             <FaBell
-              size={16}
+              size={18}
               className={`transition-all duration-300 ${requestCount > 0
                 ? "text-yellow-300 animate-pulse"
                 : "hover:text-green-200"
@@ -90,13 +90,13 @@ const Sidebar = ({
           </button>
           <button
             onClick={handleLogout}
-            className="ml-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-2 py-1.5 rounded text-[10px] font-bold uppercase whitespace-nowrap shadow-sm flex items-center text-white"
+            className="ml-1 bg-slate-200 text-slate-700 hover:bg-slate-300 px-2 py-1.5 rounded text-[10px] font-bold uppercase whitespace-nowrap shadow-sm flex items-center transition"
           >
             {/* Trên màn hình lớn hiện chữ */}
             <span className="hidden md:inline">Đăng xuất</span>
             {/* Trên màn hình nhỏ hiện icon */}
             <span className="md:hidden">
-              <FiLogOut size={14} />
+              <FiLogOut size={18} />
             </span>
           </button>
         </div>
