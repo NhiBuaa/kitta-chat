@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "Hey there! I am using KittaChat.",
+      default: "Chào bạn, tôi đang dùng KittaChat.",
     },
     activityStatus: {
       state: {
