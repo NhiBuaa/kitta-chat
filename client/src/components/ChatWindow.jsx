@@ -142,7 +142,7 @@ const ChatWindow = ({
           {/* chỉ hiện ở màn nhỏ */}
           <button
             onClick={() => setActiveChat(null)}
-            className="sm:hidden mr-3 text-gray-600 hover:text-blue-600"
+            className="sm:hidden mr-3 text-gray-600 hover:text-green-600"
           >
             <FaArrowLeft size={18} />
           </button>
@@ -170,11 +170,11 @@ const ChatWindow = ({
           </div>
         </div>
 
-        <div className="flex space-x-4 text-blue-600">
+        <div className="flex space-x-4 text-green-600">
           {/* Gọi audio */}
           <button
             onClick={() => handleCall("audio")}
-            className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
+            className="hover:bg-green-100 p-2 rounded-full transition-colors text-green-600"
             title="Gọi Audio"
             disabled={currentChatUser.members}
           >
@@ -184,7 +184,7 @@ const ChatWindow = ({
           {/* Gọi video */}
           <button
             onClick={() => handleCall("video")}
-            className="hover:bg-blue-100 p-2 rounded-full transition-colors text-blue-600"
+            className="hover:bg-green-100 p-2 rounded-full transition-colors text-green-600"
             title="Gọi Video"
             disabled={currentChatUser.members}
           >
@@ -430,7 +430,7 @@ const ChatWindow = ({
                           <>
                             {!isGroup &&
                               (message.isRead ? (
-                                <FaCheckDouble className="text-xs text-blue-200 inline-block" />
+                                <FaCheckDouble className="text-xs text-green-200 inline-block" />
                               ) : (
                                 <FaCheck className="text-xs text-green-200 inline-block" />
                               ))}
