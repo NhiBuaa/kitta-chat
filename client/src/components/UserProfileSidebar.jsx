@@ -30,8 +30,10 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
         displayName: user.displayName || "",
         status: user.status || "",
         isOnline:
-          user.activityStatus?.state === "online" ||
-          user.activityStatus?.state === "active",
+          user.activityStatus?.state
+            ? user.activityStatus.state === "online" ||
+            user.activityStatus.state === "active"
+            : true,
         avatarPreview: getAvatarUrl(user.avatar),
         avatarFile: null,
       });
@@ -137,9 +139,9 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
       ></div>
 
       {/*Sidebar*/}
-      <div className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col">
+      <div className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-b from-white to-green-50 shadow-2xl shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col">
         {/* HEADER CỦA SIDEBAR */}
-        <div className="h-32 bg-blue-600 relative flex items-center justify-center">
+        <div className="h-32 bg-gradient-to-r from-[#4CAF50] to-[#66BB6A] relative flex items-center justify-center text-white">
           {/* Nút đóng */}
           <button
             onClick={onClose}
@@ -188,7 +190,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
             {user.displayName}
           </h2>
           <p
-            className={`text-center text-sm mb-6 font-medium ${formData.isOnline ? "text-blue-600" : "text-gray-500"}`}
+            className={`text-center text-sm mb-6 font-medium ${formData.isOnline ? "text-green-600" : "text-gray-500"}`}
           >
             {formData.isOnline
               ? "Đang bật trạng thái hoạt động"
@@ -205,7 +207,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
                 type="text"
                 value={formData.displayName}
                 onChange={(e) => handleChange("displayName", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
               />
             </div>
 
@@ -214,7 +216,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
                 Trạng thái
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none resize-none"
                 rows="3"
                 value={formData.status}
                 onChange={(e) => handleChange("status", e.target.value)}
@@ -231,8 +233,8 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
                 <button
                   onClick={() => handleChange("isOnline", true)}
                   className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${formData.isOnline
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
+                    ? "bg-white text-green-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                     }`}
                 >
                   Bật trạng thái hoạt động
@@ -240,8 +242,8 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
                 <button
                   onClick={() => setShowConfirm(true)}
                   className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!formData.isOnline
-                      ? "bg-white text-gray-700 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
+                    ? "bg-white text-gray-700 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                     }`}
                 >
                   Tắt trạng thái hoạt động
@@ -255,7 +257,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
             <button
               onClick={handlesSave}
               disabled={loading}
-              className={`w-full py-2.5 px-4 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-all ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+              className={`w-full py-2.5 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow-md transition-all ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
             >
               {loading ? "Đang lưu..." : "Lưu thay đổi"}
             </button>

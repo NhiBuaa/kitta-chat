@@ -273,7 +273,7 @@ const Sidebar = ({
                   Không có tin nhắn nào
                 </p>
                 <p className="text-xs mt-1 text-gray-400">
-                  Hãy bắt đầu cuộc trò chuyện hoặc tìm kiếm bạn bè.
+                  Hãy tìm kiếm bạn bè để bắt đầu trò chuyện.
                 </p>
               </>
             )}
