@@ -180,7 +180,7 @@ export const useMessageSocket = ({
             if (isViewingChat && (!isMeSender || isCallLog)) {
                 setMessages((prev) => {
                     const isDuplicate = prev.some((m) =>
-                        m._id === data._id ||
+                        (data._id && m._id === data._id) ||
                         (isCallLog &&
                             m.callData?.callHistoryId &&
                             m.callData.callHistoryId === data.callData?.callHistoryId)
