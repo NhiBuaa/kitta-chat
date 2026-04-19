@@ -85,3 +85,5 @@ database/__pycache__/
 *.tmp
 
 server/src/config/firebase-service.json
+
+/docs
