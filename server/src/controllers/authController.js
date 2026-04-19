@@ -111,6 +111,14 @@ exports.login = async (req, res) => {
         .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
     }
 
+    user.activityStatus = {
+      state: "online",
+      lastSeen: new Date(),
+    };
+    await user.save();  
+
+    
+    // tạo token
     const token = jwt.sign({ id: user._id }, getJwtSecret(), {
       expiresIn: "1d",
     });
@@ -225,6 +233,14 @@ exports.googleLogin = async (req, res) => {
       }
     }
 
+    // update online
+    user.activityStatus = {
+      state: "online",
+      lastSeen: new Date(),
+    };
+
+    await user.save();  
+
     // 4. tạo tolen như login
     const jwtToken = jwt.sign({ id: user._id }, getJwtSecret(), {
       expiresIn: "1d",
@@ -240,6 +256,7 @@ exports.googleLogin = async (req, res) => {
         displayName: user.displayName,
         email: user.email,
         avatar: user.avatar,
+        activityStatus: user.activityStatus,
       },
     });
   } catch (error) {
