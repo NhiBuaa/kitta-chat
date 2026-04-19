@@ -30,5 +30,7 @@ USER node
 
 EXPOSE 3000
 
-# Prod: chạy node thuần, không nodemon
-CMD ["npm", "start"]
+# Prod: lấy NODE_NAME từ hostname tự động của Docker container
+# Ví dụ: chat_backend_1, chat_backend_2, chat_backend_3
+# Giúp phân biệt log từng replica trong proof scaling
+CMD ["sh", "-c", "export NODE_NAME=${HOSTNAME:-backend} && node server.js"]
