@@ -15,3 +15,5 @@ const fileSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('File', fileSchema);
+
+fileSchema.index({ ownerId: 1, createdAt: -1 });
