@@ -399,10 +399,6 @@ const getSidebarUsers = async (req, res) => {
         if (lastMsg) {
           let previewContent = lastMsg.text || "";
 
-          // DEBUG: log để kiểm tra dữ liệu thực tế từ DB
-          console.log("[DEBUG sidebar] lastMsg:", JSON.stringify(lastMsg, null, 2));
-
-          // Nếu tin nhắn cuối là call_log → hiện "[Cuộc gọi video]" hoặc "[Cuộc gọi thoại]"
           if (lastMsg.type === "call_log" && lastMsg.callData?.type) {
             previewContent = lastMsg.callData.type === "video"
               ? "[Cuộc gọi video]"

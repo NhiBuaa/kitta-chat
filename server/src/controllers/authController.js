@@ -112,7 +112,7 @@ exports.login = async (req, res) => {
     }
 
     user.activityStatus = {
-      state: "online",
+      state: "active",
       lastSeen: new Date(),
     };
     await user.save();  
@@ -235,7 +235,7 @@ exports.googleLogin = async (req, res) => {
 
     // update online
     user.activityStatus = {
-      state: "online",
+      state: "active",
       lastSeen: new Date(),
     };
 
