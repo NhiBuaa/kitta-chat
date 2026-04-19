@@ -52,7 +52,6 @@ const messageSchema = new mongoose.Schema(
       duration: { type: Number, default: null }, // giây talk time
       // direction: "outgoing" | "incoming" — do Frontend tự tính từ message.sender
       // Direction được xác định bằng cách so sánh message.sender với currentUserId
-      // → Server KHÔNG cần lưu direction
     },
 
     isRead: { type: Boolean, default: false },

@@ -14,3 +14,5 @@ groupSchema.index({ members: 1 });
 const Group = mongoose.model('Group', groupSchema);
 
 module.exports = Group;
+
+groupSchema.index({ members: 1 });
