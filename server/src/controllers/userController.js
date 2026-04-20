@@ -4,6 +4,7 @@ const getSafeUserName = require("../utils/getSafeUserName");
 const { uploadSingleFile } = require("../services/s3.service");
 const sharp = require("sharp");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
+const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -311,19 +312,16 @@ const accceptFriendRequest = async (req, res) => {
         .json({ success: false, message: "Không có lời mời kết bạn này" });
     }
 
-    // Thêm vào danh sách bạn bè và xoá khỏi lời mời
+    // Gỡ lời mời khỏi receiver (chỉ DB - không cần cache vì đây là pending request)
     await User.findByIdAndUpdate(receiverId, {
-      $push: { friends: senderId },
       $pull: { friendRequests: senderId },
     });
 
-    const sender = await User.findByIdAndUpdate(
-      senderId,
-      {
-        $push: { friends: receiverId },
-      },
-      { new: true },
-    );
+    // Write-Through: Cập nhật MongoDB + Redis SET đồng thời
+    await addFriendWriteThrough(senderId, receiverId);
+
+    // Lấy lại sender sau khi update để emit thông tin
+    const sender = await User.findById(senderId);
 
     // Emit event cho người gửi (sender) để cập nhật sidebar
     emitToUserRoom(io, senderId, "friendRequestAccepted", {
