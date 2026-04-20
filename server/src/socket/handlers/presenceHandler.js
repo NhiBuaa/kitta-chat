@@ -1,5 +1,9 @@
 const User = require("../../models/User");
 const Group = require("../../models/Group");
+const {
+    setPresenceWriteThrough,
+    renewHeartbeat,
+} = require("../../services/presenceService");
 
 const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Presence][node=${NODE_NAME}]`;
@@ -68,7 +72,6 @@ const registerPresenceHandlers = (socket, io) => {
         if (!userId || userId === "undefined") return;
 
         const redisClient = getRedisClient(io);
-        // Tránh đăng ký lại nếu socket đã join cùng userId
         if (!redisClient) {
             console.error(`${logPrefix} Redis client not available`);
             return;
@@ -88,31 +91,44 @@ const registerPresenceHandlers = (socket, io) => {
             });
             console.log(`${logPrefix} register user=${userId} socket=${socket.id} joinedUserRoom=${userId} joinedGroupCount=${userGroups.length}`);
 
-            // ==============================
-            // LOGIC REDI
-            // ==============================
+            // MULTI-TAB SUPPORT
             // Xóa flag "đang chờ offline" (nếu có) do user vừa reconnect (tránh flicker khi F5)
             await redisClient.del(`offline_timer:${userId}`);
 
             // Thêm socket.id vào Set chứa các kết nối của user này
             await redisClient.sAdd(`user_sockets:${userId}`, socket.id);
 
-            // Đếm số lượng thiết bị/tab đang kết nối của user này
-            // Lấy danh sách SocketId hiện tại của User trong Redis
             const socketCount = await redisClient.sCard(`user_sockets:${userId}`);
             const isFirstConnection = socketCount === 1;
 
-            // Chỉ broadcast "online" nếu đây là kết nối đầu tiên của User trên toàn hệ thống
+            // Chỉ broadcast + ghi DB khi đây là kết nối đầu tiên (không phải tab thứ 2/3)
             if (isFirstConnection) {
+                // Write-Through: Cập nhật MongoDB + Redis HASH đồng thời
+                await setPresenceWriteThrough(userId, "online");
+
+                // Cập nhật global online users set (dùng cho API online-friends)
                 await redisClient.sAdd("global_online_users", userId);
 
-                // [DELTA UPDATE] Chỉ phát thông báo người này vừa online cho bạn bè/nhóm
+                // Broadcast cho bạn bè + nhóm
                 broadcastUserStatus(io, userId, "online");
-                await User.findByIdAndUpdate(userId, { "activityStatus.state": "active" });
+            } else {
+                // Tab thứ N (N>1): chỉ bơm heartbeat để giữ TTL
+                await renewHeartbeat(userId);
             }
 
         } catch (err) {
             console.error(`${logPrefix} Error joining rooms for user=${userId}:`, err);
+        }
+    });
+
+    // Heartbeat (Client gửi mỗi 20s)
+    socket.on("heartbeat", async () => {
+        const userId = socket.userId || socket.userId;
+        if (!userId) return;
+        try {
+            await renewHeartbeat(userId);
+        } catch (err) {
+            console.warn(`${logPrefix} heartbeat error user=${userId}:`, err.message);
         }
     });
 
@@ -168,7 +184,7 @@ const registerPresenceHandlers = (socket, io) => {
         }
     });
 
-    // Disconnect 
+    // Disconnect
     socket.on("disconnect", async () => {
         const userId = socket.userId;
         if (!userId) return;
@@ -185,7 +201,7 @@ const registerPresenceHandlers = (socket, io) => {
             const socketCount = await redisClient.sCard(`user_sockets:${userId}`);
 
             if (socketCount === 0) {
-                // Đặt cờ chờ 5s nếu user reload trang
+                // Đặt cờ Grace Period 5s - tránh Flashing khi F5
                 await redisClient.setEx(`offline_timer:${userId}`, 5, "pending");
 
                 setTimeout(async () => {
@@ -193,17 +209,18 @@ const registerPresenceHandlers = (socket, io) => {
                         const isPending = await redisClient.get(`offline_timer:${userId}`);
                         const finalCount = await redisClient.sCard(`user_sockets:${userId}`);
 
+                        // Chỉ offline thật sự khi: không còn pending + không còn tab nào
                         if (!isPending && finalCount === 0) {
                             console.log(`${logPrefix} confirmedOffline user=${userId}`);
 
-                            // Xóa khỏi danh sách online tổng
+                            // Write-Through: Xóa khỏi MongoDB + Redis HASH đồng thời
+                            await setPresenceWriteThrough(userId, "offline");
+
+                            // Xóa khỏi global online users set
                             await redisClient.sRem("global_online_users", userId);
 
-                            // Broadcast cho bạn bè biết người này đã offline
+                            // Broadcast cho bạn bè + nhóm
                             broadcastUserStatus(io, userId, "offline");
-                            await User.findByIdAndUpdate(userId, {
-                                activityStatus: { state: "offline", lastSeen: new Date() },
-                            });
                         }
                     } catch (err) {
                         console.error(`${logPrefix} Error resolving offline status:`, err);
