@@ -4,6 +4,7 @@ const Message = require("../../models/Message");
 const getSafeUserName = require("../../utils/getSafeUserName");
 const saveMessageInBackground = require("../../utils/saveMessageInBackground");
 const buildConversationId = require("../../utils/buildConversationId");
+const { getCachedUserProfile } = require("../../services/cacheService");
 
 const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
@@ -29,16 +30,14 @@ const registerMessageHandlers = (socket, io) => {
                 return;
             }
 
-            // Lấy senderInfo nếu chưa có
+            // Lấy senderInfo - dùng Cache-Aside (ưu tiên Redis -> fallback MongoDB)
             let senderInfo = messageData.senderInfo;
             if (!senderInfo) {
-                const senderDoc = await User.findById(senderId).select(
-                    "displayName avatar username"
-                );
+                const cachedProfile = await getCachedUserProfile(senderId, User);
                 senderInfo = {
                     _id: senderId,
-                    displayName: getSafeUserName(senderDoc),
-                    avatar: senderDoc?.avatar,
+                    displayName: getSafeUserName(cachedProfile),
+                    avatar: cachedProfile?.avatar,
                 };
             }
 
