@@ -1,6 +1,9 @@
 const User = require("../../models/User");
 const Group = require("../../models/Group");
 
+const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
+const logPrefix = `[Presence][node=${NODE_NAME}]`;
+
 /**
  * Lấy đối tượng Redis Client đã được khởi tạo từ Server
  * Hàm này dùng để lấy redisClient động mỗi khi cần truy vấn
@@ -44,12 +47,12 @@ const broadcastUserStatus = async (io, userId, status) => {
 
         if (targetRooms.length > 0) {
             io.to(targetRooms).emit("userStatusChanged", { userId, status });
-            console.log(`[Presence] Broadcast "${status}" for ${userId} -> ${targetRooms.length} rooms`);
+            console.log(`${logPrefix} broadcast status=${status} user=${userId} rooms=${targetRooms.length}`);
         } else {
-            console.log(`[Presence] User ${userId} is ${status} but has no related rooms`);
+            console.log(`${logPrefix} user=${userId} status=${status} rooms=0`);
         }
     } catch (error) {
-        console.error(`[Presence] broadcastUserStatus error for ${userId}:`, error);
+        console.error(`${logPrefix} broadcastUserStatus error user=${userId}:`, error);
     }
 };
 
@@ -67,7 +70,7 @@ const registerPresenceHandlers = (socket, io) => {
         const redisClient = getRedisClient(io);
         // Tránh đăng ký lại nếu socket đã join cùng userId
         if (!redisClient) {
-            console.error("[Presence] Redis client not available");
+            console.error(`${logPrefix} Redis client not available`);
             return;
         }
 
@@ -83,6 +86,7 @@ const registerPresenceHandlers = (socket, io) => {
             userGroups.forEach((group) => {
                 socket.join(group._id.toString());
             });
+            console.log(`${logPrefix} register user=${userId} socket=${socket.id} joinedUserRoom=${userId} joinedGroupCount=${userGroups.length}`);
 
             // ==============================
             // LOGIC REDI
@@ -108,7 +112,7 @@ const registerPresenceHandlers = (socket, io) => {
             }
 
         } catch (err) {
-            console.error(`[Presence] Error joining rooms for ${userId}:`, err);
+            console.error(`${logPrefix} Error joining rooms for user=${userId}:`, err);
         }
     });
 
@@ -121,7 +125,7 @@ const registerPresenceHandlers = (socket, io) => {
 
             // Kiểm tra xem socket này đã có danh tính chưa
             if (!userId) {
-                console.warn(`[Security Warning] Socket ${socket.id} tried to join group ${groupId} without a valid userId.`);
+                console.warn(`${logPrefix} SECURITY socket=${socket.id} joinGroup denied group=${groupId} reason=missing-userId`);
                 socket.emit("error", { message: "Bạn chưa xác thực danh tính." });
                 return;
             }
@@ -135,17 +139,17 @@ const registerPresenceHandlers = (socket, io) => {
 
             if (!isMember) {
                 // NẾU KHÔNG PHẢI THÀNH VIÊN -> Chặn đứng và ghi log cảnh báo
-                console.warn(`[Security Breach] User ${userId} attempted to join group ${groupId} without permission!`);
+                console.warn(`${logPrefix} SECURITY user=${userId} socket=${socket.id} joinGroup denied group=${groupId} reason=not-member`);
                 socket.emit("error", { message: "Bạn không có quyền tham gia nhóm này." });
                 return;
             }
 
             // Nếu qua được bài kiểm tra, cho phép join
             socket.join(groupId);
-            console.log(`[Socket] User ${userId} (${socket.id}) securely joined group ${groupId}`);
+            console.log(`${logPrefix} joinGroup ok user=${userId} socket=${socket.id} group=${groupId}`);
 
         } catch (error) {
-            console.error(`[Socket Error] joining group ${groupId}:`, error);
+            console.error(`${logPrefix} joinGroup error group=${groupId}:`, error);
             socket.emit("error", { message: "Lỗi hệ thống khi tham gia nhóm." });
         }
     });
@@ -158,9 +162,9 @@ const registerPresenceHandlers = (socket, io) => {
             if (!userId) return;
 
             socket.leave(groupId);
-            console.log(`[Socket] User ${userId} (${socket.id}) left group ${groupId}`);
+            console.log(`${logPrefix} leaveGroup user=${userId} socket=${socket.id} group=${groupId}`);
         } catch (error) {
-            console.error(`[Socket Error] leaving group ${groupId}:`, error);
+            console.error(`${logPrefix} leaveGroup error group=${groupId}:`, error);
         }
     });
 
@@ -190,7 +194,7 @@ const registerPresenceHandlers = (socket, io) => {
                         const finalCount = await redisClient.sCard(`user_sockets:${userId}`);
 
                         if (!isPending && finalCount === 0) {
-                            console.log(`[Presence] Confirmed offline: ${userId}`);
+                            console.log(`${logPrefix} confirmedOffline user=${userId}`);
 
                             // Xóa khỏi danh sách online tổng
                             await redisClient.sRem("global_online_users", userId);
@@ -202,12 +206,12 @@ const registerPresenceHandlers = (socket, io) => {
                             });
                         }
                     } catch (err) {
-                        console.error("[Presence] Error resolving offline status:", err);
+                        console.error(`${logPrefix} Error resolving offline status:`, err);
                     }
                 }, 5500);
             }
         } catch (err) {
-            console.error(`[Presence] Disconnect error for ${userId}:`, err);
+            console.error(`${logPrefix} Disconnect error for user=${userId}:`, err);
         }
     });
 };
