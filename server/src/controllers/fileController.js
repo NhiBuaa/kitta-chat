@@ -1,4 +1,4 @@
-const s3Service = require('../service/s3.service');
+const s3Service = require('../services/s3.service');
 const FileModel = require('../models/File');
 const sharp = require('sharp');
 

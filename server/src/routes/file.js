@@ -4,7 +4,7 @@ const multer = require('multer');
 const fileController = require('../controllers/fileController');
 const authMiddleware = require('../middlewares/auth');
 const { uploadFileSingle } = require('../controllers/fileController');
-const { uploadSingleFile } = require('../service/s3.service');
+const { uploadSingleFile } = require('../services/s3.service');
 
 const MAX_LIMIT = 50 * 1024 * 1024;
 

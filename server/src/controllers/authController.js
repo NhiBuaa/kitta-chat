@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const axios = require("axios");
-const { uploadSingleFile } = require("../service/s3.service");
+const { uploadSingleFile } = require("../services/s3.service");
 const admin = require("../config/firebaseAdmin");
 // Hàm helper để validate email
 const validateEmail = (email) => {

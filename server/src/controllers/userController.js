@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
-const { uploadSingleFile } = require("../service/s3.service");
+const { uploadSingleFile } = require("../services/s3.service");
 const sharp = require("sharp");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
