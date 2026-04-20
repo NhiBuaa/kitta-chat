@@ -30,16 +30,15 @@ const registerMessageHandlers = (socket, io) => {
                 return;
             }
 
-            // Lấy senderInfo - dùng Cache-Aside (ưu tiên Redis -> fallback MongoDB)
+            // LUÔN ưu tiên cache để lấy thông tin sender mới nhất
+            // (client có thể gửi senderInfo nhưng có thể đã stale)
             let senderInfo = messageData.senderInfo;
-            if (!senderInfo) {
-                const cachedProfile = await getCachedUserProfile(senderId, User);
-                senderInfo = {
-                    _id: senderId,
-                    displayName: getSafeUserName(cachedProfile),
-                    avatar: cachedProfile?.avatar,
-                };
-            }
+            const cachedProfile = await getCachedUserProfile(senderId, User);
+            senderInfo = {
+                _id: senderId,
+                displayName: getSafeUserName(cachedProfile),
+                avatar: cachedProfile?.avatar,
+            };
 
             // Tính conversationId nếu chưa có
             const conversationId =
