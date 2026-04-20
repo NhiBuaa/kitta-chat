@@ -23,6 +23,43 @@ export const useMessageSocket = ({
     useEffect(() => {
         if (!socket) return;
 
+        const upsertCallLogMessage = (prev, data) => {
+            const callHistoryId = data.callData?.callHistoryId;
+            const existingIndex = prev.findIndex((m) =>
+                (data._id && m._id === data._id) ||
+                (callHistoryId && m.callData?.callHistoryId === callHistoryId)
+            );
+
+            const nextMessage = {
+                _id: data._id,
+                sender: data.sender,
+                receiver: data.receiver,
+                text: data.text || "",
+                type: "call_log",
+                attachments: [],
+                callData: data.callData,
+                createdAt: data.createdAt || new Date().toISOString(),
+                isRead: true,
+            };
+
+            if (existingIndex === -1) {
+                return [...prev, nextMessage];
+            }
+
+            return prev.map((message, index) =>
+                index === existingIndex
+                    ? {
+                        ...message,
+                        ...nextMessage,
+                        callData: {
+                            ...message.callData,
+                            ...nextMessage.callData,
+                        },
+                    }
+                    : message
+            );
+        };
+
         const appendCallLogIfViewing = (data) => {
             const currentActiveChat = activeChatRef.current;
             const senderId = data.senderId || data.sender?._id || data.sender;
@@ -34,30 +71,7 @@ export const useMessageSocket = ({
 
             if (!isViewingChat) return false;
 
-            setMessages((prev) => {
-                const isDuplicate = prev.some((m) =>
-                    m._id === data._id ||
-                    (m.callData?.callHistoryId &&
-                        m.callData.callHistoryId === data.callData?.callHistoryId)
-                );
-
-                if (isDuplicate) return prev;
-
-                return [
-                    ...prev,
-                    {
-                        _id: data._id,
-                        sender: data.sender,
-                        receiver: data.receiver,
-                        text: data.text || "",
-                        type: "call_log",
-                        attachments: [],
-                        callData: data.callData,
-                        createdAt: data.createdAt || new Date().toISOString(),
-                        isRead: true,
-                    },
-                ];
-            });
+            setMessages((prev) => upsertCallLogMessage(prev, data));
 
             setTimeout(() => {
                 if (typeof scrollChatToBottom === "function") {
@@ -179,14 +193,9 @@ export const useMessageSocket = ({
 
             if (isViewingChat && (!isMeSender || isCallLog)) {
                 setMessages((prev) => {
-                    const isDuplicate = prev.some((m) =>
-                        (data._id && m._id === data._id) ||
-                        (isCallLog &&
-                            m.callData?.callHistoryId &&
-                            m.callData.callHistoryId === data.callData?.callHistoryId)
-                    );
-
-                    if (isDuplicate) return prev;
+                    if (isCallLog) {
+                        return upsertCallLogMessage(prev, data);
+                    }
 
                     return [
                         ...prev,
