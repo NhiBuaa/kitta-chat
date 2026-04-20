@@ -1,3 +1,4 @@
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -9,6 +10,7 @@ const userRoutes = require("./src/routes/user");
 const messageRoutes = require("./src/routes/messages");
 const callHistoryRoutes = require("./src/routes/callHistory");
 const { initSocket } = require("./src/socket");
+const { connectCacheRedis } = require("./src/config/redis");
 
 dotenv.config();
 
@@ -206,10 +208,13 @@ process.on("unhandledRejection", (reason) => {
 // =========================================================
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log("✅ MongoDB Connected");
 
-    // Init Socket.IO sau khi DB ready
+    // Kết nối Redis Cache trước khi khởi tạo Socket
+    await connectCacheRedis();
+
+    // Init Socket.IO sau khi DB + Cache ready
     const io = initSocket(server, app);
     global.io = io;
 

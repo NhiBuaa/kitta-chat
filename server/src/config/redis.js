@@ -1,23 +1,26 @@
 const { createClient } = require("redis");
 
-const redisClient = createClient({
+const cacheClient = createClient({
   url: process.env.REDIS_URL,
 });
 
-redisClient.on("error", (err) => console.log("❌ Lỗi kết nối Redis:", err));
-redisClient.on("connect", () =>
-  console.log("✅ Đã kết nối thành công tới Redis!"),
+cacheClient.on("error", (err) => console.log("❌ Lỗi kết nối Redis Cache:", err));
+cacheClient.on("connect", () =>
+  console.log("✅ Đã kết nối thành công tới Redis Cache!"),
 );
 
-const connectRedis = async () => {
+const connectCacheRedis = async () => {
   try {
-    await redisClient.connect();
+    await cacheClient.connect();
   } catch (error) {
-    console.error("Không thể kết nối Redis:", error);
+    console.error("Không thể kết nối Redis Cache:", error);
   }
 };
 
+const redisClient = cacheClient;
+
 module.exports = {
+  cacheClient,
   redisClient,
-  connectRedis,
+  connectCacheRedis,
 };
