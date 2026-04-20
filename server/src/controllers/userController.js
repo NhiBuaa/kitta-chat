@@ -6,6 +6,7 @@ const sharp = require("sharp");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
 const { getMultiPresence } = require("../services/presenceService");
+const { getRecentConversations } = require("../services/conversationCacheService");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -348,119 +349,146 @@ const getSidebarUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    const currentUser = await User.findById(currentUserId).select(
-      "friends friendRequests",
+    // 
+    // Lấy conversation IDs từ Redis ZSET
+    const conversationIds = await getRecentConversations(currentUserId, 30);
+
+    // Lấy friend IDs từ Redis SET (Write-Through cache)
+    const [currentUser, friendIds] = await Promise.all([
+      User.findById(currentUserId).select("friends friendRequests"),
+      getFriendIdsFromCache(currentUserId),
+    ]);
+    const friendsIds = new Set(friendIds);
+
+    // Users đã có trong ZSET
+    // Friends chưa nhắn tin (vẫn phải hiển thị)
+    const targetUserIds = new Set(friendIds);
+
+    for (const convId of conversationIds) {
+      const parts = convId.includes("_") ? convId.split("_") : [convId];
+      for (const part of parts) {
+        if (part && part !== currentUserId) {
+          targetUserIds.add(part);
+        }
+      }
+    }
+
+    const targetIds = Array.from(targetUserIds);
+    const allConversationIds = [
+      ...new Set([...conversationIds, ...Array.from(targetUserIds)]),
+    ];
+
+    // Batch lấy User info + Last Message bằng $in
+    // Thay N query findOne -> chỉ 1 query $in
+    const [users, allLastMessages] = await Promise.all([
+      User.find({ _id: { $in: targetIds } }).select(
+        "displayName avatar status activityStatus friends friendRequests",
+      ),
+      Message.aggregate([
+        { $match: { conversationId: { $in: allConversationIds } } },
+        { $sort: { createdAt: -1 } },
+        { $group: {
+            _id: "$conversationId",
+            lastMsg: { $first: "$$ROOT" },
+        }},
+      ]),
+    ]);
+
+    // Đánh index last message theo conversationId
+    const lastMsgMap = new Map(
+      allLastMessages.map((item) => [item._id, item.lastMsg])
     );
-    // Map friends
-    const friendsIds = currentUser.friends.map((id) => id.toString());
 
-    // Tìm người lạ đã chat
-    const messages = await Message.find({
-      $or: [{ sender: currentUserId }, { receiver: currentUserId }],
-    })
-      .select("sender receiver")
-      .lean();
+    // Batch lấy unread count cho tất cả conversations
+    const unreadCounts = await Message.aggregate([
+      {
+        $match: {
+          receiver: currentUserId,
+          isRead: false,
+          conversationId: { $in: allConversationIds },
+        },
+      },
+      { $group: { _id: "$conversationId", count: { $sum: 1 } } },
+    ]);
+    const unreadMap = new Map(unreadCounts.map((item) => [item._id, item.count]));
 
-    const chattedUserIds = new Set();
-    messages.forEach((msg) => {
-      if (msg.sender && msg.sender.toString() !== currentUserId) {
-        chattedUserIds.add(msg.sender.toString());
-      }
-      if (msg.receiver && msg.receiver.toString() !== currentUserId) {
-        chattedUserIds.add(msg.receiver.toString());
-      }
+    // Build response - ưu tiên thứ tự từ ZSET (tin nhắn mới nhất)
+    // Friends chưa nhắn tin -> xếp sau cùng, vẫn hiển thị
+    const userMap = new Map(users.map((u) => [u._id.toString(), u.toObject()]));
+
+    // Đã có conversation -> xếp theo ZSET order
+    const hasConversationSet = new Set(conversationIds);
+    const conversationEntries = conversationIds
+      .map((convId) => {
+        const parts = convId.includes("_") ? convId.split("_") : [convId];
+        const targetId = parts.find((p) => p && p !== currentUserId) || convId;
+        return { convId, targetId };
+      })
+      .filter(({ targetId }) => userMap.has(targetId));
+
+    // Friends chưa nhắn tin -> xếp sau (lastMessage = null)
+    const noMessageEntries = friendIds
+      .filter((friendId) => {
+        const hasConv = Array.from(hasConversationSet).some((convId) =>
+          convId.includes(friendId)
+        );
+        return !hasConv && userMap.has(friendId);
+      })
+      .map((friendId) => ({ convId: null, targetId: friendId }));
+
+    const allEntries = [...conversationEntries, ...noMessageEntries];
+
+    // Tính relationship flags
+    const getRelationshipFlags = (targetId) => ({
+      isFriend: friendsIds.has(targetId),
+      isSent: includesId(currentUser?.friendRequests, targetId),
+      isReceived: includesId(currentUser?.friendRequests, targetId),
     });
 
-    const allUserIdsToShow = Array.from(
-      new Set([...friendsIds, ...chattedUserIds]),
-    );
+    const result = allEntries.map(({ convId, targetId }) => {
+      const userObj = userMap.get(targetId);
+      const lastMsg = convId ? lastMsgMap.get(convId) : null;
+      const unreadCount = convId ? (unreadMap.get(convId) || 0) : 0;
 
-    const users = await User.find({ _id: { $in: allUserIdsToShow } }).select(
-      "displayName avatar status activityStatus friends friendRequests",
-    );
-
-    const usersWithLastMessage = await Promise.all(
-      users.map(async (user) => {
-        const lastMsg = await Message.findOne({
-          $or: [
-            { sender: currentUserId, receiver: user._id },
-            { sender: user._id, receiver: currentUserId },
-          ],
-        })
-          .sort({ createdAt: -1 })
-          .populate("attachments", "name type url")
-          .select("content text image sender createdAt isRead attachments type callData")
-          .lean();
-
-        const userObj = user.toObject();
-
-        const relationshipFlags = buildRelationshipFlags(user, currentUser);
-
-        if (lastMsg) {
-          let previewContent = lastMsg.text || "";
-
-          if (lastMsg.type === "call_log" && lastMsg.callData?.type) {
-            previewContent = lastMsg.callData.type === "video"
-              ? "[Cuộc gọi video]"
-              : "[Cuộc gọi thoại]";
-          } else if (!previewContent && lastMsg.attachments?.length > 0) {
-            const file = lastMsg.attachments[0];
-
-            const isImage =
-              file.type?.startsWith("image/") ||
-              file.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-
-            if (isImage) {
-              previewContent = "[Hình ảnh]";
-            } else {
-              previewContent = file.name || "[Tệp đính kèm]";
-            }
-          }
-
-          // fallback cuối cùng
-          if (!previewContent) {
-            previewContent = "Tin nhắn";
-          }
-
-          const unreadCount = await Message.countDocuments({
-            sender: user._id,
-            receiver: currentUserId,
-            isRead: false,
-          });
-
-          userObj.lastMessage = {
-            content: previewContent || "Tin nhắn",
-            senderId: lastMsg.sender,
-            createdAt: lastMsg.createdAt,
-            isRead: lastMsg.isRead,
-          };
-
-          userObj.hasUnread = unreadCount > 0;
-          userObj.unreadCount = unreadCount;
-        } else {
-          // Nếu là bạn bè nhưng chưa chat bao giờ
-          userObj.lastMessage = null;
-          userObj.hasUnread = false;
+      if (lastMsg) {
+        let previewContent = lastMsg.text || "";
+        if (lastMsg.type === "call_log" && lastMsg.callData?.type) {
+          previewContent = lastMsg.callData.type === "video"
+            ? "[Cuộc gọi video]"
+            : "[Cuộc gọi thoại]";
+        } else if (!previewContent && lastMsg.attachments?.length > 0) {
+          const file = lastMsg.attachments[0];
+          const isImage =
+            file?.type?.startsWith("image/") ||
+            file?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+          previewContent = isImage ? "[Hình ảnh]" : (file?.name || "[Tệp đính kèm]");
         }
+        if (!previewContent) previewContent = "Tin nhắn";
 
         return {
           ...userObj,
-          ...relationshipFlags,
+          ...getRelationshipFlags(targetId),
+          lastMessage: {
+            content: previewContent,
+            senderId: lastMsg.sender,
+            createdAt: lastMsg.createdAt,
+            isRead: lastMsg.isRead,
+          },
+          hasUnread: unreadCount > 0,
+          unreadCount,
         };
-      }),
-    );
+      }
 
-    usersWithLastMessage.sort((a, b) => {
-      const dateA = a.lastMessage
-        ? new Date(a.lastMessage.createdAt)
-        : new Date(0);
-      const dateB = b.lastMessage
-        ? new Date(b.lastMessage.createdAt)
-        : new Date(0);
-      return dateB - dateA;
+      return {
+        ...userObj,
+        ...getRelationshipFlags(targetId),
+        lastMessage: null,
+        hasUnread: false,
+        unreadCount: 0,
+      };
     });
 
-    res.json({ success: true, users: usersWithLastMessage });
+    res.json({ success: true, users: result });
   } catch (error) {
     console.error("Get Sidebar Users Error:", error);
     res.status(500).json({ success: false, message: error.message });

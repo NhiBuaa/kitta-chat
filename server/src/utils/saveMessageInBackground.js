@@ -1,6 +1,7 @@
 const Message = require("../models/Message");
-const { redisClient } = require("../config/redis");
+const { cacheClient } = require("../config/redis");
 const buildConversationId = require("./buildConversationId");
+const { updateConversationWriteThrough } = require("../services/conversationCacheService");
 
 /**
  * Lưu tin nhắn vào MongoDB và cập nhật Redis cache.
@@ -78,7 +79,8 @@ async function saveMessageInBackground(data) {
         }
 
         // Cập nhật Redis Cache – giữ 50 tin nhắn mới nhất
-        if (redisClient.isOpen && savedMessage) {
+        // Write-Through: cập nhật ZSET danh sách trò chuyện cho tất cả participants
+        if (savedMessage) {
             const dataToCache = {
                 ...(typeof savedMessage.toObject === "function"
                     ? savedMessage.toObject()
@@ -87,10 +89,26 @@ async function saveMessageInBackground(data) {
                 senderInfo: data.senderInfo || data.sender,
             };
 
-            const multi = redisClient.multi();
-            multi.lPush(cacheKey, JSON.stringify(dataToCache));
-            multi.lTrim(cacheKey, 0, 49);
-            await multi.exec();
+            // Lấy participantIds: sender + receiver (1-1 chat)
+            const participantIds = [senderId];
+            if (data.receiverId || data.receiver) {
+                const receiverId = data.receiverId || data.receiver;
+                if (!participantIds.includes(receiverId)) {
+                    participantIds.push(receiverId);
+                }
+            }
+
+            // Chat history cache (50 tin nhắn gần nhất)
+            if (cacheClient.isOpen) {
+                const multi = cacheClient.multi();
+                multi.lPush(cacheKey, JSON.stringify(dataToCache));
+                multi.lTrim(cacheKey, 0, 49);
+                await multi.exec();
+            }
+
+            // ZSET Write-Through: cập nhật conversation list cho all participants
+            const timestamp = new Date(savedMessage.createdAt).getTime();
+            await updateConversationWriteThrough(conversationId, participantIds, timestamp);
         }
 
         return { doc: savedMessage, isDuplicate };

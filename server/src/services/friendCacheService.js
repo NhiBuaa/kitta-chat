@@ -1,4 +1,3 @@
-
 /**
  * ============================================================
  * friendCacheService.js — Friend List Cache (Write-Through + SISMEMBER O(1))
@@ -19,6 +18,9 @@
 
 const { cacheClient } = require("../config/redis");
 const User = require("../models/User");
+const Message = require("../models/Message");
+const buildConversationId = require("../utils/buildConversationId");
+const { updateConversationWriteThrough } = require("./conversationCacheService");
 
 const FRIEND_CACHE_PREFIX = "cache:friends:";
 
@@ -48,6 +50,11 @@ const addFriendWriteThrough = async (userIdA, userIdB) => {
         cacheClient.sAdd(keyB, userIdA.toString()),
     ]);
 
+    // Thêm conversation vào sorted set cho cả hai user
+    const conversationId = buildConversationId(userIdA, userIdB);
+    const timestamp = Date.now();
+    await updateConversationWriteThrough(conversationId, [userIdA, userIdB], timestamp);
+
     console.log(
         `[Write-Through] Friend added: ${userIdA} <-> ${userIdB}`
     );
@@ -75,6 +82,18 @@ const removeFriendWriteThrough = async (userIdA, userIdB) => {
         cacheClient.sRem(keyA, userIdB.toString()),
         cacheClient.sRem(keyB, userIdA.toString()),
     ]);
+
+    // Xóa conversation khỏi sorted set nếu chưa có tin nhắn
+    const conversationId = buildConversationId(userIdA, userIdB);
+    const hasMessages = await Message.countDocuments({ conversationId }) > 0;
+    if (!hasMessages) {
+        const convKeyA = `convs:${userIdA}`;
+        const convKeyB = `convs:${userIdB}`;
+        await Promise.all([
+            cacheClient.zRem(convKeyA, conversationId),
+            cacheClient.zRem(convKeyB, conversationId),
+        ]);
+    }
 
     console.log(
         `[Write-Through] Friend removed: ${userIdA} <-/-> ${userIdB}`
