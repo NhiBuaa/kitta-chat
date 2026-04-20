@@ -5,6 +5,7 @@ const getSafeUserName = require("../../utils/getSafeUserName");
 const saveMessageInBackground = require("../../utils/saveMessageInBackground");
 const buildConversationId = require("../../utils/buildConversationId");
 const { getCachedUserProfile } = require("../../services/cacheService");
+const { checkIsFriend } = require("../../services/friendCacheService");
 
 const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
@@ -28,6 +29,18 @@ const registerMessageHandlers = (socket, io) => {
                 console.error(`${logPrefix} sendMessage rejected reason=missing-receiverId`, messageData);
                 callBack?.({ success: false });
                 return;
+            }
+
+            // Kiểm tra bạn bè O(1) bằng SISMEMBER - không chạm MongoDB
+            if (!isGroup) {
+                const isFriend = await checkIsFriend(senderId, receiverId);
+                if (!isFriend) {
+                    console.warn(
+                        `${logPrefix} UNAUTHORIZED sender=${senderId} receiver=${receiverId} — not friends`
+                    );
+                    callBack?.({ success: false, error: "Not friends" });
+                    return;
+                }
             }
 
             // LUÔN ưu tiên cache để lấy thông tin sender mới nhất

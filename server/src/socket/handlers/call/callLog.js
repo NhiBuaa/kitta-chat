@@ -40,7 +40,7 @@ const createCallLogMessage = async (callRecord) => {
             update,
             {
                 upsert: true,
-                new: true,
+                returnDocument: "after",
                 setDefaultsOnInsert: true,
             },
         );
