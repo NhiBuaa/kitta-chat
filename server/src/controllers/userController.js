@@ -5,6 +5,7 @@ const { uploadSingleFile } = require("../services/s3.service");
 const sharp = require("sharp");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
+const { getMultiPresence } = require("../services/presenceService");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -248,32 +249,28 @@ const getFriends = async (req, res) => {
 };
 
 // [GET] /api/users/online-friends
+// Dùng O(1) HGETALL từ Redis HASH thay
 const getOnlineFriends = async (req, res) => {
   try {
     const currentUserId = req.user.id;
-    const redisClient = req.app.get("redisClient");
 
-    if (!redisClient) {
-      return res
-        .status(500)
-        .json({ success: false, message: "Redis client không sẵn sàng" });
-    }
-
-    // Lấy tất cả user đang online trên toàn hệ thống từ Redis
-    const globalOnlineUsers = await redisClient.sMembers("global_online_users");
-
-    // Lấy danh sách bạn bè của user hiện tại từ DB
-    const currentUser = await User.findById(currentUserId).select("friends");
-    if (!currentUser || !currentUser.friends) {
+    // Lấy friend IDs từ Redis Cache (có warm-up tự động)
+    const friendIds = await getFriendIdsFromCache(currentUserId);
+    if (friendIds.length === 0) {
       return res.json({ success: true, onlineUsers: [] });
     }
 
-    const friendIds = currentUser.friends.map((id) => id.toString());
+    // Lấy trạng thái presence cho toàn bộ bạn bè bằng HGETALL O(1)
+    const presenceMap = await getMultiPresence(friendIds);
 
-    // Lọc ra những người vừa là bạn, vừa nằm trong danh sách online
-    const onlineFriends = friendIds.filter((friendId) =>
-      globalOnlineUsers.includes(friendId),
-    );
+    // Lọc ra những người đang online
+    const onlineFriends = friendIds
+      .filter((friendId) => presenceMap[friendId]?.status !== "offline")
+      .map((friendId) => ({
+        userId: friendId,
+        status: presenceMap[friendId].status,
+        lastSeen: presenceMap[friendId].lastSeen,
+      }));
 
     res.json({ success: true, onlineUsers: onlineFriends });
   } catch (error) {

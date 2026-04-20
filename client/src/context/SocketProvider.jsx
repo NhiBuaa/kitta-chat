@@ -29,6 +29,8 @@ export const SocketProvider = ({ children }) => {
     const lastMessageIdRef = useRef(localStorage.getItem("last_message_id") || null);
     // Debounce timer ref - theo dõi timeout để clear khi unmount
     const saveLastIdTimer = useRef(null);
+    // Heartbeat interval ref
+    const heartbeatInterval = useRef(null);
 
     if (!userId && socket !== null) {
         setSocket(null);
@@ -145,6 +147,18 @@ export const SocketProvider = ({ children }) => {
                 console.log("[Socket] Syncing missed messages after:", lastId);
                 syncMissedMessages(lastId);
             }
+
+            // HEARTBEAT: Gửi tín hiệu mỗi 20s để giữ Redis TTL 30s
+            // Ngăn Ghost Online khi app crash/rớt mạng
+            if (heartbeatInterval.current) {
+                clearInterval(heartbeatInterval.current);
+            }
+            heartbeatInterval.current = setInterval(() => {
+                if (newSocket.connected) {
+                    newSocket.emit("heartbeat");
+                    console.log("[Socket] Heartbeat sent");
+                }
+            }, 20000);
         });
 
         newSocket.on("connect_error", (err) => {
@@ -176,17 +190,15 @@ export const SocketProvider = ({ children }) => {
             }
         });
 
-        // ---- Initial online friends ----
+        // ---- Initial online friends (từ Redis HASH — O(1) HGETALL) ----
         const fetchInitialOnlineUsers = async () => {
             try {
                 const res = await axios.get('/api/users/online-friends', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (res.data.success) {
-                    const initialUsers = res.data.onlineUsers.map((id) => ({
-                        userId: id,
-                    }));
-                    setOnlineUsers(initialUsers);
+                    // Backend trả về [{ userId, status, lastSeen }, ...]
+                    setOnlineUsers(res.data.onlineUsers);
                 }
             } catch (error) {
                 console.error("[Socket] Failed to fetch online friends:", error);
@@ -196,7 +208,7 @@ export const SocketProvider = ({ children }) => {
         fetchInitialOnlineUsers();
 
         // =========================================================
-        // CLEANUP: Ngắt kết nối + clear debounce timer khi unmount
+        // CLEANUP: Ngắt kết nối + clear debounce timer + clear heartbeat khi unmount
         // Quan trọng: Ngăn ghost sockets và memory leak
         // =========================================================
         return () => {
@@ -208,6 +220,13 @@ export const SocketProvider = ({ children }) => {
             newSocket.off("getMessage");
             socketRef.current = null;
             setSocket(null);
+
+            // Clear heartbeat interval khi logout/unmount
+            if (heartbeatInterval.current) {
+                clearInterval(heartbeatInterval.current);
+                heartbeatInterval.current = null;
+                console.log("[Socket] Heartbeat stopped");
+            }
 
             // Clear debounce timer khi logout/unmount
             if (saveLastIdTimer.current) {
