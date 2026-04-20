@@ -44,11 +44,13 @@ const addFriendWriteThrough = async (userIdA, userIdB) => {
         User.findByIdAndUpdate(userIdB, { $addToSet: { friends: userIdA } }),
     ]);
 
-    // Ghi Redis SET song song — Write-Through
-    await Promise.all([
-        cacheClient.sAdd(keyA, userIdB.toString()),
-        cacheClient.sAdd(keyB, userIdA.toString()),
-    ]);
+    // Write-Through Redis SET — an toàn khi Redis chưa kết nối
+    if (cacheClient.isOpen) {
+        await Promise.all([
+            cacheClient.sAdd(keyA, userIdB.toString()),
+            cacheClient.sAdd(keyB, userIdA.toString()),
+        ]);
+    }
 
     // Thêm conversation vào sorted set cho cả hai user
     const conversationId = buildConversationId(userIdA, userIdB);
@@ -71,28 +73,25 @@ const removeFriendWriteThrough = async (userIdA, userIdB) => {
     const keyA = getFriendKey(userIdA);
     const keyB = getFriendKey(userIdB);
 
-    // Xóa khỏi MongoDB
+    // Xóa khoi MongoDB
     await Promise.all([
         User.findByIdAndUpdate(userIdA, { $pull: { friends: userIdB } }),
         User.findByIdAndUpdate(userIdB, { $pull: { friends: userIdA } }),
     ]);
 
-    // Xóa khỏi Redis SET
-    await Promise.all([
-        cacheClient.sRem(keyA, userIdB.toString()),
-        cacheClient.sRem(keyB, userIdA.toString()),
-    ]);
+    // Xóa khoi Redis SET — an toàn khi Redis chưa kết nối
+    if (cacheClient.isOpen) {
+        await Promise.all([
+            cacheClient.sRem(keyA, userIdB.toString()),
+            cacheClient.sRem(keyB, userIdA.toString()),
+        ]);
+    }
 
-    // Xóa conversation khỏi sorted set nếu chưa có tin nhắn
+    // Xóa conversation khoi sorted set nếu chưa có tin nhắn
     const conversationId = buildConversationId(userIdA, userIdB);
     const hasMessages = await Message.countDocuments({ conversationId }) > 0;
     if (!hasMessages) {
-        const convKeyA = `convs:${userIdA}`;
-        const convKeyB = `convs:${userIdB}`;
-        await Promise.all([
-            cacheClient.zRem(convKeyA, conversationId),
-            cacheClient.zRem(convKeyB, conversationId),
-        ]);
+        await updateConversationRemove(conversationId, [userIdA, userIdB]);
     }
 
     console.log(
@@ -112,6 +111,16 @@ const removeFriendWriteThrough = async (userIdA, userIdB) => {
 const checkIsFriend = async (userId, targetId) => {
     const key = getFriendKey(userId);
 
+    // Redis chua kết nối -> fallback MongoDB ngay
+    if (!cacheClient.isOpen) {
+        const user = await User.findById(userId).select("friends").lean();
+        return (
+            user?.friends?.some(
+                (fId) => fId.toString() === targetId.toString()
+            ) ?? false
+        );
+    }
+
     // Check tồn tại Set trong Redis
     let setExists = false;
     try {
@@ -120,32 +129,28 @@ const checkIsFriend = async (userId, targetId) => {
         console.warn(`[Friend Cache] EXISTS error for ${key}:`, err.message);
     }
 
-    // Cache Miss -> Warm-up từ MongoDB
+    // Cache Miss -> Warm-up tu MongoDB
     if (!setExists) {
         console.log(`[Friend Cache] Warm-up for user: ${userId}`);
         const user = await User.findById(userId).select("friends").lean();
 
         if (user && user.friends && user.friends.length > 0) {
             const friendStrings = user.friends.map((id) => id.toString());
-            // SADD toàn bộ friend list lên Redis SET trong 1 lệnh
             if (friendStrings.length > 0) {
                 await cacheClient.sAdd(key, friendStrings);
             }
         } else {
-            // Không có bạn bè -> tạo placeholder để tránh Cache Penetration
             await cacheClient.sAdd(key, "__no_friends__");
             await cacheClient.expire(key, 3600);
         }
     }
 
-    // O(1) Check bằng SISMEMBER
+    // O(1) Check bang SISMEMBER
     try {
         const result = await cacheClient.sIsMember(key, targetId.toString());
-        // redis client trả về 1 (true) hoặc 0 (false)
         return result === 1 || result === true;
     } catch (err) {
         console.warn(`[Friend Cache] SISMEMBER error for ${key}:`, err.message);
-        // Fallback: check MongoDB nếu Redis lỗi
         const user = await User.findById(userId).select("friends").lean();
         return (
             user?.friends?.some(
@@ -165,6 +170,12 @@ const checkIsFriend = async (userId, targetId) => {
  */
 const getFriendIdsFromCache = async (userId) => {
     const key = getFriendKey(userId);
+
+    // Redis chua kết nối -> fallback MongoDB ngay
+    if (!cacheClient.isOpen) {
+        const user = await User.findById(userId).select("friends").lean();
+        return user?.friends?.map((id) => id.toString()) ?? [];
+    }
 
     let setExists = false;
     try {
@@ -192,11 +203,9 @@ const getFriendIdsFromCache = async (userId) => {
 
     try {
         const members = await cacheClient.sMembers(key);
-        // Loại bỏ placeholder nếu có
         return members.filter((m) => m !== "__no_friends__");
     } catch (err) {
         console.warn(`[Friend Cache] SMEMBERS error for ${key}:`, err.message);
-        // Fallback MongoDB
         const user = await User.findById(userId).select("friends").lean();
         return user?.friends?.map((id) => id.toString()) ?? [];
     }
@@ -208,6 +217,7 @@ const getFriendIdsFromCache = async (userId) => {
  */
 const listFriendCacheKeys = async () => {
     try {
+        if (!cacheClient.isOpen) return [];
         return await cacheClient.keys(`${FRIEND_CACHE_PREFIX}*`);
     } catch (err) {
         console.warn("[Friend Cache] Redis KEYS error:", err.message);

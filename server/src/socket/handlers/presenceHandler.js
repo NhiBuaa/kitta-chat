@@ -233,4 +233,4 @@ const registerPresenceHandlers = (socket, io) => {
     });
 };
 
-module.exports = { registerPresenceHandlers, getOnlineUsersPayload };
+module.exports = { registerPresenceHandlers, getOnlineUsersPayload, broadcastUserStatus };

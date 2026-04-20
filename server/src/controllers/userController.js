@@ -7,6 +7,7 @@ const { invalidateUserProfile, getCachedUserProfile } = require("../services/cac
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
 const { getMultiPresence } = require("../services/presenceService");
 const { getRecentConversations } = require("../services/conversationCacheService");
+const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -122,6 +123,22 @@ const updateUserProfile = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       returnDocument: "after",
     }).select("-password");
+
+    // Nếu user thay đổi trạng thái hoạt động qua profile, đồng bộ cả Redis + broadcast cho bạn bè
+    if (activityStatus?.state) {
+      const normalizedStatus =
+        activityStatus.state === "active" ? "online" : activityStatus.state;
+
+      await setPresenceWriteThrough(userId, normalizedStatus);
+
+      if (normalizedStatus === "offline") {
+        await req.app.get("socketio")?.redisClient?.sRem("global_online_users", userId);
+      } else if (normalizedStatus === "online") {
+        await req.app.get("socketio")?.redisClient?.sAdd("global_online_users", userId);
+      }
+
+      await broadcastUserStatus(req.app.get("socketio"), userId, normalizedStatus);
+    }
 
     // Cache Invalidation - xóa cache cũ để user khác thấy avatar/name mới sớm nhất
     await invalidateUserProfile(userId);
@@ -250,21 +267,21 @@ const getFriends = async (req, res) => {
 };
 
 // [GET] /api/users/online-friends
-// Dùng O(1) HGETALL từ Redis HASH thay
+// Dùng O(1) HGETALL tu Redis HASH thay vi global_online_users SET cu
 const getOnlineFriends = async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    // Lấy friend IDs từ Redis Cache (có warm-up tự động)
+    // Lay friend IDs tu Redis Cache (có warm-up tu dong)
     const friendIds = await getFriendIdsFromCache(currentUserId);
     if (friendIds.length === 0) {
       return res.json({ success: true, onlineUsers: [] });
     }
 
-    // Lấy trạng thái presence cho toàn bộ bạn bè bằng HGETALL O(1)
+    // Lay trang thái presence cho toan bộ ban be bang HGETALL O(1)
     const presenceMap = await getMultiPresence(friendIds);
 
-    // Lọc ra những người đang online
+    // Loc ra nhung nguoi dang online
     const onlineFriends = friendIds
       .filter((friendId) => presenceMap[friendId]?.status !== "offline")
       .map((friendId) => ({
@@ -275,7 +292,7 @@ const getOnlineFriends = async (req, res) => {
 
     res.json({ success: true, onlineUsers: onlineFriends });
   } catch (error) {
-    console.error("Lỗi lấy danh sách bạn bè online:", error);
+    console.error("Lỗi lay danh sách ban be online:", error);
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
@@ -374,8 +391,14 @@ const getSidebarUsers = async (req, res) => {
     }
 
     const targetIds = Array.from(targetUserIds);
+
+    // Tranh crash khi khong co target nao
+    if (targetIds.length === 0) {
+      return res.json({ success: true, users: [] });
+    }
+
     const allConversationIds = [
-      ...new Set([...conversationIds, ...Array.from(targetUserIds)]),
+      ...new Set([...conversationIds, ...targetIds]),
     ];
 
     // Batch lấy User info + Last Message bằng $in
@@ -439,9 +462,9 @@ const getSidebarUsers = async (req, res) => {
     const allEntries = [...conversationEntries, ...noMessageEntries];
 
     // Tính relationship flags
-    const getRelationshipFlags = (targetId) => ({
+    const getRelationshipFlags = (targetId, targetUser) => ({
       isFriend: friendsIds.has(targetId),
-      isSent: includesId(currentUser?.friendRequests, targetId),
+      isSent: includesId(targetUser?.friendRequests, currentUserId),
       isReceived: includesId(currentUser?.friendRequests, targetId),
     });
 
@@ -467,7 +490,7 @@ const getSidebarUsers = async (req, res) => {
 
         return {
           ...userObj,
-          ...getRelationshipFlags(targetId),
+          ...getRelationshipFlags(targetId, userObj),
           lastMessage: {
             content: previewContent,
             senderId: lastMsg.sender,
@@ -481,7 +504,7 @@ const getSidebarUsers = async (req, res) => {
 
       return {
         ...userObj,
-        ...getRelationshipFlags(targetId),
+        ...getRelationshipFlags(targetId, userObj),
         lastMessage: null,
         hasUnread: false,
         unreadCount: 0,

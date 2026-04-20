@@ -41,7 +41,9 @@ const Sidebar = ({
               className="w-9 h-9 rounded-full object-cover border-2 border-green-300"
             />
             {/* online chấm xanh hiện  */}
-            <span className="absolute bottom-0 right-0 block h-2 w-2 md:h-2.5 md:w-2.5 rounded-full ring-2 ring-white bg-green-400"></span>
+            {(currentUser?.activityStatus?.state === "active" || currentUser?.activityStatus?.state === "online") && (
+              <span className="absolute bottom-0 right-0 block h-2 w-2 md:h-2.5 md:w-2.5 rounded-full ring-2 ring-white bg-green-400"></span>
+            )}
           </button>
 
           {/* tên app */}

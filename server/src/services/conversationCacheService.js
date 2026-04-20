@@ -35,6 +35,12 @@ const getConvKey = (userId) => `${CONV_CACHE_PREFIX}${userId}`;
 const updateConversationWriteThrough = async (conversationId, participantIds, lastMessageTimestamp) => {
     const convIdStr = conversationId.toString();
 
+    // Redis chua kết nối -> bỏ qua cache, vẫn tiếp tục (DB đã lưu)
+    if (!cacheClient.isOpen) {
+        console.warn(`[Conv Cache] Redis not open, skipping ZADD for conv=${convIdStr}`);
+        return;
+    }
+
     // ZADD cho TẤT CẢ thành viên — song song
     const zAddPromises = participantIds.map((userId) => {
         const key = getConvKey(userId);
@@ -67,19 +73,21 @@ const updateConversationWriteThrough = async (conversationId, participantIds, la
 const getRecentConversations = async (userId, limit = 20) => {
     const key = getConvKey(userId);
 
-    // Check Cache Hit
-    try {
-        const exists = await cacheClient.exists(key);
-        if (exists) {
-            const conversationIds = await cacheClient.zRange(key, 0, limit - 1, { REV: true });
-            console.log(`[Conv Cache] Hit user=${userId} count=${conversationIds.length}`);
-            return conversationIds;
+    // Cache Hit — Redis da san sang
+    if (cacheClient.isOpen) {
+        try {
+            const exists = await cacheClient.exists(key);
+            if (exists) {
+                const conversationIds = await cacheClient.zRange(key, 0, limit - 1, { REV: true });
+                console.log(`[Conv Cache] Hit user=${userId} count=${conversationIds.length}`);
+                return conversationIds;
+            }
+        } catch (err) {
+            console.warn(`[Conv Cache] EXISTS/ZREVRANGE error for ${key}:`, err.message);
         }
-    } catch (err) {
-        console.warn(`[Conv Cache] EXISTS/ZREVRANGE error for ${key}:`, err.message);
     }
 
-    // Cache Miss -> Warm-up từ MongoDB
+    // Cache Miss hoặc Redis chua kết nối -> Warm-up tu MongoDB
     console.log(`[Conv Cache] Miss — warming up for user=${userId}`);
 
     // Lấy các cuộc trò chuyện của user, sắp xếp theo tin nhắn mới nhất
@@ -121,7 +129,7 @@ const getRecentConversations = async (userId, limit = 20) => {
         value: convId,
     }));
 
-    if (zAddEntries.length > 0) {
+    if (zAddEntries.length > 0 && cacheClient.isOpen) {
         try {
             await cacheClient.zAdd(key, zAddEntries);
             console.log(`[Conv Cache] Warm-up wrote ${zAddEntries.length} conversations for ${userId}`);
@@ -143,6 +151,7 @@ const getRecentConversations = async (userId, limit = 20) => {
  * @param {string} conversationId
  */
 const removeConversation = async (userId, conversationId) => {
+    if (!cacheClient.isOpen) return;
     const key = getConvKey(userId);
     try {
         await cacheClient.zRem(key, conversationId.toString());
@@ -152,11 +161,29 @@ const removeConversation = async (userId, conversationId) => {
     }
 };
 
+// Multi-participant ZREM (dùng bởi friendCacheService)
+const updateConversationRemove = async (conversationId, participantIds) => {
+    if (!cacheClient.isOpen) return;
+    const convIdStr = conversationId.toString();
+    try {
+        await Promise.all(
+            participantIds.map((userId) => {
+                const key = getConvKey(userId);
+                return cacheClient.zRem(key, convIdStr);
+            })
+        );
+        console.log(`[Conv Cache] ZREM conversation=${convIdStr} from ${participantIds.length} participants`);
+    } catch (err) {
+        console.warn("[Conv Cache] updateConversationRemove error:", err.message);
+    }
+};
+
 // Debug / Monitoring
 /**
  * Liệt kê tất cả conversation cache key.
  */
 const listConvCacheKeys = async () => {
+    if (!cacheClient.isOpen) return [];
     try {
         return await cacheClient.keys(`${CONV_CACHE_PREFIX}*`);
     } catch (err) {
@@ -169,6 +196,7 @@ module.exports = {
     updateConversationWriteThrough,
     getRecentConversations,
     removeConversation,
+    updateConversationRemove,
     listConvCacheKeys,
     CONV_CACHE_PREFIX,
     getConvKey,

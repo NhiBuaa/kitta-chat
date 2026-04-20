@@ -41,40 +41,39 @@ const setPresenceWriteThrough = async (userId, status) => {
     const key = getPresenceKey(userId);
     const now = Date.now();
 
-    if (status === "offline") {
-        // Ghi vào MongoDB - source of truth
-        await User.findByIdAndUpdate(userId, {
-            "activityStatus.state": "offline",
-            "activityStatus.lastSeen": now,
-        });
+    const normalizedStatus =
+        status === "online" ? "active" : status === "away" ? "busy" : status;
 
-        // Xóa Redis HASH
-        await cacheClient.del(key);
-
+    if (normalizedStatus === "offline") {
+        if (cacheClient.isOpen) {
+            await User.findByIdAndUpdate(userId, {
+                "activityStatus.state": "offline",
+                "activityStatus.lastSeen": now,
+            });
+            await cacheClient.del(key);
+        }
         console.log(`[Presence] User ${userId} -> OFFLINE (DB + Redis deleted)`);
         return;
     }
 
-    // Nếu status = online/away:
-    // Chỉ ghi DB khi key CHƯA TỒN TẠI (tức user đang offline hoàn toàn)
-    // → Tránh spam DB khi user mở nhiều tab cùng lúc
-    const exists = await cacheClient.exists(key);
+    const exists = cacheClient.isOpen ? await cacheClient.exists(key) : false;
     if (!exists) {
         await User.findByIdAndUpdate(userId, {
-            "activityStatus.state": status,
+            "activityStatus.state": normalizedStatus,
             "activityStatus.lastSeen": now,
         });
-        console.log(`[Presence] User ${userId} → ${status.toUpperCase()} (DB + Redis HASH)`);
+        console.log(`[Presence] User ${userId} → ${normalizedStatus.toUpperCase()} (DB + Redis HASH)`);
     }
 
-    // ③ Ghi Redis HASH với TTL 30s
-    await cacheClient.hSet(key, [
-        "status",
-        status,
-        "lastSeen",
-        now.toString(),
-    ]);
-    await cacheClient.expire(key, PRESENCE_TTL);
+    if (cacheClient.isOpen) {
+        await cacheClient.hSet(key, [
+            "status",
+            normalizedStatus,
+            "lastSeen",
+            now.toString(),
+        ]);
+        await cacheClient.expire(key, PRESENCE_TTL);
+    }
 };
 
 // ─── Heartbeat (Chỉ Redis, không chạm DB) ─────────────────────
@@ -87,12 +86,16 @@ const setPresenceWriteThrough = async (userId, status) => {
 const renewHeartbeat = async (userId) => {
     const key = getPresenceKey(userId);
 
-    const exists = await cacheClient.exists(key);
-    if (exists) {
-        // Chỉ cập nhật lastSeen trong HASH — giữ nguyên status hiện tại
-        await cacheClient.hSet(key, "lastSeen", Date.now().toString());
-        // Bơm lại TTL thêm 30s
-        await cacheClient.expire(key, PRESENCE_TTL);
+    if (!cacheClient.isOpen) return;
+
+    try {
+        const exists = await cacheClient.exists(key);
+        if (exists) {
+            await cacheClient.hSet(key, "lastSeen", Date.now().toString());
+            await cacheClient.expire(key, PRESENCE_TTL);
+        }
+    } catch (err) {
+        console.warn(`[Presence] renewHeartbeat error:`, err.message);
     }
 };
 
@@ -107,24 +110,28 @@ const renewHeartbeat = async (userId) => {
 const getUserPresence = async (userId) => {
     const key = getPresenceKey(userId);
 
+    if (!cacheClient.isOpen) {
+        const user = await User.findById(userId).select("activityStatus").lean();
+        return {
+            status: user?.activityStatus?.state || "offline",
+            lastSeen: user?.activityStatus?.lastSeen
+                ? new Date(user.activityStatus.lastSeen).getTime()
+                : null,
+        };
+    }
+
     try {
         const presence = await cacheClient.hGetAll(key);
-
-        // HGETALL trả {} nếu key không tồn tại hoặc đã hết TTL
         if (Object.keys(presence).length === 0) {
             return { status: "offline", lastSeen: null };
         }
-
         return {
             status: presence.status || "offline",
             lastSeen: presence.lastSeen ? parseInt(presence.lastSeen, 10) : null,
         };
     } catch (err) {
         console.warn(`[Presence] HGETALL error for ${key}:`, err.message);
-        // Fallback: đọc từ DB nếu Redis lỗi
-        const user = await User.findById(userId)
-            .select("activityStatus")
-            .lean();
+        const user = await User.findById(userId).select("activityStatus").lean();
         return {
             status: user?.activityStatus?.state || "offline",
             lastSeen: user?.activityStatus?.lastSeen

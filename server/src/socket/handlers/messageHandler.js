@@ -1,4 +1,3 @@
-
 const User = require("../../models/User");
 const Group = require("../../models/Group");
 const Message = require("../../models/Message");
@@ -6,7 +5,6 @@ const getSafeUserName = require("../../utils/getSafeUserName");
 const saveMessageInBackground = require("../../utils/saveMessageInBackground");
 const buildConversationId = require("../../utils/buildConversationId");
 const { getCachedUserProfile } = require("../../services/cacheService");
-const { checkIsFriend } = require("../../services/friendCacheService");
 
 const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
@@ -32,19 +30,8 @@ const registerMessageHandlers = (socket, io) => {
                 return;
             }
 
-            // Kiểm tra bạn bè O(1) bằng SISMEMBER - không chạm MongoDB
-            if (!isGroup) {
-                const isFriend = await checkIsFriend(senderId, receiverId);
-                if (!isFriend) {
-                    console.warn(
-                        `${logPrefix} UNAUTHORIZED sender=${senderId} receiver=${receiverId} — not friends`
-                    );
-                    callBack?.({ success: false, error: "Not friends" });
-                    return;
-                }
-            }
-
-            // LUÔN ưu tiên cache để lấy thông tin sender mới nhất
+            // Khong kiem tra ban be nua — moi nguoi deu co the nhan tin cho nhau
+            // LUON uu tien cache de lay thong tin sender moi nhat
             // (client có thể gửi senderInfo nhưng có thể đã stale)
             let senderInfo = messageData.senderInfo;
             const cachedProfile = await getCachedUserProfile(senderId, User);
