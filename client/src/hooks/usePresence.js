@@ -13,9 +13,18 @@ export const usePresence = () => {
 
         if (!targetUserId) return false;
 
-        return onlineUsers.some(
+        const isOnlineInSocket = onlineUsers.some(
             (user) => String(user.userId) === String(targetUserId),
         );
+        if (isOnlineInSocket) return true;
+
+        // Fallback: nếu payload user đã mang state activityStatus active/online thì vẫn coi như online
+        if (typeof targetUserOrId === "object" && targetUserOrId !== null) {
+            const activityState = targetUserOrId.activityStatus?.state;
+            return activityState === "active" || activityState === "online";
+        }
+
+        return false;
     };
 
     return { onlineUsers, checkIsOnline };

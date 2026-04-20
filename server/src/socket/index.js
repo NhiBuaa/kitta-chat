@@ -10,6 +10,10 @@ const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
 const { registerCallHandlers } = require("./handlers/call/index");
 
+const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
+const logPrefix = `[Socket][node=${NODE_NAME}]`;
+const deliveryLogPrefix = `[Delivery][node=${NODE_NAME}]`;
+
 // =========================================================
 // CRITICAL: Validate environment variables at startup
 // =========================================================
@@ -42,23 +46,46 @@ const initSocket = (httpServer, app) => {
     const pubClient = createClient({ url: redisUrl });
     const subClient = pubClient.duplicate();
 
-    pubClient.on("error", (err) => console.error("[Redis PubClient] Error:", err));
-    subClient.on("error", (err) => console.error("[Redis SubClient] Error:", err));
+    pubClient.on("error", (err) => console.error(`${logPrefix}[RedisPub] Error:`, err));
+    subClient.on("error", (err) => console.error(`${logPrefix}[RedisSub] Error:`, err));
 
     Promise.all([pubClient.connect(), subClient.connect()])
         .then(() => {
             io.adapter(createAdapter(pubClient, subClient));
-            console.log("[Socket] Redis adapter connected");
+            console.log(`${logPrefix} Redis adapter connected`);
         })
         .catch((err) => {
             // FAIL FAST: Redis là core dependency, không chạy nếu không có Redis
-            console.error(`[Socket] FATAL: Redis connection failed: ${err.message}`);
+            console.error(`${logPrefix} FATAL: Redis connection failed: ${err.message}`);
             process.exit(1);
         });
 
     app.set("socketio", io);
     app.set("redisClient", pubClient);
     io.redisClient = pubClient;
+
+    // Proof log cho multi-node: backend nào đang giữ socket của receiver
+    // sẽ tự in log "received" khi nhận được sự kiện nội bộ này.
+    io.on("proof:message-dispatched", (payload = {}) => {
+        const {
+            messageId,
+            senderId,
+            receiverId,
+            conversationId,
+            originNode,
+        } = payload;
+
+        if (!receiverId) return;
+
+        const localReceiverSockets = io.of("/").adapter.rooms.get(String(receiverId));
+        const localCount = localReceiverSockets?.size || 0;
+
+        if (localCount > 0) {
+            console.log(
+                `${deliveryLogPrefix} RECEIVED receiver=${receiverId} sender=${senderId} messageId=${messageId || "n/a"} conv=${conversationId || "n/a"} localSockets=${localCount} originNode=${originNode || "unknown"}`
+            );
+        }
+    });
 
     // =========================================================
     // MIDDLEWARE: JWT Authentication
@@ -68,7 +95,7 @@ const initSocket = (httpServer, app) => {
         const token = socket.handshake.auth?.token;
 
         if (!token) {
-            console.warn(`[Socket Auth] No token: ${socket.id}`);
+            console.warn(`${logPrefix}[Auth] No token for socket=${socket.id}`);
             return next(new Error("Authentication required"));
         }
 
@@ -78,14 +105,14 @@ const initSocket = (httpServer, app) => {
             socket.userEmail = decoded.email;
 
             if (!socket.userId) {
-                console.warn(`[Socket Auth] Token missing user ID: ${socket.id}`);
+                console.warn(`${logPrefix}[Auth] Token missing userId for socket=${socket.id}`);
                 return next(new Error("Invalid token payload"));
             }
 
-            console.log(`[Socket Auth] OK: ${socket.userId} (${socket.id})`);
+            console.log(`${logPrefix}[Auth] OK user=${socket.userId} socket=${socket.id}`);
             next();
         } catch (err) {
-            console.warn(`[Socket Auth] Invalid token ${socket.id}: ${err.message}`);
+            console.warn(`${logPrefix}[Auth] Invalid token socket=${socket.id}: ${err.message}`);
             return next(new Error("Invalid or expired token"));
         }
     });
@@ -95,7 +122,11 @@ const initSocket = (httpServer, app) => {
     // =========================================================
     io.on("connection", (socket) => {
         const userId = socket.userId;
-        console.log(`[Socket] Connected: ${socket.id} (user: ${userId})`);
+        console.log(`${logPrefix} CONNECT user=${userId} socket=${socket.id}`);
+
+        socket.on("disconnect", (reason) => {
+            console.log(`${logPrefix} DISCONNECT user=${socket.userId} socket=${socket.id} reason=${reason}`);
+        });
 
         socket.emit("me", socket.id);
 

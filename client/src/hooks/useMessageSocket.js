@@ -23,6 +23,43 @@ export const useMessageSocket = ({
     useEffect(() => {
         if (!socket) return;
 
+        const upsertCallLogMessage = (prev, data) => {
+            const callHistoryId = data.callData?.callHistoryId;
+            const existingIndex = prev.findIndex((m) =>
+                (data._id && m._id === data._id) ||
+                (callHistoryId && m.callData?.callHistoryId === callHistoryId)
+            );
+
+            const nextMessage = {
+                _id: data._id,
+                sender: data.sender,
+                receiver: data.receiver,
+                text: data.text || "",
+                type: "call_log",
+                attachments: [],
+                callData: data.callData,
+                createdAt: data.createdAt || new Date().toISOString(),
+                isRead: true,
+            };
+
+            if (existingIndex === -1) {
+                return [...prev, nextMessage];
+            }
+
+            return prev.map((message, index) =>
+                index === existingIndex
+                    ? {
+                        ...message,
+                        ...nextMessage,
+                        callData: {
+                            ...message.callData,
+                            ...nextMessage.callData,
+                        },
+                    }
+                    : message
+            );
+        };
+
         const appendCallLogIfViewing = (data) => {
             const currentActiveChat = activeChatRef.current;
             const senderId = data.senderId || data.sender?._id || data.sender;
@@ -34,30 +71,7 @@ export const useMessageSocket = ({
 
             if (!isViewingChat) return false;
 
-            setMessages((prev) => {
-                const isDuplicate = prev.some((m) =>
-                    m._id === data._id ||
-                    (m.callData?.callHistoryId &&
-                        m.callData.callHistoryId === data.callData?.callHistoryId)
-                );
-
-                if (isDuplicate) return prev;
-
-                return [
-                    ...prev,
-                    {
-                        _id: data._id,
-                        sender: data.sender,
-                        receiver: data.receiver,
-                        text: data.text || "",
-                        type: "call_log",
-                        attachments: [],
-                        callData: data.callData,
-                        createdAt: data.createdAt || new Date().toISOString(),
-                        isRead: true,
-                    },
-                ];
-            });
+            setMessages((prev) => upsertCallLogMessage(prev, data));
 
             setTimeout(() => {
                 if (typeof scrollChatToBottom === "function") {
@@ -179,14 +193,9 @@ export const useMessageSocket = ({
 
             if (isViewingChat && (!isMeSender || isCallLog)) {
                 setMessages((prev) => {
-                    const isDuplicate = prev.some((m) =>
-                        (data._id && m._id === data._id) ||
-                        (isCallLog &&
-                            m.callData?.callHistoryId &&
-                            m.callData.callHistoryId === data.callData?.callHistoryId)
-                    );
-
-                    if (isDuplicate) return prev;
+                    if (isCallLog) {
+                        return upsertCallLogMessage(prev, data);
+                    }
 
                     return [
                         ...prev,
@@ -244,6 +253,14 @@ export const useMessageSocket = ({
                 if (index === -1) return null;
 
                 const itemToUpdate = updatedList[index];
+                const incomingMessageId = data._id || null;
+                const incomingCallHistoryId = isCallLog ? data.callData?.callHistoryId || null : null;
+                const lastMessageId = itemToUpdate.lastMessage?.messageId || null;
+                const lastCallHistoryId = itemToUpdate.lastMessage?.callHistoryId || null;
+                const isSameSidebarEvent =
+                    (incomingMessageId && lastMessageId === incomingMessageId) ||
+                    (incomingCallHistoryId && lastCallHistoryId === incomingCallHistoryId);
+
                 updatedList.splice(index, 1);
                 updatedList.unshift({
                     ...itemToUpdate,
@@ -252,9 +269,15 @@ export const useMessageSocket = ({
                         senderId,
                         createdAt: data.createdAt || new Date().toISOString(),
                         isRead: !isUnread,
+                        messageId: incomingMessageId,
+                        callHistoryId: incomingCallHistoryId,
                     },
                     hasUnread: isUnread,
-                    unreadCount: isUnread ? (itemToUpdate.unreadCount || 0) + 1 : 0,
+                    unreadCount: isUnread
+                        ? isSameSidebarEvent
+                            ? (itemToUpdate.unreadCount || 0)
+                            : (itemToUpdate.unreadCount || 0) + 1
+                        : 0,
                 });
                 return updatedList;
             };

@@ -91,7 +91,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
 
       // Xử lý status online/offline
       const activityStatus = {
-        state: formData.isOnline ? "online" : "offline",
+        state: formData.isOnline ? "active" : "offline",
         lastSeen: new Date(),
       };
       dataPayload.append("activityStatus", JSON.stringify(activityStatus));

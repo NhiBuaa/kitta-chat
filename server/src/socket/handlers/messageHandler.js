@@ -4,6 +4,10 @@ const Message = require("../../models/Message");
 const getSafeUserName = require("../../utils/getSafeUserName");
 const saveMessageInBackground = require("../../utils/saveMessageInBackground");
 const buildConversationId = require("../../utils/buildConversationId");
+const { getCachedUserProfile } = require("../../services/cacheService");
+
+const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
+const logPrefix = `[Message][node=${NODE_NAME}]`;
 
 /**
  * Đăng ký các message events cho một socket
@@ -21,28 +25,30 @@ const registerMessageHandlers = (socket, io) => {
             const senderId = typeof sender === "object" ? sender._id : sender;
 
             if (!receiverId) {
-                console.error("[Message] Thiếu receiverId:", messageData);
+                console.error(`${logPrefix} sendMessage rejected reason=missing-receiverId`, messageData);
                 callBack?.({ success: false });
                 return;
             }
 
-            // Lấy senderInfo nếu chưa có
+            // Khong kiem tra ban be nua — moi nguoi deu co the nhan tin cho nhau
+            // LUON uu tien cache de lay thong tin sender moi nhat
+            // (client có thể gửi senderInfo nhưng có thể đã stale)
             let senderInfo = messageData.senderInfo;
-            if (!senderInfo) {
-                const senderDoc = await User.findById(senderId).select(
-                    "displayName avatar username"
-                );
-                senderInfo = {
-                    _id: senderId,
-                    displayName: getSafeUserName(senderDoc),
-                    avatar: senderDoc?.avatar,
-                };
-            }
+            const cachedProfile = await getCachedUserProfile(senderId, User);
+            senderInfo = {
+                _id: senderId,
+                displayName: getSafeUserName(cachedProfile),
+                avatar: cachedProfile?.avatar,
+            };
 
             // Tính conversationId nếu chưa có
             const conversationId =
                 messageData.conversationId ||
                 (isGroup ? receiverId : buildConversationId(senderId, receiverId));
+
+            console.log(
+                `${logPrefix} sendMessage start sender=${senderId} receiver=${receiverId} conv=${conversationId} isGroup=${Boolean(isGroup)} socket=${socket.id}`
+            );
 
             // Lưu vào DB trước để payload realtime luôn có _id ổn định.
             const { doc: savedMessage, isDuplicate } = await saveMessageInBackground({
@@ -72,13 +78,25 @@ const registerMessageHandlers = (socket, io) => {
 
                 // Emit đến tất cả thành viên trong room nhóm
                 io.to(receiverId).emit("getMessage", payloadToEmit);
-                console.log(`[Message] Group message → room ${receiverId}`);
+                console.log(`${logPrefix} emit group room=${receiverId} messageId=${payloadToEmit._id}`);
             } else {
                 // Emit cho cả 2 phía trong cuộc trò chuyện 1-1
                 io.to(receiverId).emit("getMessage", payloadToEmit);
                 io.to(senderId).emit("getMessage", payloadToEmit);
-                console.log(`[Message] 1-1 message → ${senderId} & ${receiverId}`);
+                console.log(`${logPrefix} SENT sender=${senderId} receiver=${receiverId} messageId=${payloadToEmit._id} senderRoom=${senderId} receiverRoom=${receiverId}`);
+
+                io.serverSideEmit("proof:message-dispatched", {
+                    messageId: payloadToEmit._id,
+                    senderId,
+                    receiverId,
+                    conversationId,
+                    originNode: NODE_NAME,
+                });
             }
+
+            console.log(
+                `${logPrefix} sendMessage done messageId=${savedMessage?._id || "n/a"} duplicate=${Boolean(isDuplicate)}`
+            );
 
             callBack?.({
                 success: true,
@@ -86,7 +104,7 @@ const registerMessageHandlers = (socket, io) => {
                 isDuplicate: Boolean(isDuplicate),
             });
         } catch (err) {
-            console.error("[Message] sendMessage error:", err);
+            console.error(`${logPrefix} sendMessage error:`, err);
             callBack?.({ success: false });
         }
     });
@@ -108,6 +126,7 @@ const registerMessageHandlers = (socket, io) => {
                 );
 
                 io.to(groupId).emit("groupUserRead", { groupId, readerId });
+                console.log(`${logPrefix} markRead group group=${groupId} reader=${readerId}`);
             } else {
                 const { senderId, receiverId } = data;
                 if (!senderId || !receiverId) return;
@@ -120,9 +139,10 @@ const registerMessageHandlers = (socket, io) => {
                 );
 
                 io.to(senderId).emit("userReadMessages", { readerId: receiverId });
+                console.log(`${logPrefix} markRead direct conv=${convId} sender=${senderId} reader=${receiverId}`);
             }
         } catch (err) {
-            console.error("[Message] markRead error:", err);
+            console.error(`${logPrefix} markRead error:`, err);
         }
     });
 };

@@ -84,6 +84,18 @@ messageSchema.index(
   }
 );
 
+messageSchema.index(
+  { "callData.callHistoryId": 1 },
+  {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: {
+      type: "call_log",
+      "callData.callHistoryId": { $exists: true, $ne: null },
+    },
+  }
+);
+
 const Message = mongoose.model('Message', messageSchema);
 
 module.exports = Message;

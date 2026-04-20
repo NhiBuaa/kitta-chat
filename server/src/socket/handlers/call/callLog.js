@@ -16,36 +16,49 @@ const createCallLogMessage = async (callRecord) => {
             { path: "receiver", select: "_id displayName avatar username" },
         ];
 
-        const existing = await Message.findOne({ "callData.callHistoryId": callRecord._id });
-
-        if (existing) {
-            if (existing.callData.status !== callRecord.status) {
-                existing.callData.status = callRecord.status;
-                existing.callData.duration = callRecord.duration;
-                await existing.save();
-            }
-            return await Message.findById(existing._id).populate(populate);
-        }
-
-        const saved = await new Message({
-            conversationId: callRecord.conversationId,
-            type: "call_log",
-            sender: callRecord.callerId,
-            receiver: callRecord.receiverId,
-            text: "",
-            attachments: [],
-            callData: {
-                callHistoryId: callRecord._id,
-                type: callRecord.type,
-                status: callRecord.status,
-                startedAt: callRecord.startedAt,
-                duration: callRecord.duration,
+        const filter = { "callData.callHistoryId": callRecord._id, type: "call_log" };
+        const update = {
+            $set: {
+                conversationId: callRecord.conversationId,
+                sender: callRecord.callerId,
+                receiver: callRecord.receiverId,
+                text: "",
+                attachments: [],
+                "callData.type": callRecord.type,
+                "callData.status": callRecord.status,
+                "callData.startedAt": callRecord.startedAt,
+                "callData.duration": callRecord.duration,
             },
-        }).save();
+            $setOnInsert: {
+                type: "call_log",
+                "callData.callHistoryId": callRecord._id,
+            },
+        };
+
+        const saved = await Message.findOneAndUpdate(
+            filter,
+            update,
+            {
+                upsert: true,
+                returnDocument: "after",
+                setDefaultsOnInsert: true,
+            },
+        );
 
         console.log(`[CallLog] Created call_log message ${saved._id} for call ${callRecord._id}`);
         return await Message.findById(saved._id).populate(populate);
     } catch (err) {
+        if (err?.code === 11000) {
+            try {
+                const existing = await Message.findOne({
+                    type: "call_log",
+                    "callData.callHistoryId": callRecord._id,
+                }).populate(populate);
+                if (existing) return existing;
+            } catch (findErr) {
+                console.error("[CallLog] duplicate recovery error:", findErr);
+            }
+        }
         console.error("[CallLog] createCallLogMessage error:", err);
         return null;
     }
