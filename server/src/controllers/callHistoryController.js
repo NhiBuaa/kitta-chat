@@ -171,7 +171,7 @@ exports.markCallRead = async (req, res) => {
       {
         $addToSet: { readBy: new mongoose.Types.ObjectId(currentUserId) },
       },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!updated) {
