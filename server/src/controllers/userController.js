@@ -3,6 +3,7 @@ const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
 const { uploadSingleFile } = require("../services/s3.service");
 const sharp = require("sharp");
+const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -28,7 +29,8 @@ const buildRelationshipFlags = (targetUser, currentUser) => {
 const getUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const user = await User.findById(userId).select("-password"); // Bỏ password
+    // Dùng Cache-Aside: ưu tiên Redis -> fallback MongoDB nếu miss
+    const user = await getCachedUserProfile(userId, User);
 
     if (!user) {
       return res
@@ -117,6 +119,9 @@ const updateUserProfile = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       returnDocument: "after",
     }).select("-password");
+
+    // Cache Invalidation - xóa cache cũ để user khác thấy avatar/name mới sớm nhất
+    await invalidateUserProfile(userId);
 
     res.json({
       success: true,
