@@ -82,6 +82,34 @@ test("RabbitMQ connection manager connects once and asserts configured queues", 
   ]);
 });
 
+test("RabbitMQ connection manager reports connected health after channel setup", async () => {
+  const amqp = createFakeAmqp();
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+
+  assert.deepEqual(await manager.checkStatus(), { status: "connected" });
+});
+
+test("RabbitMQ connection manager reports unavailable health when broker connection fails", async () => {
+  const manager = createRabbitConnectionManager({
+    amqp: {
+      async connect() {
+        throw new Error("rabbit down");
+      },
+    },
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+
+  assert.deepEqual(await manager.checkStatus(), {
+    status: "unavailable",
+    error: "rabbit down",
+  });
+});
+
 test("RabbitMQ URL defaults to localhost for local server runs", () => {
   const previousUrl = process.env.RABBITMQ_URL;
   delete process.env.RABBITMQ_URL;

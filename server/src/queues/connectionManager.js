@@ -20,6 +20,7 @@ const createRabbitConnectionManager = ({
   let connection;
   let channel;
   let connecting;
+  let lastError = null;
 
   const reset = () => {
     channel = null;
@@ -37,10 +38,13 @@ const createRabbitConnectionManager = ({
     connection = await amqp.connect(url);
     channel = await connection.createChannel();
     await assertTopology(channel);
+    lastError = null;
 
     if (typeof connection.on === "function") {
       connection.on("close", reset);
-      connection.on("error", () => {});
+      connection.on("error", (error) => {
+        lastError = error;
+      });
     }
 
     return channel;
@@ -51,11 +55,31 @@ const createRabbitConnectionManager = ({
       if (channel) return channel;
       if (!connecting) {
         connecting = connect().catch((error) => {
+          lastError = error;
           reset();
           throw error;
         });
       }
       return connecting;
+    },
+
+    async checkStatus() {
+      try {
+        await this.getChannel();
+        return { status: "connected" };
+      } catch (error) {
+        return {
+          status: "unavailable",
+          error: error.message,
+        };
+      }
+    },
+
+    getStatus() {
+      return {
+        status: channel ? "connected" : "unavailable",
+        error: lastError?.message,
+      };
     },
 
     async close() {

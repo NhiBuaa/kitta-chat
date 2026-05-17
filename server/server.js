@@ -10,6 +10,7 @@ const messageRoutes = require("./src/routes/messages");
 const callHistoryRoutes = require("./src/routes/callHistory");
 const { initSocket } = require("./src/socket");
 const { connectCacheRedis } = require("./src/config/redis");
+const { connectionManager: rabbitConnectionManager } = require("./src/queues/rabbitmq");
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use(
 app.get("/healthz", async (req, res) => {
   const mongoStatus =
     mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  const rabbitmqStatus = await rabbitConnectionManager.checkStatus();
   const healthy = mongoStatus === "connected";
 
   res.status(healthy ? 200 : 503).json({
@@ -73,6 +75,7 @@ app.get("/healthz", async (req, res) => {
     services: {
       mongo: mongoStatus,
       redis: "unknown",
+      rabbitmq: rabbitmqStatus,
     },
   });
 });
