@@ -38,4 +38,6 @@ export const SOCKET_EVENTS = {
   CALL_MEDIA_UPDATED: 'updateMediaStatus',
   CALL_HISTORY_SYNC: 'callHistorySync',
   CALL_LOG_MESSAGE: 'callLogMessage',
+  FILE_PROCESSED: 'fileProcessed',
+  AVATAR_UPDATED: 'avatarUpdated',
 }

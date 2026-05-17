@@ -1,7 +1,6 @@
 import React from 'react';
 import { PreviewMedia } from '@/features/chat/components/PreviewMedia.jsx';
 
-// Format dung lượng file
 const formatBytes = (bytes, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
     const k = 1024;
@@ -26,6 +25,7 @@ export const UploadItem = ({ item }) => {
         switch (status) {
             case 'waiting': return 'Đang chờ...';
             case 'uploading': return `Đang tải lên... ${progress}%`;
+            case 'processing': return 'Đang xử lý...';
             case 'completed': return 'Hoàn tất';
             case 'error': return 'Lỗi tải lên';
             default: return '';
@@ -34,16 +34,12 @@ export const UploadItem = ({ item }) => {
 
     return (
         <div className="flex items-center p-3 mb-3 bg-white border border-gray-200 rounded-lg shadow-sm transition-all hover:shadow-md">
-
-            {/* Preview*/}
             <div className="flex-shrink-0 mr-4">
                 <PreviewMedia file={file} />
             </div>
 
-            {/* Phần thông tin & tiến trình */}
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-1">
-                    {/* Tên file & Kích thước */}
                     <div className="truncate pr-4">
                         <p className="text-sm font-medium text-gray-900 truncate">
                             {file.name}
@@ -53,7 +49,6 @@ export const UploadItem = ({ item }) => {
                         </p>
                     </div>
 
-                    {/* Trạng thái */}
                     <span className={`text-xs font-semibold ${status === 'completed' ? 'text-green-600' :
                         status === 'error' ? 'text-red-600' :
                             'text-blue-600'
@@ -62,7 +57,6 @@ export const UploadItem = ({ item }) => {
                     </span>
                 </div>
 
-                {/* Progress bar */}
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden">
                     <div
                         className={`h-1.5 rounded-full transition-all duration-300 ease-out ${getProgressColor()}`}
@@ -70,7 +64,6 @@ export const UploadItem = ({ item }) => {
                     />
                 </div>
             </div>
-
         </div>
     );
 };

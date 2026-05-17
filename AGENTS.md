@@ -1,4 +1,13 @@
-# AGENTS.md
+# AGENTS.
+
+## Skills Workflow
+
+- Feature design → grill-with-docs
+- Implementation → tdd
+- Debugging → diagnose
+- Architecture review → zoom-out
+- Refactor → improve-codebase-architecture
+- Session summary → handoff
 
 Huong dan dai han cho AI agents lam viec trong repo `web-socket`.
 

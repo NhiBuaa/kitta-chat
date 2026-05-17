@@ -187,6 +187,23 @@ export const SocketProvider = ({ children }) => {
             }
         });
 
+        newSocket.on(SOCKET_EVENTS.FILE_PROCESSED, (payload) => {
+            window.dispatchEvent(
+                new CustomEvent("file-processed", { detail: payload })
+            );
+        });
+
+        newSocket.on(SOCKET_EVENTS.AVATAR_UPDATED, (payload) => {
+            const updatedUser = payload?.user;
+            if (updatedUser?._id || updatedUser?.id) {
+                localStorage.setItem("user", JSON.stringify(updatedUser));
+                window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+            }
+            window.dispatchEvent(
+                new CustomEvent("avatar-updated", { detail: payload })
+            );
+        });
+
         // ---- Initial online friends (từ Redis HASH — O(1) HGETALL) ----
         const fetchInitialOnlineUsers = async () => {
             try {
@@ -213,6 +230,8 @@ export const SocketProvider = ({ children }) => {
             newSocket.off("disconnect");
             newSocket.off(SOCKET_EVENTS.USER_ONLINE);
             newSocket.off(SOCKET_EVENTS.MESSAGE_RECEIVE);
+            newSocket.off(SOCKET_EVENTS.FILE_PROCESSED);
+            newSocket.off(SOCKET_EVENTS.AVATAR_UPDATED);
             socketRef.current = null;
             setSocket(null);
 
