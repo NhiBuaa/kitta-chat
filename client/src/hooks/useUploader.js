@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { uploadFileChunked, uploadFileSingle } from './useUpload';
+import { uploadFileChunked, uploadFileSingle } from '@/hooks/useUpload.js';
 import { toast } from 'react-toastify';
 import imageCompression from 'browser-image-compression';
 

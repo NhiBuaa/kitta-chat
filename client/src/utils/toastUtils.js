@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "react-toastify";
-import MissedCallToast from "../components/MissedCallToast";
+import MissedCallToast from "@/features/calls/components/MissedCallToast.jsx";
 
 export const showMissedCallToast = ({
     callerName,

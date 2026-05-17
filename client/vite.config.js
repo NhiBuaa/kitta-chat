@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import path from 'node:path'
 import process from 'node:process'
 
 export default defineConfig(({ mode }) => {
@@ -24,6 +25,11 @@ export default defineConfig(({ mode }) => {
     ],
     define: {
       global: 'window',
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(process.cwd(), 'src'),
+      },
     },
     server: {
       host: true,

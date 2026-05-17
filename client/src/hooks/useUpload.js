@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { initUpload, getPresignedUrl, completeUpload } from '../services/api';
+import { initUpload, getPresignedUrl, completeUpload } from '@/services/api/fileApi.js';
 
 // BIẾN
 const VITE_API_URL_FILES = import.meta.env.VITE_API_URL_FILES || '/api/files';

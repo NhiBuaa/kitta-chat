@@ -1,7 +1,11 @@
 const { createClient } = require("redis");
 
+const redisUrl =
+  process.env.REDIS_URL ||
+  `redis://${process.env.REDIS_HOST || "redis"}:${process.env.REDIS_PORT || 6379}`;
+
 const cacheClient = createClient({
-  url: process.env.REDIS_URL,
+  url: redisUrl,
 });
 
 cacheClient.on("error", (err) => console.log("❌ Lỗi kết nối Redis Cache:", err));
