@@ -16,12 +16,12 @@ const buildFilePayload = (file) => ({
 });
 
 const buildSourcePayload = (source) => {
-  if (!source?.key) {
-    throw new Error("Image job source.key is required");
+  if (!source?.key && !source?.url) {
+    throw new Error("Image job source.key or source.url is required");
   }
 
   return {
-    key: source.key,
+    key: source.key || null,
     url: source.url || null,
   };
 };
@@ -56,8 +56,33 @@ const buildAvatarImageJob = ({
   createdAt: new Date().toISOString(),
 });
 
+const buildRemoteAvatarImageJob = ({
+  avatarUrl,
+  userId,
+  displayName = "google-avatar",
+  profileUpdates = {},
+  requestId = crypto.randomUUID(),
+}) => {
+  if (!avatarUrl) {
+    throw new Error("Remote avatar URL is required");
+  }
+
+  return buildAvatarImageJob({
+    source: { url: avatarUrl },
+    file: {
+      originalname: "google-avatar.jpg",
+      mimetype: "image/jpeg",
+      size: 0,
+    },
+    userId,
+    profileUpdates,
+    requestId,
+  });
+};
+
 module.exports = {
   IMAGE_JOB_QUEUE,
   buildChatImageJob,
   buildAvatarImageJob,
+  buildRemoteAvatarImageJob,
 };

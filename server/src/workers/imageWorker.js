@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const sharp = require("sharp");
+const axios = require("axios");
 
 const FileModel = require("../models/File");
 const UserModel = require("../models/User");
@@ -33,8 +34,23 @@ const cleanupSourceObject = async (deps, job) => {
   }
 };
 
+const downloadSourceBuffer = async (deps, job) => {
+  if (job.source?.key) {
+    return deps.s3Service.downloadObject(job.source.key);
+  }
+
+  if (job.source?.url) {
+    const response = await deps.httpClient.get(job.source.url, {
+      responseType: "arraybuffer",
+    });
+    return Buffer.from(response.data);
+  }
+
+  throw new Error("Image job source.key or source.url is required");
+};
+
 const processChatImage = async (job, deps) => {
-  const sourceBuffer = await deps.s3Service.downloadObject(job.source.key);
+  const sourceBuffer = await downloadSourceBuffer(deps, job);
   const processedBuffer = await deps
     .sharp(sourceBuffer)
     .resize({ width: 1920, withoutEnlargement: true })
@@ -81,7 +97,7 @@ const processChatImage = async (job, deps) => {
 };
 
 const processAvatarImage = async (job, deps) => {
-  const sourceBuffer = await deps.s3Service.downloadObject(job.source.key);
+  const sourceBuffer = await downloadSourceBuffer(deps, job);
   const processedBuffer = await deps
     .sharp(sourceBuffer)
     .resize(256, 256, { fit: "cover" })
@@ -129,6 +145,7 @@ const processImageJob = async (
     FileModel,
     UserModel,
     invalidateUserProfile,
+    httpClient: axios,
     io: global.io,
   },
 ) => {
@@ -155,7 +172,7 @@ const startImageWorker = async () => {
     connectionManager,
     prefetch: Number(process.env.IMAGE_WORKER_CONCURRENCY || 2),
     processJob: async (job) => {
-      await processImageJob(job, { sharp, s3Service, FileModel, UserModel, invalidateUserProfile, io });
+      await processImageJob(job, { sharp, s3Service, FileModel, UserModel, invalidateUserProfile, httpClient: axios, io });
     },
     logger: console,
   });

@@ -4,6 +4,7 @@ const test = require("node:test");
 const {
   buildChatImageJob,
   buildAvatarImageJob,
+  buildRemoteAvatarImageJob,
 } = require("../src/queues/imageJobs");
 const { createFileController } = require("../src/controllers/fileController");
 const { processImageJob } = require("../src/workers/imageWorker");
@@ -53,6 +54,86 @@ test("buildAvatarImageJob keeps profile fields separate from image work", () => 
   assert.deepEqual(job.profileUpdates, { displayName: "Alice", status: "Hi" });
   assert.equal(job.source.key, "queue-sources/req-2.jpg");
   assert.equal(job.file.bufferBase64, undefined);
+});
+
+test("buildRemoteAvatarImageJob queues remote avatars without staging bytes in the API", () => {
+  const job = buildRemoteAvatarImageJob({
+    avatarUrl: "https://lh3.googleusercontent.com/avatar.jpg",
+    userId: "user-1",
+    displayName: "Alice",
+    requestId: "req-google-avatar",
+  });
+
+  assert.equal(job.type, "avatar-image");
+  assert.equal(job.userId, "user-1");
+  assert.equal(job.requestId, "req-google-avatar");
+  assert.equal(job.source.key, null);
+  assert.equal(job.source.url, "https://lh3.googleusercontent.com/avatar.jpg");
+  assert.equal(job.file.originalName, "google-avatar.jpg");
+  assert.equal(job.file.mimeType, "image/jpeg");
+  assert.equal(job.file.bufferBase64, undefined);
+});
+
+test("processImageJob downloads remote avatar sources inside the worker", async () => {
+  const httpDownloads = [];
+  const uploads = [];
+  const deps = {
+    sharp: () => ({
+      resize() {
+        return this;
+      },
+      webp() {
+        return this;
+      },
+      async toBuffer() {
+        return Buffer.from("remote avatar webp");
+      },
+    }),
+    httpClient: {
+      async get(url, options) {
+        httpDownloads.push({ url, options });
+        return { data: Buffer.from("remote avatar bytes") };
+      },
+    },
+    s3Service: {
+      async uploadSingleFile(buffer, fileName, mimeType, folder) {
+        uploads.push({ buffer, fileName, mimeType, folder });
+        return "https://bucket.s3.local/avatars/google-avatar.webp";
+      },
+      async deleteObject() {
+        throw new Error("remote sources should not be deleted from S3");
+      },
+    },
+    FileModel: {},
+    UserModel: {
+      async findByIdAndUpdate(userId, updateData) {
+        return { _id: userId, ...updateData };
+      },
+    },
+    invalidateUserProfile: async () => {},
+    io: { to: () => ({ emit() {} }) },
+  };
+
+  const result = await processImageJob(
+    buildRemoteAvatarImageJob({
+      avatarUrl: "https://lh3.googleusercontent.com/avatar.jpg",
+      userId: "user-1",
+      displayName: "Alice",
+      requestId: "req-google-avatar",
+    }),
+    deps,
+  );
+
+  assert.equal(result.success, true);
+  assert.deepEqual(httpDownloads, [
+    {
+      url: "https://lh3.googleusercontent.com/avatar.jpg",
+      options: { responseType: "arraybuffer" },
+    },
+  ]);
+  assert.equal(uploads[0].buffer.toString(), "remote avatar webp");
+  assert.equal(uploads[0].fileName, "google-avatar.webp");
+  assert.equal(uploads[0].folder, "avatars");
 });
 
 test("processImageJob stores chat images and emits fileProcessed", async () => {

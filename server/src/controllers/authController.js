@@ -2,9 +2,8 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const axios = require("axios");
-const { uploadSingleFile } = require("../services/s3.service");
 const admin = require("../config/firebaseAdmin");
+const { queueRemoteAvatarProcessing } = require("../services/avatarQueueService");
 // Hàm helper để validate email
 const validateEmail = (email) => {
   return String(email)
@@ -189,44 +188,43 @@ exports.googleLogin = async (req, res) => {
 
     // 3. ch co thi tao moi
     if (!user) {
-      let avatarUrl = defaultAvatarUrl;
-      // chỉ tải avt lần đầu
-      if (avatar) {
-        try {
-          const response = await axios.get(avatar, {
-            responseType: "arraybuffer",
-          });
-
-          const buffer = Buffer.from(response.data, "binary");
-
-          const fileName = `google-${Date.now()}.jpg`;
-
-          avatarUrl = await uploadSingleFile(
-            buffer,
-            fileName,
-            "image/jpeg",
-            "avatars",
-          );
-        } catch (err) {
-          console.error("Upload Google avatar failed:", err.message);
-        }
-      }
       user = new User({
         email: cleanEmail,
         displayName,
-        avatar: avatarUrl,
+        avatar: defaultAvatarUrl,
         password: await bcrypt.hash("GOOGLE_LOGIN", 10),
         provider: "google",
       });
 
       await user.save();
+
+      if (avatar) {
+        try {
+          await queueRemoteAvatarProcessing({
+            avatarUrl: avatar,
+            userId: user._id,
+            displayName,
+          });
+        } catch (err) {
+          console.error("Queue Google avatar failed:", err.message);
+        }
+      }
     } else {
       // chỉ update nếu là google account
       if (user.provider === "google") {
         user.displayName = displayName || user.displayName;
 
         if (!user.avatar && avatar) {
-          user.avatar = avatar;
+          user.avatar = defaultAvatarUrl;
+          try {
+            await queueRemoteAvatarProcessing({
+              avatarUrl: avatar,
+              userId: user._id,
+              displayName,
+            });
+          } catch (err) {
+            console.error("Queue Google avatar failed:", err.message);
+          }
         }
 
         await user.save();
