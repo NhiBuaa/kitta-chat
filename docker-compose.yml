@@ -43,7 +43,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
     env_file:
       - ./server/.env
     depends_on:
@@ -78,7 +78,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
     env_file:
       - ./server/.env
     depends_on:
@@ -103,7 +103,28 @@ services:
     command: npm run worker:notification
     environment:
       - NODE_NAME=${NODE_NAME:-notification-worker}
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - ./server/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - chat-network
+
+  # =========================================================
+  # AUDIT WORKER - RabbitMQ consumer for audit/statistics jobs
+  # =========================================================
+  audit-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    restart: on-failure
+    command: npm run worker:audit
+    environment:
+      - NODE_NAME=${NODE_NAME:-audit-worker}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
     env_file:
       - ./server/.env
     depends_on:
@@ -138,6 +159,9 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: chat_rabbitmq
     restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-guest}
     ports:
       - "5672:5672"
       - "15672:15672"
