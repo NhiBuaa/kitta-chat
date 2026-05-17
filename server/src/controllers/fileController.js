@@ -3,11 +3,14 @@ const FileModel = require("../models/File");
 const { buildChatImageJob } = require("../queues/imageJobs");
 const { publishImageJob } = require("../queues/rabbitmq");
 
-const createFileController = ({ imageQueue = { publishImageJob } } = {}) => ({
+const createFileController = ({
+  imageQueue = { publishImageJob },
+  storage = s3Service,
+} = {}) => ({
   init: async (req, res) => {
     try {
       const { fileName, fileType } = req.body;
-      const { uploadId, key } = await s3Service.initiateUpload(fileName, fileType);
+      const { uploadId, key } = await storage.initiateUpload(fileName, fileType);
 
       res.status(200).json({ uploadId, key });
     } catch (error) {
@@ -18,7 +21,7 @@ const createFileController = ({ imageQueue = { publishImageJob } } = {}) => ({
   getPresignedUrl: async (req, res) => {
     try {
       const { uploadId, key, partNumber } = req.body;
-      const url = await s3Service.getPartUrl(uploadId, key, partNumber);
+      const url = await storage.getPartUrl(uploadId, key, partNumber);
 
       res.status(200).json({ url });
     } catch (error) {
@@ -30,7 +33,7 @@ const createFileController = ({ imageQueue = { publishImageJob } } = {}) => ({
     try {
       const { uploadId, key, parts, fileName, fileType, fileSize, fileHash } = req.body;
 
-      await s3Service.completeUpload(uploadId, key, parts);
+      await storage.completeUpload(uploadId, key, parts);
 
       const baseUrl =
         process.env.CLOUDFRONT_URL ||
@@ -79,7 +82,14 @@ const createFileController = ({ imageQueue = { publishImageJob } } = {}) => ({
         throw new Error("Khong lay duoc id nguoi dung tu token");
       }
 
-      const job = buildChatImageJob({ file: req.file, userId });
+      const source = await storage.uploadObject(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        "queue-sources",
+      );
+
+      const job = buildChatImageJob({ source, file: req.file, userId });
       await imageQueue.publishImageJob(job);
 
       res.status(202).json({

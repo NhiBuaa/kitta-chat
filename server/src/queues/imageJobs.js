@@ -13,18 +13,35 @@ const buildFilePayload = (file) => ({
   baseName: getBaseName(file.originalname),
   mimeType: file.mimetype,
   size: file.size,
-  bufferBase64: file.buffer.toString("base64"),
 });
 
-const buildChatImageJob = ({ file, userId, requestId = crypto.randomUUID() }) => ({
+const buildSourcePayload = (source) => {
+  if (!source?.key) {
+    throw new Error("Image job source.key is required");
+  }
+
+  return {
+    key: source.key,
+    url: source.url || null,
+  };
+};
+
+const buildChatImageJob = ({
+  source,
+  file,
+  userId,
+  requestId = crypto.randomUUID(),
+}) => ({
   type: "chat-image",
   requestId,
   userId,
+  source: buildSourcePayload(source),
   file: buildFilePayload(file),
   createdAt: new Date().toISOString(),
 });
 
 const buildAvatarImageJob = ({
+  source,
   file,
   userId,
   profileUpdates = {},
@@ -34,6 +51,7 @@ const buildAvatarImageJob = ({
   requestId,
   userId,
   profileUpdates,
+  source: buildSourcePayload(source),
   file: buildFilePayload(file),
   createdAt: new Date().toISOString(),
 });

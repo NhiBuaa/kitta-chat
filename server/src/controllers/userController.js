@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
+const s3Service = require("../services/s3.service");
 const { buildAvatarImageJob } = require("../queues/imageJobs");
 const { publishImageJob } = require("../queues/rabbitmq");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
@@ -113,7 +114,14 @@ const updateUserProfile = async (req, res) => {
 
     let avatarRequestId = null;
     if (req.file) {
+      const source = await s3Service.uploadObject(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        "queue-sources",
+      );
       const avatarJob = buildAvatarImageJob({
+        source,
         file: req.file,
         userId,
         profileUpdates: {},

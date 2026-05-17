@@ -5,36 +5,45 @@ const {
   buildChatImageJob,
   buildAvatarImageJob,
 } = require("../src/queues/imageJobs");
+const { createFileController } = require("../src/controllers/fileController");
 const { processImageJob } = require("../src/workers/imageWorker");
 
-test("buildChatImageJob serializes the uploaded image for async processing", () => {
-  const file = {
-    buffer: Buffer.from("raw image"),
-    originalname: "hello world.png",
-    mimetype: "image/png",
-    size: 9,
-  };
-
-  const job = buildChatImageJob({ file, userId: "user-1", requestId: "req-1" });
+test("buildChatImageJob only puts S3 source metadata on the queue", () => {
+  const job = buildChatImageJob({
+    source: {
+      key: "queue-sources/req-1.png",
+      url: "https://bucket.s3.local/queue-sources/req-1.png",
+    },
+    file: {
+      originalname: "hello world.png",
+      mimetype: "image/png",
+      size: 9,
+    },
+    userId: "user-1",
+    requestId: "req-1",
+  });
 
   assert.equal(job.type, "chat-image");
   assert.equal(job.userId, "user-1");
   assert.equal(job.requestId, "req-1");
   assert.equal(job.file.originalName, "hello world.png");
   assert.equal(job.file.mimeType, "image/png");
-  assert.equal(job.file.bufferBase64, file.buffer.toString("base64"));
+  assert.equal(job.source.key, "queue-sources/req-1.png");
+  assert.equal(job.source.url, "https://bucket.s3.local/queue-sources/req-1.png");
+  assert.equal(job.file.bufferBase64, undefined);
 });
 
 test("buildAvatarImageJob keeps profile fields separate from image work", () => {
-  const file = {
-    buffer: Buffer.from("avatar"),
-    originalname: "avatar.jpg",
-    mimetype: "image/jpeg",
-    size: 6,
-  };
-
   const job = buildAvatarImageJob({
-    file,
+    source: {
+      key: "queue-sources/req-2.jpg",
+      url: "https://bucket.s3.local/queue-sources/req-2.jpg",
+    },
+    file: {
+      originalname: "avatar.jpg",
+      mimetype: "image/jpeg",
+      size: 6,
+    },
     userId: "user-1",
     profileUpdates: { displayName: "Alice", status: "Hi" },
     requestId: "req-2",
@@ -42,7 +51,8 @@ test("buildAvatarImageJob keeps profile fields separate from image work", () => 
 
   assert.equal(job.type, "avatar-image");
   assert.deepEqual(job.profileUpdates, { displayName: "Alice", status: "Hi" });
-  assert.equal(job.file.bufferBase64, file.buffer.toString("base64"));
+  assert.equal(job.source.key, "queue-sources/req-2.jpg");
+  assert.equal(job.file.bufferBase64, undefined);
 });
 
 test("processImageJob stores chat images and emits fileProcessed", async () => {
@@ -61,12 +71,19 @@ test("processImageJob stores chat images and emits fileProcessed", async () => {
       },
     }),
     s3Service: {
+      async downloadObject(key) {
+        assert.equal(key, "queue-sources/cat.png");
+        return Buffer.from("raw");
+      },
       async uploadSingleFile(buffer, fileName, mimeType, folder) {
         assert.equal(buffer.toString(), "processed image");
         assert.equal(fileName, "cat.webp");
         assert.equal(mimeType, "image/webp");
         assert.equal(folder, "uploads");
         return "https://bucket.s3.local/uploads/cat.webp";
+      },
+      async deleteObject(key) {
+        assert.equal(key, "queue-sources/cat.png");
       },
     },
     FileModel: {
@@ -90,8 +107,11 @@ test("processImageJob stores chat images and emits fileProcessed", async () => {
 
   const result = await processImageJob(
     buildChatImageJob({
+      source: {
+        key: "queue-sources/cat.png",
+        url: "https://bucket.s3.local/queue-sources/cat.png",
+      },
       file: {
-        buffer: Buffer.from("raw"),
         originalname: "cat.png",
         mimetype: "image/png",
         size: 3,
@@ -127,12 +147,19 @@ test("processImageJob updates avatar and emits avatarUpdated", async () => {
       },
     }),
     s3Service: {
+      async downloadObject(key) {
+        assert.equal(key, "queue-sources/me.jpg");
+        return Buffer.from("raw avatar");
+      },
       async uploadSingleFile(buffer, fileName, mimeType, folder) {
         assert.equal(buffer.toString(), "avatar webp");
         assert.equal(fileName, "me.webp");
         assert.equal(mimeType, "image/webp");
         assert.equal(folder, "avatars");
         return "https://bucket.s3.local/avatars/me.webp";
+      },
+      async deleteObject(key) {
+        assert.equal(key, "queue-sources/me.jpg");
       },
     },
     FileModel: {},
@@ -158,8 +185,11 @@ test("processImageJob updates avatar and emits avatarUpdated", async () => {
 
   const result = await processImageJob(
     buildAvatarImageJob({
+      source: {
+        key: "queue-sources/me.jpg",
+        url: "https://bucket.s3.local/queue-sources/me.jpg",
+      },
       file: {
-        buffer: Buffer.from("raw avatar"),
         originalname: "me.jpg",
         mimetype: "image/jpeg",
         size: 10,
@@ -183,4 +213,57 @@ test("processImageJob updates avatar and emits avatarUpdated", async () => {
   assert.equal(emitted[0].room, "user-1");
   assert.equal(emitted[0].eventName, "avatarUpdated");
   assert.equal(emitted[0].payload.requestId, "req-2");
+});
+
+test("uploadSingleFile stages the image in S3 before publishing a metadata-only job", async () => {
+  const published = [];
+  const stagedUploads = [];
+  const controller = createFileController({
+    storage: {
+      async uploadObject(buffer, fileName, mimeType, folder) {
+        stagedUploads.push({ buffer, fileName, mimeType, folder });
+        return {
+          key: "queue-sources/source-cat.png",
+          url: "https://bucket.s3.local/queue-sources/source-cat.png",
+        };
+      },
+    },
+    imageQueue: {
+      async publishImageJob(job) {
+        published.push(job);
+      },
+    },
+  });
+
+  const req = {
+    user: { id: "user-1" },
+    file: {
+      buffer: Buffer.from("raw-cat"),
+      originalname: "cat.png",
+      mimetype: "image/png",
+      size: 7,
+    },
+  };
+  const res = {
+    statusCode: null,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.body = payload;
+      return this;
+    },
+  };
+
+  await controller.uploadSingleFile(req, res);
+
+  assert.equal(res.statusCode, 202);
+  assert.equal(stagedUploads[0].folder, "queue-sources");
+  assert.equal(stagedUploads[0].buffer.toString(), "raw-cat");
+  assert.equal(published.length, 1);
+  assert.equal(published[0].source.key, "queue-sources/source-cat.png");
+  assert.equal(published[0].file.bufferBase64, undefined);
+  assert.equal(res.body.file.status, "processing");
 });

@@ -20,9 +20,22 @@ const emitToUser = (io, userId, eventName, payload) => {
   io.to(String(userId)).emit(eventName, payload);
 };
 
+const cleanupSourceObject = async (deps, job) => {
+  if (!job.source?.key || typeof deps.s3Service.deleteObject !== "function") {
+    return;
+  }
+
+  try {
+    await deps.s3Service.deleteObject(job.source.key);
+  } catch (error) {
+    console.warn(`[ImageWorker] failed to delete source object ${job.source.key}:`, error.message);
+  }
+};
+
 const processChatImage = async (job, deps) => {
+  const sourceBuffer = await deps.s3Service.downloadObject(job.source.key);
   const processedBuffer = await deps
-    .sharp(Buffer.from(job.file.bufferBase64, "base64"))
+    .sharp(sourceBuffer)
     .resize({ width: 1920, withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
@@ -62,12 +75,14 @@ const processChatImage = async (job, deps) => {
   };
 
   emitToUser(deps.io, job.userId, "fileProcessed", payload);
+  await cleanupSourceObject(deps, job);
   return { success: true, file: payload.file };
 };
 
 const processAvatarImage = async (job, deps) => {
+  const sourceBuffer = await deps.s3Service.downloadObject(job.source.key);
   const processedBuffer = await deps
-    .sharp(Buffer.from(job.file.bufferBase64, "base64"))
+    .sharp(sourceBuffer)
     .resize(256, 256, { fit: "cover" })
     .webp({ quality: 80 })
     .toBuffer();
@@ -101,6 +116,7 @@ const processAvatarImage = async (job, deps) => {
     avatar: avatarUrl,
   });
 
+  await cleanupSourceObject(deps, job);
   return { success: true, user: updatedUser, avatar: avatarUrl };
 };
 
