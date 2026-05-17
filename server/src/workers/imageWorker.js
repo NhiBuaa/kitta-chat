@@ -6,8 +6,9 @@ const FileModel = require("../models/File");
 const UserModel = require("../models/User");
 const s3Service = require("../services/s3.service");
 const { invalidateUserProfile } = require("../services/cacheService");
-const { connectRabbitMQ, closeRabbitMQ } = require("../queues/rabbitmq");
+const { closeRabbitMQ, connectionManager } = require("../queues/rabbitmq");
 const { IMAGE_JOB_QUEUE } = require("../queues/imageJobs");
+const { startQueueWorker } = require("./workerRuntime");
 const { createSocketEmitter } = require("../socket/emitter");
 const { connectCacheRedis } = require("../config/redis");
 
@@ -149,25 +150,15 @@ const startImageWorker = async () => {
   const io = await createSocketEmitter();
   global.io = io;
 
-  const channel = await connectRabbitMQ();
-  await channel.prefetch(Number(process.env.IMAGE_WORKER_CONCURRENCY || 2));
-
-  await channel.consume(
-    IMAGE_JOB_QUEUE,
-    async (message) => {
-      if (!message) return;
-
-      try {
-        const job = JSON.parse(message.content.toString("utf8"));
-        await processImageJob(job, { sharp, s3Service, FileModel, UserModel, invalidateUserProfile, io });
-        channel.ack(message);
-      } catch (error) {
-        console.error("[ImageWorker] job failed:", error);
-        channel.nack(message, false, false);
-      }
+  await startQueueWorker({
+    queueName: IMAGE_JOB_QUEUE,
+    connectionManager,
+    prefetch: Number(process.env.IMAGE_WORKER_CONCURRENCY || 2),
+    processJob: async (job) => {
+      await processImageJob(job, { sharp, s3Service, FileModel, UserModel, invalidateUserProfile, io });
     },
-    { noAck: false },
-  );
+    logger: console,
+  });
 
   console.log(`[ImageWorker] consuming queue=${IMAGE_JOB_QUEUE}`);
 };

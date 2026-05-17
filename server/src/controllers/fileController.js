@@ -1,10 +1,10 @@
 const s3Service = require("../services/s3.service");
 const FileModel = require("../models/File");
 const { buildChatImageJob } = require("../queues/imageJobs");
-const { publishImageJob } = require("../queues/rabbitmq");
+const { imageQueue: defaultImageQueue } = require("../queues/imageQueue");
 
 const createFileController = ({
-  imageQueue = { publishImageJob },
+  imageQueue = defaultImageQueue,
   storage = s3Service,
 } = {}) => ({
   init: async (req, res) => {

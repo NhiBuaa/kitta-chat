@@ -3,7 +3,7 @@ const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
 const s3Service = require("../services/s3.service");
 const { buildAvatarImageJob } = require("../queues/imageJobs");
-const { publishImageJob } = require("../queues/rabbitmq");
+const { imageQueue } = require("../queues/imageQueue");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
 const { getMultiPresence, setPresenceWriteThrough } = require("../services/presenceService");
@@ -127,7 +127,7 @@ const updateUserProfile = async (req, res) => {
         profileUpdates: {},
       });
       avatarRequestId = avatarJob.requestId;
-      await publishImageJob(avatarJob);
+      await imageQueue.publishImageJob(avatarJob);
     }
 
     // Nếu user thay đổi trạng thái hoạt động qua profile, đồng bộ cả Redis + broadcast cho bạn bè
