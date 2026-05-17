@@ -87,3 +87,4 @@ database/__pycache__/
 server/src/config/firebase-service.json
 
 /docs
+/data
