@@ -1,9 +1,9 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
 const admin = require("../config/firebaseAdmin");
 const { queueRemoteAvatarProcessing } = require("../services/avatarQueueService");
+const { queuePasswordResetEmail } = require("../services/passwordResetNotificationService");
 // Hàm helper để validate email
 const validateEmail = (email) => {
   return String(email)
@@ -291,41 +291,18 @@ exports.forgotPassword = async (req, res) => {
     // Tạo nội dung Email
     const resetUrl = `${process.env.URL_FRONTEND}/reset-password/${user._id}/${resetToken}`;
 
-    // Cấu hình Transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+    // Queue email để worker gửi qua RabbitMQ.
+    const emailQueueResult = await queuePasswordResetEmail({
+      user,
+      resetUrl,
     });
 
-    const mailOptions = {
-      from: `"KittaChat Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Yêu cầu đặt lại mật khẩu - KittaChat",
-      html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-                    <h2 style="color: rgb(73, 145, 28); text-align: center;">Yêu cầu Reset Mật khẩu</h2>
-                    <p>Xin chào <strong>${user.displayName}</strong>,</p>
-                    <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
-                    <p>Vui lòng nhấn vào nút bên dưới để tạo mật khẩu mới (Link chỉ có hiệu lực trong 15 phút):</p>
-                    
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${resetUrl}" style="background-color: rgb(73, 145, 28); color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                            Đặt lại mật khẩu ngay
-                        </a>
-                    </div>
-
-                    <p style="color: #666; font-size: 12px;">Nếu bạn không yêu cầu điều này, vui lòng bỏ qua email này.</p>
-                    <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;">
-                    <p style="text-align: center; color: #999; font-size: 12px;">Chat App Team</p>
-                </div>
-            `,
-    };
-
-    // Gửi mail------------------------------
-    await transporter.sendMail(mailOptions);
+    if (!emailQueueResult.queued) {
+      console.error("[ForgotPassword] queue email failed:", emailQueueResult.error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Server error: could not queue reset email" });
+    }
 
     return res.json({
       success: true,

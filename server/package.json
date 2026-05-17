@@ -26,6 +26,7 @@
     "dev": "nodemon server.js",
     "worker:image": "node src/workers/imageWorker.js",
     "worker:audit": "node src/workers/auditWorker.js",
+    "worker:notification": "node src/workers/notificationWorker.js",
     "test": "node --test"
   }
 }

@@ -92,6 +92,27 @@ services:
       - chat-network
 
   # =========================================================
+  # NOTIFICATION WORKER - RabbitMQ consumer for email jobs
+  # =========================================================
+  notification-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    restart: on-failure
+    command: npm run worker:notification
+    environment:
+      - NODE_NAME=${NODE_NAME:-notification-worker}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    env_file:
+      - ./server/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - chat-network
+
+  # =========================================================
   # REDIS - Pub/Sub & Adapter
   # =========================================================
   redis:
