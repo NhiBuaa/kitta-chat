@@ -22,6 +22,27 @@ const emitToUser = (io, userId, eventName, payload) => {
   io.to(String(userId)).emit(eventName, payload);
 };
 
+const getAvatarUpdateRooms = (updatedUser, userId) => {
+  const roomIds = new Set([String(userId)]);
+  const friends = Array.isArray(updatedUser?.friends) ? updatedUser.friends : [];
+
+  for (const friend of friends) {
+    const friendId = friend?._id || friend?.id || friend;
+    if (friendId) roomIds.add(String(friendId));
+  }
+
+  return Array.from(roomIds);
+};
+
+const buildPublicAvatarUser = (user) => ({
+  _id: user?._id,
+  displayName: user?.displayName,
+  username: user?.username,
+  avatar: user?.avatar,
+  status: user?.status,
+  activityStatus: user?.activityStatus,
+});
+
 const cleanupSourceObject = async (deps, job) => {
   if (!job.source?.key || typeof deps.s3Service.deleteObject !== "function") {
     return;
@@ -127,11 +148,14 @@ const processAvatarImage = async (job, deps) => {
 
   await deps.invalidateUserProfile(job.userId);
 
-  emitToUser(deps.io, job.userId, "avatarUpdated", {
-    requestId: job.requestId,
-    user: updatedUser,
-    avatar: avatarUrl,
-  });
+  for (const roomId of getAvatarUpdateRooms(updatedUser, job.userId)) {
+    const isOwnerRoom = roomId === String(job.userId);
+    emitToUser(deps.io, roomId, "avatarUpdated", {
+      requestId: job.requestId,
+      user: isOwnerRoom ? updatedUser : buildPublicAvatarUser(updatedUser),
+      avatar: avatarUrl,
+    });
+  }
 
   await cleanupSourceObject(deps, job);
   return { success: true, user: updatedUser, avatar: avatarUrl };
@@ -189,6 +213,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  buildPublicAvatarUser,
+  getAvatarUpdateRooms,
   processImageJob,
   startImageWorker,
 };

@@ -195,7 +195,8 @@ export const SocketProvider = ({ children }) => {
 
         newSocket.on(SOCKET_EVENTS.AVATAR_UPDATED, (payload) => {
             const updatedUser = payload?.user;
-            if (updatedUser?._id || updatedUser?.id) {
+            const updatedUserId = updatedUser?._id || updatedUser?.id;
+            if (updatedUserId && String(updatedUserId) === String(userId)) {
                 localStorage.setItem("user", JSON.stringify(updatedUser));
                 window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
             }

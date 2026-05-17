@@ -1,9 +1,7 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
 const getSafeUserName = require("../utils/getSafeUserName");
-const s3Service = require("../services/s3.service");
-const { buildAvatarImageJob } = require("../queues/imageJobs");
-const { imageQueue } = require("../queues/imageQueue");
+const { queueProfileAvatarProcessing } = require("../services/profileAvatarQueueService");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
 const { getMultiPresence, setPresenceWriteThrough } = require("../services/presenceService");
@@ -112,22 +110,16 @@ const updateUserProfile = async (req, res) => {
       returnDocument: "after",
     }).select("-password");
 
-    let avatarRequestId = null;
+    let avatarQueueResult = { queued: false, requestId: null, error: null };
     if (req.file) {
-      const source = await s3Service.uploadObject(
-        req.file.buffer,
-        req.file.originalname,
-        req.file.mimetype,
-        "queue-sources",
-      );
-      const avatarJob = buildAvatarImageJob({
-        source,
+      avatarQueueResult = await queueProfileAvatarProcessing({
         file: req.file,
         userId,
-        profileUpdates: {},
       });
-      avatarRequestId = avatarJob.requestId;
-      await imageQueue.publishImageJob(avatarJob);
+
+      if (!avatarQueueResult.queued) {
+        console.warn("[ProfileAvatar] queue unavailable:", avatarQueueResult.error);
+      }
     }
 
     // Nếu user thay đổi trạng thái hoạt động qua profile, đồng bộ cả Redis + broadcast cho bạn bè
@@ -152,8 +144,9 @@ const updateUserProfile = async (req, res) => {
     res.json({
       success: true,
       message: "Cập nhật thành công",
-      queued: Boolean(avatarRequestId),
-      avatarRequestId,
+      queued: avatarQueueResult.queued,
+      avatarRequestId: avatarQueueResult.requestId,
+      avatarQueueError: avatarQueueResult.error,
       user: updatedUser,
     });
   } catch (error) {

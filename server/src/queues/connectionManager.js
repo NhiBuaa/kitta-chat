@@ -10,7 +10,7 @@ const getAmqplib = () => {
 };
 
 const getRabbitUrl = () =>
-  process.env.RABBITMQ_URL || "amqp://guest:guest@rabbitmq:5672";
+  process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672";
 
 const createRabbitConnectionManager = ({
   amqp = getAmqplib(),

@@ -247,7 +247,7 @@ test("processImageJob updates avatar and emits avatarUpdated", async () => {
     UserModel: {
       async findByIdAndUpdate(userId, updateData) {
         updates.push({ userId, updateData });
-        return { _id: userId, ...updateData };
+        return { _id: userId, friends: ["friend-1", { _id: "friend-2" }], ...updateData };
       },
     },
     invalidateUserProfile: async (userId) => {
@@ -294,6 +294,12 @@ test("processImageJob updates avatar and emits avatarUpdated", async () => {
   assert.equal(emitted[0].room, "user-1");
   assert.equal(emitted[0].eventName, "avatarUpdated");
   assert.equal(emitted[0].payload.requestId, "req-2");
+  assert.deepEqual(
+    emitted.map((item) => item.room),
+    ["user-1", "friend-1", "friend-2"],
+  );
+  assert.equal(emitted[1].payload.user.avatar, "https://bucket.s3.local/avatars/me.webp");
+  assert.equal(emitted[1].payload.user.friends, undefined);
 });
 
 test("uploadSingleFile stages the image in S3 before publishing a metadata-only job", async () => {

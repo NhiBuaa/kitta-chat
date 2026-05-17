@@ -5,146 +5,156 @@ const getSafeUserName = require("../../utils/getSafeUserName");
 const saveMessageInBackground = require("../../utils/saveMessageInBackground");
 const buildConversationId = require("../../utils/buildConversationId");
 const { getCachedUserProfile } = require("../../services/cacheService");
+const { buildMessageCreatedJob } = require("../../queues/auditJobs");
+const { auditQueue: defaultAuditQueue } = require("../../queues/auditQueue");
 
 const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
 
-/**
- * Đăng ký các message events cho một socket
- *
- * @param {import("socket.io").Socket} socket
- * @param {import("socket.io").Server} io
- */
-const registerMessageHandlers = (socket, io) => {
-    // sendMessage 
-    socket.on("sendMessage", async (messageData, callBack) => {
-        try {
-            const receiverId = messageData.receiverId || messageData.receiver;
-            const sender = messageData.sender;
-            const isGroup = messageData.isGroup;
-            const senderId = typeof sender === "object" ? sender._id : sender;
+const createRegisterMessageHandlers = ({
+  saveMessage = saveMessageInBackground,
+  getCachedUserProfile: loadCachedUserProfile = getCachedUserProfile,
+  auditQueue = defaultAuditQueue,
+  GroupModel = Group,
+  UserModel = User,
+  MessageModel = Message,
+  logger = console,
+} = {}) => (socket, io) => {
+  socket.on("sendMessage", async (messageData, callBack) => {
+    try {
+      const receiverId = messageData.receiverId || messageData.receiver;
+      const sender = messageData.sender;
+      const isGroup = messageData.isGroup;
+      const senderId = typeof sender === "object" ? sender._id : sender;
 
-            if (!receiverId) {
-                console.error(`${logPrefix} sendMessage rejected reason=missing-receiverId`, messageData);
-                callBack?.({ success: false });
-                return;
-            }
+      if (!receiverId) {
+        logger.error(`${logPrefix} sendMessage rejected reason=missing-receiverId`, messageData);
+        callBack?.({ success: false });
+        return;
+      }
 
-            // Khong kiem tra ban be nua — moi nguoi deu co the nhan tin cho nhau
-            // LUON uu tien cache de lay thong tin sender moi nhat
-            // (client có thể gửi senderInfo nhưng có thể đã stale)
-            let senderInfo = messageData.senderInfo;
-            const cachedProfile = await getCachedUserProfile(senderId, User);
-            senderInfo = {
-                _id: senderId,
-                displayName: getSafeUserName(cachedProfile),
-                avatar: cachedProfile?.avatar,
-            };
+      const cachedProfile = await loadCachedUserProfile(senderId, UserModel);
+      const senderInfo = {
+        _id: senderId,
+        displayName: getSafeUserName(cachedProfile),
+        avatar: cachedProfile?.avatar,
+      };
 
-            // Tính conversationId nếu chưa có
-            const conversationId =
-                messageData.conversationId ||
-                (isGroup ? receiverId : buildConversationId(senderId, receiverId));
+      const conversationId =
+        messageData.conversationId ||
+        (isGroup ? receiverId : buildConversationId(senderId, receiverId));
 
-            console.log(
-                `${logPrefix} sendMessage start sender=${senderId} receiver=${receiverId} conv=${conversationId} isGroup=${Boolean(isGroup)} socket=${socket.id}`
-            );
+      logger.log(
+        `${logPrefix} sendMessage start sender=${senderId} receiver=${receiverId} conv=${conversationId} isGroup=${Boolean(isGroup)} socket=${socket.id}`,
+      );
 
-            // Lưu vào DB trước để payload realtime luôn có _id ổn định.
-            const { doc: savedMessage, isDuplicate } = await saveMessageInBackground({
-                ...messageData,
-                sender: senderInfo,
-                conversationId,
-                receiverId,
-            });
+      const { doc: savedMessage, isDuplicate } = await saveMessage({
+        ...messageData,
+        sender: senderInfo,
+        conversationId,
+        receiverId,
+      });
 
-            const payloadToEmit = {
-                ...messageData,
-                sender: senderInfo,
-                receiver: messageData.receiver || receiverId,
-                _id: savedMessage?._id || messageData._id,
-                createdAt: savedMessage?.createdAt || messageData.createdAt || new Date(),
-                attachments: savedMessage?.attachments || messageData.attachments || [],
-                // Gửi kèm idempotencyKey để client có thể dedupe khi nhận getMessage
-                idempotencyKey: messageData.idempotencyKey || null,
-            };
+      const payloadToEmit = {
+        ...messageData,
+        sender: senderInfo,
+        receiver: messageData.receiver || receiverId,
+        _id: savedMessage?._id || messageData._id,
+        createdAt: savedMessage?.createdAt || messageData.createdAt || new Date(),
+        attachments: savedMessage?.attachments || messageData.attachments || [],
+        idempotencyKey: messageData.idempotencyKey || null,
+      };
 
-            if (isGroup) {
-                // Lấy tên nhóm nếu chưa có trong payload
-                if (!payloadToEmit.groupName) {
-                    const groupDoc = await Group.findById(receiverId).select("name displayName");
-                    payloadToEmit.groupName = groupDoc?.displayName || groupDoc?.name || "Nhóm chat";
-                }
-
-                // Emit đến tất cả thành viên trong room nhóm
-                io.to(receiverId).emit("getMessage", payloadToEmit);
-                console.log(`${logPrefix} emit group room=${receiverId} messageId=${payloadToEmit._id}`);
-            } else {
-                // Emit cho cả 2 phía trong cuộc trò chuyện 1-1
-                io.to(receiverId).emit("getMessage", payloadToEmit);
-                io.to(senderId).emit("getMessage", payloadToEmit);
-                console.log(`${logPrefix} SENT sender=${senderId} receiver=${receiverId} messageId=${payloadToEmit._id} senderRoom=${senderId} receiverRoom=${receiverId}`);
-
-                io.serverSideEmit("proof:message-dispatched", {
-                    messageId: payloadToEmit._id,
-                    senderId,
-                    receiverId,
-                    conversationId,
-                    originNode: NODE_NAME,
-                });
-            }
-
-            console.log(
-                `${logPrefix} sendMessage done messageId=${savedMessage?._id || "n/a"} duplicate=${Boolean(isDuplicate)}`
-            );
-
-            callBack?.({
-                success: true,
-                realId: savedMessage?._id,
-                isDuplicate: Boolean(isDuplicate),
-            });
-        } catch (err) {
-            console.error(`${logPrefix} sendMessage error:`, err);
-            callBack?.({ success: false });
+      if (isGroup) {
+        if (!payloadToEmit.groupName) {
+          const groupDoc = await GroupModel.findById(receiverId).select("name displayName");
+          payloadToEmit.groupName = groupDoc?.displayName || groupDoc?.name || "Nhóm chat";
         }
-    });
 
-    // markRead 
-    socket.on("markRead", async (data) => {
+        io.to(receiverId).emit("getMessage", payloadToEmit);
+        logger.log(`${logPrefix} emit group room=${receiverId} messageId=${payloadToEmit._id}`);
+      } else {
+        io.to(receiverId).emit("getMessage", payloadToEmit);
+        io.to(senderId).emit("getMessage", payloadToEmit);
+        logger.log(
+          `${logPrefix} SENT sender=${senderId} receiver=${receiverId} messageId=${payloadToEmit._id} senderRoom=${senderId} receiverRoom=${receiverId}`,
+        );
+
+        io.serverSideEmit("proof:message-dispatched", {
+          messageId: payloadToEmit._id,
+          senderId,
+          receiverId,
+          conversationId,
+          originNode: NODE_NAME,
+        });
+      }
+
+      if (savedMessage && !isDuplicate) {
         try {
-            if (data?.isGroup) {
-                const { groupId, readerId } = data;
-                if (!groupId || !readerId) return;
-
-                await Message.updateMany(
-                    {
-                        conversationId: groupId,
-                        type: { $ne: "system" },
-                        readBy: { $ne: readerId },
-                    },
-                    { $push: { readBy: readerId } }
-                );
-
-                io.to(groupId).emit("groupUserRead", { groupId, readerId });
-                console.log(`${logPrefix} markRead group group=${groupId} reader=${readerId}`);
-            } else {
-                const { senderId, receiverId } = data;
-                if (!senderId || !receiverId) return;
-
-                const convId = buildConversationId(senderId, receiverId);
-
-                await Message.updateMany(
-                    { sender: senderId, conversationId: convId, isRead: false },
-                    { $set: { isRead: true } }
-                );
-
-                io.to(senderId).emit("userReadMessages", { readerId: receiverId });
-                console.log(`${logPrefix} markRead direct conv=${convId} sender=${senderId} reader=${receiverId}`);
-            }
-        } catch (err) {
-            console.error(`${logPrefix} markRead error:`, err);
+          await auditQueue.publishMessageCreatedJob(
+            buildMessageCreatedJob({
+              message: savedMessage,
+              isGroup,
+              isDuplicate,
+            }),
+          );
+        } catch (publishError) {
+          logger.warn?.(`${logPrefix} message.created publish failed:`, publishError.message);
         }
-    });
+      }
+
+      logger.log(
+        `${logPrefix} sendMessage done messageId=${savedMessage?._id || "n/a"} duplicate=${Boolean(isDuplicate)}`,
+      );
+
+      callBack?.({
+        success: true,
+        realId: savedMessage?._id,
+        isDuplicate: Boolean(isDuplicate),
+      });
+    } catch (err) {
+      logger.error(`${logPrefix} sendMessage error:`, err);
+      callBack?.({ success: false });
+    }
+  });
+
+  socket.on("markRead", async (data) => {
+    try {
+      if (data?.isGroup) {
+        const { groupId, readerId } = data;
+        if (!groupId || !readerId) return;
+
+        await MessageModel.updateMany(
+          {
+            conversationId: groupId,
+            type: { $ne: "system" },
+            readBy: { $ne: readerId },
+          },
+          { $push: { readBy: readerId } },
+        );
+
+        io.to(groupId).emit("groupUserRead", { groupId, readerId });
+        logger.log(`${logPrefix} markRead group group=${groupId} reader=${readerId}`);
+      } else {
+        const { senderId, receiverId } = data;
+        if (!senderId || !receiverId) return;
+
+        const convId = buildConversationId(senderId, receiverId);
+
+        await MessageModel.updateMany(
+          { sender: senderId, conversationId: convId, isRead: false },
+          { $set: { isRead: true } },
+        );
+
+        io.to(senderId).emit("userReadMessages", { readerId: receiverId });
+        logger.log(`${logPrefix} markRead direct conv=${convId} sender=${senderId} reader=${receiverId}`);
+      }
+    } catch (err) {
+      logger.error(`${logPrefix} markRead error:`, err);
+    }
+  });
 };
 
-module.exports = { registerMessageHandlers };
+const registerMessageHandlers = createRegisterMessageHandlers();
+
+module.exports = { createRegisterMessageHandlers, registerMessageHandlers };

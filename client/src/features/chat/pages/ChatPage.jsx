@@ -88,7 +88,7 @@ const Home = () => {
   // Utility fns
   const getAvatarUrl = useCallback((avatarPath) => {
     if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
-    if (avatarPath.startsWith("http")) return avatarPath;
+    if (/^(https?:|blob:|data:)/.test(avatarPath)) return avatarPath;
     return `/uploads${avatarPath}`;
   }, []);
 
@@ -163,6 +163,26 @@ const Home = () => {
     },
     [patchUsers],
   );
+
+  useEffect(() => {
+    const handleAvatarUpdated = (event) => {
+      const updatedUser = event.detail?.user;
+      const updatedUserId = updatedUser?._id || updatedUser?.id;
+      if (!updatedUserId) return;
+
+      const applyUserUpdate = (user) => ({ ...user, ...updatedUser });
+      const currentUserId = currentUser?._id || currentUser?.id;
+
+      if (String(updatedUserId) === String(currentUserId)) {
+        setCurrentUser((prev) => (prev ? applyUserUpdate(prev) : updatedUser));
+      }
+
+      patchUserEverywhere(String(updatedUserId), applyUserUpdate);
+    };
+
+    window.addEventListener("avatar-updated", handleAvatarUpdated);
+    return () => window.removeEventListener("avatar-updated", handleAvatarUpdated);
+  }, [currentUser, patchUserEverywhere]);
 
   // Search hook
   const { searchTerm, setSearchTerm, isSearching, usersToDisplay } = useSearch({

@@ -6,6 +6,7 @@ const { createImageQueue } = require("../src/queues/imageQueue");
 const { createRabbitConnectionManager } = require("../src/queues/connectionManager");
 const { createProducer } = require("../src/queues/producer");
 const { startQueueWorker } = require("../src/workers/workerRuntime");
+const { getRabbitUrl } = require("../src/queues/connectionManager");
 
 const createFakeAmqp = () => {
   const calls = {
@@ -79,6 +80,21 @@ test("RabbitMQ connection manager connects once and asserts configured queues", 
   assert.deepEqual(amqp.calls.assertQueue, [
     { queueName: "image.process", options: { durable: true } },
   ]);
+});
+
+test("RabbitMQ URL defaults to localhost for local server runs", () => {
+  const previousUrl = process.env.RABBITMQ_URL;
+  delete process.env.RABBITMQ_URL;
+
+  try {
+    assert.equal(getRabbitUrl(), "amqp://guest:guest@localhost:5672");
+  } finally {
+    if (previousUrl === undefined) {
+      delete process.env.RABBITMQ_URL;
+    } else {
+      process.env.RABBITMQ_URL = previousUrl;
+    }
+  }
 });
 
 test("producer publishes JSON jobs as persistent messages", async () => {
