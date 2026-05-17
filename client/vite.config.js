@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
   const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:3000'
 
   return {
+    cacheDir: '.vite-cache',
     plugins: [
       react({
         babel: {
