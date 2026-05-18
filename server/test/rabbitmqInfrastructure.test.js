@@ -7,6 +7,7 @@ const { createRabbitConnectionManager } = require("../src/queues/connectionManag
 const { createProducer } = require("../src/queues/producer");
 const { startQueueWorker } = require("../src/workers/workerRuntime");
 const { getRabbitUrl } = require("../src/queues/connectionManager");
+const { QUEUE_TOPOLOGY } = require("../src/queues/topology");
 
 const createFakeAmqp = () => {
   const calls = {
@@ -129,6 +130,14 @@ test("RabbitMQ URL defaults to localhost for local server runs", () => {
   }
 });
 
+test("RabbitMQ topology includes dead-letter queues for background jobs", () => {
+  const queueNames = QUEUE_TOPOLOGY.map((queue) => queue.name);
+
+  assert.ok(queueNames.includes("image.process.dlq"));
+  assert.ok(queueNames.includes("notification.email.dlq"));
+  assert.ok(queueNames.includes("audit.events.dlq"));
+});
+
 test("producer publishes JSON jobs as persistent messages", async () => {
   const amqp = createFakeAmqp();
   const manager = createRabbitConnectionManager({
@@ -238,7 +247,7 @@ test("worker bootstrap consumes JSON jobs and acks successful processing", async
   assert.deepEqual(amqp.calls.nack, []);
 });
 
-test("worker bootstrap dead-letters failed jobs without requeueing", async () => {
+test("worker bootstrap publishes failed jobs to the matching DLQ before acking", async () => {
   const amqp = createFakeAmqp();
   const manager = createRabbitConnectionManager({
     amqp,
@@ -260,6 +269,51 @@ test("worker bootstrap dead-letters failed jobs without requeueing", async () =>
   };
   await amqp.calls.consume[0].handler(message);
 
+  assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.dlq");
+  assert.deepEqual(amqp.calls.sendToQueue[0].payload.job, {
+    type: "chat-image",
+    requestId: "req-1",
+  });
+  assert.equal(amqp.calls.sendToQueue[0].payload.error.message, "boom");
+  assert.equal(amqp.calls.sendToQueue[0].payload.error.originalQueue, IMAGE_JOB_QUEUE);
+  assert.match(amqp.calls.sendToQueue[0].payload.error.failedAt, /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(amqp.calls.ack, [message]);
+  assert.deepEqual(amqp.calls.nack, []);
+});
+
+test("worker bootstrap leaves the original job unacked when DLQ publish fails", async () => {
+  const amqp = createFakeAmqp();
+  amqp.channel.sendToQueue = (queueName, buffer, options, callback) => {
+    amqp.calls.sendToQueue.push({
+      queueName,
+      payload: JSON.parse(buffer.toString("utf8")),
+      options,
+    });
+    callback(new Error("dlq down"));
+    return true;
+  };
+
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+
+  await startQueueWorker({
+    queueName: IMAGE_JOB_QUEUE,
+    connectionManager: manager,
+    processJob: async () => {
+      throw new Error("boom");
+    },
+    logger: { error() {} },
+  });
+
+  const message = {
+    content: Buffer.from(JSON.stringify({ type: "chat-image", requestId: "req-1" })),
+  };
+  await amqp.calls.consume[0].handler(message);
+
+  assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.dlq");
   assert.deepEqual(amqp.calls.ack, []);
-  assert.deepEqual(amqp.calls.nack, [{ message, allUpTo: false, requeue: false }]);
+  assert.deepEqual(amqp.calls.nack, []);
 });
