@@ -605,3 +605,57 @@ test("uploadSingleFile stages the image in S3 before publishing a metadata-only 
   assert.equal(published[0].file.bufferBase64, undefined);
   assert.equal(res.body.file.status, "processing");
 });
+
+test("uploadSingleFile returns explicit queue failure when image job publish fails", async () => {
+  const deletedObjects = [];
+  const controller = createFileController({
+    storage: {
+      async uploadObject() {
+        return {
+          key: "queue-sources/source-cat.png",
+          url: "https://bucket.s3.local/queue-sources/source-cat.png",
+        };
+      },
+      async deleteObject(key) {
+        deletedObjects.push(key);
+      },
+    },
+    imageQueue: {
+      async publishImageJob() {
+        throw new Error("connect ECONNREFUSED 127.0.0.1:5672");
+      },
+    },
+  });
+
+  const req = {
+    user: { id: "user-1" },
+    file: {
+      buffer: Buffer.from("raw-cat"),
+      originalname: "cat.png",
+      mimetype: "image/png",
+      size: 7,
+    },
+  };
+  const res = {
+    statusCode: null,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.body = payload;
+      return this;
+    },
+  };
+
+  await controller.uploadSingleFile(req, res);
+
+  assert.equal(res.statusCode, 503);
+  assert.equal(res.body.success, false);
+  assert.equal(res.body.queued, false);
+  assert.equal(res.body.file.status, "queue_failed");
+  assert.match(res.body.queueError, /temporarily unavailable/i);
+  assert.doesNotMatch(res.body.queueError, /ECONNREFUSED|5672|RabbitMQ/i);
+  assert.deepEqual(deletedObjects, ["queue-sources/source-cat.png"]);
+});

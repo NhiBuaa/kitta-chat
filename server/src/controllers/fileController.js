@@ -2,6 +2,7 @@ const s3Service = require("../services/s3.service");
 const FileModel = require("../models/File");
 const { buildChatImageJob } = require("../queues/imageJobs");
 const { imageQueue: defaultImageQueue } = require("../queues/imageQueue");
+const { buildQueueFailureResponse } = require("../utils/queueApiSemantics");
 
 const createFileController = ({
   imageQueue = defaultImageQueue,
@@ -68,6 +69,8 @@ const createFileController = ({
   },
 
   uploadSingleFile: async (req, res) => {
+    let source = null;
+    let job = null;
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Không tìm thấy file upload" });
@@ -82,14 +85,14 @@ const createFileController = ({
         throw new Error("Khong lay duoc id nguoi dung tu token");
       }
 
-      const source = await storage.uploadObject(
+      source = await storage.uploadObject(
         req.file.buffer,
         req.file.originalname,
         req.file.mimetype,
         "queue-sources",
       );
 
-      const job = buildChatImageJob({ source, file: req.file, userId });
+      job = buildChatImageJob({ source, file: req.file, userId });
       await imageQueue.publishImageJob(job);
 
       res.status(202).json({
@@ -107,7 +110,23 @@ const createFileController = ({
       });
     } catch (err) {
       console.error("Loi uploadSingleFile:", err);
-      res.status(503).json({ message: "Khong the dua anh vao hang doi xu ly" });
+      if (source?.key && typeof storage.deleteObject === "function") {
+        await storage.deleteObject(source.key).catch(() => {});
+      }
+
+      res.status(503).json(
+        buildQueueFailureResponse({
+          message: "Khong the dua anh vao hang doi xu ly",
+          file: req.file
+            ? {
+                requestId: job?.requestId,
+                name: req.file.originalname,
+                type: req.file.mimetype,
+                size: req.file.size,
+              }
+            : null,
+        }),
+      );
     }
   },
 });

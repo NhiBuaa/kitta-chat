@@ -151,6 +151,7 @@ const getJwtSecret = () => {
 exports.googleLogin = async (req, res) => {
   try {
     const { token } = req.body;
+    let avatarQueueResult = null;
 
     // validate
     if (!token) {
@@ -199,14 +200,14 @@ exports.googleLogin = async (req, res) => {
       await user.save();
 
       if (avatar) {
-        try {
-          await queueRemoteAvatarProcessing({
-            avatarUrl: avatar,
-            userId: user._id,
-            displayName,
-          });
-        } catch (err) {
-          console.error("Queue Google avatar failed:", err.message);
+        avatarQueueResult = await queueRemoteAvatarProcessing({
+          avatarUrl: avatar,
+          userId: user._id,
+          displayName,
+        });
+
+        if (!avatarQueueResult.queued) {
+          console.error("Queue Google avatar failed:", avatarQueueResult.error);
         }
       }
     } else {
@@ -216,14 +217,14 @@ exports.googleLogin = async (req, res) => {
 
         if (!user.avatar && avatar) {
           user.avatar = defaultAvatarUrl;
-          try {
-            await queueRemoteAvatarProcessing({
-              avatarUrl: avatar,
-              userId: user._id,
-              displayName,
-            });
-          } catch (err) {
-            console.error("Queue Google avatar failed:", err.message);
+          avatarQueueResult = await queueRemoteAvatarProcessing({
+            avatarUrl: avatar,
+            userId: user._id,
+            displayName,
+          });
+
+          if (!avatarQueueResult.queued) {
+            console.error("Queue Google avatar failed:", avatarQueueResult.error);
           }
         }
 
@@ -256,6 +257,13 @@ exports.googleLogin = async (req, res) => {
         avatar: user.avatar,
         activityStatus: user.activityStatus,
       },
+      avatarQueue: avatarQueueResult
+        ? {
+            queued: avatarQueueResult.queued,
+            requestId: avatarQueueResult.requestId,
+            queueError: avatarQueueResult.queueError || null,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Google Login Error:", error);

@@ -1,5 +1,6 @@
 const { buildAvatarImageJob } = require("../queues/imageJobs");
 const { imageQueue: defaultImageQueue } = require("../queues/imageQueue");
+const { QUEUE_TEMPORARILY_UNAVAILABLE } = require("../utils/queueApiSemantics");
 const s3Service = require("./s3.service");
 
 const queueProfileAvatarProcessing = async ({
@@ -33,6 +34,7 @@ const queueProfileAvatarProcessing = async ({
       queued: false,
       requestId: null,
       error: formatQueueError(error),
+      queueError: QUEUE_TEMPORARILY_UNAVAILABLE,
     };
   }
 

@@ -1,5 +1,7 @@
 const { buildRemoteAvatarImageJob } = require("../queues/imageJobs");
 const { imageQueue: defaultImageQueue } = require("../queues/imageQueue");
+const { QUEUE_TEMPORARILY_UNAVAILABLE } = require("../utils/queueApiSemantics");
+const { formatQueueError } = require("./profileAvatarQueueService");
 
 const queueRemoteAvatarProcessing = async ({
   avatarUrl,
@@ -15,7 +17,16 @@ const queueRemoteAvatarProcessing = async ({
     requestId,
   });
 
-  await imageQueue.publishImageJob(job);
+  try {
+    await imageQueue.publishImageJob(job);
+  } catch (error) {
+    return {
+      queued: false,
+      requestId: null,
+      error: formatQueueError(error),
+      queueError: QUEUE_TEMPORARILY_UNAVAILABLE,
+    };
+  }
 
   return {
     queued: true,

@@ -146,7 +146,7 @@ const updateUserProfile = async (req, res) => {
       message: "Cập nhật thành công",
       queued: avatarQueueResult.queued,
       avatarRequestId: avatarQueueResult.requestId,
-      avatarQueueError: avatarQueueResult.error,
+      avatarQueueError: avatarQueueResult.queueError || null,
       user: updatedUser,
     });
   } catch (error) {

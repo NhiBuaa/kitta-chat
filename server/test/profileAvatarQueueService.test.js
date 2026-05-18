@@ -44,4 +44,6 @@ test("queueProfileAvatarProcessing reports queued false when RabbitMQ is unavail
   assert.equal(result.queued, false);
   assert.equal(result.requestId, null);
   assert.match(result.error, /ECONNREFUSED/);
+  assert.match(result.queueError, /temporarily unavailable/i);
+  assert.doesNotMatch(result.queueError, /ECONNREFUSED|5672|RabbitMQ/i);
 });
