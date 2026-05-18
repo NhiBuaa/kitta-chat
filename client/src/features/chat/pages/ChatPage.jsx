@@ -368,12 +368,32 @@ const Home = () => {
       }),
     );
 
+    if (user.members) {
+      setGroups((prev) =>
+        prev.map((g) => {
+          if (g._id !== user._id) return g;
+          const lm = g.lastMessage
+            ? { ...g.lastMessage, isRead: true }
+            : g.lastMessage;
+          return { ...g, hasUnread: false, unreadCount: 0, lastMessage: lm };
+        }),
+      );
+    }
+
     if (socket) {
-      socket.emit(SOCKET_EVENTS.MESSAGE_MARK_READ, {
-        senderId: user._id,
-        receiverId: currentUser._id,
-        isGroup: false,
-      });
+      if (user.members) {
+        socket.emit(SOCKET_EVENTS.MESSAGE_MARK_READ, {
+          isGroup: true,
+          groupId: user._id,
+          readerId: currentUser._id,
+        });
+      } else {
+        socket.emit(SOCKET_EVENTS.MESSAGE_MARK_READ, {
+          senderId: user._id,
+          receiverId: currentUser._id,
+          isGroup: false,
+        });
+      }
     }
   };
 

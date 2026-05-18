@@ -207,36 +207,33 @@ export const useMessageSocket = ({
                 resolvedAttachments,
             });
 
-            setUsers((prevUsers) => {
-                const newList = updateListWithMessagePreview(prevUsers, {
-                    data,
-                    targetId,
-                    senderId,
-                    isUnread,
-                    isCallLog,
-                    previewContent,
-                    createdAtFallback,
-                });
-                if (newList) return newList;
-                fetchNewConversation(
-                    data.isGroup ? `/api/groups/${targetId}` : `/api/users/${targetId}`,
-                    data
-                );
-                return prevUsers;
-            });
+            const previewUpdate = {
+                data,
+                targetId,
+                senderId,
+                isUnread,
+                isCallLog,
+                previewContent,
+                createdAtFallback,
+            };
 
-            setSearchResult((prev) => {
-                if (!prev?.length) return prev;
-                return updateListWithMessagePreview(prev, {
-                    data,
-                    targetId,
-                    senderId,
-                    isUnread,
-                    isCallLog,
-                    previewContent,
-                    createdAtFallback,
-                }) || prev;
-            });
+            if (data.isGroup) {
+                setGroups((prevGroups) =>
+                    updateListWithMessagePreview(prevGroups, previewUpdate) || prevGroups
+                );
+            } else {
+                setUsers((prevUsers) => {
+                    const newList = updateListWithMessagePreview(prevUsers, previewUpdate);
+                    if (newList) return newList;
+                    fetchNewConversation(`/api/users/${targetId}`, data);
+                    return prevUsers;
+                });
+
+                setSearchResult((prev) => {
+                    if (!prev?.length) return prev;
+                    return updateListWithMessagePreview(prev, previewUpdate) || prev;
+                });
+            }
 
             if (incomingMessageId) {
                 processedMessageIdsRef.current.add(incomingMessageId);
