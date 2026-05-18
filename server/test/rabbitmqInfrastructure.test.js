@@ -21,38 +21,63 @@ const createFakeAmqp = () => {
     nack: [],
   };
 
-  const channel = {
-    async assertQueue(queueName, options) {
-      calls.assertQueue.push({ queueName, options });
-    },
-    sendToQueue(queueName, buffer, options, callback) {
-      calls.sendToQueue.push({
-        queueName,
-        payload: JSON.parse(buffer.toString("utf8")),
-        options,
-      });
-      if (callback) callback(null);
-      return true;
-    },
-    async prefetch(count) {
-      calls.prefetch.push(count);
-    },
-    async consume(queueName, handler, options) {
-      calls.consume.push({ queueName, handler, options });
-    },
-    ack(message) {
-      calls.ack.push(message);
-    },
-    nack(message, allUpTo, requeue) {
-      calls.nack.push({ message, allUpTo, requeue });
-    },
-    async close() {},
+  const createChannel = () => {
+    const handlers = {};
+
+    return {
+      async assertQueue(queueName, options) {
+        calls.assertQueue.push({ queueName, options });
+      },
+      sendToQueue(queueName, buffer, options, callback) {
+        calls.sendToQueue.push({
+          queueName,
+          payload: JSON.parse(buffer.toString("utf8")),
+          options,
+        });
+        if (callback) callback(null);
+        return true;
+      },
+      async prefetch(count) {
+        calls.prefetch.push(count);
+      },
+      async consume(queueName, handler, options) {
+        calls.consume.push({ queueName, handler, options });
+      },
+      ack(message) {
+        calls.ack.push(message);
+      },
+      nack(message, allUpTo, requeue) {
+        calls.nack.push({ message, allUpTo, requeue });
+      },
+      on(eventName, handler) {
+        handlers[eventName] = handlers[eventName] || [];
+        handlers[eventName].push(handler);
+      },
+      once(eventName, handler) {
+        this.on(eventName, handler);
+      },
+      emit(eventName, payload) {
+        for (const handler of handlers[eventName] || []) {
+          handler(payload);
+        }
+      },
+      async close() {
+        this.emit("close");
+      },
+    };
   };
+
+  const channels = [];
+  const channel = createChannel();
+  channels.push(channel);
 
   const connection = {
     async createConfirmChannel() {
       calls.createConfirmChannel += 1;
-      return channel;
+      if (channels.length < calls.createConfirmChannel) {
+        channels.push(createChannel());
+      }
+      return channels[calls.createConfirmChannel - 1];
     },
     on() {},
     async close() {},
@@ -61,6 +86,7 @@ const createFakeAmqp = () => {
   return {
     calls,
     channel,
+    channels,
     async connect(url) {
       calls.connect.push(url);
       return connection;
@@ -364,4 +390,30 @@ test("worker bootstrap leaves the original job unacked when retry publish fails"
   assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.retry");
   assert.deepEqual(amqp.calls.ack, []);
   assert.deepEqual(amqp.calls.nack, []);
+});
+
+test("worker bootstrap re-registers the consumer after channel close", async () => {
+  const amqp = createFakeAmqp();
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+
+  const worker = await startQueueWorker({
+    queueName: IMAGE_JOB_QUEUE,
+    connectionManager: manager,
+    reconnectDelayMs: 1,
+    processJob: async () => {},
+    logger: { error() {}, warn() {}, log() {} },
+  });
+
+  amqp.channels[0].emit("close");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  assert.equal(amqp.calls.createConfirmChannel, 2);
+  assert.equal(amqp.calls.consume.length, 2);
+  assert.equal(amqp.calls.consume[1].queueName, IMAGE_JOB_QUEUE);
+
+  await worker.stop();
 });

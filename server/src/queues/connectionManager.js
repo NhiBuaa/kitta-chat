@@ -47,6 +47,14 @@ const createRabbitConnectionManager = ({
       });
     }
 
+    if (typeof channel.on === "function") {
+      channel.on("close", reset);
+      channel.on("error", (error) => {
+        lastError = error;
+        reset();
+      });
+    }
+
     return channel;
   };
 
@@ -81,6 +89,8 @@ const createRabbitConnectionManager = ({
         error: lastError?.message,
       };
     },
+
+    reset,
 
     async close() {
       const activeChannel = channel;

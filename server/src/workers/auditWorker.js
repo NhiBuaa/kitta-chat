@@ -25,7 +25,7 @@ const processAuditJob = async (job, { logger = console } = {}) => {
 };
 
 const startAuditWorker = async () => {
-  await startQueueWorker({
+  const worker = await startQueueWorker({
     queueName: AUDIT_EVENTS_QUEUE,
     connectionManager,
     prefetch: Number(process.env.AUDIT_WORKER_CONCURRENCY || 10),
@@ -34,13 +34,31 @@ const startAuditWorker = async () => {
   });
 
   console.log(`[AuditWorker] consuming queue=${AUDIT_EVENTS_QUEUE}`);
+  return worker;
 };
 
 if (require.main === module) {
+  let workerRuntime = null;
+  let shuttingDown = false;
+
+  const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[AuditWorker] received ${signal}, shutting down...`);
+    await workerRuntime?.stop?.().catch(() => {});
+    await closeRabbitMQ().catch(() => {});
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
   startAuditWorker().catch(async (error) => {
     console.error("[AuditWorker] fatal:", error);
     await closeRabbitMQ().catch(() => {});
     process.exit(1);
+  }).then((worker) => {
+    workerRuntime = worker;
   });
 }
 

@@ -11,7 +11,7 @@ const { closeRabbitMQ, connectionManager } = require("../queues/rabbitmq");
 const { IMAGE_JOB_QUEUE } = require("../queues/imageJobs");
 const { startQueueWorker } = require("./workerRuntime");
 const { createSocketEmitter } = require("../socket/emitter");
-const { connectCacheRedis } = require("../config/redis");
+const { cacheClient, connectCacheRedis } = require("../config/redis");
 
 dotenv.config();
 
@@ -191,7 +191,7 @@ const startImageWorker = async () => {
   const io = await createSocketEmitter();
   global.io = io;
 
-  await startQueueWorker({
+  const worker = await startQueueWorker({
     queueName: IMAGE_JOB_QUEUE,
     connectionManager,
     prefetch: Number(process.env.IMAGE_WORKER_CONCURRENCY || 2),
@@ -202,13 +202,39 @@ const startImageWorker = async () => {
   });
 
   console.log(`[ImageWorker] consuming queue=${IMAGE_JOB_QUEUE}`);
+  return worker;
 };
 
 if (require.main === module) {
+  let workerRuntime = null;
+  let shuttingDown = false;
+
+  const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[ImageWorker] received ${signal}, shutting down...`);
+
+    await workerRuntime?.stop?.().catch(() => {});
+    await closeRabbitMQ().catch(() => {});
+    await global.io?.closeEmitterClients?.().catch(() => {});
+    global.io?.close?.();
+    if (cacheClient.isOpen) await cacheClient.quit().catch(() => {});
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close().catch(() => {});
+    }
+
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
   startImageWorker().catch(async (error) => {
     console.error("[ImageWorker] fatal:", error);
     await closeRabbitMQ().catch(() => {});
     process.exit(1);
+  }).then((worker) => {
+    workerRuntime = worker;
   });
 }
 

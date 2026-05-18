@@ -41,7 +41,7 @@ const processNotificationJob = async (
 };
 
 const startNotificationWorker = async () => {
-  await startQueueWorker({
+  const worker = await startQueueWorker({
     queueName: NOTIFICATION_EMAIL_QUEUE,
     connectionManager,
     prefetch: Number(process.env.NOTIFICATION_WORKER_CONCURRENCY || 5),
@@ -50,13 +50,31 @@ const startNotificationWorker = async () => {
   });
 
   console.log(`[NotificationWorker] consuming queue=${NOTIFICATION_EMAIL_QUEUE}`);
+  return worker;
 };
 
 if (require.main === module) {
+  let workerRuntime = null;
+  let shuttingDown = false;
+
+  const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[NotificationWorker] received ${signal}, shutting down...`);
+    await workerRuntime?.stop?.().catch(() => {});
+    await closeRabbitMQ().catch(() => {});
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
   startNotificationWorker().catch(async (error) => {
     console.error("[NotificationWorker] fatal:", error);
     await closeRabbitMQ().catch(() => {});
     process.exit(1);
+  }).then((worker) => {
+    workerRuntime = worker;
   });
 }
 

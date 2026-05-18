@@ -20,6 +20,12 @@ const createSocketEmitter = async () => {
   await Promise.all([pubClient.connect(), subClient.connect()]);
   io.adapter(createAdapter(pubClient, subClient));
   io.redisClient = pubClient;
+  io.closeEmitterClients = async () => {
+    await Promise.allSettled([
+      pubClient.isOpen ? pubClient.quit() : Promise.resolve(),
+      subClient.isOpen ? subClient.quit() : Promise.resolve(),
+    ]);
+  };
 
   return io;
 };
