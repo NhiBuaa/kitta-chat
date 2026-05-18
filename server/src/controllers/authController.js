@@ -298,10 +298,12 @@ exports.forgotPassword = async (req, res) => {
     });
 
     if (!emailQueueResult.queued) {
-      console.error("[ForgotPassword] queue email failed:", emailQueueResult.error);
-      return res
-        .status(500)
-        .json({ success: false, message: "Server error: could not queue reset email" });
+      console.error("[ForgotPassword] queue email failed:", {
+        userId: user._id?.toString?.() || user._id,
+        email: cleanEmail,
+        queue: "notification.email",
+        error: emailQueueResult.error,
+      });
     }
 
     return res.json({

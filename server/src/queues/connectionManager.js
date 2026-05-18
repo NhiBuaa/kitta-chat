@@ -36,7 +36,7 @@ const createRabbitConnectionManager = ({
 
   const connect = async () => {
     connection = await amqp.connect(url);
-    channel = await connection.createChannel();
+    channel = await connection.createConfirmChannel();
     await assertTopology(channel);
     lastError = null;
 

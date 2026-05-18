@@ -11,6 +11,7 @@ const { getRabbitUrl } = require("../src/queues/connectionManager");
 const createFakeAmqp = () => {
   const calls = {
     connect: [],
+    createConfirmChannel: 0,
     assertQueue: [],
     sendToQueue: [],
     consume: [],
@@ -23,12 +24,13 @@ const createFakeAmqp = () => {
     async assertQueue(queueName, options) {
       calls.assertQueue.push({ queueName, options });
     },
-    sendToQueue(queueName, buffer, options) {
+    sendToQueue(queueName, buffer, options, callback) {
       calls.sendToQueue.push({
         queueName,
         payload: JSON.parse(buffer.toString("utf8")),
         options,
       });
+      if (callback) callback(null);
       return true;
     },
     async prefetch(count) {
@@ -47,7 +49,8 @@ const createFakeAmqp = () => {
   };
 
   const connection = {
-    async createChannel() {
+    async createConfirmChannel() {
+      calls.createConfirmChannel += 1;
       return channel;
     },
     on() {},
@@ -77,6 +80,7 @@ test("RabbitMQ connection manager connects once and asserts configured queues", 
 
   assert.equal(firstChannel, secondChannel);
   assert.deepEqual(amqp.calls.connect, ["amqp://test"]);
+  assert.equal(amqp.calls.createConfirmChannel, 1);
   assert.deepEqual(amqp.calls.assertQueue, [
     { queueName: "image.process", options: { durable: true } },
   ]);
@@ -146,6 +150,42 @@ test("producer publishes JSON jobs as persistent messages", async () => {
       },
     },
   ]);
+});
+
+test("producer resolves only after broker confirms the published job", async () => {
+  let confirmPublish;
+  const amqp = createFakeAmqp();
+  amqp.channel.sendToQueue = (queueName, buffer, options, callback) => {
+    amqp.calls.sendToQueue.push({
+      queueName,
+      payload: JSON.parse(buffer.toString("utf8")),
+      options,
+    });
+    confirmPublish = callback;
+    return true;
+  };
+
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+  const producer = createProducer({ connectionManager: manager });
+
+  let resolved = false;
+  const publishPromise = producer
+    .publish(IMAGE_JOB_QUEUE, { type: "chat-image", requestId: "req-confirm-1" })
+    .then(() => {
+      resolved = true;
+    });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(resolved, false);
+
+  confirmPublish(null);
+  await publishPromise;
+
+  assert.equal(resolved, true);
 });
 
 test("image queue publishes image jobs to the image processing queue", async () => {

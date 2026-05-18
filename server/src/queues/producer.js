@@ -1,19 +1,26 @@
 const createProducer = ({ connectionManager }) => ({
   async publish(queueName, payload, options = {}) {
     const channel = await connectionManager.getChannel();
-    const accepted = channel.sendToQueue(
-      queueName,
-      Buffer.from(JSON.stringify(payload)),
-      {
-        contentType: "application/json",
-        persistent: true,
-        ...options,
-      },
-    );
 
-    if (!accepted) {
-      throw new Error(`RabbitMQ backpressure: job was not accepted by ${queueName}`);
-    }
+    await new Promise((resolve, reject) => {
+      channel.sendToQueue(
+        queueName,
+        Buffer.from(JSON.stringify(payload)),
+        {
+          contentType: "application/json",
+          persistent: true,
+          ...options,
+        },
+        (error) => {
+          if (error) {
+            reject(new Error(`RabbitMQ publish confirm failed for ${queueName}: ${error.message}`));
+            return;
+          }
+
+          resolve();
+        },
+      );
+    });
   },
 });
 
