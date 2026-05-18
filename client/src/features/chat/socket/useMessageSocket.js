@@ -1,6 +1,15 @@
 import { useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { audioManager } from "@/utils/AudioManager.js";
+import {
+    appendIncomingChatMessage,
+    getMessageId,
+    getMessagePreviewContent,
+    normalizeRecoveredMessage,
+    resolveMessageAttachments,
+    updateListWithMessagePreview,
+    upsertCallLogMessage,
+} from "@/features/chat/socket/messageSocketState.js";
 
 /**
  * Đăng ký socket listeners liên quan đến tin nhắn:
@@ -25,43 +34,6 @@ export const useMessageSocket = ({
     useEffect(() => {
         if (!socket) return;
 
-        const upsertCallLogMessage = (prev, data) => {
-            const callHistoryId = data.callData?.callHistoryId;
-            const existingIndex = prev.findIndex((m) =>
-                (data._id && m._id === data._id) ||
-                (callHistoryId && m.callData?.callHistoryId === callHistoryId)
-            );
-
-            const nextMessage = {
-                _id: data._id,
-                sender: data.sender,
-                receiver: data.receiver,
-                text: data.text || "",
-                type: "call_log",
-                attachments: [],
-                callData: data.callData,
-                createdAt: data.createdAt || new Date().toISOString(),
-                isRead: true,
-            };
-
-            if (existingIndex === -1) {
-                return [...prev, nextMessage];
-            }
-
-            return prev.map((message, index) =>
-                index === existingIndex
-                    ? {
-                        ...message,
-                        ...nextMessage,
-                        callData: {
-                            ...message.callData,
-                            ...nextMessage.callData,
-                        },
-                    }
-                    : message
-            );
-        };
-
         const appendCallLogIfViewing = (data) => {
             const currentActiveChat = activeChatRef.current;
             const senderId = data.senderId || data.sender?._id || data.sender;
@@ -73,7 +45,9 @@ export const useMessageSocket = ({
 
             if (!isViewingChat) return false;
 
-            setMessages((prev) => upsertCallLogMessage(prev, data));
+            setMessages((prev) => upsertCallLogMessage(prev, data, {
+                createdAtFallback: new Date().toISOString(),
+            }));
 
             setTimeout(() => {
                 if (typeof scrollChatToBottom === "function") {
@@ -136,26 +110,10 @@ export const useMessageSocket = ({
             );
         };
 
-        const normalizeRecoveredMessage = (message) => {
-            const conversationId = message?.conversationId || "";
-            const isRecoveredGroup =
-                typeof message?.isGroup === "boolean"
-                    ? message.isGroup
-                    : Boolean(conversationId && !conversationId.includes("_"));
-
-            return {
-                ...message,
-                isGroup: isRecoveredGroup,
-                receiverId: isRecoveredGroup
-                    ? conversationId
-                    : message?.receiverId || message?.receiver,
-            };
-        };
-
         // getMessage (tin nhắn mới)
         const handleUnifiedMessage = (data, options = {}) => {
             const { suppressNotification = false } = options;
-            const incomingMessageId = data?._id || null;
+            const incomingMessageId = getMessageId(data);
 
             if (incomingMessageId && processedMessageIdsRef.current.has(incomingMessageId)) {
                 return;
@@ -166,6 +124,7 @@ export const useMessageSocket = ({
             const receiverId = data.receiverId || data.receiver;
             const isMeSender = senderId === currentUser._id;
             const isCallLog = data.type === "call_log";
+            const createdAtFallback = new Date().toISOString();
 
             /**
              * Deduplicate: khi retry thành công, sender nhận lại getMessage từ server
@@ -197,11 +156,7 @@ export const useMessageSocket = ({
                 });
             }
 
-            const resolvedAttachments = Array.isArray(data.attachmentsData)
-                ? data.attachmentsData
-                : Array.isArray(data.attachments)
-                    ? data.attachments
-                    : [];
+            const resolvedAttachments = resolveMessageAttachments(data);
 
             const targetId = data.isGroup
                 ? receiverId
@@ -219,29 +174,13 @@ export const useMessageSocket = ({
             if (isViewingChat && (!isMeSender || isCallLog)) {
                 setMessages((prev) => {
                     if (isCallLog) {
-                        return upsertCallLogMessage(prev, data);
+                        return upsertCallLogMessage(prev, data, { createdAtFallback });
                     }
 
-                    if (incomingMessageId && prev.some((m) => m._id === incomingMessageId)) {
-                        return prev;
-                    }
-
-                    return [
-                        ...prev,
-                        {
-                            _id: data._id,
-                            sender: data.sender || { _id: senderId, displayName: "Người dùng", avatar: null },
-                            receiver: data.receiver,
-                            text: data.text,
-                            image: data.image,
-                            type: data.type,
-                            files: data.files,
-                            attachments: resolvedAttachments,
-                            callData: data.callData,
-                            createdAt: data.createdAt,
-                            isRead: true,
-                        },
-                    ];
+                    return appendIncomingChatMessage(prev, data, {
+                        senderId,
+                        resolvedAttachments,
+                    });
                 });
 
                 if (data.isGroup) {
@@ -263,56 +202,21 @@ export const useMessageSocket = ({
                 }, 100);
             }
 
-            let previewContent = data.text;
-            if (!previewContent && isCallLog) {
-                previewContent = data.callData?.type === "video"
-                    ? "[Cuộc gọi video]"
-                    : "[Cuộc gọi thoại]";
-            }
-            if (!previewContent && data.image) previewContent = "[Hình ảnh]";
-            if (!previewContent && resolvedAttachments.length > 0) {
-                previewContent = resolvedAttachments.some((f) => f?.mimeType?.startsWith("image/"))
-                    ? "[Hình ảnh]"
-                    : "[Tệp đính kèm]";
-            }
-
-            const updateListWithPreview = (list = []) => {
-                const updatedList = [...list];
-                const index = updatedList.findIndex((item) => item._id === targetId);
-                if (index === -1) return null;
-
-                const itemToUpdate = updatedList[index];
-                const incomingMessageId = data._id || null;
-                const incomingCallHistoryId = isCallLog ? data.callData?.callHistoryId || null : null;
-                const lastMessageId = itemToUpdate.lastMessage?.messageId || null;
-                const lastCallHistoryId = itemToUpdate.lastMessage?.callHistoryId || null;
-                const isSameSidebarEvent =
-                    (incomingMessageId && lastMessageId === incomingMessageId) ||
-                    (incomingCallHistoryId && lastCallHistoryId === incomingCallHistoryId);
-
-                updatedList.splice(index, 1);
-                updatedList.unshift({
-                    ...itemToUpdate,
-                    lastMessage: {
-                        content: previewContent,
-                        senderId,
-                        createdAt: data.createdAt || new Date().toISOString(),
-                        isRead: !isUnread,
-                        messageId: incomingMessageId,
-                        callHistoryId: incomingCallHistoryId,
-                    },
-                    hasUnread: isUnread,
-                    unreadCount: isUnread
-                        ? isSameSidebarEvent
-                            ? (itemToUpdate.unreadCount || 0)
-                            : (itemToUpdate.unreadCount || 0) + 1
-                        : 0,
-                });
-                return updatedList;
-            };
+            const previewContent = getMessagePreviewContent(data, {
+                isCallLog,
+                resolvedAttachments,
+            });
 
             setUsers((prevUsers) => {
-                const newList = updateListWithPreview(prevUsers);
+                const newList = updateListWithMessagePreview(prevUsers, {
+                    data,
+                    targetId,
+                    senderId,
+                    isUnread,
+                    isCallLog,
+                    previewContent,
+                    createdAtFallback,
+                });
                 if (newList) return newList;
                 fetchNewConversation(
                     data.isGroup ? `/api/groups/${targetId}` : `/api/users/${targetId}`,
@@ -323,7 +227,15 @@ export const useMessageSocket = ({
 
             setSearchResult((prev) => {
                 if (!prev?.length) return prev;
-                return updateListWithPreview(prev) || prev;
+                return updateListWithMessagePreview(prev, {
+                    data,
+                    targetId,
+                    senderId,
+                    isUnread,
+                    isCallLog,
+                    previewContent,
+                    createdAtFallback,
+                }) || prev;
             });
 
             if (incomingMessageId) {
