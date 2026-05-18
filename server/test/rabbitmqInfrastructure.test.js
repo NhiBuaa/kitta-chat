@@ -130,12 +130,22 @@ test("RabbitMQ URL defaults to localhost for local server runs", () => {
   }
 });
 
-test("RabbitMQ topology includes dead-letter queues for background jobs", () => {
+test("RabbitMQ topology includes retry and dead-letter queues for background jobs", () => {
   const queueNames = QUEUE_TOPOLOGY.map((queue) => queue.name);
+  const imageRetryQueue = QUEUE_TOPOLOGY.find((queue) => queue.name === "image.process.retry");
 
   assert.ok(queueNames.includes("image.process.dlq"));
   assert.ok(queueNames.includes("notification.email.dlq"));
   assert.ok(queueNames.includes("audit.events.dlq"));
+  assert.ok(queueNames.includes("image.process.retry"));
+  assert.ok(queueNames.includes("notification.email.retry"));
+  assert.ok(queueNames.includes("audit.events.retry"));
+  assert.deepEqual(imageRetryQueue.options, {
+    durable: true,
+    messageTtl: 30000,
+    deadLetterExchange: "",
+    deadLetterRoutingKey: "image.process",
+  });
 });
 
 test("producer publishes JSON jobs as persistent messages", async () => {
@@ -247,7 +257,7 @@ test("worker bootstrap consumes JSON jobs and acks successful processing", async
   assert.deepEqual(amqp.calls.nack, []);
 });
 
-test("worker bootstrap publishes failed jobs to the matching DLQ before acking", async () => {
+test("worker bootstrap publishes failed jobs to the retry queue before max attempts", async () => {
   const amqp = createFakeAmqp();
   const manager = createRabbitConnectionManager({
     amqp,
@@ -258,6 +268,7 @@ test("worker bootstrap publishes failed jobs to the matching DLQ before acking",
   await startQueueWorker({
     queueName: IMAGE_JOB_QUEUE,
     connectionManager: manager,
+    maxAttempts: 3,
     processJob: async () => {
       throw new Error("boom");
     },
@@ -269,10 +280,46 @@ test("worker bootstrap publishes failed jobs to the matching DLQ before acking",
   };
   await amqp.calls.consume[0].handler(message);
 
+  assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.retry");
+  assert.deepEqual(amqp.calls.sendToQueue[0].payload, {
+    type: "chat-image",
+    requestId: "req-1",
+    attempts: 1,
+  });
+  assert.equal(amqp.calls.sendToQueue[0].options.headers.attempts, 1);
+  assert.deepEqual(amqp.calls.ack, [message]);
+  assert.deepEqual(amqp.calls.nack, []);
+});
+
+test("worker bootstrap publishes failed jobs to DLQ at max attempts", async () => {
+  const amqp = createFakeAmqp();
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+
+  await startQueueWorker({
+    queueName: IMAGE_JOB_QUEUE,
+    connectionManager: manager,
+    maxAttempts: 3,
+    processJob: async () => {
+      throw new Error("boom");
+    },
+    logger: { error() {}, warn() {} },
+  });
+
+  const message = {
+    content: Buffer.from(JSON.stringify({ type: "chat-image", requestId: "req-1", attempts: 3 })),
+    properties: { headers: { attempts: 3 } },
+  };
+  await amqp.calls.consume[0].handler(message);
+
   assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.dlq");
   assert.deepEqual(amqp.calls.sendToQueue[0].payload.job, {
     type: "chat-image",
     requestId: "req-1",
+    attempts: 3,
   });
   assert.equal(amqp.calls.sendToQueue[0].payload.error.message, "boom");
   assert.equal(amqp.calls.sendToQueue[0].payload.error.originalQueue, IMAGE_JOB_QUEUE);
@@ -281,7 +328,7 @@ test("worker bootstrap publishes failed jobs to the matching DLQ before acking",
   assert.deepEqual(amqp.calls.nack, []);
 });
 
-test("worker bootstrap leaves the original job unacked when DLQ publish fails", async () => {
+test("worker bootstrap leaves the original job unacked when retry publish fails", async () => {
   const amqp = createFakeAmqp();
   amqp.channel.sendToQueue = (queueName, buffer, options, callback) => {
     amqp.calls.sendToQueue.push({
@@ -302,6 +349,7 @@ test("worker bootstrap leaves the original job unacked when DLQ publish fails", 
   await startQueueWorker({
     queueName: IMAGE_JOB_QUEUE,
     connectionManager: manager,
+    maxAttempts: 3,
     processJob: async () => {
       throw new Error("boom");
     },
@@ -313,7 +361,7 @@ test("worker bootstrap leaves the original job unacked when DLQ publish fails", 
   };
   await amqp.calls.consume[0].handler(message);
 
-  assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.dlq");
+  assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.retry");
   assert.deepEqual(amqp.calls.ack, []);
   assert.deepEqual(amqp.calls.nack, []);
 });

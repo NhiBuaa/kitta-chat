@@ -1,4 +1,6 @@
-const publishConfirmed = (channel, queueName, payload) =>
+const getMaxAttempts = () => Number(process.env.RABBITMQ_MAX_ATTEMPTS || 3);
+
+const publishConfirmed = (channel, queueName, payload, options = {}) =>
   new Promise((resolve, reject) => {
     channel.sendToQueue(
       queueName,
@@ -6,6 +8,7 @@ const publishConfirmed = (channel, queueName, payload) =>
       {
         contentType: "application/json",
         persistent: true,
+        ...options,
       },
       (error) => {
         if (error) {
@@ -27,11 +30,31 @@ const buildDeadLetterPayload = ({ job, error, queueName }) => ({
   },
 });
 
+const getAttempts = (job, message) => {
+  const headerAttempts = Number(message?.properties?.headers?.attempts);
+  if (Number.isFinite(headerAttempts) && headerAttempts > 0) {
+    return headerAttempts;
+  }
+
+  const payloadAttempts = Number(job?.attempts);
+  if (Number.isFinite(payloadAttempts) && payloadAttempts > 0) {
+    return payloadAttempts;
+  }
+
+  return 0;
+};
+
+const buildRetryPayload = ({ job, attempts }) => ({
+  ...job,
+  attempts,
+});
+
 const startQueueWorker = async ({
   queueName,
   connectionManager,
   processJob,
   prefetch = 1,
+  maxAttempts = getMaxAttempts(),
   logger = console,
 }) => {
   const channel = await connectionManager.getChannel();
@@ -52,14 +75,35 @@ const startQueueWorker = async ({
         logger.error?.(`[Worker] queue=${queueName} job failed:`, error);
 
         try {
-          await publishConfirmed(
-            channel,
-            `${queueName}.dlq`,
-            buildDeadLetterPayload({ job, error, queueName }),
-          );
+          const attempts = getAttempts(job, message);
+
+          if (attempts < maxAttempts) {
+            const nextAttempts = attempts + 1;
+            logger.warn?.(
+              `[Worker] queue=${queueName} retry attempt=${nextAttempts}/${maxAttempts}`,
+            );
+
+            await publishConfirmed(
+              channel,
+              `${queueName}.retry`,
+              buildRetryPayload({ job, attempts: nextAttempts }),
+              { headers: { attempts: nextAttempts } },
+            );
+          } else {
+            logger.error?.(
+              `[Worker] queue=${queueName} routing to DLQ attempts=${attempts}/${maxAttempts}`,
+            );
+
+            await publishConfirmed(
+              channel,
+              `${queueName}.dlq`,
+              buildDeadLetterPayload({ job, error, queueName }),
+            );
+          }
+
           channel.ack(message);
-        } catch (dlqError) {
-          logger.error?.(`[Worker] queue=${queueName} DLQ publish failed:`, dlqError);
+        } catch (routeError) {
+          logger.error?.(`[Worker] queue=${queueName} failure routing publish failed:`, routeError);
         }
       }
     },
@@ -71,5 +115,8 @@ const startQueueWorker = async ({
 
 module.exports = {
   buildDeadLetterPayload,
+  buildRetryPayload,
+  getAttempts,
+  getMaxAttempts,
   startQueueWorker,
 };
