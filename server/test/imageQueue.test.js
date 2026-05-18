@@ -212,6 +212,173 @@ test("processImageJob stores chat images and emits fileProcessed", async () => {
   assert.equal(emitted[0].payload.file._id, "file-1");
 });
 
+test("processImageJob re-emits existing chat image for duplicate requestId", async () => {
+  const emitted = [];
+  let uploads = 0;
+  let creates = 0;
+  const existingFile = {
+    _id: "file-existing",
+    ownerId: "user-1",
+    originalName: "cat.webp",
+    mimeType: "image/webp",
+    size: 15,
+    s3Key: "uploads/cat.webp",
+    url: "https://bucket.s3.local/uploads/cat.webp",
+    requestId: "req-duplicate",
+  };
+  const deps = {
+    sharp: () => {
+      throw new Error("duplicate jobs should not be reprocessed");
+    },
+    s3Service: {
+      async downloadObject() {
+        throw new Error("duplicate jobs should not download source");
+      },
+      async uploadSingleFile() {
+        uploads += 1;
+        throw new Error("duplicate jobs should not upload output");
+      },
+      async deleteObject() {},
+    },
+    FileModel: {
+      async findOne(query) {
+        assert.deepEqual(query, { requestId: "req-duplicate" });
+        return existingFile;
+      },
+      async create() {
+        creates += 1;
+        throw new Error("duplicate jobs should not create a File");
+      },
+    },
+    UserModel: {},
+    invalidateUserProfile: async () => {},
+    io: {
+      to(room) {
+        return {
+          emit(eventName, payload) {
+            emitted.push({ room, eventName, payload });
+          },
+        };
+      },
+    },
+  };
+
+  const result = await processImageJob(
+    buildChatImageJob({
+      source: {
+        key: "queue-sources/cat.png",
+        url: "https://bucket.s3.local/queue-sources/cat.png",
+      },
+      file: {
+        originalname: "cat.png",
+        mimetype: "image/png",
+        size: 3,
+      },
+      userId: "user-1",
+      requestId: "req-duplicate",
+    }),
+    deps,
+  );
+
+  assert.equal(result.success, true);
+  assert.equal(result.file._id, "file-existing");
+  assert.equal(uploads, 0);
+  assert.equal(creates, 0);
+  assert.deepEqual(emitted, [
+    {
+      room: "user-1",
+      eventName: "fileProcessed",
+      payload: {
+        requestId: "req-duplicate",
+        file: {
+          _id: "file-existing",
+          cdnUrl: "https://bucket.s3.local/uploads/cat.webp",
+          url: "https://bucket.s3.local/uploads/cat.webp",
+          name: "cat.webp",
+          originalName: "cat.webp",
+          type: "image/webp",
+          mimeType: "image/webp",
+          size: 15,
+        },
+      },
+    },
+  ]);
+});
+
+test("processImageJob cleans duplicate chat image upload when requestId insert races", async () => {
+  const deletedObjects = [];
+  let findCount = 0;
+  const existingFile = {
+    _id: "file-existing",
+    ownerId: "user-1",
+    originalName: "cat.webp",
+    mimeType: "image/webp",
+    size: 15,
+    s3Key: "uploads/cat-existing.webp",
+    url: "https://bucket.s3.local/uploads/cat-existing.webp",
+    requestId: "req-race",
+  };
+  const duplicateError = new Error("duplicate key");
+  duplicateError.code = 11000;
+  const deps = {
+    sharp: () => ({
+      resize() {
+        return this;
+      },
+      webp() {
+        return this;
+      },
+      async toBuffer() {
+        return Buffer.from("processed race image");
+      },
+    }),
+    s3Service: {
+      async downloadObject() {
+        return Buffer.from("raw");
+      },
+      async uploadSingleFile() {
+        return "https://bucket.s3.local/uploads/cat-race.webp";
+      },
+      async deleteObject(key) {
+        deletedObjects.push(key);
+      },
+    },
+    FileModel: {
+      async findOne() {
+        findCount += 1;
+        return findCount === 1 ? null : existingFile;
+      },
+      async create() {
+        throw duplicateError;
+      },
+    },
+    UserModel: {},
+    invalidateUserProfile: async () => {},
+    io: { to: () => ({ emit() {} }) },
+  };
+
+  const result = await processImageJob(
+    buildChatImageJob({
+      source: {
+        key: "queue-sources/cat.png",
+        url: "https://bucket.s3.local/queue-sources/cat.png",
+      },
+      file: {
+        originalname: "cat.png",
+        mimetype: "image/png",
+        size: 3,
+      },
+      userId: "user-1",
+      requestId: "req-race",
+    }),
+    deps,
+  );
+
+  assert.equal(result.success, true);
+  assert.equal(result.file._id, "file-existing");
+  assert.deepEqual(deletedObjects, ["uploads/cat-race.webp", "queue-sources/cat.png"]);
+});
+
 test("processImageJob updates avatar and emits avatarUpdated", async () => {
   const emitted = [];
   const updates = [];
@@ -288,6 +455,7 @@ test("processImageJob updates avatar and emits avatarUpdated", async () => {
     updateData: {
       displayName: "Alice",
       avatar: "https://bucket.s3.local/avatars/me.webp",
+      avatarRequestId: "req-2",
     },
   });
   assert.deepEqual(updates[1], { invalidated: "user-1" });
@@ -300,6 +468,89 @@ test("processImageJob updates avatar and emits avatarUpdated", async () => {
   );
   assert.equal(emitted[1].payload.user.avatar, "https://bucket.s3.local/avatars/me.webp");
   assert.equal(emitted[1].payload.user.friends, undefined);
+});
+
+test("processImageJob re-emits existing avatar state for duplicate requestId", async () => {
+  const emitted = [];
+  let updates = 0;
+  let uploads = 0;
+  const existingUser = {
+    _id: "user-1",
+    displayName: "Alice",
+    avatar: "https://bucket.s3.local/avatars/me.webp",
+    friends: ["friend-1"],
+    avatarRequestId: "req-avatar-duplicate",
+  };
+  const deps = {
+    sharp: () => {
+      throw new Error("duplicate avatar jobs should not be reprocessed");
+    },
+    s3Service: {
+      async downloadObject() {
+        throw new Error("duplicate avatar jobs should not download source");
+      },
+      async uploadSingleFile() {
+        uploads += 1;
+        throw new Error("duplicate avatar jobs should not upload output");
+      },
+      async deleteObject() {},
+    },
+    FileModel: {},
+    UserModel: {
+      async findOne(query) {
+        assert.deepEqual(query, {
+          _id: "user-1",
+          avatarRequestId: "req-avatar-duplicate",
+        });
+        return existingUser;
+      },
+      async findByIdAndUpdate() {
+        updates += 1;
+        throw new Error("duplicate avatar jobs should not update user");
+      },
+    },
+    invalidateUserProfile: async () => {
+      throw new Error("duplicate avatar jobs should not invalidate unchanged profile");
+    },
+    io: {
+      to(room) {
+        return {
+          emit(eventName, payload) {
+            emitted.push({ room, eventName, payload });
+          },
+        };
+      },
+    },
+  };
+
+  const result = await processImageJob(
+    buildAvatarImageJob({
+      source: {
+        key: "queue-sources/me.jpg",
+        url: "https://bucket.s3.local/queue-sources/me.jpg",
+      },
+      file: {
+        originalname: "me.jpg",
+        mimetype: "image/jpeg",
+        size: 10,
+      },
+      userId: "user-1",
+      requestId: "req-avatar-duplicate",
+    }),
+    deps,
+  );
+
+  assert.equal(result.success, true);
+  assert.equal(result.avatar, "https://bucket.s3.local/avatars/me.webp");
+  assert.equal(uploads, 0);
+  assert.equal(updates, 0);
+  assert.deepEqual(
+    emitted.map((item) => item.room),
+    ["user-1", "friend-1"],
+  );
+  assert.equal(emitted[0].eventName, "avatarUpdated");
+  assert.equal(emitted[0].payload.requestId, "req-avatar-duplicate");
+  assert.equal(emitted[0].payload.avatar, "https://bucket.s3.local/avatars/me.webp");
 });
 
 test("uploadSingleFile stages the image in S3 before publishing a metadata-only job", async () => {

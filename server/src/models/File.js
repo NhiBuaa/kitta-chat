@@ -11,9 +11,18 @@ const fileSchema = new mongoose.Schema({
     size: { type: Number, required: true },
     s3Key: { type: String, required: true },
     url: { type: String, required: true },
-    fileHash: { type: String }
+    fileHash: { type: String },
+    requestId: { type: String }
 }, { timestamps: true });
 
-module.exports = mongoose.model('File', fileSchema);
-
 fileSchema.index({ ownerId: 1, createdAt: -1 });
+fileSchema.index(
+    { requestId: 1 },
+    {
+        unique: true,
+        sparse: true,
+        partialFilterExpression: { requestId: { $exists: true, $ne: null } },
+    },
+);
+
+module.exports = mongoose.model('File', fileSchema);

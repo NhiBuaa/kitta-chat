@@ -7,7 +7,7 @@ const { createRabbitConnectionManager } = require("../src/queues/connectionManag
 const { createProducer } = require("../src/queues/producer");
 const { startQueueWorker } = require("../src/workers/workerRuntime");
 const { getRabbitUrl } = require("../src/queues/connectionManager");
-const { QUEUE_TOPOLOGY } = require("../src/queues/topology");
+const { getRetryDelayMs, QUEUE_TOPOLOGY } = require("../src/queues/topology");
 
 const createFakeAmqp = () => {
   const calls = {
@@ -168,7 +168,7 @@ test("RabbitMQ topology includes retry and dead-letter queues for background job
   assert.ok(queueNames.includes("audit.events.retry"));
   assert.deepEqual(imageRetryQueue.options, {
     durable: true,
-    messageTtl: 30000,
+    messageTtl: getRetryDelayMs(),
     deadLetterExchange: "",
     deadLetterRoutingKey: "image.process",
   });

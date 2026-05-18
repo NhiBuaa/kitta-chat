@@ -43,6 +43,47 @@ const buildPublicAvatarUser = (user) => ({
   activityStatus: user?.activityStatus,
 });
 
+const buildFileProcessedPayload = (job, file) => ({
+  requestId: job.requestId,
+  file: {
+    _id: file._id,
+    cdnUrl: file.url,
+    url: file.url,
+    name: file.originalName,
+    originalName: file.originalName,
+    type: file.mimeType,
+    mimeType: file.mimeType,
+    size: file.size,
+  },
+});
+
+const findFileByRequestId = async (deps, requestId) => {
+  if (!requestId || typeof deps.FileModel.findOne !== "function") {
+    return null;
+  }
+
+  return deps.FileModel.findOne({ requestId });
+};
+
+const findAvatarByRequestId = async (deps, userId, requestId) => {
+  if (!userId || !requestId || typeof deps.UserModel.findOne !== "function") {
+    return null;
+  }
+
+  return deps.UserModel.findOne({ _id: userId, avatarRequestId: requestId });
+};
+
+const emitAvatarUpdated = (deps, job, updatedUser, avatarUrl) => {
+  for (const roomId of getAvatarUpdateRooms(updatedUser, job.userId)) {
+    const isOwnerRoom = roomId === String(job.userId);
+    emitToUser(deps.io, roomId, "avatarUpdated", {
+      requestId: job.requestId,
+      user: isOwnerRoom ? updatedUser : buildPublicAvatarUser(updatedUser),
+      avatar: avatarUrl,
+    });
+  }
+};
+
 const cleanupSourceObject = async (deps, job) => {
   if (!job.source?.key || typeof deps.s3Service.deleteObject !== "function") {
     return;
@@ -52,6 +93,18 @@ const cleanupSourceObject = async (deps, job) => {
     await deps.s3Service.deleteObject(job.source.key);
   } catch (error) {
     console.warn(`[ImageWorker] failed to delete source object ${job.source.key}:`, error.message);
+  }
+};
+
+const cleanupObjectKey = async (deps, key) => {
+  if (!key || typeof deps.s3Service.deleteObject !== "function") {
+    return;
+  }
+
+  try {
+    await deps.s3Service.deleteObject(key);
+  } catch (error) {
+    console.warn(`[ImageWorker] failed to delete object ${key}:`, error.message);
   }
 };
 
@@ -71,6 +124,14 @@ const downloadSourceBuffer = async (deps, job) => {
 };
 
 const processChatImage = async (job, deps) => {
+  const existingFile = await findFileByRequestId(deps, job.requestId);
+  if (existingFile) {
+    const payload = buildFileProcessedPayload(job, existingFile);
+    emitToUser(deps.io, job.userId, "fileProcessed", payload);
+    await cleanupSourceObject(deps, job);
+    return { success: true, file: payload.file };
+  }
+
   const sourceBuffer = await downloadSourceBuffer(deps, job);
   const processedBuffer = await deps
     .sharp(sourceBuffer)
@@ -88,29 +149,31 @@ const processChatImage = async (job, deps) => {
   );
   const key = new URL(s3Url).pathname.substring(1);
 
-  const newFile = await deps.FileModel.create({
-    ownerId: job.userId,
-    originalName: fileName,
-    mimeType,
-    size: processedBuffer.length,
-    s3Key: key,
-    url: s3Url,
-    fileHash: "",
-  });
-
-  const payload = {
-    requestId: job.requestId,
-    file: {
-      _id: newFile._id,
-      cdnUrl: s3Url,
-      url: s3Url,
-      name: fileName,
+  let newFile;
+  try {
+    newFile = await deps.FileModel.create({
+      ownerId: job.userId,
       originalName: fileName,
-      type: mimeType,
       mimeType,
       size: processedBuffer.length,
-    },
-  };
+      s3Key: key,
+      url: s3Url,
+      fileHash: "",
+      requestId: job.requestId,
+    });
+  } catch (error) {
+    if (error?.code !== 11000) {
+      throw error;
+    }
+
+    await cleanupObjectKey(deps, key);
+    newFile = await findFileByRequestId(deps, job.requestId);
+    if (!newFile) {
+      throw error;
+    }
+  }
+
+  const payload = buildFileProcessedPayload(job, newFile);
 
   emitToUser(deps.io, job.userId, "fileProcessed", payload);
   await cleanupSourceObject(deps, job);
@@ -118,6 +181,13 @@ const processChatImage = async (job, deps) => {
 };
 
 const processAvatarImage = async (job, deps) => {
+  const existingUser = await findAvatarByRequestId(deps, job.userId, job.requestId);
+  if (existingUser) {
+    emitAvatarUpdated(deps, job, existingUser, existingUser.avatar);
+    await cleanupSourceObject(deps, job);
+    return { success: true, user: existingUser, avatar: existingUser.avatar };
+  }
+
   const sourceBuffer = await downloadSourceBuffer(deps, job);
   const processedBuffer = await deps
     .sharp(sourceBuffer)
@@ -138,6 +208,7 @@ const processAvatarImage = async (job, deps) => {
     {
       ...job.profileUpdates,
       avatar: avatarUrl,
+      avatarRequestId: job.requestId,
     },
     { returnDocument: "after" },
   );
@@ -148,14 +219,7 @@ const processAvatarImage = async (job, deps) => {
 
   await deps.invalidateUserProfile(job.userId);
 
-  for (const roomId of getAvatarUpdateRooms(updatedUser, job.userId)) {
-    const isOwnerRoom = roomId === String(job.userId);
-    emitToUser(deps.io, roomId, "avatarUpdated", {
-      requestId: job.requestId,
-      user: isOwnerRoom ? updatedUser : buildPublicAvatarUser(updatedUser),
-      avatar: avatarUrl,
-    });
-  }
+  emitAvatarUpdated(deps, job, updatedUser, avatarUrl);
 
   await cleanupSourceObject(deps, job);
   return { success: true, user: updatedUser, avatar: avatarUrl };
