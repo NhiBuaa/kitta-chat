@@ -119,6 +119,7 @@ test("sendMessage publishes message.created after realtime delivery succeeds", a
   assert.equal(callbackPayload.success, true);
   assert.equal(emissions.length, 2);
   assert.deepEqual(emissions.map((item) => item.room), ["user-2", "user-1"]);
+  assert.deepEqual(emissions.map((item) => item.eventName), ["getMessage", "getMessage"]);
   assert.equal(published.length, 1);
   assert.equal(published[0].type, "message.created");
   assert.equal(published[0].messageId, "msg-1");
@@ -159,4 +160,5 @@ test("sendMessage remains successful when message.created job publish fails", as
 
   assert.equal(callbackPayload.success, true);
   assert.equal(emissions.length, 2);
+  assert.deepEqual(emissions.map((item) => item.eventName), ["getMessage", "getMessage"]);
 });

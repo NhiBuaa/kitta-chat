@@ -7,6 +7,12 @@ const buildConversationId = require("../../utils/buildConversationId");
 const { getCachedUserProfile } = require("../../services/cacheService");
 const { buildMessageCreatedJob } = require("../../queues/auditJobs");
 const { auditQueue: defaultAuditQueue } = require("../../queues/auditQueue");
+const { SOCKET_EVENTS, SERVER_SIDE_EVENTS } = require("../socketEvents");
+const {
+  emitServerSide,
+  emitToConversation,
+  emitToUser,
+} = require("../realtimePublisher");
 
 const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
@@ -20,7 +26,7 @@ const createRegisterMessageHandlers = ({
   MessageModel = Message,
   logger = console,
 } = {}) => (socket, io) => {
-  socket.on("sendMessage", async (messageData, callBack) => {
+  socket.on(SOCKET_EVENTS.MESSAGE_SEND, async (messageData, callBack) => {
     try {
       const receiverId = messageData.receiverId || messageData.receiver;
       const sender = messageData.sender;
@@ -71,16 +77,16 @@ const createRegisterMessageHandlers = ({
           payloadToEmit.groupName = groupDoc?.displayName || groupDoc?.name || "Nhóm chat";
         }
 
-        io.to(receiverId).emit("getMessage", payloadToEmit);
+        emitToConversation(io, receiverId, SOCKET_EVENTS.MESSAGE_RECEIVE, payloadToEmit);
         logger.log(`${logPrefix} emit group room=${receiverId} messageId=${payloadToEmit._id}`);
       } else {
-        io.to(receiverId).emit("getMessage", payloadToEmit);
-        io.to(senderId).emit("getMessage", payloadToEmit);
+        emitToUser(io, receiverId, SOCKET_EVENTS.MESSAGE_RECEIVE, payloadToEmit);
+        emitToUser(io, senderId, SOCKET_EVENTS.MESSAGE_RECEIVE, payloadToEmit);
         logger.log(
           `${logPrefix} SENT sender=${senderId} receiver=${receiverId} messageId=${payloadToEmit._id} senderRoom=${senderId} receiverRoom=${receiverId}`,
         );
 
-        io.serverSideEmit("proof:message-dispatched", {
+        emitServerSide(io, SERVER_SIDE_EVENTS.MESSAGE_DISPATCHED_PROOF, {
           messageId: payloadToEmit._id,
           senderId,
           receiverId,
@@ -118,7 +124,7 @@ const createRegisterMessageHandlers = ({
     }
   });
 
-  socket.on("markRead", async (data) => {
+  socket.on(SOCKET_EVENTS.MESSAGE_MARK_READ, async (data) => {
     try {
       if (data?.isGroup) {
         const { groupId, readerId } = data;
@@ -133,7 +139,7 @@ const createRegisterMessageHandlers = ({
           { $push: { readBy: readerId } },
         );
 
-        io.to(groupId).emit("groupUserRead", { groupId, readerId });
+        emitToConversation(io, groupId, SOCKET_EVENTS.GROUP_MESSAGE_READ, { groupId, readerId });
         logger.log(`${logPrefix} markRead group group=${groupId} reader=${readerId}`);
       } else {
         const { senderId, receiverId } = data;
@@ -146,7 +152,7 @@ const createRegisterMessageHandlers = ({
           { $set: { isRead: true } },
         );
 
-        io.to(senderId).emit("userReadMessages", { readerId: receiverId });
+        emitToUser(io, senderId, SOCKET_EVENTS.MESSAGE_READ, { readerId: receiverId });
         logger.log(`${logPrefix} markRead direct conv=${convId} sender=${senderId} reader=${receiverId}`);
       }
     } catch (err) {
