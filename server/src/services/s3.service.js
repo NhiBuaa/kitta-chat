@@ -1,13 +1,22 @@
-const { S3Client, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
+const {
+  S3Client,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-require('dotenv').config();
+require("dotenv").config();
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  }
+  },
 });
 
 const BUCKET = process.env.AWS_S3_BUCKET_NAME;
@@ -15,26 +24,81 @@ const BUCKET = process.env.AWS_S3_BUCKET_NAME;
 const validateFile = (mimeType) => {
   const safeMimeType = mimeType || "application/octet-stream";
   const allowedTypes = [
-    "image/", "video/", "audio/", "application/pdf", "application/msword",
+    "image/",
+    "video/",
+    "audio/",
+    "application/pdf",
+    "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/plain",
     "application/zip",
     "application/x-rar-compressed",
-    "application/octet-stream"
+    "application/octet-stream",
   ];
-  const isAllowed = allowedTypes.some((type) => mimeType.startsWith(type));
-  if (!isAllowed) throw new Error(`Định dạng file không được hỗ trợ! (${safeMimeType})`);
+  const isAllowed = allowedTypes.some((type) => safeMimeType.startsWith(type));
+  if (!isAllowed) {
+    throw new Error(`Unsupported file type: ${safeMimeType}`);
+  }
+};
+
+const buildObjectUrl = (key) =>
+  `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+const streamToBuffer = async (stream) => {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+};
+
+const uploadObject = async (fileBuffer, fileName, mimeType, folder = "uploads") => {
+  validateFile(mimeType);
+
+  const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+  const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, "-");
+  const key = `${folder}/${uniqueSuffix}-${safeName}`;
+
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    Body: fileBuffer,
+    ContentType: mimeType || "application/octet-stream",
+  });
+
+  await s3Client.send(command);
+
+  return { key, url: buildObjectUrl(key) };
+};
+
+const downloadObject = async (key) => {
+  const response = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+    }),
+  );
+
+  return streamToBuffer(response.Body);
+};
+
+const deleteObject = async (key) => {
+  await s3Client.send(
+    new DeleteObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+    }),
+  );
 };
 
 module.exports = {
   initiateUpload: async (fileName, mimeType) => {
     validateFile(mimeType);
 
-    // Tạo key an toàn không bị trùng lặp
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
     const key = `uploads/${uniqueSuffix}-${safeName}`;
 
     const command = new CreateMultipartUploadCommand({
@@ -55,7 +119,7 @@ module.exports = {
       PartNumber: partNumber,
     });
 
-    return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    return getSignedUrl(s3Client, command, { expiresIn: 3600 });
   },
 
   completeUpload: async (uploadId, key, parts) => {
@@ -64,7 +128,7 @@ module.exports = {
       Key: key,
       UploadId: uploadId,
       MultipartUpload: {
-        Parts: parts
+        Parts: parts,
       },
     });
 
@@ -76,28 +140,21 @@ module.exports = {
     const command = new AbortMultipartUploadCommand({
       Bucket: BUCKET,
       Key: key,
-      UploadId: uploadId
+      UploadId: uploadId,
     });
     await s3Client.send(command);
   },
 
-  uploadSingleFile: async (fileBuffer, fileName, mimeType, folder = 'uploads') => {
-    // Chỉ dành cho ảnh
-    if (!mimeType?.startsWith("image/")) throw new Error("Chỉ hổ trợ định dạng ảnh.");
+  uploadObject,
+  downloadObject,
+  deleteObject,
 
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '-');
-    const key = `${folder}/${uniqueSuffix}-${safeName}`;
+  uploadSingleFile: async (fileBuffer, fileName, mimeType, folder = "uploads") => {
+    if (!mimeType?.startsWith("image/")) {
+      throw new Error("Only image files are supported.");
+    }
 
-    const command = new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-      Body: fileBuffer,
-      ContentType: mimeType || "image/jpeg",
-    });
-
-    await s3Client.send(command);
-
-    return `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-  }
+    const uploaded = await uploadObject(fileBuffer, fileName, mimeType, folder);
+    return uploaded.url;
+  },
 };

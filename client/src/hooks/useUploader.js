@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { uploadFileChunked, uploadFileSingle } from '@/hooks/useUpload.js';
 import { toast } from 'react-toastify';
 import imageCompression from 'browser-image-compression';
@@ -26,6 +26,18 @@ export const useUploader = () => {
                 result = await uploadFileSingle(file, onProgress);
             } else {
                 result = await uploadFileChunked(file, onProgress);
+            }
+
+            if (result?.status === 'processing' && result?.requestId) {
+                updateFileStatus(id, {
+                    status: 'processing',
+                    progress: 100,
+                    requestId: result.requestId,
+                    originalName: result.name || file.name,
+                    mimeType: result.type || file.type,
+                    size: result.size || file.size
+                });
+                return result;
             }
 
             updateFileStatus(id, {
@@ -113,6 +125,31 @@ export const useUploader = () => {
     const removeUploadItem = (id) => {
         setUploadQueue(prev => prev.filter(item => item.id !== id));
     };
+
+    useEffect(() => {
+        const handleFileProcessed = (event) => {
+            const processed = event.detail;
+            const fileResult = processed?.file;
+            if (!processed?.requestId || !fileResult) return;
+
+            setUploadQueue(prev => prev.map(item => {
+                if (item.requestId !== processed.requestId) return item;
+                return {
+                    ...item,
+                    status: 'completed',
+                    progress: 100,
+                    url: fileResult.cdnUrl || fileResult.url || null,
+                    dbFileId: fileResult._id,
+                    originalName: fileResult.originalName || fileResult.name || item.file.name,
+                    mimeType: fileResult.mimeType || fileResult.type || item.file.type,
+                    size: fileResult.size || item.file.size
+                };
+            }));
+        };
+
+        window.addEventListener('file-processed', handleFileProcessed);
+        return () => window.removeEventListener('file-processed', handleFileProcessed);
+    }, []);
 
     const clearUploads = () => setUploadQueue([]);
     return { uploadQueue, addFiles, clearUploads, removeUploadItem };

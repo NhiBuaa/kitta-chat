@@ -1,11 +1,11 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
+const mongoose = require("mongoose");
 const getSafeUserName = require("../utils/getSafeUserName");
-const { uploadSingleFile } = require("../services/s3.service");
-const sharp = require("sharp");
+const { queueProfileAvatarProcessing } = require("../services/profileAvatarQueueService");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
-const { getMultiPresence } = require("../services/presenceService");
+const { getMultiPresence, setPresenceWriteThrough } = require("../services/presenceService");
 const { getRecentConversations } = require("../services/conversationCacheService");
 const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
 
@@ -100,22 +100,9 @@ const updateUserProfile = async (req, res) => {
 
     // Xử lý Avatar
     if (req.file) {
-      const compressedBuffer = await sharp(req.file.buffer)
-        .resize(256, 256, { fit: "cover" })
-        .webp({ quality: 80 })
-        .toBuffer();
-
-      const OriginalNameWithoutExt = req.file.originalname.split(".")[0];
-      const newName = OriginalNameWithoutExt + ".webp";
-
-      const avatarUrl = await uploadSingleFile(
-        compressedBuffer,
-        newName,
-        "image/webp",
-        "avatars",
-      );
-
-      updateData.avatar = avatarUrl;
+      if (!req.file.mimetype?.startsWith("image/")) {
+        return res.status(400).json({ success: false, message: "Avatar phải là file ảnh." });
+      }
     }
 
     console.log("Dữ liệu chuẩn bị update vào DB:", updateData);
@@ -123,6 +110,18 @@ const updateUserProfile = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       returnDocument: "after",
     }).select("-password");
+
+    let avatarQueueResult = { queued: false, requestId: null, error: null };
+    if (req.file) {
+      avatarQueueResult = await queueProfileAvatarProcessing({
+        file: req.file,
+        userId,
+      });
+
+      if (!avatarQueueResult.queued) {
+        console.warn("[ProfileAvatar] queue unavailable:", avatarQueueResult.error);
+      }
+    }
 
     // Nếu user thay đổi trạng thái hoạt động qua profile, đồng bộ cả Redis + broadcast cho bạn bè
     if (activityStatus?.state) {
@@ -146,6 +145,9 @@ const updateUserProfile = async (req, res) => {
     res.json({
       success: true,
       message: "Cập nhật thành công",
+      queued: avatarQueueResult.queued,
+      avatarRequestId: avatarQueueResult.requestId,
+      avatarQueueError: avatarQueueResult.queueError || null,
       user: updatedUser,
     });
   } catch (error) {
@@ -365,6 +367,7 @@ const accceptFriendRequest = async (req, res) => {
 const getSidebarUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
+    const currentUserObjectId = new mongoose.Types.ObjectId(currentUserId);
 
     // 
     // Lấy conversation IDs từ Redis ZSET
@@ -426,7 +429,7 @@ const getSidebarUsers = async (req, res) => {
     const unreadCounts = await Message.aggregate([
       {
         $match: {
-          receiver: currentUserId,
+          receiver: currentUserObjectId,
           isRead: false,
           conversationId: { $in: allConversationIds },
         },

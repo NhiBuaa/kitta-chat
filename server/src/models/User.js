@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     isOnline: { type: Boolean, default: false },
     displayName: { type: String, default: "" },
     avatar: { type: String, default: DEFAULT_AVATAR },
+    avatarRequestId: { type: String },
     provider: {
       type: String,
       enum: ["local", "google"],
@@ -45,5 +46,12 @@ userSchema.index({ friendRequests: 1 });
 
 // Index cho tìm kiếm theo displayName (nếu cần search users)
 userSchema.index({ displayName: 1 });
+userSchema.index(
+  { avatarRequestId: 1 },
+  {
+    sparse: true,
+    partialFilterExpression: { avatarRequestId: { $exists: true, $ne: null } },
+  },
+);
 
 module.exports = mongoose.model("User", userSchema);

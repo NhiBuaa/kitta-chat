@@ -43,6 +43,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
     env_file:
       - ./server/.env
     depends_on:
@@ -58,6 +59,77 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  # =========================================================
+  # IMAGE WORKER - RabbitMQ consumer for image processing
+  # =========================================================
+  image-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    restart: on-failure
+    command: npm run worker:image
+    environment:
+      - NODE_NAME=${NODE_NAME:-image-worker}
+      - MONGO_URI=mongodb://mongo:27017/shot-chat
+      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - ./server/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - chat-network
+
+  # =========================================================
+  # NOTIFICATION WORKER - RabbitMQ consumer for email jobs
+  # =========================================================
+  notification-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    restart: on-failure
+    command: npm run worker:notification
+    environment:
+      - NODE_NAME=${NODE_NAME:-notification-worker}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - ./server/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - chat-network
+
+  # =========================================================
+  # AUDIT WORKER - RabbitMQ consumer for audit/statistics jobs
+  # =========================================================
+  audit-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    restart: on-failure
+    command: npm run worker:audit
+    environment:
+      - NODE_NAME=${NODE_NAME:-audit-worker}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - ./server/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - chat-network
 
   # =========================================================
   # REDIS - Pub/Sub & Adapter
@@ -77,6 +149,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
+  # =========================================================
+  # RABBITMQ - Background job queue
+  # =========================================================
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: chat_rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - chat-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # =========================================================
   # MONGODB - Database
@@ -103,3 +198,4 @@ networks:
 volumes:
   redis_data:
   mongo_data:
+  rabbitmq_data:

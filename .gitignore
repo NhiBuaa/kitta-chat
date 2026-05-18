@@ -50,16 +50,19 @@ logs/
 client/node_modules/
 client/.env
 client/.env.*
+!client/.env.example
 client/dist/
 client/build/
 client/.DS_Store
 client/.vite/
+client/.vite-cache/
 
 # =========================
 # Backend (NodeJS)
 # =========================
 server/node_modules/
 server/.env
+!server/.env.example
 server/logs/
 server/dist/
 server/.DS_Store
@@ -85,5 +88,11 @@ database/__pycache__/
 *.tmp
 
 server/src/config/firebase-service.json
+nginx/ssl/*.key
+nginx/ssl/*.pem
+nginx/ssl/*.p12
+nginx/ssl/*.pfx
+*.local.key
 
 /docs
+/data

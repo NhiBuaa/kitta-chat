@@ -150,7 +150,9 @@ export const useChatMessages = ({
             return;
         }
 
-        const isUploading = uploadQueue.some((item) => item.status === "uploading");
+        const isUploading = uploadQueue.some((item) =>
+            ["waiting", "uploading", "processing"].includes(item.status)
+        );
         if (isUploading) {
             toast.warning("Vui lòng chờ file tải lên hoàn tất trước khi gửi!");
             return;

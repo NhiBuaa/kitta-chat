@@ -37,6 +37,10 @@ services:
     ports:
       - "6379:6379"
 
+  mongo:
+    ports:
+      - "27017:27017"
+
 volumes:
   backend_node_modules:
   client_node_modules:

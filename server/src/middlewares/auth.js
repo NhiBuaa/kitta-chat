@@ -28,4 +28,6 @@ const getUserIdFromToken = (token) => {
     }
 }
 
-module.exports = verifyToken, getUserIdFromToken;
+module.exports = verifyToken;
+module.exports.verifyToken = verifyToken;
+module.exports.getUserIdFromToken = getUserIdFromToken;

@@ -20,7 +20,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
 
   const getAvatarUrl = (avatar) => {
     if (!avatar) return defaultAvatar;
-    if (avatar.startsWith("http")) return avatar;
+    if (/^(https?:|blob:|data:)/.test(avatar)) return avatar;
     return `${VITE_API_URL_USERS}/${avatar.replace(/^\/+/, "")}`;
   };
 
@@ -114,6 +114,29 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
       });
 
       if (res.data.success) {
+        if (formData.avatarFile) {
+          if (res.data.queued) {
+            toast.success("Cập nhật hồ sơ thành công!");
+          } else {
+            toast.warning(
+              "Thông tin hồ sơ đã lưu, nhưng avatar chưa được cập nhật vì hàng đợi xử lý ảnh chưa sẵn sàng.",
+            );
+          }
+
+          const nextUser = res.data.queued ? {
+            ...res.data.user,
+            avatar: formData.avatarPreview,
+          } : res.data.user;
+
+          localStorage.setItem("user", JSON.stringify(res.data.user));
+          setFormData((prev) => ({
+            ...prev,
+            avatarFile: null,
+            avatarPreview: getAvatarUrl(nextUser.avatar),
+          }));
+          if (onUpdateSuccess) onUpdateSuccess(nextUser);
+          return;
+        }
         toast.success("Cập nhật hồ sơ thành công!");
 
         localStorage.setItem("user", JSON.stringify(res.data.user));
