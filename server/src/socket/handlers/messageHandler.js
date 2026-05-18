@@ -133,10 +133,9 @@ const createRegisterMessageHandlers = ({
         await MessageModel.updateMany(
           {
             conversationId: groupId,
-            type: { $ne: "system" },
             readBy: { $ne: readerId },
           },
-          { $push: { readBy: readerId } },
+          { $addToSet: { readBy: readerId } },
         );
 
         emitToConversation(io, groupId, SOCKET_EVENTS.GROUP_MESSAGE_READ, { groupId, readerId });
