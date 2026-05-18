@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Message = require("../models/Message");
+const mongoose = require("mongoose");
 const getSafeUserName = require("../utils/getSafeUserName");
 const { queueProfileAvatarProcessing } = require("../services/profileAvatarQueueService");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
@@ -366,6 +367,7 @@ const accceptFriendRequest = async (req, res) => {
 const getSidebarUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
+    const currentUserObjectId = new mongoose.Types.ObjectId(currentUserId);
 
     // 
     // Lấy conversation IDs từ Redis ZSET
@@ -427,7 +429,7 @@ const getSidebarUsers = async (req, res) => {
     const unreadCounts = await Message.aggregate([
       {
         $match: {
-          receiver: currentUserId,
+          receiver: currentUserObjectId,
           isRead: false,
           conversationId: { $in: allConversationIds },
         },

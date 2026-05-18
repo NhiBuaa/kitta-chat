@@ -42,8 +42,8 @@ const buildPublicAvatarUser = (user) => ({
   status: user?.status,
   activityStatus: user?.activityStatus,
 });
-
 const buildFileProcessedPayload = (job, file) => ({
+
   requestId: job.requestId,
   file: {
     _id: file._id,
