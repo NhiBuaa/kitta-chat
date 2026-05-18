@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { audioManager } from "@/utils/AudioManager.js";
 
@@ -20,6 +20,8 @@ export const useMessageSocket = ({
     fetchNewConversation,
     setSearchResult,
 }) => {
+    const processedMessageIdsRef = useRef(new Set());
+
     useEffect(() => {
         if (!socket) return;
 
@@ -134,8 +136,31 @@ export const useMessageSocket = ({
             );
         };
 
+        const normalizeRecoveredMessage = (message) => {
+            const conversationId = message?.conversationId || "";
+            const isRecoveredGroup =
+                typeof message?.isGroup === "boolean"
+                    ? message.isGroup
+                    : Boolean(conversationId && !conversationId.includes("_"));
+
+            return {
+                ...message,
+                isGroup: isRecoveredGroup,
+                receiverId: isRecoveredGroup
+                    ? conversationId
+                    : message?.receiverId || message?.receiver,
+            };
+        };
+
         // getMessage (tin nhắn mới)
-        const handleUnifiedMessage = (data) => {
+        const handleUnifiedMessage = (data, options = {}) => {
+            const { suppressNotification = false } = options;
+            const incomingMessageId = data?._id || null;
+
+            if (incomingMessageId && processedMessageIdsRef.current.has(incomingMessageId)) {
+                return;
+            }
+
             const currentActiveChat = activeChatRef.current;
             const senderId = data.senderId || data.sender?._id || data.sender;
             const receiverId = data.receiverId || data.receiver;
@@ -195,6 +220,10 @@ export const useMessageSocket = ({
                 setMessages((prev) => {
                     if (isCallLog) {
                         return upsertCallLogMessage(prev, data);
+                    }
+
+                    if (incomingMessageId && prev.some((m) => m._id === incomingMessageId)) {
+                        return prev;
                     }
 
                     return [
@@ -297,7 +326,11 @@ export const useMessageSocket = ({
                 return updateListWithPreview(prev) || prev;
             });
 
-            if (isUnread && data.type !== "system" && data.type !== "call_log") {
+            if (incomingMessageId) {
+                processedMessageIdsRef.current.add(incomingMessageId);
+            }
+
+            if (!suppressNotification && isUnread && data.type !== "system" && data.type !== "call_log") {
                 try {
                     audioManager.playMessageNotification();
                     const senderName = data.sender?.displayName || "Ai đó";
@@ -311,6 +344,17 @@ export const useMessageSocket = ({
             }
         };
 
+        const handleRecoveredMessages = (event) => {
+            const messages = event?.detail?.messages;
+            if (!Array.isArray(messages) || messages.length === 0) return;
+
+            messages.forEach((message) => {
+                handleUnifiedMessage(normalizeRecoveredMessage(message), {
+                    suppressNotification: true,
+                });
+            });
+        };
+
         const handleCallLogMessage = (data) => {
             appendCallLogIfViewing(data);
         };
@@ -319,12 +363,14 @@ export const useMessageSocket = ({
         socket.on("groupUserRead", handleGroupUserRead);
         socket.on("getMessage", handleUnifiedMessage);
         socket.on("callLogMessage", handleCallLogMessage);
+        window.addEventListener("sync-message-recovered", handleRecoveredMessages);
 
         return () => {
             socket.off("userReadMessages", handleUserRead);
             socket.off("groupUserRead", handleGroupUserRead);
             socket.off("getMessage", handleUnifiedMessage);
             socket.off("callLogMessage", handleCallLogMessage);
+            window.removeEventListener("sync-message-recovered", handleRecoveredMessages);
         };
     }, [socket, currentUser, activeChatRef, setMessages, setUsers, setGroups, setHasNewUnread, scrollRef, scrollChatToBottom, fetchNewConversation, setSearchResult]);
 };
