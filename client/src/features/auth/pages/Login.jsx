@@ -31,7 +31,9 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       toast.error(
-        err.response?.data?.msg || "Tài khoản hoặc mật khẩu không chính xác",
+        err.response?.data?.message ||
+          err.response?.data?.msg ||
+          "Tài khoản hoặc mật khẩu không chính xác",
       );
     }
   };

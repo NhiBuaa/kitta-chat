@@ -4,7 +4,7 @@ Last updated: 2026-05-18
 
 ## Scope
 
-This handoff captures the current state of the `web-socket` project after RabbitMQ hardening, secrets cleanup, socket architecture slices, and missed-message/sidebar unread fixes.
+This handoff captures the current state of the `web-socket` project after RabbitMQ hardening, secrets cleanup, socket architecture slices, missed-message/sidebar unread fixes, and group sidebar preview/unread fixes.
 
 Recommended skills for next sessions:
 
@@ -136,18 +136,86 @@ Extracted pure helpers cover:
 - scroll handling,
 - toast/audio notifications.
 
+## Completed Group Sidebar Preview / Unread
+
+Group sidebar preview/unread is now implemented for both realtime/reconnect and refresh/initial load.
+
+### Slice A: Frontend Realtime / Reconnect
+
+Completed:
+
+- `client/src/features/chat/socket/messageSocketState.test.js` now covers group preview/unread helper behavior.
+- `client/src/features/chat/socket/useMessageSocket.js` routes group `getMessage` and `sync-message-recovered` payloads through `setGroups`.
+- Direct chat message handling still updates `setUsers`; group messages no longer try to update the direct user sidebar list.
+- `client/src/components/layout/Sidebar.jsx` renders group `lastMessage`, timestamp, unread highlight, and unread badge.
+- `client/src/features/chat/pages/ChatPage.jsx` clears group `hasUnread` / `unreadCount` locally when opening a group and emits group `markRead`.
+
+### Slice B: Backend Refresh / Initial Load
+
+Completed:
+
+- `server/src/controllers/groupController.js` enriches `GET /api/groups` with:
+  - `lastMessage`,
+  - `hasUnread`,
+  - `unreadCount`.
+- Existing group response fields are preserved:
+  - `_id`,
+  - `name`,
+  - `admin`,
+  - `members`,
+  - `avatar`,
+  - `createdAt`,
+  - `updatedAt`.
+- Group unread state uses `Message.readBy` with MongoDB as source of truth.
+- Messages sent by the current user are excluded from that user's unread count.
+- System messages intentionally count as unread for group sidebar.
+
+### System Message Consistency
+
+Decision:
+
+- Group system messages should count as unread.
+- Examples include group rename, member add/remove/leave, admin transfer, and delete/disband events.
+
+Completed:
+
+- `GET /api/groups` unread aggregation no longer excludes `type: "system"`.
+- Group `markRead` in `server/src/socket/handlers/messageHandler.js` now marks system messages read too.
+- Group `markRead` uses `$addToSet` for `readBy` so duplicate mark-read emits are idempotent.
+- Realtime system message payloads emitted from `server/src/controllers/groupController.js` now include:
+  - `_id`,
+  - `conversationId`,
+  - `senderId`,
+  - `sender`,
+  - `receiverId`,
+  - `receiver`,
+  - `text`,
+  - `type: "system"`,
+  - `createdAt`,
+  - `isGroup: true`.
+
+Expected behavior:
+
+- If user B renames a group or changes membership while user A is not viewing that group, user A's sidebar should immediately show the latest system message and increment unread.
+- Refresh should preserve the same group `lastMessage` and unread count.
+- Opening the group should clear unread and write user A into `readBy` for unread group messages, including system messages.
+- Refresh after opening the group should keep unread cleared.
+
 ## Verification Passed
 
 Server:
 
 - `npm.cmd test` from `server/` passed after the sidebar aggregation fix.
-- Last observed server suite: 44 tests passed, 0 failed.
+- `npm.cmd test` from `server/` passed after group sidebar Slice B, system-message unread consistency, group mark-read, and realtime system payload fixes.
+- Last observed server suite: 49 tests passed, 0 failed.
 
 Client:
 
 - `npm.cmd run build` from `client/` passed after removing `useChatSocket`.
 - `npm.cmd run build` from `client/` passed after adding `sync-message-recovered` handling.
 - `npm.cmd run build` from `client/` passed after extracting `messageSocketState.js`.
+- `npm.cmd test` from `client/` passed with 9 focused `messageSocketState.js` tests.
+- `npm.cmd run build` from `client/` passed after group sidebar Slice A and backend payload fixes.
 - Vite only reported the existing large bundle warning.
 
 Manual socket/sidebar checks passed or should remain the smoke checklist for this area:
@@ -159,6 +227,12 @@ Manual socket/sidebar checks passed or should remain the smoke checklist for thi
 - call-log messages do not duplicate inline call-log rows,
 - reconnect without refresh updates active chat/sidebar state,
 - refresh after offline messages shows sidebar unread state through `/api/users/sidebar-list`.
+- group realtime messages update group sidebar preview/unread,
+- recovered group messages update group sidebar preview/unread,
+- `GET /api/groups` returns group `lastMessage`, `hasUnread`, and `unreadCount` after refresh,
+- group system messages count as unread,
+- opening a group marks system messages read through `readBy`,
+- realtime group system message payload includes `_id`, `conversationId`, and `receiver` fields for stable sidebar updates.
 
 Search checks:
 
@@ -167,9 +241,10 @@ Search checks:
 
 ## Current Known Risks
 
-- Client has no dedicated React hook/unit test harness yet; verification is currently build plus manual socket/sidebar smoke checks.
+- Client has focused pure-helper tests for `messageSocketState.js`, but still has no dedicated React hook/component test harness for `useMessageSocket` or `Sidebar`.
 - REST sync payloads and realtime Socket.IO payloads are not identical; `messageSocketState.js` normalizes recovered group/direct state from `conversationId`.
 - `useMessageSocket` is lighter after helper extraction, but still owns several side effects and should remain watched for growth.
+- Group sidebar state now exists in both realtime frontend state and `GET /api/groups`; future changes should keep realtime payloads and refresh payloads aligned.
 - `FriendRequestModal` can still update modal-local request state while `useFriendSocket` updates global request count/state; this is intentional but worth testing around modal open/close.
 - `CallHistoryProvider` and `useMessageSocket` both listen to `callLogMessage` for different ownership concerns; current dedupe/upsert paths reduce duplicate UI risk, but missed-call UX should still be smoke-tested.
 - RabbitMQ ops risks remain:
@@ -179,15 +254,15 @@ Search checks:
 
 ## Next Recommended Slice
 
-Next slice: add focused tests around `messageSocketState.js`.
+Next slice: manual end-to-end smoke test of group sidebar unread behavior with two real users and then capture any remaining drift as a small targeted test/fix.
 
-Suggested coverage:
+Suggested smoke checklist:
 
-- direct inactive conversation increments `unreadCount`,
-- active conversation keeps unread clear,
-- duplicate recovered `_id` does not append or increment twice,
-- call-log upsert by `callHistoryId`,
-- group preview content and unread behavior,
-- file/image preview content.
+- user B sends normal group message while user A is not viewing that group,
+- user B performs a group system action such as rename or add/remove member,
+- user A sees group `lastMessage` and unread badge update immediately,
+- user A refreshes and sees the same group `lastMessage` / unread count,
+- user A opens the group and unread clears,
+- user A refreshes and unread remains cleared.
 
-After that, consider a small cleanup of friend request modal/global ownership if manual testing shows `requestCount` drift while the modal is open.
+After that, consider a React-level test harness for `useMessageSocket` / `Sidebar` or a small cleanup of friend request modal/global ownership if manual testing shows `requestCount` drift while the modal is open.

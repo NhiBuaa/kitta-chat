@@ -131,19 +131,40 @@ const Sidebar = ({
               <div
                 key={group._id}
                 onClick={() => handleSelectUser(group)}
-                className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50"
+                className={`flex items-center p-4 cursor-pointer border-b border-gray-50 ${group.hasUnread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
               >
                 <img
                   src={getAvatarUrl(group.avatar)}
                   className="w-10 h-10 rounded-full object-cover"
                   alt="Group avatar"
                 />
-                <div className="ml-3">
-                  <h3 className="font-semibold text-sm">{group.name}</h3>
-                  <p className="text-xs text-gray-400">
-                    {group.members.length} thành viên
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className={`text-sm truncate pr-2 ${group.hasUnread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
+                      {group.name}
+                    </h3>
+                    {group.lastMessage && (
+                      <span className={`text-[10px] flex-shrink-0 ${group.hasUnread ? "text-blue-600 font-bold" : "text-gray-400"}`}>
+                        {new Date(group.lastMessage.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs truncate text-gray-500">
+                    {group.lastMessage
+                      ? renderLastMessage(group, currentUser._id)
+                      : `${group.members.length} thành viên`}
                   </p>
                 </div>
+                {group.hasUnread && (
+                  <div className="ml-2 flex-shrink-0">
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow animate-bounce">
+                      {group.unreadCount > 9 ? "9+" : group.unreadCount}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </>

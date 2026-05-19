@@ -162,3 +162,41 @@ test("sendMessage remains successful when message.created job publish fails", as
   assert.equal(emissions.length, 2);
   assert.deepEqual(emissions.map((item) => item.eventName), ["getMessage", "getMessage"]);
 });
+
+test("group markRead marks system messages read and is idempotent", async () => {
+  const { handlers, emissions, socket, io } = createSocketHarness();
+  const updates = [];
+  const registerMessageHandlers = createRegisterMessageHandlers({
+    MessageModel: {
+      async updateMany(query, update) {
+        updates.push({ query, update });
+      },
+    },
+    logger: { error() {}, warn() {}, log() {} },
+  });
+
+  registerMessageHandlers(socket, io);
+
+  await handlers.markRead({
+    isGroup: true,
+    groupId: "group-1",
+    readerId: "user-1",
+  });
+
+  assert.deepEqual(updates, [
+    {
+      query: {
+        conversationId: "group-1",
+        readBy: { $ne: "user-1" },
+      },
+      update: { $addToSet: { readBy: "user-1" } },
+    },
+  ]);
+  assert.deepEqual(emissions, [
+    {
+      room: "group-1",
+      eventName: "groupUserRead",
+      payload: { groupId: "group-1", readerId: "user-1" },
+    },
+  ]);
+});

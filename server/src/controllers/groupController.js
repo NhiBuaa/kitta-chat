@@ -1,6 +1,7 @@
 const Group = require("../models/Group");
 const User = require("../models/User");
 const Message = require("../models/Message");
+const mongoose = require("mongoose");
 const { createSystemMessage } = require("./messageController");
 const getSafeUserName = require("../utils/getSafeUserName");
 
@@ -18,6 +19,49 @@ const populateGroup = (query) =>
   query
     .populate("members", GROUP_USER_FIELDS)
     .populate("admin", GROUP_USER_FIELDS);
+
+const toPlainObject = (doc) =>
+  typeof doc?.toObject === "function" ? doc.toObject() : doc;
+
+const hasReadMessage = (message, currentUserId) => {
+  const senderId = normalizeUserId(message?.sender);
+  if (!message || senderId === currentUserId) {
+    return true;
+  }
+
+  return (message.readBy || []).some(
+    (readerId) => normalizeUserId(readerId) === currentUserId,
+  );
+};
+
+const buildGroupLastMessagePreview = (message, currentUserId) => {
+  if (!message) return null;
+
+  let content = message.text || "";
+  if (message.type === "call_log" && message.callData?.type) {
+    content = message.callData.type === "video"
+      ? "[Cuộc gọi video]"
+      : "[Cuộc gọi thoại]";
+  } else if (!content && message.attachments?.length > 0) {
+    content = "[Tệp đính kèm]";
+  }
+  if (!content) content = "Tin nhắn";
+
+  const senderId = normalizeUserId(message.sender);
+
+  return {
+    content,
+    text: message.text || "",
+    type: message.type,
+    sender: message.sender,
+    senderId,
+    createdAt: message.createdAt,
+    isRead: hasReadMessage(message, currentUserId),
+    readBy: message.readBy || [],
+    messageId: message._id,
+    callHistoryId: message.callData?.callHistoryId || null,
+  };
+};
 
 const emitToUserRooms = (io, userIds, eventName, payload) => {
   if (!io) return;
@@ -37,6 +81,19 @@ const emitGroupUpsert = (io, group, extraPayload = {}) => {
     ...extraPayload,
   });
 };
+
+const buildGroupSystemMessagePayload = (groupId, systemMessage) => ({
+  _id: systemMessage._id,
+  conversationId: groupId,
+  senderId: null,
+  sender: null,
+  receiverId: groupId,
+  receiver: groupId,
+  text: systemMessage.text,
+  type: "system",
+  createdAt: systemMessage.createdAt,
+  isGroup: true,
+});
 
 // [POST] /api/groups (Tạo nhóm mới)
 const createGroup = async (req, res) => {
@@ -86,13 +143,63 @@ const createGroup = async (req, res) => {
 const getMyGroups = async (req, res) => {
   try {
     const currentUserId = req.user.id;
+    const currentUserObjectId = new mongoose.Types.ObjectId(currentUserId);
     const groups = await populateGroup(
       Group.find({ members: currentUserId }),
     ).sort({
       updatedAt: -1,
     });
 
-    res.json({ success: true, groups });
+    const groupIds = groups.map((group) => normalizeUserId(group)).filter(Boolean);
+
+    if (groupIds.length === 0) {
+      return res.json({ success: true, groups: [] });
+    }
+
+    const [lastMessages, unreadCounts] = await Promise.all([
+      Message.aggregate([
+        { $match: { conversationId: { $in: groupIds } } },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: "$conversationId",
+            lastMsg: { $first: "$$ROOT" },
+          },
+        },
+      ]),
+      Message.aggregate([
+        {
+          $match: {
+            conversationId: { $in: groupIds },
+            sender: { $ne: currentUserObjectId },
+            readBy: { $ne: currentUserObjectId },
+          },
+        },
+        { $group: { _id: "$conversationId", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const lastMessageMap = new Map(
+      lastMessages.map((item) => [item._id, item.lastMsg]),
+    );
+    const unreadMap = new Map(
+      unreadCounts.map((item) => [item._id, item.count]),
+    );
+
+    const groupsWithSidebarState = groups.map((group) => {
+      const groupId = normalizeUserId(group);
+      const lastMsg = lastMessageMap.get(groupId) || null;
+      const unreadCount = unreadMap.get(groupId) || 0;
+
+      return {
+        ...toPlainObject(group),
+        lastMessage: buildGroupLastMessagePreview(lastMsg, currentUserId),
+        hasUnread: unreadCount > 0,
+        unreadCount,
+      };
+    });
+
+    res.json({ success: true, groups: groupsWithSidebarState });
   } catch (error) {
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
@@ -141,15 +248,7 @@ const addMember = async (req, res) => {
       `${getSafeUserName(actor)} đã thêm ${getSafeUserName(newMember)} vào nhóm`,
     );
 
-    io.to(groupId).emit("getMessage", {
-      senderId: null,
-      sender: null,
-      receiverId: groupId,
-      text: systemMessage.text,
-      type: "system",
-      createdAt: systemMessage.createdAt,
-      isGroup: true,
-    });
+    io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
 
     emitGroupUpsert(io, updatedGroup, {
       action: "member-added",
@@ -206,15 +305,7 @@ const removeMember = async (req, res) => {
       `${getSafeUserName(removedMember)} đã ${actionType} nhóm`,
     );
 
-    io.to(groupId).emit("getMessage", {
-      senderId: null,
-      sender: null,
-      receiverId: groupId,
-      text: systemMessage.text,
-      type: "system",
-      createdAt: systemMessage.createdAt,
-      isGroup: true,
-    });
+    io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
 
     group.members = group.members.filter((id) => id.toString() !== memberId);
     await group.save();
@@ -271,15 +362,7 @@ const renameGroup = async (req, res) => {
       `${getSafeUserName(admin)} đã đổi tên nhóm từ "${oldName}" thành "${newName}"`,
     );
 
-    io.to(groupId).emit("getMessage", {
-      senderId: null,
-      sender: null,
-      receiverId: groupId,
-      text: systemMessage.text,
-      type: "system",
-      createdAt: systemMessage.createdAt,
-      isGroup: true,
-    });
+    io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
 
     const payload = {
       groupId,
@@ -341,15 +424,7 @@ const transferAdmin = async (req, res) => {
 
     const updatedGroup = await populateGroup(Group.findById(groupId));
 
-    io.to(groupId).emit("getMessage", {
-      senderId: null,
-      sender: null,
-      receiverId: groupId,
-      text: systemMessage.text,
-      type: "system",
-      createdAt: systemMessage.createdAt,
-      isGroup: true,
-    });
+    io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
 
     const payload = {
       groupId,
@@ -396,15 +471,7 @@ const deleteGroup = async (req, res) => {
       `${getSafeUserName(admin)} đã giải tán nhóm`,
     );
 
-    io.to(groupId).emit("getMessage", {
-      senderId: null,
-      sender: null,
-      receiverId: groupId,
-      text: systemMessage.text,
-      type: "system",
-      createdAt: systemMessage.createdAt,
-      isGroup: true,
-    });
+    io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
 
     await Group.findByIdAndDelete(groupId);
     await Message.deleteMany({ conversationId: groupId });
