@@ -78,14 +78,6 @@ const registerCallUser = (socket, io) => {
                 type: typeCall,
             });
 
-            // ── Only proceed with signal if receiver is online ───────────────────
-            const receiverRoom = io.sockets.adapter.rooms.get(userToCall);
-            if (!receiverRoom || receiverRoom.size === 0) {
-                console.log(`[callUser] Receiver ${userToCall} offline — waiting 45 s`);
-                _startTimeout({ io, callRecordId, userId, userToCall });
-                return;
-            }
-
             const callerInfo = await User.findById(userId)
                 .select("_id displayName avatar username")
                 .lean();
@@ -109,7 +101,29 @@ const registerCallUser = (socket, io) => {
             }
 
             // ── Normal call ───────────────────────────────────────────────────────
-            io.to(userToCall).emit("callUser", {
+            const targetRoom = String(userToCall);
+            let targetSockets = [];
+            try {
+                targetSockets = Array.from(await io.in(targetRoom).allSockets());
+            } catch (err) {
+                console.warn("[CALL_DIAG][server:callUser:allSockets:error]", {
+                    callerUserId: userId,
+                    userToCall: targetRoom,
+                    callId: callRecordId,
+                    error: err.message,
+                });
+            }
+
+            console.log("[CALL_DIAG][server:callUser:beforeEmit]", {
+                callerUserId: userId,
+                callerSocketId: socket.id,
+                userToCall: targetRoom,
+                callId: callRecordId,
+                targetSocketCount: targetSockets.length,
+                targetSockets,
+            });
+
+            io.to(targetRoom).emit("callUser", {
                 signal: signalData,
                 from,
                 callerDbId: userId,
@@ -118,6 +132,12 @@ const registerCallUser = (socket, io) => {
                 mediaStatus,
                 typeCall,
                 callId: callRecordId,
+            });
+            console.log("[CALL_DIAG][server:callUser:afterEmit]", {
+                callerUserId: userId,
+                userToCall: targetRoom,
+                callId: callRecordId,
+                targetSocketCount: targetSockets.length,
             });
 
             _startTimeout({ io, callRecordId, userId, userToCall });

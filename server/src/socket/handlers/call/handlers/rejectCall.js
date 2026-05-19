@@ -32,7 +32,7 @@ const registerRejectCall = (socket, io) => {
         const actualCallId = await _resolveCallId({ callId, userId, to, label: "rejectCall" });
         if (!actualCallId) return;
 
-        _cancelTimeout(actualCallId);
+        const timeoutCancelled = _cancelTimeout(actualCallId);
 
         try {
             const call = await CallHistory.findById(actualCallId);
@@ -42,6 +42,17 @@ const registerRejectCall = (socket, io) => {
             }
 
             const status = deriveStatus(reason, call.answeredAt);
+            console.log("[CALL_DIAG][server:rejectCall]", {
+                socketUserId: userId,
+                socketId: socket.id,
+                to,
+                callId,
+                actualCallId,
+                reason,
+                status,
+                timeoutCancelled,
+                answeredAt: call.answeredAt,
+            });
             const updated = await CallHistory.findByIdAndUpdate(
                 actualCallId,
                 { status, endedAt: new Date(), endedBy: new mongoose.Types.ObjectId(userId) },
@@ -70,7 +81,8 @@ const registerRejectCall = (socket, io) => {
 // Private helpers
 const _cancelTimeout = (callId) => {
     const t = activeTimeouts.get(callId);
-    if (t) { clearTimeout(t); activeTimeouts.delete(callId); }
+    if (t) { clearTimeout(t); activeTimeouts.delete(callId); return true; }
+    return false;
 };
 
 const _resolveCallId = async ({ callId, userId, to, label }) => {

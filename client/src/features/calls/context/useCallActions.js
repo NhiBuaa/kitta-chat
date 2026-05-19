@@ -28,9 +28,9 @@ export const useCallActions = ({ socket, bag }) => {
         const peer = new Peer({ initiator, trickle: false, stream, config: ICE_SERVERS });
         peer.on('signal', onSignal);
         peer.on('stream', onStream);
-        peer.on('error', onError ?? (() => leaveCall()));
+        peer.on('error', onError ?? (() => leaveCall('peer:error')));
         peer.on('close', () => {
-            if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall();
+            if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall('peer:close-connected');
         });
         return peer;
     };
@@ -159,11 +159,22 @@ export const useCallActions = ({ socket, bag }) => {
         cleanupConnection();
     };
 
-    const leaveCall = () => {
+    const leaveCall = (source = 'unspecified') => {
         if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
         const partnerUserId =
             localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
         const callId = localStorage.getItem('tempCallId') || null;
+        const willEmitCancelled = Boolean(socket && partnerUserId && callId && !callAcceptedRef.current);
+
+        console.log('[CALL_DIAG][client:leaveCall]', {
+            source,
+            socketId: socket?.id,
+            partnerUserId,
+            callId,
+            callAccepted: callAcceptedRef.current,
+            callState: callStateRef.current,
+            willEmitRejectCancelled: willEmitCancelled,
+        });
 
         if (socket && partnerUserId) {
             // Dùng ref để tránh stale closure

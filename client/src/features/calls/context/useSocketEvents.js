@@ -34,6 +34,23 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         // ── callUser (incoming) ──────────────────────────────────────────────
         const handleIncomingCall = (data) => {
             const callerId = data.callerDbId;
+            let loggedInUserId = null;
+            try {
+                const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+                loggedInUserId = storedUser?._id || storedUser?.id || null;
+            } catch {
+                loggedInUserId = null;
+            }
+            console.log('[CALL_DIAG][client:callUser:received]', {
+                loggedInUserId,
+                socketId: socket?.id,
+                callerId,
+                callerSocketId: data.from,
+                callId: data.callId || null,
+                clientCallId: localStorage.getItem('tempCallId'),
+                pathname: window.location.pathname,
+                callState: callStateRef.current,
+            });
 
             // Nếu đang mở popup CallPage thì tự đóng, không xử lý tiếp
             if (window.location.pathname.includes('/call') && callStateRef.current === CALL_STATES.IDLE) {
@@ -297,9 +314,9 @@ function _handleGlareWinner({ data, callerId, socket, bag, leaveCall }) {
         callStateRef.current = CALL_STATES.CONNECTED;
     });
 
-    peer.on('error', () => leaveCall());
+    peer.on('error', () => leaveCall('glareWinner:peer:error'));
     peer.on('close', () => {
-        if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall();
+        if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall('glareWinner:peer:close-connected');
     });
 
     peer.signal(validSignal);

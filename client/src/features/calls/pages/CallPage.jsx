@@ -14,6 +14,7 @@ import { useSocket } from "@/services/socket/SocketContext.js";
 import { CallContext } from "@/features/calls/context/CallContext.jsx";
 import { useCallTimer } from "@/features/calls/hooks/useCallTimer.js";
 import { formatDuration } from "@/utils/formatTime.js";
+import { canStartOutgoingCall } from "@/features/calls/pages/callPageState.js";
 
 const VideoCallPage = () => {
     const { partnerId } = useParams();
@@ -30,7 +31,7 @@ const VideoCallPage = () => {
     const partnerAvatar = urlAvatar && urlAvatar !== "undefined" && urlAvatar !== "null"
             ? urlAvatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(urlName)}&background=random`;
 
-    const { socket, onlineUsers } = useSocket();
+    const { socket } = useSocket();
     const {
         callUser,
         answerCall,
@@ -91,17 +92,17 @@ const VideoCallPage = () => {
             return;
         }
 
-        const isPartnerOnline = onlineUsers?.some((user) => user.userId === partnerId);
-        if (isPartnerOnline || partnerId.length < 24) {
-            callUser(partnerId, stream, camOn, micOn, callType);
-            setIsJoined(true);
-        } else {
-            toast.error("Người dùng không online hoặc chưa sẵn sàng.");
+        if (!canStartOutgoingCall({ socket, partnerId, stream, mediaError })) {
+            toast.error("Chưa đủ điều kiện bắt đầu cuộc gọi.");
+            return;
         }
+
+        callUser(partnerId, stream, camOn, micOn, callType);
+        setIsJoined(true);
     };
 
     const handleEndCall = () => {
-        leaveCall();
+        leaveCall('CallPage:handleEndCall');
     };
 
     useEffect(() => {
