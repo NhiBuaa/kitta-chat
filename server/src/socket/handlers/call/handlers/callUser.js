@@ -8,6 +8,10 @@ const { checkRateLimit } = require("../rateLimit");
 const { createCallLogMessage } = require("../callLog");
 const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync } = require("../emitters");
+const {
+    resolveCallHistoryId,
+    storeTempCallMapping,
+} = require("../services/callSessionResolver");
 
 /**
  * "callUser" — sends the WebRTC offer to the callee.
@@ -45,7 +49,13 @@ const registerCallUser = (socket, io) => {
             let callRecordId = null;
 
             if (callId?.startsWith("temp_")) {
-                callRecordId = tempIdToDbId.get(callId) ?? null;
+                callRecordId = await resolveCallHistoryId({
+                    callId,
+                    userId,
+                    userToCall,
+                    redisClient: io.redisClient,
+                    localTempIdToDbId: tempIdToDbId,
+                });
                 if (callRecordId) {
                     console.log(`[callUser] Reusing existing record ${callRecordId} from initCall`);
                 }
@@ -65,6 +75,11 @@ const registerCallUser = (socket, io) => {
 
                 if (callId?.startsWith("temp_") && !tempIdToDbId.has(callId)) {
                     tempIdToDbId.set(callId, callRecordId);
+                    await storeTempCallMapping({
+                        redisClient: io.redisClient,
+                        tempCallId: callId,
+                        callHistoryId: callRecordId,
+                    });
                     console.log(`[callUser] NEW mapping temp ${callId} -> ${callRecordId}`);
                 }
             }

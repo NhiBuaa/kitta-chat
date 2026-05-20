@@ -6,6 +6,7 @@ const { CALL_TIMEOUT_MS } = require("../constants");
 const { createCallLogMessage } = require("../callLog");
 const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync } = require("../emitters");
+const { storeTempCallMapping } = require("../services/callSessionResolver");
 
 /**
  * "initCall" — client fires this immediately before sending the WebRTC offer
@@ -39,6 +40,11 @@ const registerInitCall = (socket, io) => {
 
             const callRecordId = callRecord._id.toString();
             tempIdToDbId.set(callId, callRecordId);
+            await storeTempCallMapping({
+                redisClient: io.redisClient,
+                tempCallId: callId,
+                callHistoryId: callRecordId,
+            });
             console.log(`[initCall] MAPPED temp ${callId} -> ${callRecordId}`);
 
             bindSocketToCall(socket.id, callRecordId);
