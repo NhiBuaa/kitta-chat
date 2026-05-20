@@ -5,7 +5,7 @@ const getSafeUserName = require("../utils/getSafeUserName");
 const { queueProfileAvatarProcessing } = require("../services/profileAvatarQueueService");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
-const { getMultiPresence, setPresenceWriteThrough } = require("../services/presenceService");
+const { getMultiPresence, getUserPresence, setPresenceWriteThrough } = require("../services/presenceService");
 const { getRecentConversations } = require("../services/conversationCacheService");
 const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
 
@@ -18,6 +18,9 @@ const emitToUserRoom = (io, userId, eventName, payload) => {
   if (!io || !userId) return;
   io.to(toComparableId(userId)).emit(eventName, payload);
 };
+
+const isRealtimeOnline = (presence) =>
+  presence?.status === "online" || presence?.status === "active";
 
 const buildRelationshipFlags = (targetUser, currentUser) => {
   const currentUserId = toComparableId(currentUser?._id || currentUser?.id);
@@ -339,6 +342,10 @@ const accceptFriendRequest = async (req, res) => {
 
     // Lấy lại sender sau khi update để emit thông tin
     const sender = await User.findById(senderId);
+    const [senderPresence, receiverPresence] = await Promise.all([
+      getUserPresence(senderId),
+      getUserPresence(receiverId),
+    ]);
 
     // Emit event cho người gửi (sender) để cập nhật sidebar
     emitToUserRoom(io, senderId, "friendRequestAccepted", {
@@ -346,6 +353,14 @@ const accceptFriendRequest = async (req, res) => {
       newFriendName: getSafeUserName(receiver),
       newFriendAvatar: receiver.avatar,
     });
+
+    if (isRealtimeOnline(receiverPresence)) {
+      emitToUserRoom(io, senderId, "userStatusChanged", {
+        userId: toComparableId(receiverId),
+        status: "online",
+        lastSeen: receiverPresence.lastSeen,
+      });
+    }
 
     emitToUserRoom(io, receiverId, "friendRequestHandled", {
       action: "accepted",
@@ -356,6 +371,14 @@ const accceptFriendRequest = async (req, res) => {
         avatar: sender?.avatar,
       },
     });
+
+    if (isRealtimeOnline(senderPresence)) {
+      emitToUserRoom(io, receiverId, "userStatusChanged", {
+        userId: toComparableId(senderId),
+        status: "online",
+        lastSeen: senderPresence.lastSeen,
+      });
+    }
 
     res.json({ success: true, message: "Đã chấp nhận lời mời kết bạn." });
   } catch (error) {
