@@ -9,6 +9,7 @@ const { registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
 const { registerCallHandlers } = require("./handlers/call/index");
+const { createCallTimeoutFinalizer } = require("./handlers/call/services/callTimeoutFinalizer");
 
 const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Socket][node=${NODE_NAME}]`;
@@ -61,6 +62,8 @@ const initSocket = async (httpServer, app) => {
     app.set("socketio", io);
     app.set("redisClient", pubClient);
     io.redisClient = pubClient;
+    io.callTimeoutFinalizer = createCallTimeoutFinalizer({ io, redisClient: pubClient });
+    io.callTimeoutFinalizer.start();
 
     // Proof log cho multi-node: backend nào đang giữ socket của receiver
     // sẽ tự in log "received" khi nhận được sự kiện nội bộ này.

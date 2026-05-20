@@ -18,6 +18,10 @@ import {
     canStartOutgoingCall,
     getPreAnswerCancelReason,
 } from "@/features/calls/pages/callPageState.js";
+import {
+    setAudioEnabled,
+    setVideoEnabled,
+} from "@/features/calls/context/callMediaState.js";
 
 const VideoCallPage = () => {
     const { partnerId } = useParams();
@@ -71,7 +75,7 @@ const VideoCallPage = () => {
     const toggleMic = () => {
         if (!stream) return;
         const newStatus = !micOn;
-        stream.getAudioTracks()[0].enabled = newStatus;
+        setAudioEnabled(stream, newStatus);
         setMicOn(newStatus);
         notifyMediaChange(camOn, newStatus);
     };
@@ -79,7 +83,7 @@ const VideoCallPage = () => {
     const toggleCam = () => {
         if (!stream || !isVideoCall) return;
         const newStatus = !camOn;
-        stream.getVideoTracks()[0].enabled = newStatus;
+        setVideoEnabled(stream, newStatus);
         setCamOn(newStatus);
         notifyMediaChange(newStatus, micOn);
     };
@@ -131,24 +135,14 @@ const VideoCallPage = () => {
     useEffect(() => {
         const initMedia = async () => {
             try {
-                // Luôn request CẢ video + audio để đảm bảo audio track luôn tồn tại.
-                // Nếu là audio call → camera tắt bằng CSS, nhưng audio vẫn hoạt động.
-                const currentStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true,
-                });
+                const currentStream = await navigator.mediaDevices.getUserMedia(
+                    isVideoCall
+                        ? { video: true, audio: true }
+                        : { video: false, audio: true }
+                );
 
-                // Nếu là audio call, tắt camera ngay để tiết kiệm bandwidth
                 const hasVideoTrack = currentStream.getVideoTracks().length > 0;
-                if (!isVideoCall && hasVideoTrack) {
-                    currentStream.getVideoTracks().forEach((t) => t.stop());
-                    // Thay thế bằng stream không có video track
-                    const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    currentStream.getAudioTracks().forEach((t) => audioOnly.addTrack(t));
-                    setLocalStream(audioOnly);
-                } else {
-                    setLocalStream(currentStream);
-                }
+                setLocalStream(currentStream);
 
                 setMediaError(false);
                 setCamOn(isVideoCall);
@@ -296,7 +290,12 @@ const VideoCallPage = () => {
                             />
                             <h2 className="text-3xl text-white font-semibold mt-6">{urlName}</h2>
                             <p className="text-gray-400 mt-2">{formatDuration(callDuration)}</p>
-                            <p className="text-gray-400 mt-2">{partnerMediaStatus.mic ? "" : "Đang tắt mic"}</p>
+                            {!partnerMediaStatus.mic && (
+                                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-red-600/90 px-3 py-1.5 text-sm font-medium text-white shadow-lg">
+                                    <FaMicrophoneSlash className="text-xs" />
+                                    <span>{urlName} đang tắt mic</span>
+                                </div>
+                            )}
                             {/* Thẻ video ẩn đi chỉ để phát tiếng */}
                             <video ref={userVideoFull} autoPlay playsInline className="hidden" />
                         </div>
@@ -386,7 +385,7 @@ const VideoCallPage = () => {
                                 onClick={() => {
                                     if (!stream) return;
                                     const newStatus = !camOn;
-                                    stream.getVideoTracks()[0].enabled = newStatus;
+                                    setVideoEnabled(stream, newStatus);
                                     setCamOn(newStatus);
                                 }}
                                 className={`p-3 rounded-full transition ${camOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-500 hover:bg-red-600"}`}
@@ -397,7 +396,7 @@ const VideoCallPage = () => {
                                 onClick={() => {
                                     if (!stream) return;
                                     const newStatus = !micOn;
-                                    stream.getAudioTracks()[0].enabled = newStatus;
+                                    setAudioEnabled(stream, newStatus);
                                     setMicOn(newStatus);
                                 }}
                                 className={`p-3 rounded-full transition ${micOn ? "bg-gray-700 hover:bg-gray-600" : "bg-red-500 hover:bg-red-600"}`}
@@ -418,7 +417,7 @@ const VideoCallPage = () => {
                                 onClick={() => {
                                     if (!stream) return;
                                     const newStatus = !micOn;
-                                    stream.getAudioTracks()[0].enabled = newStatus;
+                                    setAudioEnabled(stream, newStatus);
                                     setMicOn(newStatus);
                                 }}
                                 className={`px-6 py-3 rounded-full flex items-center gap-2 font-medium transition ${micOn ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"}`}

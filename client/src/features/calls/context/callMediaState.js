@@ -1,11 +1,35 @@
 export const getMediaStatusFromStream = (stream, fallback = { cam: true, mic: true }) => {
-    const audioTrack = stream?.getAudioTracks?.()[0];
-    const videoTrack = stream?.getVideoTracks?.()[0];
+    const audioTracks = stream?.getAudioTracks?.() ?? [];
+    const videoTracks = stream?.getVideoTracks?.() ?? [];
 
     return {
-        cam: videoTrack ? Boolean(videoTrack.enabled) : Boolean(fallback.cam),
-        mic: audioTrack ? Boolean(audioTrack.enabled) : Boolean(fallback.mic),
+        cam: videoTracks.length > 0
+            ? videoTracks.some((track) => Boolean(track.enabled))
+            : Boolean(fallback.cam),
+        mic: audioTracks.length > 0
+            ? audioTracks.some((track) => Boolean(track.enabled))
+            : Boolean(fallback.mic),
     };
+};
+
+export const setAudioEnabled = (stream, enabled) => {
+    const audioTracks = stream?.getAudioTracks?.() ?? [];
+    if (audioTracks.length === 0) return false;
+
+    audioTracks.forEach((track) => {
+        track.enabled = Boolean(enabled);
+    });
+    return true;
+};
+
+export const setVideoEnabled = (stream, enabled) => {
+    const videoTracks = stream?.getVideoTracks?.() ?? [];
+    if (videoTracks.length === 0) return false;
+
+    videoTracks.forEach((track) => {
+        track.enabled = Boolean(enabled);
+    });
+    return true;
 };
 
 export const sendLocalMediaStatusSnapshot = ({ socket, to, stream, fallback }) => {
