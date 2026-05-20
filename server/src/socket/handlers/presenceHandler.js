@@ -71,6 +71,14 @@ const registerPresenceHandlers = (socket, io) => {
     socket.on("addNewUser", async (userId) => {
         if (!userId || userId === "undefined") return;
 
+        const authenticatedUserId = socket.userId?.toString();
+        const requestedUserId = userId.toString();
+
+        if (!authenticatedUserId || requestedUserId !== authenticatedUserId) {
+            console.warn(`${logPrefix} SECURITY addNewUser denied socket=${socket.id} authUser=${authenticatedUserId || "missing"} requestedUser=${requestedUserId}`);
+            return;
+        }
+
         const redisClient = getRedisClient(io);
         if (!redisClient) {
             console.error(`${logPrefix} Redis client not available`);
@@ -78,53 +86,52 @@ const registerPresenceHandlers = (socket, io) => {
         }
 
         try {
-            socket.userId = userId;
             socket.userRegistered = true;
 
             // Join room userId để nhận tin nhắn 1-1
-            socket.join(userId);
+            socket.join(authenticatedUserId);
             console.log("[CALL_DIAG][presence:addNewUser]", {
                 authUserId: socket.userId,
-                receivedUserId: userId,
+                receivedUserId: requestedUserId,
                 socketId: socket.id,
                 rooms: Array.from(socket.rooms),
-                joinedUserRoom: socket.rooms.has(String(userId)),
+                joinedUserRoom: socket.rooms.has(authenticatedUserId),
             });
 
             // Join tất cả room Group mà user là thành viên
-            const userGroups = await Group.find({ members: userId });
+            const userGroups = await Group.find({ members: authenticatedUserId });
             userGroups.forEach((group) => {
                 socket.join(group._id.toString());
             });
-            console.log(`${logPrefix} register user=${userId} socket=${socket.id} joinedUserRoom=${userId} joinedGroupCount=${userGroups.length}`);
+            console.log(`${logPrefix} register user=${authenticatedUserId} socket=${socket.id} joinedUserRoom=${authenticatedUserId} joinedGroupCount=${userGroups.length}`);
 
             // MULTI-TAB SUPPORT
             // Xóa flag "đang chờ offline" (nếu có) do user vừa reconnect (tránh flicker khi F5)
-            await redisClient.del(`offline_timer:${userId}`);
+            await redisClient.del(`offline_timer:${authenticatedUserId}`);
 
             // Thêm socket.id vào Set chứa các kết nối của user này
-            await redisClient.sAdd(`user_sockets:${userId}`, socket.id);
+            await redisClient.sAdd(`user_sockets:${authenticatedUserId}`, socket.id);
 
-            const socketCount = await redisClient.sCard(`user_sockets:${userId}`);
+            const socketCount = await redisClient.sCard(`user_sockets:${authenticatedUserId}`);
             const isFirstConnection = socketCount === 1;
 
             // Chỉ broadcast + ghi DB khi đây là kết nối đầu tiên (không phải tab thứ 2/3)
             if (isFirstConnection) {
                 // Write-Through: Cập nhật MongoDB + Redis HASH đồng thời
-                await setPresenceWriteThrough(userId, "online");
+                await setPresenceWriteThrough(authenticatedUserId, "online");
 
                 // Cập nhật global online users set (dùng cho API online-friends)
-                await redisClient.sAdd("global_online_users", userId);
+                await redisClient.sAdd("global_online_users", authenticatedUserId);
 
                 // Broadcast cho bạn bè + nhóm
-                broadcastUserStatus(io, userId, "online");
+                broadcastUserStatus(io, authenticatedUserId, "online");
             } else {
                 // Tab thứ N (N>1): chỉ bơm heartbeat để giữ TTL
-                await renewHeartbeat(userId);
+                await renewHeartbeat(authenticatedUserId);
             }
 
         } catch (err) {
-            console.error(`${logPrefix} Error joining rooms for user=${userId}:`, err);
+            console.error(`${logPrefix} Error joining rooms for user=${authenticatedUserId}:`, err);
         }
     });
 

@@ -20,7 +20,10 @@ const { cacheClient } = require("../config/redis");
 const User = require("../models/User");
 const Message = require("../models/Message");
 const buildConversationId = require("../utils/buildConversationId");
-const { updateConversationWriteThrough } = require("./conversationCacheService");
+const {
+    updateConversationWriteThrough,
+    updateConversationRemove,
+} = require("./conversationCacheService");
 
 const FRIEND_CACHE_PREFIX = "cache:friends:";
 
