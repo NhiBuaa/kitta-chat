@@ -1,5 +1,6 @@
 const CallHistory = require("../../../../models/CallHistory");
 const { activeTimeouts, bindSocketToCall } = require("../state");
+const { removeCallTimeoutDue } = require("../services/callTimeoutDueStore");
 
 /**
  * "answerCall" — callee accepts the incoming call.
@@ -22,6 +23,7 @@ const registerAnswerCall = (socket, io) => {
                 clearTimeout(timeoutId);
                 activeTimeouts.delete(callId);
             }
+            await removeCallTimeoutDue({ redisClient: io.redisClient, callId });
 
             try {
                 await CallHistory.findByIdAndUpdate(callId, { answeredAt: new Date() });

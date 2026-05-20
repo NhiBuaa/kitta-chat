@@ -107,6 +107,7 @@ const loadEndCall = ({ initialCall = makeCall() } = {}) => {
 const createSocketIo = () => {
   const listeners = new Map();
   const emitted = [];
+  const redisCalls = [];
   const socket = {
     id: "caller-socket",
     userId: callerId,
@@ -115,6 +116,17 @@ const createSocketIo = () => {
     },
   };
   const io = {
+    redisClient: {
+      async zRem(key, value) {
+        redisCalls.push(["zRem", key, value]);
+      },
+      async del(key) {
+        redisCalls.push(["del", key]);
+      },
+      async sMembers() {
+        return [];
+      },
+    },
     emitted,
     to(target) {
       return {
@@ -124,7 +136,7 @@ const createSocketIo = () => {
       };
     },
   };
-  return { socket, io, listeners, emitted };
+  return { socket, io, listeners, emitted, redisCalls };
 };
 
 test.beforeEach(() => {
@@ -219,4 +231,19 @@ test("endCall event payloads remain compatible", async () => {
     event.payload.status === "completed"
   )));
   assert.ok(emitted.some((event) => event.eventName === "callEnded"));
+});
+
+test("endCall removes Redis timeout due metadata", async () => {
+  const { registerEndCall } = loadEndCall();
+  const { socket, io, listeners, redisCalls } = createSocketIo();
+  registerEndCall(socket, io);
+
+  await listeners.get("endCall")({ to: receiverId, callId });
+
+  assert.ok(redisCalls.some((entry) => (
+    entry[0] === "zRem" && entry[1] === "call:timeouts" && entry[2] === callId
+  )));
+  assert.ok(redisCalls.some((entry) => (
+    entry[0] === "del" && entry[1] === `call:timeout:${callId}`
+  )));
 });

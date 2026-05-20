@@ -4,6 +4,7 @@ const { activeTimeouts, tempIdToDbId, unbindSocketFromCall } = require("../state
 const { createCallLogMessage, emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync, emitCallEndedToParticipants } = require("../emitters");
 const { finalizeCallOnce } = require("../services/callFinalizer");
+const { removeCallTimeoutDue } = require("../services/callTimeoutDueStore");
 
 const POPULATE = [
     { path: "callerId", select: "_id displayName avatar username" },
@@ -25,6 +26,8 @@ const registerEndCall = (socket, io) => {
         const actualCallId = await _resolveCallId({ callId, userId, to, label: "endCall" });
         if (!actualCallId) return;
 
+        await _cancelTimeout({ redisClient: io.redisClient, callId: actualCallId });
+
         try {
             const call = await CallHistory.findById(actualCallId).populate(POPULATE);
             if (!call) {
@@ -37,8 +40,6 @@ const registerEndCall = (socket, io) => {
                 console.log(`[endCall] Idempotent: ${actualCallId} already ended`);
                 return;
             }
-
-            _cancelTimeout(actualCallId);
 
             const now = new Date(Date.now());
             // Nếu chưa answered -> status là "missed" (không trả lời / bỏ cuộc).
@@ -79,9 +80,13 @@ const registerEndCall = (socket, io) => {
 };
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
-const _cancelTimeout = (callId) => {
+const _cancelTimeout = async ({ redisClient, callId }) => {
     const t = activeTimeouts.get(callId);
-    if (t) { clearTimeout(t); activeTimeouts.delete(callId); }
+    if (t) {
+        clearTimeout(t);
+        activeTimeouts.delete(callId);
+    }
+    await removeCallTimeoutDue({ redisClient, callId });
 };
 
 /**

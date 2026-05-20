@@ -4,6 +4,7 @@ const { activeTimeouts, tempIdToDbId, unbindSocketFromCall } = require("../state
 const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync, emitCallEndedToParticipants } = require("../emitters");
 const { finalizeCallOnce } = require("../services/callFinalizer");
+const { removeCallTimeoutDue } = require("../services/callTimeoutDueStore");
 
 const POPULATE = [
     { path: "callerId", select: "_id displayName avatar username" },
@@ -33,7 +34,7 @@ const registerRejectCall = (socket, io) => {
         const actualCallId = await _resolveCallId({ callId, userId, to, label: "rejectCall" });
         if (!actualCallId) return;
 
-        const timeoutCancelled = _cancelTimeout(actualCallId);
+        const timeoutCancelled = await _cancelTimeout({ redisClient: io.redisClient, callId: actualCallId });
 
         try {
             const call = await CallHistory.findById(actualCallId);
@@ -83,9 +84,15 @@ const registerRejectCall = (socket, io) => {
 };
 
 // Private helpers
-const _cancelTimeout = (callId) => {
+const _cancelTimeout = async ({ redisClient, callId }) => {
     const t = activeTimeouts.get(callId);
-    if (t) { clearTimeout(t); activeTimeouts.delete(callId); return true; }
+    if (t) {
+        clearTimeout(t);
+        activeTimeouts.delete(callId);
+        await removeCallTimeoutDue({ redisClient, callId });
+        return true;
+    }
+    await removeCallTimeoutDue({ redisClient, callId });
     return false;
 };
 

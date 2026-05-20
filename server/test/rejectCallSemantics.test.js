@@ -109,6 +109,7 @@ const loadRejectCall = ({ initialCall = makeCall() } = {}) => {
 const createSocketIo = () => {
   const listeners = new Map();
   const emitted = [];
+  const redisCalls = [];
   const socket = {
     id: "receiver-socket",
     userId: receiverId,
@@ -117,6 +118,17 @@ const createSocketIo = () => {
     },
   };
   const io = {
+    redisClient: {
+      async zRem(key, value) {
+        redisCalls.push(["zRem", key, value]);
+      },
+      async del(key) {
+        redisCalls.push(["del", key]);
+      },
+      async sMembers() {
+        return [];
+      },
+    },
     emitted,
     to(target) {
       return {
@@ -126,7 +138,7 @@ const createSocketIo = () => {
       };
     },
   };
-  return { socket, io, listeners, emitted };
+  return { socket, io, listeners, emitted, redisCalls };
 };
 
 test("rejectCall with reason rejected stores status rejected", async () => {
@@ -179,6 +191,21 @@ test("repeated rejectCall for the same call does not create duplicate call_log",
   assert.equal(calls.createCallLogMessage.length, 1);
   assert.equal(calls.getStoredCall().status, "rejected");
   assert.equal(emitted.length, firstEmitCount);
+});
+
+test("rejectCall removes Redis timeout due metadata", async () => {
+  const { registerRejectCall } = loadRejectCall();
+  const { socket, io, listeners, redisCalls } = createSocketIo();
+  registerRejectCall(socket, io);
+
+  await listeners.get("rejectCall")({ to: callerId, callId, reason: "rejected" });
+
+  assert.ok(redisCalls.some((entry) => (
+    entry[0] === "zRem" && entry[1] === "call:timeouts" && entry[2] === callId
+  )));
+  assert.ok(redisCalls.some((entry) => (
+    entry[0] === "del" && entry[1] === `call:timeout:${callId}`
+  )));
 });
 
 test("timeout-style missed reject cannot overwrite an already rejected call", async () => {
