@@ -169,11 +169,49 @@ test("rejectCall with reason cancelled preserves caller-cancel missed behavior",
 
 test("repeated rejectCall for the same call does not create duplicate call_log", async () => {
   const { registerRejectCall, calls } = loadRejectCall();
-  const { socket, io, listeners } = createSocketIo();
+  const { socket, io, listeners, emitted } = createSocketIo();
   registerRejectCall(socket, io);
 
   await listeners.get("rejectCall")({ to: callerId, callId, reason: "rejected" });
+  const firstEmitCount = emitted.length;
   await listeners.get("rejectCall")({ to: callerId, callId, reason: "rejected" });
 
   assert.equal(calls.createCallLogMessage.length, 1);
+  assert.equal(calls.getStoredCall().status, "rejected");
+  assert.equal(emitted.length, firstEmitCount);
+});
+
+test("timeout-style missed reject cannot overwrite an already rejected call", async () => {
+  const { registerRejectCall, calls } = loadRejectCall({
+    initialCall: makeCall({
+      status: "rejected",
+      endedAt: new Date("2026-05-20T08:00:05.000Z"),
+    }),
+  });
+  const { socket, io, listeners, emitted } = createSocketIo();
+  registerRejectCall(socket, io);
+
+  await listeners.get("rejectCall")({ to: callerId, callId, reason: "cancelled" });
+
+  assert.equal(calls.getStoredCall().status, "rejected");
+  assert.equal(calls.createCallLogMessage.length, 0);
+  assert.equal(emitted.length, 0);
+});
+
+test("rejected reject cannot overwrite an answered completed call", async () => {
+  const { registerRejectCall, calls } = loadRejectCall({
+    initialCall: makeCall({
+      status: "completed",
+      answeredAt: new Date("2026-05-20T08:00:02.000Z"),
+      endedAt: new Date("2026-05-20T08:10:00.000Z"),
+    }),
+  });
+  const { socket, io, listeners, emitted } = createSocketIo();
+  registerRejectCall(socket, io);
+
+  await listeners.get("rejectCall")({ to: callerId, callId, reason: "rejected" });
+
+  assert.equal(calls.getStoredCall().status, "completed");
+  assert.equal(calls.createCallLogMessage.length, 0);
+  assert.equal(emitted.length, 0);
 });

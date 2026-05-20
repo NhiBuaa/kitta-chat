@@ -32,6 +32,35 @@ const buildRelationshipFlags = (targetUser, currentUser) => {
   };
 };
 
+const buildSidebarLastMessage = (lastMsg) => {
+  if (!lastMsg) return null;
+
+  let previewContent = lastMsg.text || "";
+  if (lastMsg.type === "call_log" && lastMsg.callData?.type) {
+    previewContent = lastMsg.callData.type === "video"
+      ? "[Cuộc gọi video]"
+      : "[Cuộc gọi thoại]";
+  } else if (!previewContent && lastMsg.attachments?.length > 0) {
+    const file = lastMsg.attachments[0];
+    const isImage =
+      file?.type?.startsWith("image/") ||
+      file?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    previewContent = isImage ? "[Hình ảnh]" : (file?.name || "[Tệp đính kèm]");
+  }
+  if (!previewContent) previewContent = "Tin nhắn";
+
+  return {
+    content: previewContent,
+    senderId: lastMsg.sender,
+    createdAt: lastMsg.createdAt,
+    isRead: lastMsg.isRead,
+    messageId: lastMsg._id ? toComparableId(lastMsg._id) : null,
+    callHistoryId: lastMsg.callData?.callHistoryId
+      ? toComparableId(lastMsg.callData.callHistoryId)
+      : null,
+  };
+};
+
 // [GET] /api/users/profile
 const getUserProfile = async (req, res) => {
   try {
@@ -500,29 +529,11 @@ const getSidebarUsers = async (req, res) => {
       const unreadCount = convId ? (unreadMap.get(convId) || 0) : 0;
 
       if (lastMsg) {
-        let previewContent = lastMsg.text || "";
-        if (lastMsg.type === "call_log" && lastMsg.callData?.type) {
-          previewContent = lastMsg.callData.type === "video"
-            ? "[Cuộc gọi video]"
-            : "[Cuộc gọi thoại]";
-        } else if (!previewContent && lastMsg.attachments?.length > 0) {
-          const file = lastMsg.attachments[0];
-          const isImage =
-            file?.type?.startsWith("image/") ||
-            file?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-          previewContent = isImage ? "[Hình ảnh]" : (file?.name || "[Tệp đính kèm]");
-        }
-        if (!previewContent) previewContent = "Tin nhắn";
 
         return {
           ...userObj,
           ...getRelationshipFlags(targetId, userObj),
-          lastMessage: {
-            content: previewContent,
-            senderId: lastMsg.sender,
-            createdAt: lastMsg.createdAt,
-            isRead: lastMsg.isRead,
-          },
+          lastMessage: buildSidebarLastMessage(lastMsg),
           hasUnread: unreadCount > 0,
           unreadCount,
         };
@@ -637,4 +648,5 @@ module.exports = {
   sendFriendRequest,
   rejectFriendRequest,
   getOnlineFriends,
+  _buildSidebarLastMessage: buildSidebarLastMessage,
 };

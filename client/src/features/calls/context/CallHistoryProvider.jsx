@@ -3,10 +3,22 @@ import { useSocket } from '@/services/socket/SocketContext.js';
 import { getMissedCalls } from '@/services/webrtc/callService.js';
 import { CallHistoryContext } from '@/features/calls/context/CallHistoryContext.js';
 import { showMissedCallToast } from '@/utils/toastUtils.js';
+import {
+    applyCallHistorySyncToMissedCount,
+    applyCallLogMessageToMissedCount,
+    clearMissedCallCount,
+    getCurrentUserId,
+    hydrateMissedCount,
+    hydrateMissedCountForCurrentUser,
+    subscribeCallHistoryAuthRefresh,
+    subscribeCallHistoryRefresh,
+} from '@/features/calls/context/callHistoryBadgeState.js';
 
 export const CallHistoryProvider = ({ children }) => {
-    const { socket } = useSocket();
+    const { socket, currentUser } = useSocket();
     const [missedCount, setMissedCount] = useState(0);
+    const isFetchingMissedCountRef = useRef(false);
+    const currentUserId = getCurrentUserId(currentUser);
 
     // Track callIds đã xử lý bởi callHistorySync để tránh duplicate với callLogMessage
     const processedCallIds = useRef(new Set());
@@ -14,14 +26,12 @@ export const CallHistoryProvider = ({ children }) => {
     // FETCH MISSED CALLS ON MOUNT
     const fetchMissedCount = useCallback(async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-            const response = await getMissedCalls();
-            if (response.data.success) {
-                const data = response.data.data;
-                const finalCount = data.count !== undefined ? data.count : (data.missedCalls?.length || 0);
-                setMissedCount(finalCount);
-            }
+            await hydrateMissedCount({
+                getToken: () => localStorage.getItem('token'),
+                getMissedCalls,
+                setMissedCount,
+                isFetchingRef: isFetchingMissedCountRef,
+            });
         } catch (error) {
             console.error("Failed to fetch missed calls:", error);
         }
@@ -30,8 +40,17 @@ export const CallHistoryProvider = ({ children }) => {
     // Effect 1: fetch số lượng missed call khi component mount
     useEffect(() => {
         fetchMissedCount();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [fetchMissedCount]);
+
+    useEffect(() => {
+        hydrateMissedCountForCurrentUser({
+            currentUserId,
+            hydrate: fetchMissedCount,
+        });
+    }, [currentUserId, fetchMissedCount]);
+
+    useEffect(() => subscribeCallHistoryRefresh({ fetchMissedCount }), [fetchMissedCount]);
+    useEffect(() => subscribeCallHistoryAuthRefresh({ fetchMissedCount }), [fetchMissedCount]);
 
     // Effect 2: lắng nghe callHistorySync — cập nhật badge count khi có thay đổi call
     useEffect(() => {
@@ -45,9 +64,11 @@ export const CallHistoryProvider = ({ children }) => {
             if (data.direction === 'incoming' && data.isReadByCurrentUser === false) {
                 const missedStatuses = ['missed', 'rejected', 'unreachable', 'busy'];
                 if (missedStatuses.includes(data.status)) {
-                    // Đánh dấu callId đã xử lý để callLogMessage không tăng trùng
-                    if (data.callId) processedCallIds.current.add(data.callId);
-                    setMissedCount((prev) => prev + 1);
+                    setMissedCount((prev) => applyCallHistorySyncToMissedCount({
+                        previousCount: prev,
+                        data,
+                        processedCallIds: processedCallIds.current,
+                    }));
                 }
             }
 
@@ -91,20 +112,13 @@ export const CallHistoryProvider = ({ children }) => {
 
         const handleCallLogMessage = (data) => {
             if (data.type !== 'call_log') return;
-            const missedStatuses = ['missed', 'rejected', 'unreachable', 'busy'];
-            if (!missedStatuses.includes(data.callData?.status)) return;
-
-            // Kiểm tra: mình là receiver (không phải sender)
             const currentUserId = JSON.parse(localStorage.getItem('user') || '{}')._id || JSON.parse(localStorage.getItem('user') || '{}').id;
-            const senderId = typeof data.senderId === 'string' ? data.senderId : data.sender?._id?.toString();
-            if (senderId === currentUserId) return; // mình là caller → không tăng
-
-            // Bỏ qua nếu callHistorySync đã xử lý rồi (tránh duplicate)
-            const callId = data.callData?.callHistoryId || data.callId;
-            if (callId && processedCallIds.current.has(callId)) return;
-            if (callId) processedCallIds.current.add(callId);
-
-            setMissedCount((prev) => prev + 1);
+            setMissedCount((prev) => applyCallLogMessageToMissedCount({
+                previousCount: prev,
+                data,
+                currentUserId,
+                processedCallIds: processedCallIds.current,
+            }));
         };
 
         socket.on('callLogMessage', handleCallLogMessage);
@@ -115,7 +129,7 @@ export const CallHistoryProvider = ({ children }) => {
     // KHÔNG dùng callTimeout/callRejected/callCancelled/callEnded
     // vì chúng đều emit cùng callHistorySync → double increment.
 
-    const clearMissedCount = useCallback(() => setMissedCount(0), []);
+    const clearMissedCount = useCallback(() => setMissedCount(clearMissedCallCount), []);
 
     return (
         <CallHistoryContext.Provider value={{ missedCount, clearMissedCount, fetchMissedCount, setMissedCount }}>

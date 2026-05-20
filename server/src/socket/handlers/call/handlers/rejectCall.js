@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const CallHistory = require("../../../../models/CallHistory");
 const { activeTimeouts, tempIdToDbId, unbindSocketFromCall } = require("../state");
-const { createCallLogMessage, emitCallLogMessage } = require("../callLog");
+const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync, emitCallEndedToParticipants } = require("../emitters");
 const { finalizeCallOnce } = require("../services/callFinalizer");
 
@@ -71,7 +71,6 @@ const registerRejectCall = (socket, io) => {
                 console.log(`[rejectCall] Finished emitting all events`);
             } else if (finalizeResult.alreadyFinalized && updated) {
                 console.log(`[rejectCall] Idempotent: ${actualCallId} already finalized`);
-                _broadcastEnd({ io, updated, actualCallId, to, reason, userId });
             }
         } catch (err) {
             console.error("[rejectCall] error:", err);
