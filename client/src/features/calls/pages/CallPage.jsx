@@ -14,7 +14,10 @@ import { useSocket } from "@/services/socket/SocketContext.js";
 import { CallContext } from "@/features/calls/context/CallContext.jsx";
 import { useCallTimer } from "@/features/calls/hooks/useCallTimer.js";
 import { formatDuration } from "@/utils/formatTime.js";
-import { canStartOutgoingCall } from "@/features/calls/pages/callPageState.js";
+import {
+    canStartOutgoingCall,
+    getPreAnswerCancelReason,
+} from "@/features/calls/pages/callPageState.js";
 
 const VideoCallPage = () => {
     const { partnerId } = useParams();
@@ -35,6 +38,7 @@ const VideoCallPage = () => {
     const {
         callUser,
         answerCall,
+        rejectCall,
         leaveCall,
         callAccepted,
         callEnded,
@@ -102,6 +106,11 @@ const VideoCallPage = () => {
     };
 
     const handleEndCall = () => {
+        if (!isJoined && getPreAnswerCancelReason({ isIncoming }) === "rejected") {
+            rejectCall();
+            return;
+        }
+
         leaveCall('CallPage:handleEndCall');
     };
 

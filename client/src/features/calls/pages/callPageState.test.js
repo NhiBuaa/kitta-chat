@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { canStartOutgoingCall } from "./callPageState.js";
+import { canStartOutgoingCall, getPreAnswerCancelReason } from "./callPageState.js";
 
 test("outgoing call can start even when onlineUsers does not include partner", () => {
     assert.equal(canStartOutgoingCall({
@@ -41,4 +41,12 @@ test("outgoing call is blocked only by invalid local call prerequisites", () => 
         stream: { id: "local-stream" },
         mediaError: true,
     }), false);
+});
+
+test("incoming receiver pre-call cancel emits rejected reason", () => {
+    assert.equal(getPreAnswerCancelReason({ isIncoming: true }), "rejected");
+});
+
+test("outgoing caller cancel before answer still emits cancelled reason", () => {
+    assert.equal(getPreAnswerCancelReason({ isIncoming: false }), "cancelled");
 });
