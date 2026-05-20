@@ -3,6 +3,7 @@ import Peer from 'simple-peer';
 import { toast } from 'react-toastify';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
+import { persistPartnerMediaStatus } from '@/features/calls/context/callMediaState.js';
 
 /**
  * Đăng ký / hủy toàn bộ socket event listeners liên quan đến cuộc gọi.
@@ -166,7 +167,11 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         };
 
         // ── updateMediaStatus ─────────────────────────────────────────────────
-        const handleUpdateMediaStatus = ({ cam, mic }) => setPartnerMediaStatus({ cam, mic });
+        const handleUpdateMediaStatus = ({ cam, mic }) => {
+            const mediaStatus = { cam, mic };
+            persistPartnerMediaStatus(mediaStatus);
+            setPartnerMediaStatus(mediaStatus);
+        };
 
         // ── outgoingCallCreated ───────────────────────────────────────────────
         const handleOutgoingCallCreated = ({ callId: createdCallId, userToCall }) => {

@@ -4,6 +4,7 @@ import { SOCKET_EVENTS } from '@/constants/socketEvents.js';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { clearCallStorage } from '@/features/calls/context/callStorage.js';
+import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
 
 /**
  * Các action thực hiện cuộc gọi: callUser, answerCall, rejectCall, leaveCall.
@@ -94,6 +95,12 @@ export const useCallActions = ({ socket, bag }) => {
             setCallState(CALL_STATES.CONNECTED);
             callStateRef.current = CALL_STATES.CONNECTED;
             if (payload?.mediaStatus) setPartnerMediaStatus(payload.mediaStatus);
+            sendLocalMediaStatusSnapshot({
+                socket,
+                to: receiverUserId,
+                stream: localStreamRef.current,
+                fallback: { cam: isCamOn, mic: isMicOn },
+            });
             peer.signal(signal);
         });
 
