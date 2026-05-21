@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const { NOTIFICATION_EMAIL_QUEUE } = require("../queues/notificationJobs");
 const { closeRabbitMQ, connectionManager } = require("../queues/rabbitmq");
 const { startQueueWorker } = require("./workerRuntime");
+const { validateWorkerEnv } = require("../config/env");
 
 dotenv.config();
 
@@ -41,10 +42,12 @@ const processNotificationJob = async (
 };
 
 const startNotificationWorker = async () => {
+  const workerConfig = validateWorkerEnv({ workerName: "notification" });
+
   const worker = await startQueueWorker({
     queueName: NOTIFICATION_EMAIL_QUEUE,
     connectionManager,
-    prefetch: Number(process.env.NOTIFICATION_WORKER_CONCURRENCY || 5),
+    prefetch: workerConfig.workerConcurrency,
     processJob: processNotificationJob,
     logger: console,
   });

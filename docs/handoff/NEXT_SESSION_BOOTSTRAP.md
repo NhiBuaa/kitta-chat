@@ -1,171 +1,197 @@
-﻿# Next Session Bootstrap
+﻿# Next Session Bootstrap: Backend Reliability / OPSWAT Prep
 
-Purpose: fast startup context for the next Codex session. Read this first; open deeper files only when needed.
+Use this file to bootstrap the next agent session for the `web-socket` repository.
 
-## Architecture Invariants
+## Current Goal
 
-- MongoDB is canonical for durable call/message state: `CallHistory`, `Message`, `call_log`.
-- Redis is coordination/cache/presence only; call Redis keys are short-lived/disposable.
-- RabbitMQ is background-only; never use it for realtime call signaling or lifecycle decisions.
-- Socket.IO is the synchronous realtime path for call signaling, media-state updates, presence, and call-history events.
-- All call finalization correctness must go through Mongo-gated `finalizeCallOnce`.
-- Local process state remains as rollout fallback; do not remove it yet.
+Continue preparing this realtime distributed chat project for backend/software engineering internship applications such as OPSWAT.
 
-## Latest Completed Milestone
+Prioritize small, verifiable backend engineering slices:
 
-Stabilized call hardening now includes:
+1. config/env validation
+2. CI pipeline
+3. API response/error consistency
+4. operational signals/metrics
+5. app-level rate limits/security polish
+6. Socket.IO integration tests
 
-- Redis temp-call mapping: `call:temp:{tempCallId}` -> `callHistoryId`, TTL 120s.
-- Redis timeout due storage: `call:timeouts`, `call:timeout:{callId}`.
-- `rejectCall` and `endCall` use `finalizeCallOnce`.
-- Local timeout callbacks use `finalizeCallOnce({ status: "missed", requireUnanswered: true })`.
-- Distributed timeout finalizer exists, is disabled by default, and has passed manual flag-ON smoke.
-- Disconnect hardening Slice 2 is complete:
-  - resolves active call local -> Redis socket -> Redis user.
-  - finalizes through `finalizeCallOnce`.
-  - answered disconnect => `completed`; pending disconnect => `rejected`; terminal states no-op.
-  - Redis bindings/timeouts cleanup is best-effort.
-- Media-state sync fixed: caller replays state after `callAccepted`; audio mute toggles all audio tracks.
-- Call-history modal, call-history badge, and sidebar unread badge dedupe fixed.
-- Unfriend Slice 1 backend is complete:
-  - `POST /api/users/remove-friend` added.
-  - `removeFriend` controller uses Mongo/Redis write-through.
-  - `removeFriendWriteThrough` clears `friends` and stale `friendRequests`.
-  - emits `friendRemoved` to both user rooms.
-  - does not delete `Message`, `CallHistory`, or `call_log`.
-- Unfriend Slice 2 frontend realtime state sync is complete:
-  - `friendshipState` helper added.
-  - `friendRemoved` socket listener added.
-  - updates `users`, `searchResult`, and `activeChat`.
-  - `hadMessages:true` keeps sidebar row as non-friend.
-  - `hadMessages:false` removes sidebar row.
-  - active chat updates safely.
+Avoid large refactors.
 
-## Feature Flags
+## Current Architecture
 
-- `CALL_DISTRIBUTED_TIMEOUT_ENABLED`: default OFF / unset.
-- `CALL_DISTRIBUTED_TIMEOUT_POLL_MS`: optional poll interval, used only when the finalizer flag is ON.
+- `client/`: React + Vite frontend.
+- `server/`: Express backend + Socket.IO + Mongoose.
+- `server/server.js`: process startup/shutdown only; connects MongoDB, Redis cache, initializes Socket.IO, then listens.
+- `server/src/app.js`: Express app factory; owns middleware, routes, request logging, health/readiness, error handling.
+- MongoDB is the durable source of truth.
+- Redis is used for Socket.IO adapter fan-out, presence, caches, and short-lived call coordination.
+- Socket.IO is the realtime path for chat, typing, presence, friendship events, WebRTC signaling, and call lifecycle events.
+- RabbitMQ is background-only for image processing, notification/email, and audit jobs. Do not use RabbitMQ for realtime chat/call delivery.
+- Docker Compose runs nginx, 3 backend replicas, Redis, MongoDB, RabbitMQ, and workers.
 
-Manual smoke confirmed `CALL_DISTRIBUTED_TIMEOUT_ENABLED=true` works in backend containers, but keep the default OFF and keep local `activeTimeouts` enabled as fallback for now.
+## Recently Completed Slices
 
-## Manual Smoke Results
+- Issue 1: HTTP integration tests.
+  - `server/test/httpCoreFlows.test.js`
+  - `server/src/app.js` introduced as testable Express app factory.
 
-Passed:
+- Issue 3: structured request logging + request IDs.
+  - `server/src/middlewares/requestLogging.js`
+  - `server/src/utils/logger.js`
+  - Preserves/generates `x-request-id`, returns it in response, logs request fields.
 
-- Docker/nginx 3-replica call smoke.
-- Cross-replica `initCall` + `callUser` reused one `CallHistory`.
-- Redis `call:temp:*` observed with TTL.
-- No duplicate `CallHistory` / `call_log`.
-- Receiver reject/pre-call cancel finalizes as `rejected` and cleans up caller immediately.
-- Offline missed call creates one `CallHistory` and one `call_log`.
-- Answered call no longer becomes missed after stale local timeout.
-- SPA login badges hydrate correctly: call-history icon `1`, chat row unread `1`.
-- Media-state smoke passed: both sides see mic/camera state after join; audio mute works before join and during call.
-- Distributed timeout finalizer flag ON smoke passed:
-  - `CALL_DISTRIBUTED_TIMEOUT_ENABLED=true` confirmed in backend container.
-  - All 3 backend replicas started `CallTimeoutFinalizer` poller.
-  - Offline timeout produced no duplicate `call_log`.
-  - Redis `call:timeouts` and `call:timeout:*` cleaned after timeout.
-  - Mongo duplicate `call_log` aggregation returned `[]`.
-- Disconnect hardening Slice 2 tests passed:
-  - disconnect tests `9/9`.
-  - related call tests `51/51`.
-  - full server regression `125/125`.
-- Disconnect manual smoke passed:
-  - active call resolves via local/Redis bindings.
-  - answered disconnect finalizes `completed`.
-  - pending disconnect finalizes `rejected`.
-  - duplicate disconnect/end paths do not duplicate `call_log`.
-  - terminal states remain unchanged.
-- Unfriend Slice 1 backend tests passed:
-  - targeted tests `9/9`.
-  - full server regression `133/133`.
-- Unfriend manual API/DB/Redis smoke passed:
-  - API removes both users from each other's `friends` arrays.
-  - stale `friendRequests` are cleared both directions.
-  - Redis `cache:friends:*` entries are updated/removed.
-  - `friendRemoved` emits to both user rooms.
-  - `Message`, `CallHistory`, and `call_log` remain intact.
-- Unfriend Slice 2 frontend tests/build passed:
-  - targeted tests `7/7`.
-  - full client tests `56/56`.
-  - client build passed.
-- Unfriend realtime smoke passed:
-  - `friendRemoved` marks sidebar/search/active chat as non-friend.
-  - `hadMessages:true` keeps sidebar row.
-  - `hadMessages:false` removes sidebar row.
-  - active chat remains stable and updates safely.
-  - both current user and removed friend sessions update without refresh.
+- Issue 5: hardened health/readiness endpoints.
+  - `server/src/services/healthService.js`
+  - `/healthz`: MongoDB, Redis, RabbitMQ, uptime, memory, `healthy|degraded|unhealthy`.
+  - `/readyz`: required startup deps are MongoDB + Redis; RabbitMQ can be degraded.
 
-## Remaining Risks
+- Issue 4: RabbitMQ correlation propagation.
+  - `server/src/queues/correlation.js`
+  - `server/src/queues/producer.js`
+  - `server/src/workers/workerRuntime.js`
+  - HTTP `requestId` propagates to RabbitMQ `correlationId`, retry, DLQ, and worker logs.
 
-- Local `activeSocketCalls` still exists as fallback, but disconnect can now resolve Redis socket/user bindings across replicas.
-- `callRateLimit` is still process-local.
-- Some glare branches still have direct updates and process-local assumptions.
-- `CallPage.jsx` and `SocketProvider` are large/complex; avoid broad refactors without tests and browser smoke.
+- Issue 14: RabbitMQ poison-message handling and reliability tests.
+  - Malformed JSON routes directly to DLQ.
+  - Original message is not acked if retry/DLQ publish fails.
+  - Covered in `server/test/rabbitmqInfrastructure.test.js`.
 
-## Next Recommended Tasks
+- Issue 6: RabbitMQ worker flow docs.
+  - `docs/RABBITMQ_WORKER_FLOWS.md`
 
-1. Implement unfriend UI button/API trigger Slice 3.
-2. Move `callRateLimit` to Redis TTL counters.
-3. Harden glare paths through `finalizeCallOnce`.
-4. Add production-readiness visibility for distributed timeout finalizer while keeping default OFF.
-5. Move noisy call diagnostic logs behind a debug flag.
+- Issue 7: Socket.IO multi-replica scaling docs.
+  - `docs/SOCKET_IO_SCALING.md`
 
-## Read Only When Needed
+- Issue 8: REST API docs.
+  - `docs/API.md`
 
-Architecture/history:
+- Handoff doc:
+  - `docs/handoff/HANDOFF_BACKEND_RELIABILITY_PHASE_1.md`
 
-- `docs/handoff/stabilized-architecture-state-2026-05-21.md`
-- `docs/handoff/safe-architecture-cleanup-2026-05-20.md`
+## Important Docs To Read First
+
+Read these before making backend reliability changes:
+
 - `AGENTS.md`
+- `docs/handoff/HANDOFF_BACKEND_RELIABILITY_PHASE_1.md`
+- `docs/ARCHITECTURE.md`
+- `docs/API.md`
+- `docs/RABBITMQ_WORKER_FLOWS.md`
+- `docs/SOCKET_IO_SCALING.md`
 
-Call server:
+## Verification Status
 
-- `server/src/socket/handlers/call/services/callFinalizer.js`
-- `server/src/socket/handlers/call/services/callSessionResolver.js`
-- `server/src/socket/handlers/call/services/callTimeoutDueStore.js`
-- `server/src/socket/handlers/call/services/callTimeoutFinalizer.js`
-- `server/src/socket/handlers/call/services/callSocketBindingStore.js`
-- `server/src/socket/handlers/call/handlers/initCall.js`
-- `server/src/socket/handlers/call/handlers/callUser.js`
-- `server/src/socket/handlers/call/handlers/answerCall.js`
-- `server/src/socket/handlers/call/handlers/rejectCall.js`
-- `server/src/socket/handlers/call/handlers/endCall.js`
-- `server/src/socket/handlers/call/disconnect.js`
-- `server/src/socket/handlers/call/state.js`
+Last full server test after runtime changes:
 
-Call client:
+```powershell
+cd server
+npm.cmd test
+```
 
-- `client/src/features/calls/pages/CallPage.jsx`
-- `client/src/features/calls/context/useCallActions.js`
-- `client/src/features/calls/context/useSocketEvents.js`
-- `client/src/features/calls/context/callMediaState.js`
-- `client/src/features/calls/context/CallHistoryProvider.jsx`
+Result at that time: `146` tests passed, `0` failed.
 
-Badge/sidebar:
+PowerShell blocks `npm.ps1` in this environment, so use `npm.cmd test` rather than `npm test` from PowerShell.
 
-- `server/src/controllers/userController.js`
-- `server/src/routes/user.js`
-- `server/src/services/friendCacheService.js`
-- `client/src/features/chat/socket/messageSocketState.js`
-- `client/src/features/friends/socket/friendshipState.js`
-- `client/src/features/friends/socket/useFriendSocket.js`
-- `client/src/features/chat/pages/ChatPage.jsx`
-- `client/src/features/calls/components/CallHistoryModal.jsx`
+Docs-only slices after that did not require tests because no doc/link-check script exists.
 
-Focused tests:
+## Current Known Gaps
 
-- `server/test/callFinalizer.test.js`
-- `server/test/callTimeoutDueHandlers.test.js`
-- `server/test/callTimeoutFinalizer.test.js`
-- `server/test/callSocketBindingStore.test.js`
-- `server/test/disconnectFinalizer.test.js`
-- `server/test/removeFriendController.test.js`
-- `server/test/rejectCallSemantics.test.js`
-- `server/test/endCallFinalizer.test.js`
-- `client/src/features/calls/context/callMediaState.test.js`
-- `client/src/features/calls/context/callHistoryBadgeState.test.js`
-- `client/src/features/friends/socket/friendshipState.test.js`
-- `client/src/features/friends/socket/useFriendSocket.test.js`
-- `client/src/features/chat/socket/messageSocketState.test.js`
+From the OPSWAT-oriented audit, remaining gaps include:
+
+1. Centralized env/config validation.
+2. GitHub Actions CI pipeline.
+3. Consistent API error/response shapes.
+4. Basic operational signals or metrics endpoint.
+5. App-level rate limiting for sensitive routes/events.
+6. Security hygiene polish: Helmet/CORS/upload/JWT validation docs or baseline.
+7. Socket.IO integration tests for authenticated connection/message delivery.
+8. Optional OpenAPI later; current `docs/API.md` is hand-written and intentionally honest.
+
+## Recommended Next Slice
+
+Recommended next implementation slice: **centralized env/config validation**.
+
+Why:
+
+- High backend-engineering value for OPSWAT.
+- Complements health/readiness and Docker Compose docs.
+- Can be implemented test-first with small scope.
+
+Suggested TDD scope:
+
+- Add a config/env module for server and worker contexts.
+- Validate required variables:
+  - server: `MONGO_URI`, `JWT_SECRET`, frontend URL/CORS setting where applicable, Redis URL/host/port
+  - RabbitMQ publishers/workers: `RABBITMQ_URL` when queue use is required
+  - worker-specific concurrency/retry values should parse as numbers with defaults
+- Keep Docker Compose injected env compatible.
+- Add tests for missing/invalid env without starting real services.
+- Do not broadly rewrite startup.
+
+Alternative lower-risk next slice: **GitHub Actions CI** once current working tree is clean.
+
+## Skills To Use
+
+- Use `tdd` for env validation, CI-affecting scripts, API response consistency, metrics, rate limits, and socket integration tests.
+- Use `zoom-out` before touching Socket.IO/call architecture.
+- Use `diagnose` if tests fail unexpectedly.
+- Use `handoff` when compacting the session again.
+
+## Do Not Change Casually
+
+- Do not remove `server/src/app.js`; it is the Express test seam.
+- Do not move process startup back into `app.js`.
+- Do not use RabbitMQ for realtime chat/call delivery.
+- Do not make RabbitMQ a hard dependency for chat API readiness unless explicitly designed.
+- Do not treat Redis as durable source of truth.
+- Do not remove `idempotencyKey` behavior from message send.
+- Do not remove RabbitMQ `correlationId`, retry, DLQ, or poison-message behavior.
+- Do not refactor call flow broadly without reading call handler services and tests.
+- Do not overstate production readiness in docs or CV notes.
+
+## Files Most Likely Needed Next
+
+Backend reliability:
+
+- `server/server.js`
+- `server/src/app.js`
+- `server/src/services/healthService.js`
+- `server/src/middlewares/requestLogging.js`
+- `server/src/utils/logger.js`
+- `server/src/queues/producer.js`
+- `server/src/queues/correlation.js`
+- `server/src/workers/workerRuntime.js`
+- `server/test/httpCoreFlows.test.js`
+- `server/test/healthEndpoints.test.js`
+- `server/test/requestLoggingMiddleware.test.js`
+- `server/test/rabbitmqInfrastructure.test.js`
+
+Docs:
+
+- `README.md`
+- `docs/ARCHITECTURE.md`
+- `docs/API.md`
+- `docs/RABBITMQ_WORKER_FLOWS.md`
+- `docs/SOCKET_IO_SCALING.md`
+- `docs/handoff/HANDOFF_BACKEND_RELIABILITY_PHASE_1.md`
+
+## Honest CV-Safe Claims Right Now
+
+Safe:
+
+- Realtime chat backend using Express, Socket.IO, MongoDB, Redis adapter, RabbitMQ, and Docker Compose.
+- Multi-replica Socket.IO delivery documented with Redis adapter fan-out.
+- Request ID and queue correlation ID tracing from HTTP to RabbitMQ retry/DLQ.
+- RabbitMQ retry queues, DLQs, poison-message routing, and tests.
+- Health/readiness endpoints with degraded states.
+- HTTP integration tests for core REST flows.
+- Hand-written REST API, RabbitMQ, and Socket.IO architecture docs.
+
+Not safe yet:
+
+- Full production observability.
+- Full OpenAPI/Swagger automation.
+- TypeScript backend.
+- Complete CI/CD.
+- Production-grade security hardening.
+- Complete end-to-end distributed-system test coverage.

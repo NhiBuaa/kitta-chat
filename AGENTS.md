@@ -12,27 +12,35 @@
 Long-term guidance for AI agents working in the `web-socket` repository.
 
 This repository is a KittaChat-style realtime chat application: React/Vite client, Express
-server, Socket.IO, MongoDB/Mongoose, Redis, nginx, and Docker Compose. When modifying code,
-prioritize reading the existing flow first, keep changes small, and respect the existing Redis
-/ Mongo / Socket.IO patterns.
+server, Socket.IO, MongoDB/Mongoose, Redis, RabbitMQ workers, nginx, and Docker Compose.
+When modifying code, prioritize reading the existing flow first, keep changes small, and
+respect the existing MongoDB / Redis / Socket.IO / RabbitMQ boundaries.
 
 ## Overall Architecture
 
 * `client/`: React 19 + Vite. The app is divided by feature inside `client/src/features`.
-* `server/`: Express 5 + Socket.IO 4 + Mongoose. Entry point is `server/server.js`.
+* `server/`: Express 5 + Socket.IO 4 + Mongoose. Process entry point is
+  `server/server.js`; Express app wiring lives in `server/src/app.js`.
 * `nginx/`: reverse proxy for static frontend, REST API, and `/socket.io/`.
-* `docker-compose.yml`: runs nginx, 3 backend replicas, Redis, and MongoDB.
+* `docker-compose.yml`: runs nginx, 3 backend replicas, Redis, MongoDB, RabbitMQ,
+  and background workers.
 * MongoDB is the source of truth.
 * Redis is used for the Socket.IO adapter, presence, profile cache, friends cache,
   recent conversations, and short chat history.
+* RabbitMQ is background-only for image processing, notification/email, and audit jobs;
+  never use RabbitMQ for realtime chat/call delivery or call lifecycle decisions.
 
 The server only listens after MongoDB connects successfully, then calls
 `connectCacheRedis()` and `initSocket(server, app)`.
 
 ## Important Folders
 
-* `server/server.js`: Express middleware, routes, health checks, shutdown,
-  startup DB/cache/socket.
+* `server/server.js`: process startup/shutdown, MongoDB connect, Redis cache connect,
+  Socket.IO init, HTTP listen.
+* `server/src/app.js`: Express middleware, routes, request logging, health/readiness,
+  error handling, and testable app factory.
+* `server/src/queues/`: RabbitMQ topology, producers, job builders, and correlation helpers.
+* `server/src/workers/`: RabbitMQ worker runtime and image/notification/audit consumers.
 * `server/src/socket/index.js`: initializes Socket.IO, Redis adapter, JWT socket auth,
   registers handlers.
 * `server/src/socket/handlers/`: event handlers for presence, message, friend,
@@ -81,10 +89,8 @@ Socket auth:
 
 Important note:
 
-* `server/src/middlewares/auth.js` currently has an export bug:
-  `module.exports = verifyToken, getUserIdFromToken` only exports
-  `getUserIdFromToken`. Routes importing `authMiddleware` may break/hang because
-  middleware does not call `next()`. When fixing REST auth, fix the export first.
+* `server/src/middlewares/auth.js` currently exports both the middleware itself and
+  named helpers. Preserve that compatibility if touching REST auth.
 
 ## WebSocket Flow
 
@@ -301,16 +307,48 @@ Files:
 * Client uses websocket-only transport, so no long-polling fallback is expected.
 * Redis adapter allows events across multiple backend replicas.
 
+## Backend Reliability / OPSWAT Prep Phase 1
+
+Recent backend-readiness work added:
+
+* HTTP integration tests for auth register/login/profile and a basic message flow:
+  `server/test/httpCoreFlows.test.js`.
+* Request ID middleware and lightweight structured logger:
+  `server/src/middlewares/requestLogging.js`, `server/src/utils/logger.js`.
+* Hardened `/healthz` and `/readyz` with MongoDB, Redis, RabbitMQ, degraded/unhealthy
+  semantics: `server/src/services/healthService.js`.
+* RabbitMQ correlation propagation from HTTP `requestId` to queue `correlationId`,
+  retry, DLQ, and worker logs: `server/src/queues/correlation.js`,
+  `server/src/queues/producer.js`, `server/src/workers/workerRuntime.js`.
+* RabbitMQ poison-message tests and behavior: malformed JSON routes directly to DLQ
+  and original messages are not acked if retry/DLQ publish fails.
+* Interview-ready docs:
+  * `docs/API.md`
+  * `docs/RABBITMQ_WORKER_FLOWS.md`
+  * `docs/SOCKET_IO_SCALING.md`
+  * `docs/handoff/HANDOFF_BACKEND_RELIABILITY_PHASE_1.md`
+
+Honest claims only:
+
+* It is safe to claim request/correlation IDs, RabbitMQ retry/DLQ/poison-message tests,
+  health/readiness endpoints, and multi-replica Socket.IO Redis adapter documentation.
+* Do not claim full production-grade observability, complete OpenAPI/Swagger,
+  TypeScript backend, complete CI/CD, or production security hardening unless those
+  are implemented in later slices.
+
 ## When Modifying Code
 
 * Use `rg` to search for files/events/functions.
 * Read both server and client flow of the same event before modifying.
-* If modifying REST auth, check `middlewares/auth.js` export first.
+* If modifying REST auth, preserve the current `middlewares/auth.js` default export and
+  named helper exports.
 * If modifying socket events, update both server handler, client listener/emitter, and
   `socketEvents.js` if needed.
 * If modifying message send, preserve `idempotencyKey`, optimistic UI, and pending queue.
 * If modifying presence, do not write MongoDB during heartbeat.
 * If modifying Redis keys, preserve separate namespace and inspect warm-up paths.
+* If modifying RabbitMQ flows, preserve `correlationId`, retry queue, DLQ, and poison-message
+  behavior covered by `server/test/rabbitmqInfrastructure.test.js`.
 * If modifying group membership, ensure join/leave room and realtime events still work.
 * If modifying call flow, check temp id -> DB id mapping, timeout cleanup, and
   `call_log` upsert.

@@ -2,11 +2,14 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const http = require("http");
 
+dotenv.config();
+
+const { validateServerEnv } = require("./src/config/env");
+
+const serverConfig = validateServerEnv();
 const { createApp } = require("./src/app");
 const { initSocket } = require("./src/socket");
 const { connectCacheRedis } = require("./src/config/redis");
-
-dotenv.config();
 
 // =========================================================
 // EXPRESS APP SETUP
@@ -81,7 +84,7 @@ process.on("unhandledRejection", (reason) => {
 // Chỉ listen KHI MongoDB đã connected (tránh race condition)
 // =========================================================
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(serverConfig.mongoUri)
   .then(async () => {
     console.log("✅ MongoDB Connected");
 
@@ -92,7 +95,7 @@ mongoose
     const io = await initSocket(server, app);
     global.io = io;
 
-    const PORT = process.env.PORT || 3000;
+    const PORT = serverConfig.port;
 
     server.listen(PORT, () => {
       const instanceName = process.env.NODE_NAME || "backend";
