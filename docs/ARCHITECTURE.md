@@ -74,3 +74,7 @@ Use targeted tests first, then broader regression:
 - Client build: `cd client && npm run build`
 
 For multi-replica behavior, use Docker Compose and nginx manual smoke tests.
+
+## API Reference
+
+See `docs/API.md` for the current REST endpoint surface, auth requirements, request/response examples, request ID behavior, and honest limitations.

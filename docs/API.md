@@ -1,0 +1,1132 @@
+# REST API Reference
+
+This document describes the current REST API surface for the `web-socket`
+backend. It is intentionally concise and hand-written so it stays aligned with
+the existing Express controllers.
+
+Base URL in local backend development:
+
+```text
+http://localhost:3000
+```
+
+Base URL through Docker/nginx:
+
+```text
+http://localhost
+```
+
+## Cross-Cutting Behavior
+
+### Request IDs
+
+Every HTTP request gets an `x-request-id`.
+
+- If the client sends `x-request-id`, the server preserves it.
+- If the client omits it, the server generates one.
+- The response includes the same `x-request-id`.
+- Request logs include method, path, status, latency, requestId, and userId when
+  authentication middleware has resolved a user.
+- Queue jobs published from HTTP flows use this request ID as their RabbitMQ
+  `correlationId`.
+
+Example:
+
+```bash
+curl -i http://localhost:3000/healthz \
+  -H "x-request-id: demo-request-1"
+```
+
+### Authentication
+
+Local login returns a JWT. Protected REST endpoints expect:
+
+```http
+Authorization: Bearer <token>
+```
+
+The token is signed with `JWT_SECRET` and currently expires after `1d`.
+
+Common auth errors:
+
+```json
+{
+  "msg": "Truy cập bị từ chối. Vui lòng đăng nhập!"
+}
+```
+
+```json
+{
+  "msg": "Token không hợp lệ hoặc đã hết hạn!"
+}
+```
+
+### Response Shapes
+
+Most endpoints return `{ "success": true, ... }` or
+`{ "success": false, "message": "..." }`, but some older routes still return
+raw documents or `{ "error": "..." }`. This document reflects current behavior;
+it does not claim a fully standardized response envelope.
+
+## Health And Readiness
+
+### `GET /healthz`
+
+Auth: none.
+
+Reports process and dependency health. RabbitMQ unavailable makes the service
+`degraded`, not hard-down for chat API startup.
+
+Success/degraded response:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-05-21T15:00:00.000Z",
+  "instance": {
+    "name": "backend",
+    "pid": 1234,
+    "uptime": 42,
+    "memory": {
+      "rss": "95MB",
+      "heapUsed": "28MB"
+    }
+  },
+  "services": {
+    "mongo": { "status": "connected" },
+    "redis": { "status": "connected" },
+    "rabbitmq": { "status": "connected" }
+  }
+}
+```
+
+Unhealthy response status is `503` when a required dependency is unavailable.
+
+### `GET /readyz`
+
+Auth: none.
+
+Readiness checks required startup dependencies: MongoDB and Redis.
+
+```json
+{
+  "status": "ready",
+  "timestamp": "2026-05-21T15:00:00.000Z",
+  "services": {
+    "mongo": { "status": "connected" },
+    "redis": { "status": "connected" },
+    "rabbitmq": { "status": "unavailable", "error": "rabbit down" }
+  }
+}
+```
+
+## Auth
+
+### `POST /api/auth/register`
+
+Auth: none.
+
+Request body:
+
+```json
+{
+  "displayName": "Alice",
+  "email": "alice@example.com",
+  "password": "Password1!",
+  "confirmPassword": "Password1!"
+}
+```
+
+Success `201`:
+
+```json
+{
+  "success": true,
+  "message": "Đăng ký thành công",
+  "user": {
+    "_id": "665f1f...",
+    "email": "alice@example.com",
+    "displayName": "Alice",
+    "avatar": "https://ui-avatars.com/api/?name=Alice&background=22c55e&color=fff&size=128",
+    "provider": "local",
+    "friends": [],
+    "friendRequests": []
+  }
+}
+```
+
+Common errors:
+
+- `400` missing fields
+- `400` invalid email
+- `400` weak password
+- `400` duplicate email
+- `500` server error
+
+### `POST /api/auth/login`
+
+Auth: none.
+
+Request body:
+
+```json
+{
+  "email": "alice@example.com",
+  "password": "Password1!"
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đăng nhập thành công",
+  "token": "<jwt>",
+  "user": {
+    "id": "665f1f...",
+    "displayName": "Alice",
+    "email": "alice@example.com",
+    "avatar": "https://...",
+    "status": "Chào bạn, tôi đang dùng KittaChat.",
+    "activityStatus": {
+      "state": "active",
+      "lastSeen": "2026-05-21T15:00:00.000Z"
+    }
+  }
+}
+```
+
+Common errors:
+
+- `400` wrong email/password
+- `400` account uses Google provider
+- `500` server error
+
+### `POST /api/auth/google`
+
+Auth: Firebase ID token in request body.
+
+Request body:
+
+```json
+{
+  "idToken": "<firebase-id-token>"
+}
+```
+
+Success `200` returns an app JWT and user profile. Google avatar processing may
+be queued through RabbitMQ as a background side effect.
+
+Common errors:
+
+- `400` email already registered with local password
+- `401` invalid Firebase token
+- `500` server error
+
+### `POST /api/auth/forgot-password`
+
+Auth: none.
+
+Request body:
+
+```json
+{
+  "email": "alice@example.com"
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Nếu email tồn tại, chúng tôi đã gửi hướng dẫn"
+}
+```
+
+The endpoint intentionally returns a generic success-style message even when the
+email does not exist. Password reset email sending is queued through RabbitMQ.
+
+### `POST /api/auth/reset-password/:id/:token`
+
+Auth: reset token in URL.
+
+Request body:
+
+```json
+{
+  "password": "NewPassword1!",
+  "confirmPassword": "NewPassword1!"
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đặt lại mật khẩu thành công"
+}
+```
+
+Common errors:
+
+- `400` password validation failure
+- `400` password confirmation mismatch
+- `401` invalid/expired reset token
+- `500` server error
+
+## Users And Profile
+
+All endpoints in this section require `Authorization: Bearer <token>` unless
+noted otherwise.
+
+### `GET /api/users/profile`
+
+Returns the authenticated user's profile.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "user": {
+    "_id": "665f1f...",
+    "email": "alice@example.com",
+    "displayName": "Alice",
+    "avatar": "https://...",
+    "status": "Available",
+    "activityStatus": {
+      "state": "active",
+      "lastSeen": "2026-05-21T15:00:00.000Z"
+    }
+  }
+}
+```
+
+Common errors:
+
+- `401` missing token
+- `403` invalid token
+- `404` user not found
+- `500` server error
+
+### `PUT /api/users/profile`
+
+Content type: `multipart/form-data`.
+
+Fields:
+
+- `displayName` optional string
+- `status` optional string
+- `activityStatus` optional JSON string
+- `avatar` optional image file
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Cập nhật thành công",
+  "queued": true,
+  "avatarRequestId": "9f2e...",
+  "avatarQueueError": null,
+  "user": {
+    "_id": "665f1f...",
+    "displayName": "Alice Updated",
+    "status": "Available"
+  }
+}
+```
+
+Avatar processing is asynchronous. If RabbitMQ is unavailable, the profile
+update can still succeed with `queued: false` and a safe `avatarQueueError`.
+
+Common errors:
+
+- `400` avatar is not an image
+- `401` missing token
+- `403` invalid token
+- `500` server error
+
+### `GET /api/users`
+
+Returns users other than the authenticated user, with sidebar/read metadata.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "users": [
+    {
+      "_id": "665f20...",
+      "displayName": "Bob",
+      "avatar": "https://...",
+      "isRead": true,
+      "lastMessage": null
+    }
+  ]
+}
+```
+
+### `GET /api/users/:id`
+
+Returns another user's public profile plus relationship flags.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "user": {
+    "_id": "665f20...",
+    "displayName": "Bob",
+    "avatar": "https://...",
+    "isFriend": true,
+    "isSent": false,
+    "isReceived": false
+  }
+}
+```
+
+Common errors:
+
+- `404` user not found
+- `500` server error
+
+### `GET /api/users/search?search=<term>`
+
+Searches users by display name/email-like fields used by the implementation.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "users": [
+    {
+      "_id": "665f20...",
+      "displayName": "Bob",
+      "avatar": "https://...",
+      "isFriend": false,
+      "isSent": false,
+      "isReceived": false,
+      "activityStatus": { "state": "active" }
+    }
+  ]
+}
+```
+
+### Friends And Sidebar
+
+#### `GET /api/users/friends`
+
+```json
+{
+  "success": true,
+  "friends": [
+    {
+      "_id": "665f20...",
+      "displayName": "Bob",
+      "avatar": "https://..."
+    }
+  ]
+}
+```
+
+#### `GET /api/users/friend-requests`
+
+```json
+{
+  "success": true,
+  "requests": [
+    {
+      "_id": "665f20...",
+      "displayName": "Bob",
+      "avatar": "https://..."
+    }
+  ]
+}
+```
+
+#### `GET /api/users/sidebar-list`
+
+Returns recent sidebar users/conversations enriched with last-message and
+presence data.
+
+```json
+{
+  "success": true,
+  "users": [
+    {
+      "_id": "665f20...",
+      "displayName": "Bob",
+      "lastMessage": {
+        "content": "Hello",
+        "messageId": "6660..."
+      },
+      "isOnline": true
+    }
+  ]
+}
+```
+
+#### `GET /api/users/online-friends`
+
+```json
+{
+  "success": true,
+  "onlineUsers": [
+    {
+      "userId": "665f20...",
+      "status": "online",
+      "lastSeen": "2026-05-21T15:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### `POST /api/users/friend-request`
+
+Request body:
+
+```json
+{
+  "receiverId": "665f20..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đã gửi lời mời"
+}
+```
+
+#### `POST /api/users/accept-friend`
+
+Request body:
+
+```json
+{
+  "senderId": "665f20..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đã chấp nhận lời mời kết bạn."
+}
+```
+
+#### `POST /api/users/reject-friend`
+
+Request body:
+
+```json
+{
+  "senderId": "665f20..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đã từ chối lời mời"
+}
+```
+
+#### `POST /api/users/remove-friend`
+
+Request body:
+
+```json
+{
+  "friendId": "665f20..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đã hủy kết bạn",
+  "friendId": "665f20...",
+  "hadMessages": true
+}
+```
+
+## Messages
+
+### `POST /api/messages`
+
+Auth: currently not enforced by this route. In normal app flow, realtime message
+send uses Socket.IO with JWT-authenticated sockets; this REST route is legacy
+support for creating messages.
+
+Request body for direct message:
+
+```json
+{
+  "sender": "665f1f...",
+  "receiver": "665f20...",
+  "text": "Hello Bob",
+  "attachments": [],
+  "isGroup": false
+}
+```
+
+Success `200` returns the saved message document:
+
+```json
+{
+  "_id": "6660...",
+  "conversationId": "665f1f..._665f20...",
+  "type": "text",
+  "sender": "665f1f...",
+  "receiver": "665f20...",
+  "text": "Hello Bob",
+  "attachments": [],
+  "createdAt": "2026-05-21T15:00:00.000Z"
+}
+```
+
+Common errors:
+
+- `400` missing sender/receiver for direct message
+- `500` server error
+
+### `GET /api/messages/:userId1/:userId2`
+
+Auth: currently not enforced by this route.
+
+Query params:
+
+- `isGroup=true` when `userId2` is a group id
+- `cursor=<messageId>` optional pagination cursor
+- `limit=<number>` optional, defaults to `20`
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "6660...",
+      "conversationId": "665f1f..._665f20...",
+      "sender": {
+        "_id": "665f1f...",
+        "displayName": "Alice",
+        "avatar": "https://..."
+      },
+      "receiver": "665f20...",
+      "text": "Hello Bob",
+      "type": "text",
+      "attachments": []
+    }
+  ],
+  "hasMore": false
+}
+```
+
+### `GET /api/messages/sync`
+
+Auth: required.
+
+Query params:
+
+- `after_id=<messageId>` optional
+- `limit=<number>` optional, capped at `200`
+
+Used by the client after reconnect to recover missed messages from MongoDB.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "messages": [
+    {
+      "_id": "6660...",
+      "conversationId": "665f1f..._665f20...",
+      "text": "Missed while offline"
+    }
+  ],
+  "count": 1
+}
+```
+
+## Groups
+
+All group mutation/list endpoints require auth except `GET /api/groups/:groupId`
+in the current route file.
+
+### `POST /api/groups`
+
+Auth: required.
+
+Request body:
+
+```json
+{
+  "name": "Study Group",
+  "members": ["665f20...", "665f21..."]
+}
+```
+
+The authenticated user becomes admin and is included as a member. The current
+implementation requires at least 3 total members including the admin.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "group": {
+    "_id": "6661...",
+    "name": "Study Group",
+    "admin": {
+      "_id": "665f1f...",
+      "displayName": "Alice"
+    },
+    "members": [
+      { "_id": "665f1f...", "displayName": "Alice" },
+      { "_id": "665f20...", "displayName": "Bob" }
+    ],
+    "avatar": "https://ui-avatars.com/api/?name=Study%20Group&background=random&color=fff&size=128"
+  }
+}
+```
+
+Common errors:
+
+- `400` fewer than 3 total members
+- `401`/`403` auth errors
+- `500` server error
+
+### `GET /api/groups`
+
+Auth: required.
+
+Returns groups where the authenticated user is a member, with sidebar-like
+last-message/read state.
+
+```json
+{
+  "success": true,
+  "groups": [
+    {
+      "_id": "6661...",
+      "name": "Study Group",
+      "members": [],
+      "lastMessage": {
+        "content": "Welcome",
+        "messageId": "6662..."
+      }
+    }
+  ]
+}
+```
+
+### `GET /api/groups/:groupId`
+
+Auth: currently not enforced by the route.
+
+Success `200` returns the group document.
+
+Common errors:
+
+- `404` group not found
+- `500` server error
+
+### `POST /api/groups/:groupId/add-member`
+
+Auth: required; current user must be group admin.
+
+Request body:
+
+```json
+{
+  "userId": "665f22..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Thêm thành viên thành công",
+  "group": {
+    "_id": "6661...",
+    "name": "Study Group"
+  }
+}
+```
+
+Common errors:
+
+- `404` group not found
+- `403` not admin
+- `400` user already in group
+- `500` server error
+
+### `POST /api/groups/:groupId/remove-member`
+
+Auth: required; current user must be group admin.
+
+Request body:
+
+```json
+{
+  "userId": "665f22..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Xóa thành viên thành công"
+}
+```
+
+### `POST /api/groups/:groupId/transfer-admin`
+
+Auth: required; current user must be group admin.
+
+Request body:
+
+```json
+{
+  "newAdminId": "665f20..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Chuyển quyền admin thành công",
+  "group": {
+    "_id": "6661...",
+    "admin": "665f20..."
+  }
+}
+```
+
+### `PUT /api/groups/:groupId/rename`
+
+Auth: required; current user must be group admin.
+
+Request body:
+
+```json
+{
+  "name": "New Group Name"
+}
+```
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đổi tên nhóm thành công",
+  "group": {
+    "_id": "6661...",
+    "name": "New Group Name"
+  }
+}
+```
+
+### `DELETE /api/groups/:groupId`
+
+Auth: required; current user must be group admin.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Giải tán nhóm thành công"
+}
+```
+
+## Files And Uploads
+
+All file endpoints require auth.
+
+### `POST /api/files/init`
+
+Starts a multipart upload.
+
+Request body:
+
+```json
+{
+  "fileName": "video.mp4",
+  "fileType": "video/mp4"
+}
+```
+
+Success `200`:
+
+```json
+{
+  "uploadId": "multipart-upload-id",
+  "key": "uploads/video.mp4"
+}
+```
+
+### `POST /api/files/get-presigned-url`
+
+Request body:
+
+```json
+{
+  "uploadId": "multipart-upload-id",
+  "key": "uploads/video.mp4",
+  "partNumber": 1
+}
+```
+
+Success `200`:
+
+```json
+{
+  "url": "https://s3-presigned-url"
+}
+```
+
+### `POST /api/files/complete`
+
+Completes multipart upload and stores file metadata in MongoDB.
+
+Request body:
+
+```json
+{
+  "uploadId": "multipart-upload-id",
+  "key": "uploads/video.mp4",
+  "parts": [
+    { "ETag": "\"etag-1\"", "PartNumber": 1 }
+  ],
+  "fileName": "video.mp4",
+  "fileType": "video/mp4",
+  "fileSize": 1048576,
+  "fileHash": "sha256-or-client-hash"
+}
+```
+
+Success `200`:
+
+```json
+{
+  "message": "Upload thành công",
+  "file": {
+    "_id": "6663...",
+    "ownerId": "665f1f...",
+    "originalName": "video.mp4",
+    "mimeType": "video/mp4",
+    "size": 1048576,
+    "s3Key": "uploads/video.mp4",
+    "url": "https://..."
+  }
+}
+```
+
+### `POST /api/files/upload-single`
+
+Content type: `multipart/form-data`.
+
+Fields:
+
+- `file`: image file, max 50MB
+
+This endpoint stages the image source and queues RabbitMQ image processing. The
+final processed file is delivered asynchronously through Socket.IO events such
+as `fileProcessed`.
+
+Success `202`:
+
+```json
+{
+  "success": true,
+  "queued": true,
+  "requestId": "9f2e...",
+  "message": "Anh dang duoc xu ly.",
+  "file": {
+    "requestId": "9f2e...",
+    "status": "processing",
+    "name": "cat.png",
+    "type": "image/png",
+    "size": 12345
+  }
+}
+```
+
+Common errors:
+
+- `400` no file uploaded
+- `400` file is not an image
+- `413` file larger than multer limit
+- `503` queue unavailable after staging cleanup
+
+## Calls
+
+REST call endpoints expose call-history state. Realtime call signaling itself
+uses Socket.IO events, not REST.
+
+All call endpoints require auth.
+
+### `GET /api/calls/history`
+
+Query params:
+
+- `limit=<number>` optional
+- `page=<number>` optional
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "calls": [
+    {
+      "_id": "6664...",
+      "callerId": {
+        "_id": "665f1f...",
+        "displayName": "Alice",
+        "avatar": "https://..."
+      },
+      "receiverId": {
+        "_id": "665f20...",
+        "displayName": "Bob",
+        "avatar": "https://..."
+      },
+      "type": "video",
+      "status": "completed",
+      "duration": 42,
+      "createdAt": "2026-05-21T15:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+### `GET /api/calls/missed`
+
+Returns missed/rejected/unreachable/busy calls that are unread by the current
+user.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "count": 1,
+  "calls": [
+    {
+      "_id": "6664...",
+      "type": "audio",
+      "status": "missed",
+      "callerId": {
+        "_id": "665f20...",
+        "displayName": "Bob"
+      }
+    }
+  ]
+}
+```
+
+### `POST /api/calls/:id/read`
+
+Marks one accessible call record as read.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Call marked as read"
+}
+```
+
+Common errors:
+
+- `404` call not found or access denied
+- `500` server error
+
+### `POST /api/calls/read-all`
+
+Marks all unread missed/rejected/unreachable/busy calls for the current user as
+read.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "3 calls marked as read",
+  "modifiedCount": 3
+}
+```
+
+## Local Verification Examples
+
+Register and login:
+
+```bash
+curl -s http://localhost:3000/api/auth/register \
+  -H "content-type: application/json" \
+  -H "x-request-id: docs-register-1" \
+  -d '{"displayName":"Alice","email":"alice@example.com","password":"Password1!","confirmPassword":"Password1!"}'
+
+curl -s http://localhost:3000/api/auth/login \
+  -H "content-type: application/json" \
+  -H "x-request-id: docs-login-1" \
+  -d '{"email":"alice@example.com","password":"Password1!"}'
+```
+
+Call protected profile after assigning the token:
+
+```bash
+TOKEN="<jwt-from-login>"
+
+curl -s http://localhost:3000/api/users/profile \
+  -H "authorization: Bearer $TOKEN" \
+  -H "x-request-id: docs-profile-1"
+```
+
+Check health:
+
+```bash
+curl -s http://localhost:3000/healthz
+curl -s http://localhost:3000/readyz
+```
+
+## Honest Limitations
+
+- This is a hand-written API reference, not generated OpenAPI.
+- Some legacy REST message/group routes do not enforce auth in the route file;
+  the primary application flow uses authenticated Socket.IO for realtime chat.
+- Error response shapes are not fully standardized yet.
+- File upload examples assume S3-compatible environment variables are configured.
+- Realtime call setup/answer/reject/end flows are Socket.IO events and are
+  intentionally documented outside this REST API reference.
