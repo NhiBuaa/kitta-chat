@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
@@ -10,9 +9,15 @@ const groupRoutes = require("./routes/group");
 const fileRoutes = require("./routes/file");
 const { connectionManager: defaultRabbitConnectionManager } = require("./queues/rabbitmq");
 const { createRequestLoggingMiddleware } = require("./middlewares/requestLogging");
+const {
+  buildHealthPayload,
+  buildReadinessPayload,
+  createDefaultHealthChecks,
+} = require("./services/healthService");
 
 const createApp = ({
   rabbitConnectionManager = defaultRabbitConnectionManager,
+  healthChecks = createDefaultHealthChecks({ rabbitConnectionManager }),
   logger,
 } = {}) => {
   const app = express();
@@ -39,40 +44,13 @@ const createApp = ({
   );
 
   app.get("/healthz", async (req, res) => {
-    const mongoStatus =
-      mongoose.connection.readyState === 1 ? "connected" : "disconnected";
-    const rabbitmqStatus = await rabbitConnectionManager.checkStatus();
-    const healthy = mongoStatus === "connected";
-
-    res.status(healthy ? 200 : 503).json({
-      status: healthy ? "healthy" : "unhealthy",
-      timestamp: new Date().toISOString(),
-      instance: {
-        name: process.env.NODE_NAME || "backend",
-        pid: process.pid,
-        uptime: Math.floor(process.uptime()),
-        memory: {
-          rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`,
-          heapUsed: `${Math.round(
-            process.memoryUsage().heapUsed / 1024 / 1024,
-          )}MB`,
-        },
-      },
-      services: {
-        mongo: mongoStatus,
-        redis: "unknown",
-        rabbitmq: rabbitmqStatus,
-      },
-    });
+    const payload = await buildHealthPayload(healthChecks);
+    res.status(payload.status === "unhealthy" ? 503 : 200).json(payload);
   });
 
   app.get("/readyz", async (req, res) => {
-    const mongoReady = mongoose.connection.readyState === 1;
-    if (mongoReady) {
-      res.status(200).json({ status: "ready" });
-    } else {
-      res.status(503).json({ status: "not ready", reason: "MongoDB disconnected" });
-    }
+    const payload = await buildReadinessPayload(healthChecks);
+    res.status(payload.status === "ready" ? 200 : 503).json(payload);
   });
 
   app.use("/api/auth", authRoutes);
