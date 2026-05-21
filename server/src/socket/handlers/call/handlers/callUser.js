@@ -16,6 +16,10 @@ const {
     removeCallTimeoutDue,
 } = require("../services/callTimeoutDueStore");
 const { finalizeCallOnce } = require("../services/callFinalizer");
+const {
+    storeSocketCallBinding,
+    storeUserActiveCall,
+} = require("../services/callSocketBindingStore");
 
 /**
  * "callUser" — sends the WebRTC offer to the callee.
@@ -89,6 +93,8 @@ const registerCallUser = (socket, io) => {
             }
 
             bindSocketToCall(socket.id, callRecordId);
+            await storeSocketCallBinding(socket.id, callRecordId, io.redisClient);
+            await storeUserActiveCall(userId, callRecordId, io.redisClient);
 
             io.to(userId).emit("outgoingCallCreated", {
                 callId: callRecordId,
@@ -152,6 +158,7 @@ const registerCallUser = (socket, io) => {
                 typeCall,
                 callId: callRecordId,
             });
+            await storeUserActiveCall(userToCall, callRecordId, io.redisClient);
             console.log("[CALL_DIAG][server:callUser:afterEmit]", {
                 callerUserId: userId,
                 userToCall: targetRoom,

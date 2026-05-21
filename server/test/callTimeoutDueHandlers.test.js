@@ -5,6 +5,7 @@ const callHistoryPath = require.resolve("../src/models/CallHistory");
 const userPath = require.resolve("../src/models/User");
 const callLogPath = require.resolve("../src/socket/handlers/call/callLog");
 const finalizerPath = require.resolve("../src/socket/handlers/call/services/callFinalizer");
+const bindingStorePath = require.resolve("../src/socket/handlers/call/services/callSocketBindingStore");
 const initCallPath = require.resolve("../src/socket/handlers/call/handlers/initCall");
 const callUserPath = require.resolve("../src/socket/handlers/call/handlers/callUser");
 const answerCallPath = require.resolve("../src/socket/handlers/call/handlers/answerCall");
@@ -176,6 +177,7 @@ const clearCallModules = () => {
     userPath,
     callLogPath,
     finalizerPath,
+    bindingStorePath,
     initCallPath,
     callUserPath,
     answerCallPath,
@@ -226,6 +228,36 @@ test("initCall adds callId to Redis timeout due storage with correct timeoutAt",
   )));
 });
 
+test("initCall stores caller socket and user active call bindings", async () => {
+  clearCallModules();
+  installCallHistoryMock();
+  installCallLogMock();
+  const { registerInitCall } = require("../src/socket/handlers/call/handlers/initCall");
+  const { CALL_BINDING_TTL_SECONDS } = require("../src/socket/handlers/call/services/callSocketBindingStore");
+  const { socket, io, listeners, redisClient } = createSocketIo();
+
+  registerInitCall(socket, io);
+  await listeners.get("initCall")({
+    userToCall: receiverId,
+    typeCall: "video",
+    callId: "temp_init",
+    from: "socket-1",
+  });
+
+  assert.ok(redisClient.calls.some((entry) => (
+    entry[0] === "setEx" &&
+    entry[1] === "call:socket:socket-1" &&
+    entry[2] === CALL_BINDING_TTL_SECONDS &&
+    entry[3] === callId
+  )));
+  assert.ok(redisClient.calls.some((entry) => (
+    entry[0] === "setEx" &&
+    entry[1] === `call:user:${callerId}` &&
+    entry[2] === CALL_BINDING_TTL_SECONDS &&
+    entry[3] === callId
+  )));
+});
+
 test("callUser-created fallback call adds timeout due metadata", async () => {
   clearCallModules();
   installCallHistoryMock();
@@ -254,6 +286,47 @@ test("callUser-created fallback call adds timeout due metadata", async () => {
   )));
 });
 
+test("callUser stores caller socket, caller user, and receiver user active call bindings", async () => {
+  clearCallModules();
+  installCallHistoryMock();
+  installUserMock();
+  installCallLogMock();
+  const { registerCallUser } = require("../src/socket/handlers/call/handlers/callUser");
+  const { CALL_BINDING_TTL_SECONDS } = require("../src/socket/handlers/call/services/callSocketBindingStore");
+  const { socket, io, listeners, redisClient } = createSocketIo();
+
+  registerCallUser(socket, io);
+  await listeners.get("callUser")({
+    userToCall: receiverId,
+    signalData: { sdp: "offer" },
+    from: "socket-1",
+    name: "A",
+    mediaStatus: { cam: true, mic: true },
+    typeCall: "video",
+    avatar: "",
+    callId: null,
+  });
+
+  assert.ok(redisClient.calls.some((entry) => (
+    entry[0] === "setEx" &&
+    entry[1] === "call:socket:socket-1" &&
+    entry[2] === CALL_BINDING_TTL_SECONDS &&
+    entry[3] === callId
+  )));
+  assert.ok(redisClient.calls.some((entry) => (
+    entry[0] === "setEx" &&
+    entry[1] === `call:user:${callerId}` &&
+    entry[2] === CALL_BINDING_TTL_SECONDS &&
+    entry[3] === callId
+  )));
+  assert.ok(redisClient.calls.some((entry) => (
+    entry[0] === "setEx" &&
+    entry[1] === `call:user:${receiverId}` &&
+    entry[2] === CALL_BINDING_TTL_SECONDS &&
+    entry[3] === callId
+  )));
+});
+
 test("answerCall removes timeout due metadata", async () => {
   clearCallModules();
   installCallHistoryMock();
@@ -273,6 +346,35 @@ test("answerCall removes timeout due metadata", async () => {
   )));
   assert.ok(redisClient.calls.some((entry) => (
     entry[0] === "del" && entry[1] === `call:timeout:${callId}`
+  )));
+});
+
+test("answerCall stores receiver socket and user active call bindings", async () => {
+  clearCallModules();
+  installCallHistoryMock();
+  const { registerAnswerCall } = require("../src/socket/handlers/call/handlers/answerCall");
+  const { CALL_BINDING_TTL_SECONDS } = require("../src/socket/handlers/call/services/callSocketBindingStore");
+  const { socket, io, listeners, redisClient } = createSocketIo({ userId: receiverId });
+
+  registerAnswerCall(socket, io);
+  await listeners.get("answerCall")({
+    to: callerId,
+    signal: { sdp: "answer" },
+    mediaStatus: { cam: false, mic: false },
+    callId,
+  });
+
+  assert.ok(redisClient.calls.some((entry) => (
+    entry[0] === "setEx" &&
+    entry[1] === "call:socket:socket-1" &&
+    entry[2] === CALL_BINDING_TTL_SECONDS &&
+    entry[3] === callId
+  )));
+  assert.ok(redisClient.calls.some((entry) => (
+    entry[0] === "setEx" &&
+    entry[1] === `call:user:${receiverId}` &&
+    entry[2] === CALL_BINDING_TTL_SECONDS &&
+    entry[3] === callId
   )));
 });
 

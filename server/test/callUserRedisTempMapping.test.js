@@ -5,6 +5,7 @@ const callHistoryPath = require.resolve("../src/models/CallHistory");
 const userPath = require.resolve("../src/models/User");
 const initCallPath = require.resolve("../src/socket/handlers/call/handlers/initCall");
 const callUserPath = require.resolve("../src/socket/handlers/call/handlers/callUser");
+const bindingStorePath = require.resolve("../src/socket/handlers/call/services/callSocketBindingStore");
 const statePath = require.resolve("../src/socket/handlers/call/state");
 
 const clearCallModules = () => {
@@ -13,6 +14,7 @@ const clearCallModules = () => {
     userPath,
     initCallPath,
     callUserPath,
+    bindingStorePath,
     statePath,
   ].forEach((path) => delete require.cache[path]);
 };
@@ -105,6 +107,8 @@ test("callUser on isolated handler state reuses initCall record through Redis te
 
     assert.deepEqual(redisClient.calls, [
       ["setEx", "call:temp:temp_cross_replica", 120, callHistoryId],
+      ["setEx", "call:socket:caller-socket-init", 21600, callHistoryId],
+      ["setEx", `call:user:${callerId}`, 21600, callHistoryId],
     ]);
 
     delete require.cache[callUserPath];
@@ -163,4 +167,3 @@ test("callUser on isolated handler state reuses initCall record through Redis te
     clearCallModules();
   }
 });
-

@@ -11,6 +11,10 @@ const {
     removeCallTimeoutDue,
 } = require("../services/callTimeoutDueStore");
 const { finalizeCallOnce } = require("../services/callFinalizer");
+const {
+    storeSocketCallBinding,
+    storeUserActiveCall,
+} = require("../services/callSocketBindingStore");
 
 /**
  * "initCall" — client fires this immediately before sending the WebRTC offer
@@ -52,6 +56,8 @@ const registerInitCall = (socket, io) => {
             console.log(`[initCall] MAPPED temp ${callId} -> ${callRecordId}`);
 
             bindSocketToCall(socket.id, callRecordId);
+            await storeSocketCallBinding(socket.id, callRecordId, io.redisClient);
+            await storeUserActiveCall(userId, callRecordId, io.redisClient);
 
             const timeoutAt = Date.now() + CALL_TIMEOUT_MS;
             await storeCallTimeoutDue({
