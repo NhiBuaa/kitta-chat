@@ -2,180 +2,181 @@
 
 ## Skills Workflow
 
-- Feature design → grill-with-docs
-- Implementation → tdd
-- Debugging → diagnose
-- Architecture review → zoom-out
-- Refactor → improve-codebase-architecture
-- Session summary → handoff
+* Feature design → grill-with-docs
+* Implementation → tdd
+* Debugging → diagnose
+* Architecture review → zoom-out
+* Refactor → improve-codebase-architecture
+* Session summary → handoff
 
-Huong dan dai han cho AI agents lam viec trong repo `web-socket`.
+Long-term guidance for AI agents working in the `web-socket` repository.
 
-Repo nay la ung dung chat realtime KittaChat-style: React/Vite client, Express
-server, Socket.IO, MongoDB/Mongoose, Redis, nginx va Docker Compose. Khi sua code,
-uu tien doc luong hien co truoc, giu thay doi nho, va ton trong cac pattern Redis
-/ Mongo / Socket.IO da co.
+This repository is a KittaChat-style realtime chat application: React/Vite client, Express
+server, Socket.IO, MongoDB/Mongoose, Redis, nginx, and Docker Compose. When modifying code,
+prioritize reading the existing flow first, keep changes small, and respect the existing Redis
+/ Mongo / Socket.IO patterns.
 
-## Kien Truc Tong Quan
+## Overall Architecture
 
-- `client/`: React 19 + Vite. App chia theo feature trong `client/src/features`.
-- `server/`: Express 5 + Socket.IO 4 + Mongoose. Entry point la `server/server.js`.
-- `nginx/`: reverse proxy cho static frontend, REST API va `/socket.io/`.
-- `docker-compose.yml`: chay nginx, 3 backend replicas, Redis va MongoDB.
-- MongoDB la source of truth.
-- Redis dung cho Socket.IO adapter, presence, cache profile, cache friends,
-  recent conversations va chat history ngan.
+* `client/`: React 19 + Vite. The app is divided by feature inside `client/src/features`.
+* `server/`: Express 5 + Socket.IO 4 + Mongoose. Entry point is `server/server.js`.
+* `nginx/`: reverse proxy for static frontend, REST API, and `/socket.io/`.
+* `docker-compose.yml`: runs nginx, 3 backend replicas, Redis, and MongoDB.
+* MongoDB is the source of truth.
+* Redis is used for the Socket.IO adapter, presence, profile cache, friends cache,
+  recent conversations, and short chat history.
 
-Server chi listen sau khi MongoDB ket noi thanh cong, sau do goi
-`connectCacheRedis()` va `initSocket(server, app)`.
+The server only listens after MongoDB connects successfully, then calls
+`connectCacheRedis()` and `initSocket(server, app)`.
 
-## Folder Quan Trong
+## Important Folders
 
-- `server/server.js`: Express middleware, routes, health checks, shutdown,
+* `server/server.js`: Express middleware, routes, health checks, shutdown,
   startup DB/cache/socket.
-- `server/src/socket/index.js`: khoi tao Socket.IO, Redis adapter, JWT socket auth,
-  dang ky cac handler.
-- `server/src/socket/handlers/`: event handlers cho presence, message, friend,
-  typing va call.
-- `server/src/socket/handlers/call/`: WebRTC signaling, call state, timeout,
+* `server/src/socket/index.js`: initializes Socket.IO, Redis adapter, JWT socket auth,
+  registers handlers.
+* `server/src/socket/handlers/`: event handlers for presence, message, friend,
+  typing, and call.
+* `server/src/socket/handlers/call/`: WebRTC signaling, call state, timeout,
   call log.
-- `server/src/controllers/`: REST business logic.
-- `server/src/models/`: Mongoose schemas.
-- `server/src/services/`: Redis cache/presence/S3 services.
-- `client/src/services/socket/SocketProvider.jsx`: socket lifecycle tren client.
-- `client/src/constants/socketEvents.js`: ten event socket dung chung.
-- `client/src/features/chat/hooks/useChatMessages.js`: fetch, optimistic send,
-  retry, pagination tin nhan.
-- `client/src/features/chat/socket/useMessageSocket.js`: nhan message/read/call log.
-- `client/src/features/calls/context/`: call state va socket event tren client.
+* `server/src/controllers/`: REST business logic.
+* `server/src/models/`: Mongoose schemas.
+* `server/src/services/`: Redis cache/presence/S3 services.
+* `client/src/services/socket/SocketProvider.jsx`: socket lifecycle on the client.
+* `client/src/constants/socketEvents.js`: shared socket event names.
+* `client/src/features/chat/hooks/useChatMessages.js`: fetch, optimistic send,
+  retry, message pagination.
+* `client/src/features/chat/socket/useMessageSocket.js`: receive message/read/call log.
+* `client/src/features/calls/context/`: call state and socket events on the client.
 
 ## Authentication Flow
 
 Local auth:
 
-1. `POST /api/auth/register` validate email/password, bcrypt hash password,
-   tao `User`.
-2. `POST /api/auth/login` verify bcrypt, update `activityStatus`, tra ve JWT
-   signed voi payload `{ id: user._id }`, het han sau `1d`.
-3. Client luu `token` va `user` trong `localStorage`.
+1. `POST /api/auth/register` validates email/password, bcrypt hashes the password,
+   creates `User`.
+2. `POST /api/auth/login` verifies bcrypt, updates `activityStatus`, returns JWT
+   signed with payload `{ id: user._id }`, expires after `1d`.
+3. Client stores `token` and `user` in `localStorage`.
 
 Google auth:
 
-1. Client lay Firebase ID token.
-2. `POST /api/auth/google` verify token bang `firebase-admin`.
-3. Server tao/update `User` provider `google`, co the upload Google avatar len S3.
-4. Server tra ve JWT app nhu local login.
+1. Client gets Firebase ID token.
+2. `POST /api/auth/google` verifies token using `firebase-admin`.
+3. Server creates/updates `User` provider `google`, may upload Google avatar to S3.
+4. Server returns app JWT similar to local login.
 
 REST auth:
 
-- `client/src/services/api/axiosClient.js` gan `Authorization: Bearer <token>`.
-- Khi REST tra `401` hoac `403`, client xoa `token`, `user`, emit
-  `auth-changed`, redirect ve `/login`.
-- `ProtectedRoute` trong client chi check co token hay khong.
+* `client/src/services/api/axiosClient.js` attaches `Authorization: Bearer <token>`.
+* When REST returns `401` or `403`, client clears `token`, `user`, emits
+  `auth-changed`, redirects to `/login`.
+* `ProtectedRoute` on the client only checks whether a token exists.
 
 Socket auth:
 
-- Client connect Socket.IO bang `auth: { token }`.
-- `server/src/socket/index.js` dung `jwt.verify(token, JWT_SECRET)`, set
-  `socket.userId`, reject missing/invalid/expired token truoc khi connection.
+* Client connects Socket.IO using `auth: { token }`.
+* `server/src/socket/index.js` uses `jwt.verify(token, JWT_SECRET)`, sets
+  `socket.userId`, rejects missing/invalid/expired token before connection.
 
-Can luu y:
+Important note:
 
-- `server/src/middlewares/auth.js` hien co bug export:
-  `module.exports = verifyToken, getUserIdFromToken` chi export
-  `getUserIdFromToken`. Cac route import `authMiddleware` co the bi sai/hang vi
-  middleware khong goi `next()`. Khi sua auth REST, sua export truoc.
+* `server/src/middlewares/auth.js` currently has an export bug:
+  `module.exports = verifyToken, getUserIdFromToken` only exports
+  `getUserIdFromToken`. Routes importing `authMiddleware` may break/hang because
+  middleware does not call `next()`. When fixing REST auth, fix the export first.
 
 ## WebSocket Flow
 
 Client lifecycle:
 
-1. `SocketProvider` doc `user` va `token` tu `localStorage`.
-2. Connect toi `VITE_API_URL` bang `transports: ["websocket"]`.
-3. On `connect`, emit `addNewUser` voi `userId`.
-4. Neu co `last_message_id`, goi REST sync missed messages.
-5. Gui `heartbeat` moi 20 giay.
-6. Cleanup disconnect socket, clear heartbeat va debounce timer.
+1. `SocketProvider` reads `user` and `token` from `localStorage`.
+2. Connects to `VITE_API_URL` using `transports: ["websocket"]`.
+3. On `connect`, emits `addNewUser` with `userId`.
+4. If `last_message_id` exists, calls REST sync missed messages.
+5. Sends `heartbeat` every 20 seconds.
+6. Cleanup disconnect socket, clear heartbeat and debounce timer.
 
 Server lifecycle:
 
-1. Socket.IO middleware verify JWT.
-2. On `connection`, emit `me`, dang ky handler presence/message/friend/typing/call.
-3. `addNewUser` join room userId va tat ca group room cua user.
-4. Redis `user_sockets:{userId}` ho tro multi-tab.
-5. First tab online thi write-through presence vao MongoDB + Redis va broadcast
+1. Socket.IO middleware verifies JWT.
+2. On `connection`, emits `me`, registers presence/message/friend/typing/call handlers.
+3. `addNewUser` joins userId room and all group rooms of the user.
+4. Redis `user_sockets:{userId}` supports multi-tab.
+5. First online tab performs write-through presence to MongoDB + Redis and broadcasts
    `userStatusChanged`.
-6. Disconnect xoa socket id, dat grace period 5s de tranh flicker khi refresh.
+6. Disconnect removes socket id, sets 5s grace period to avoid flicker during refresh.
 
 Core events:
 
-- `sendMessage` -> server save/upsert Message -> update Redis -> emit `getMessage`.
-- `markRead` -> direct update `isRead`, group push `readBy`.
-- `typing` / `stopTyping` -> `getTyping` / `getStopTyping`.
-- Friend REST thay doi DB/cache, socket event cap nhat realtime sidebar.
-- Group REST thay doi DB, tao system message, emit group events.
-- Call events: `initCall`, `callUser`, `answerCall`, `rejectCall`, `endCall`,
+* `sendMessage` -> server save/upsert Message -> update Redis -> emit `getMessage`.
+* `markRead` -> direct update `isRead`, group push `readBy`.
+* `typing` / `stopTyping` -> `getTyping` / `getStopTyping`.
+* Friend REST changes DB/cache, socket events update realtime sidebar.
+* Group REST changes DB, creates system message, emits group events.
+* Call events: `initCall`, `callUser`, `answerCall`, `rejectCall`, `endCall`,
   `toggleMedia`.
 
 ## Message Flow
 
 Client send:
 
-1. `useChatMessages.handleSendMessage` tao optimistic message voi `_id=temp_*`.
-2. Tao `idempotencyKey` bang UUID.
-3. Luu pending queue vao `localStorage`.
-4. Emit `sendMessage` voi sender, receiver, text, attachments, isGroup,
+1. `useChatMessages.handleSendMessage` creates optimistic message with `_id=temp_*`.
+2. Creates `idempotencyKey` using UUID.
+3. Stores pending queue in `localStorage`.
+4. Emits `sendMessage` with sender, receiver, text, attachments, isGroup,
    conversationId, idempotencyKey.
-5. Callback thanh cong thi thay temp id bang `realId`; loi thi set status `error`.
+5. Successful callback replaces temp id with `realId`; error sets status `error`.
 
 Server receive:
 
-1. `messageHandler.sendMessage` lay sender/receiver/isGroup.
-2. Lay sender profile moi nhat bang Redis cache-aside
+1. `messageHandler.sendMessage` gets sender/receiver/isGroup.
+2. Gets latest sender profile using Redis cache-aside
    `getCachedUserProfile`.
-3. Tinh `conversationId`: group = groupId, direct =
+3. Calculates `conversationId`: group = groupId, direct =
    sorted `senderId_receiverId`.
-4. Goi `saveMessageInBackground`.
-5. Emit:
-   - Group: `io.to(groupId).emit("getMessage", payload)`.
-   - Direct: emit cho ca `receiverId` va `senderId` rooms.
+4. Calls `saveMessageInBackground`.
+5. Emits:
+
+   * Group: `io.to(groupId).emit("getMessage", payload)`.
+   * Direct: emit to both `receiverId` and `senderId` rooms.
 6. Callback `{ success, realId, isDuplicate }`.
 
 Dedup/retry pattern:
 
-- `Message` co unique sparse index tren `{ sender, idempotencyKey }`.
-- Client retry gui lai cung `idempotencyKey`.
-- Server upsert de tranh duplicate.
+* `Message` has unique sparse index on `{ sender, idempotencyKey }`.
+* Client retries sending with the same `idempotencyKey`.
+* Server upserts to avoid duplicates.
 
 ## Presence Flow
 
 Presence Redis keys:
 
-- `presence:{userId}` HASH `{ status, lastSeen }`, TTL 30s.
-- `user_sockets:{userId}` SET danh sach socket id dang mo.
-- `offline_timer:{userId}` key tam 5s khi disconnect.
-- `global_online_users` SET con ton tai cho mot so logic cu.
+* `presence:{userId}` HASH `{ status, lastSeen }`, TTL 30s.
+* `user_sockets:{userId}` SET list of currently open socket ids.
+* `offline_timer:{userId}` temporary 5s key during disconnect.
+* `global_online_users` SET still exists for some legacy logic.
 
 Pattern:
 
-- First connection: `setPresenceWriteThrough(userId, "online")`.
-- Heartbeat: chi renew Redis TTL, khong ghi MongoDB.
-- Offline thuc su: sau grace period, neu khong con socket thi update MongoDB va
-  Redis, broadcast cho friend/group rooms.
+* First connection: `setPresenceWriteThrough(userId, "online")`.
+* Heartbeat: only renews Redis TTL, does not write MongoDB.
+* Actual offline: after grace period, if no remaining sockets then update MongoDB and
+  Redis, broadcast to friend/group rooms.
 
 ## Call Flow
 
-Call signaling nam trong `server/src/socket/handlers/call/`.
+Call signaling is located in `server/src/socket/handlers/call/`.
 
-- `initCall`: tao `CallHistory` pending, map temp call id sang DB id, set timeout.
-- `callUser`: forward WebRTC offer, tao record neu chua co, check receiver online,
-  rate limit, xu ly glare khi hai ben goi nhau cung luc.
-- `answerCall`: clear timeout, set `answeredAt`, emit `callAccepted`.
-- `rejectCall`: set status `rejected`, `busy`, hoac `missed` tuy reason.
-- `endCall`: neu da answer thi `completed` va tinh duration; neu chua answer thi
+* `initCall`: creates pending `CallHistory`, maps temp call id to DB id, sets timeout.
+* `callUser`: forwards WebRTC offer, creates record if missing, checks receiver online,
+  rate limits, handles glare when both users call each other simultaneously.
+* `answerCall`: clears timeout, sets `answeredAt`, emits `callAccepted`.
+* `rejectCall`: sets status `rejected`, `busy`, or `missed` depending on reason.
+* `endCall`: if answered then `completed` and calculates duration; if not answered then
   `missed`.
-- Finalized call tao/upsert `Message` type `call_log`, emit `getMessage` va
-  `callLogMessage` cho ca hai participant.
+* Finalized call creates/upserts `Message` type `call_log`, emits `getMessage` and
+  `callLogMessage` to both participants.
 
 `CallHistory` statuses: `pending`, `completed`, `missed`, `rejected`,
 `unreachable`, `busy`.
@@ -184,138 +185,138 @@ Call signaling nam trong `server/src/socket/handlers/call/`.
 
 `User`:
 
-- email unique, password, provider `local|google`, displayName, avatar, status,
+* email unique, password, provider `local|google`, displayName, avatar, status,
   activityStatus, friends, friendRequests.
-- Indexes cho friends, friendRequests, displayName.
+* Indexes for friends, friendRequests, displayName.
 
 `Message`:
 
-- `conversationId`, type `text|file|system|call_log`, sender, receiver, text,
+* `conversationId`, type `text|file|system|call_log`, sender, receiver, text,
   attachments, callData, isRead, readBy, idempotencyKey.
-- Indexes cho pagination theo conversationId, sender, idempotencyKey unique,
-  call log unique theo `callData.callHistoryId`.
+* Indexes for pagination by conversationId, sender, unique idempotencyKey,
+  unique call log by `callData.callHistoryId`.
 
 `Group`:
 
-- name, admin, members, avatar.
-- Group conversationId chinh la group `_id`.
+* name, admin, members, avatar.
+* Group conversationId is the group `_id`.
 
 `File`:
 
-- Metadata file upload, dung cho attachments.
+* File upload metadata, used for attachments.
 
 `CallHistory`:
 
-- callerId, receiverId, conversationId, type `video|audio`, status, timestamps,
+* callerId, receiverId, conversationId, type `video|audio`, status, timestamps,
   duration, readBy, endedBy.
-- Collection name `call-histories`.
+* Collection name `call-histories`.
 
 ## Redis Cache Patterns
 
-Ten key duoc tach namespace de khong xung dot voi Socket.IO adapter:
+Key names are separated by namespace to avoid conflicts with the Socket.IO adapter:
 
-- `cache:user:{id}`: profile cache-aside, TTL 900s.
-- `cache:friends:{userId}`: Redis SET friend ids, write-through + warm-up.
-- `convs:{userId}`: Sorted Set recent conversation ids, score la timestamp.
-- `presence:{userId}`: HASH presence co TTL.
-- `chat_history:{conversationId}`: LIST 50 message moi nhat.
+* `cache:user:{id}`: profile cache-aside, TTL 900s.
+* `cache:friends:{userId}`: Redis SET of friend ids, write-through + warm-up.
+* `convs:{userId}`: Sorted Set of recent conversation ids, score is timestamp.
+* `presence:{userId}`: presence HASH with TTL.
+* `chat_history:{conversationId}`: LIST of latest 50 messages.
 
-Nguyen tac:
+Principles:
 
-- MongoDB van la source of truth.
-- Redis miss thi warm-up tu MongoDB.
-- Write-through khi thao tac thay doi friends/conversations/presence co chu dich.
-- Heartbeat khong duoc ghi MongoDB.
+* MongoDB remains the source of truth.
+* Redis miss performs warm-up from MongoDB.
+* Write-through for operations intentionally changing friends/conversations/presence.
+* Heartbeat must not write MongoDB.
 
-Can luu y bug:
+Important bugs:
 
-- `server/src/controllers/userController.js` dung `setPresenceWriteThrough` trong
-  `updateUserProfile` nhung chua import.
-- `server/src/services/friendCacheService.js` dung `updateConversationRemove`
-  nhung chua import tu `conversationCacheService`.
+* `server/src/controllers/userController.js` uses `setPresenceWriteThrough` in
+  `updateUserProfile` but has not imported it.
+* `server/src/services/friendCacheService.js` uses `updateConversationRemove`
+  but has not imported it from `conversationCacheService`.
 
 ## REST API Map
 
 Auth:
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/google`
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/reset-password/:id/:token`
+* `POST /api/auth/register`
+* `POST /api/auth/login`
+* `POST /api/auth/google`
+* `POST /api/auth/forgot-password`
+* `POST /api/auth/reset-password/:id/:token`
 
 Users:
 
-- `GET /api/users/profile`
-- `PUT /api/users/profile`
-- `GET /api/users/friends`
-- `GET /api/users/friend-requests`
-- `POST /api/users/friend-request`
-- `POST /api/users/accept-friend`
-- `POST /api/users/reject-friend`
-- `GET /api/users/sidebar-list`
-- `GET /api/users/online-friends`
-- `GET /api/users/search`
-- `GET /api/users/:id`
+* `GET /api/users/profile`
+* `PUT /api/users/profile`
+* `GET /api/users/friends`
+* `GET /api/users/friend-requests`
+* `POST /api/users/friend-request`
+* `POST /api/users/accept-friend`
+* `POST /api/users/reject-friend`
+* `GET /api/users/sidebar-list`
+* `GET /api/users/online-friends`
+* `GET /api/users/search`
+* `GET /api/users/:id`
 
 Messages:
 
-- `POST /api/messages`
-- `GET /api/messages/:userId1/:userId2`
-- `GET /api/messages/sync`
+* `POST /api/messages`
+* `GET /api/messages/:userId1/:userId2`
+* `GET /api/messages/sync`
 
 Groups:
 
-- mounted under `/api/groups`.
-- Group operations also emit socket events and system messages.
+* mounted under `/api/groups`.
+* Group operations also emit socket events and system messages.
 
 Calls:
 
-- mounted under `/api/calls`.
-- Call socket events create/update `CallHistory` and inline call log messages.
+* mounted under `/api/calls`.
+* Call socket events create/update `CallHistory` and inline call log messages.
 
 Files:
 
-- mounted under `/api/files`.
-- Upload logic uses S3 service and may use image compression/sharp.
+* mounted under `/api/files`.
+* Upload logic uses S3 service and may use image compression/sharp.
 
 ## Frontend Patterns
 
-- Alias `@/` points to `client/src`.
-- Socket event names should come from `client/src/constants/socketEvents.js`.
-- Shared socket state lives in `SocketProvider`.
-- Auth changes are synced by `auth-changed` and browser `storage` events.
-- Chat sends are optimistic; never remove idempotency/retry behavior casually.
-- Message UI must handle sender as either populated object or raw id.
-- Attachments may appear as DB ids, populated docs, or normalized client metadata.
-- Group chat is detected by `Boolean(activeChat.members)`.
-- Direct chat target is a user `_id`; group target is group `_id`.
+* Alias `@/` points to `client/src`.
+* Socket event names should come from `client/src/constants/socketEvents.js`.
+* Shared socket state lives in `SocketProvider`.
+* Auth changes are synced by `auth-changed` and browser `storage` events.
+* Chat sends are optimistic; never casually remove idempotency/retry behavior.
+* Message UI must handle sender as either populated object or raw id.
+* Attachments may appear as DB ids, populated docs, or normalized client metadata.
+* Group chat is detected by `Boolean(activeChat.members)`.
+* Direct chat target is a user `_id`; group target is group `_id`.
 
 ## Deployment / Nginx Notes
 
-- Client build is served from `client/dist`.
-- `/api/` proxies to backend.
-- `/api/auth/` has stricter nginx rate limit.
-- `/socket.io/` sets WebSocket upgrade headers and disables buffering.
-- Client uses websocket-only transport, so no long-polling fallback is expected.
-- Redis adapter allows events across multiple backend replicas.
+* Client build is served from `client/dist`.
+* `/api/` proxies to backend.
+* `/api/auth/` has stricter nginx rate limiting.
+* `/socket.io/` sets WebSocket upgrade headers and disables buffering.
+* Client uses websocket-only transport, so no long-polling fallback is expected.
+* Redis adapter allows events across multiple backend replicas.
 
-## Khi Sua Code
+## When Modifying Code
 
-- Dung `rg` de tim file/event/function.
-- Doc server va client flow cua cung mot event truoc khi sua.
-- Neu sua auth REST, kiem tra `middlewares/auth.js` export truoc.
-- Neu sua socket event, cap nhat ca server handler, client listener/emitter va
-  `socketEvents.js` neu can.
-- Neu sua message send, giu `idempotencyKey`, optimistic UI va pending queue.
-- Neu sua presence, khong ghi MongoDB trong heartbeat.
-- Neu sua Redis key, giu namespace rieng va xem cac warm-up path.
-- Neu sua group membership, dam bao join/leave room va realtime event van dung.
-- Neu sua call flow, can kiem tra temp id -> DB id mapping, timeout cleanup va
-  call_log upsert.
-- Khong revert thay doi khong lien quan trong working tree.
+* Use `rg` to search for files/events/functions.
+* Read both server and client flow of the same event before modifying.
+* If modifying REST auth, check `middlewares/auth.js` export first.
+* If modifying socket events, update both server handler, client listener/emitter, and
+  `socketEvents.js` if needed.
+* If modifying message send, preserve `idempotencyKey`, optimistic UI, and pending queue.
+* If modifying presence, do not write MongoDB during heartbeat.
+* If modifying Redis keys, preserve separate namespace and inspect warm-up paths.
+* If modifying group membership, ensure join/leave room and realtime events still work.
+* If modifying call flow, check temp id -> DB id mapping, timeout cleanup, and
+  `call_log` upsert.
+* Do not revert unrelated changes in the working tree.
 
-## Lenh Hay Dung
+## Common Commands
 
 Server:
 
@@ -346,12 +347,12 @@ rg "SOCKET_EVENTS"
 rg "conversationId"
 ```
 
-## Checklist Truoc Khi Ket Thuc Mot Thay Doi
+## Checklist Before Finishing a Change
 
-- Build/lint/test phan lien quan neu co the.
-- Kiem tra khong pha auth token flow.
-- Kiem tra socket event co listener cleanup (`socket.off`) tren client.
-- Kiem tra Mongo query co index phu hop neu them query moi.
-- Kiem tra Redis fallback khi cache miss hoac Redis chua open.
-- Kiem tra group/direct chat khong bi lan conversationId.
-- Ghi ro neu khong chay duoc test/build.
+* Build/lint/test the relevant parts if possible.
+* Verify auth token flow is not broken.
+* Verify socket events have listener cleanup (`socket.off`) on the client.
+* Verify Mongo queries have appropriate indexes if adding new queries.
+* Verify Redis fallback when cache miss or Redis is not open.
+* Verify group/direct chat conversationId is not mixed.
+* Clearly state if tests/build could not be run.
