@@ -15,6 +15,7 @@ const {
   createDefaultHealthChecks,
 } = require("./services/healthService");
 const { logger: defaultLogger } = require("./utils/logger");
+const { sendError } = require("./utils/apiResponse");
 
 const createApp = ({
   rabbitConnectionManager = defaultRabbitConnectionManager,
@@ -62,10 +63,10 @@ const createApp = ({
   app.use("/api/files", fileRoutes);
 
   app.use((req, res, next) => {
-    res.status(404).json({
-      error: "Not Found",
+    return sendError(res, {
+      status: 404,
+      code: "ROUTE_NOT_FOUND",
       message: `Route ${req.method} ${req.originalUrl} not found`,
-      timestamp: new Date().toISOString(),
     });
   });
 
@@ -79,23 +80,25 @@ const createApp = ({
     });
 
     if (err.type === "entity.parse.failed") {
-      return res.status(400).json({
-        error: "Bad Request",
+      return sendError(res, {
+        status: 400,
+        code: "BAD_JSON",
         message: "Invalid JSON payload",
       });
     }
 
     if (err.type === "entity.too.large") {
-      return res.status(413).json({
-        error: "Payload Too Large",
+      return sendError(res, {
+        status: 413,
+        code: "PAYLOAD_TOO_LARGE",
         message: "Request body exceeds 10kb limit",
       });
     }
 
-    res.status(err.status || 500).json({
-      error: err.name || "Internal Server Error",
+    return sendError(res, {
+      status: err.status || 500,
+      code: err.code || err.name || "INTERNAL_ERROR",
       message: err.message || "Something went wrong",
-      timestamp: new Date().toISOString(),
     });
   });
 

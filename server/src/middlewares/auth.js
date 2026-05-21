@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { sendError } = require("../utils/apiResponse");
 
 const verifyToken = (req, res, next) => {
     const authHeader = req.header("Authorization");
@@ -6,7 +7,12 @@ const verifyToken = (req, res, next) => {
 
     // Nếu không có token
     if (!token) {
-        return res.status(401).json({ msg: "Truy cập bị từ chối. Vui lòng đăng nhập!" });
+        return sendError(res, {
+            status: 401,
+            code: "AUTH_REQUIRED",
+            message: "Truy cập bị từ chối. Vui lòng đăng nhập!",
+            legacy: { msg: "Truy cập bị từ chối. Vui lòng đăng nhập!" },
+        });
     }
 
     try {
@@ -14,7 +20,12 @@ const verifyToken = (req, res, next) => {
         req.user = verified;
         next();
     } catch (err) {
-        res.status(403).json({ msg: "Token không hợp lệ hoặc đã hết hạn!" });
+        return sendError(res, {
+            status: 403,
+            code: "INVALID_TOKEN",
+            message: "Token không hợp lệ hoặc đã hết hạn!",
+            legacy: { msg: "Token không hợp lệ hoặc đã hết hạn!" },
+        });
     }
 };
 

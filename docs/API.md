@@ -1,4 +1,4 @@
-# REST API Reference
+﻿# REST API Reference
 
 This document describes the current REST API surface for the `web-socket`
 backend. It is intentionally concise and hand-written so it stays aligned with
@@ -51,22 +51,52 @@ Common auth errors:
 
 ```json
 {
+  "success": false,
+  "error": {
+    "code": "AUTH_REQUIRED",
+    "message": "Truy cập bị từ chối. Vui lòng đăng nhập!"
+  },
+  "message": "Truy cập bị từ chối. Vui lòng đăng nhập!",
+  "requestId": "demo-request-1",
   "msg": "Truy cập bị từ chối. Vui lòng đăng nhập!"
 }
 ```
 
 ```json
 {
+  "success": false,
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Token không hợp lệ hoặc đã hết hạn!"
+  },
+  "message": "Token không hợp lệ hoặc đã hết hạn!",
+  "requestId": "demo-request-1",
   "msg": "Token không hợp lệ hoặc đã hết hạn!"
 }
+```
 ```
 
 ### Response Shapes
 
-Most endpoints return `{ "success": true, ... }` or
-`{ "success": false, "message": "..." }`, but some older routes still return
-raw documents or `{ "error": "..." }`. This document reflects current behavior;
-it does not claim a fully standardized response envelope.
+Auth/profile errors, message validation errors, not-found routes, and global
+Express errors use this error shape:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Email hoặc mật khẩu không đúng"
+  },
+  "message": "Email hoặc mật khẩu không đúng",
+  "requestId": "demo-request-1"
+}
+```
+
+The top-level `message` and selected legacy fields such as `msg` remain for
+backward compatibility while newer clients can read `error.code`,
+`error.message`, and `requestId`. Some older success responses still return raw
+documents instead of a single success envelope.
 
 ## Health And Readiness
 
@@ -142,7 +172,7 @@ Success `201`:
 ```json
 {
   "success": true,
-  "message": "Đăng ký thành công",
+  "message": "ÄÄƒng kÃ½ thÃ nh cÃ´ng",
   "user": {
     "_id": "665f1f...",
     "email": "alice@example.com",
@@ -181,14 +211,14 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Đăng nhập thành công",
+  "message": "ÄÄƒng nháº­p thÃ nh cÃ´ng",
   "token": "<jwt>",
   "user": {
     "id": "665f1f...",
     "displayName": "Alice",
     "email": "alice@example.com",
     "avatar": "https://...",
-    "status": "Chào bạn, tôi đang dùng KittaChat.",
+    "status": "ChÃ o báº¡n, tÃ´i Ä‘ang dÃ¹ng KittaChat.",
     "activityStatus": {
       "state": "active",
       "lastSeen": "2026-05-21T15:00:00.000Z"
@@ -202,6 +232,20 @@ Common errors:
 - `400` wrong email/password
 - `400` account uses Google provider
 - `500` server error
+
+Invalid credential example:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Email hoặc mật khẩu không đúng"
+  },
+  "message": "Email hoặc mật khẩu không đúng",
+  "requestId": "demo-request-1"
+}
+```
 
 ### `POST /api/auth/google`
 
@@ -241,7 +285,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Nếu email tồn tại, chúng tôi đã gửi hướng dẫn"
+  "message": "Náº¿u email tá»“n táº¡i, chÃºng tÃ´i Ä‘Ã£ gá»­i hÆ°á»›ng dáº«n"
 }
 ```
 
@@ -266,7 +310,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Đặt lại mật khẩu thành công"
+  "message": "Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng"
 }
 ```
 
@@ -328,7 +372,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Cập nhật thành công",
+  "message": "Cáº­p nháº­t thÃ nh cÃ´ng",
   "queued": true,
   "avatarRequestId": "9f2e...",
   "avatarQueueError": null,
@@ -503,7 +547,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Đã gửi lời mời"
+  "message": "ÄÃ£ gá»­i lá»i má»i"
 }
 ```
 
@@ -522,7 +566,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Đã chấp nhận lời mời kết bạn."
+  "message": "ÄÃ£ cháº¥p nháº­n lá»i má»i káº¿t báº¡n."
 }
 ```
 
@@ -541,7 +585,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Đã từ chối lời mời"
+  "message": "ÄÃ£ tá»« chá»‘i lá»i má»i"
 }
 ```
 
@@ -560,7 +604,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Đã hủy kết bạn",
+  "message": "ÄÃ£ há»§y káº¿t báº¡n",
   "friendId": "665f20...",
   "hadMessages": true
 }
@@ -605,6 +649,20 @@ Common errors:
 
 - `400` missing sender/receiver for direct message
 - `500` server error
+
+Missing direct-message participant example:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "MESSAGE_RECIPIENT_REQUIRED",
+    "message": "Thiếu thông tin người gửi/nhận"
+  },
+  "message": "Thiếu thông tin người gửi/nhận",
+  "requestId": "demo-request-1"
+}
+```
 
 ### `GET /api/messages/:userId1/:userId2`
 
@@ -767,7 +825,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Thêm thành viên thành công",
+  "message": "ThÃªm thÃ nh viÃªn thÃ nh cÃ´ng",
   "group": {
     "_id": "6661...",
     "name": "Study Group"
@@ -799,7 +857,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Xóa thành viên thành công"
+  "message": "XÃ³a thÃ nh viÃªn thÃ nh cÃ´ng"
 }
 ```
 
@@ -820,7 +878,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Chuyển quyền admin thành công",
+  "message": "Chuyá»ƒn quyá»n admin thÃ nh cÃ´ng",
   "group": {
     "_id": "6661...",
     "admin": "665f20..."
@@ -845,7 +903,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Đổi tên nhóm thành công",
+  "message": "Äá»•i tÃªn nhÃ³m thÃ nh cÃ´ng",
   "group": {
     "_id": "6661...",
     "name": "New Group Name"
@@ -862,7 +920,7 @@ Success `200`:
 ```json
 {
   "success": true,
-  "message": "Giải tán nhóm thành công"
+  "message": "Giáº£i tÃ¡n nhÃ³m thÃ nh cÃ´ng"
 }
 ```
 
@@ -936,7 +994,7 @@ Success `200`:
 
 ```json
 {
-  "message": "Upload thành công",
+  "message": "Upload thÃ nh cÃ´ng",
   "file": {
     "_id": "6663...",
     "ownerId": "665f1f...",
@@ -1126,7 +1184,8 @@ curl -s http://localhost:3000/readyz
 - This is a hand-written API reference, not generated OpenAPI.
 - Some legacy REST message/group routes do not enforce auth in the route file;
   the primary application flow uses authenticated Socket.IO for realtime chat.
-- Error response shapes are not fully standardized yet.
+- Some legacy controller errors outside auth/profile/messages still need the
+  standardized error helper.
 - File upload examples assume S3-compatible environment variables are configured.
 - Realtime call setup/answer/reject/end flows are Socket.IO events and are
   intentionally documented outside this REST API reference.

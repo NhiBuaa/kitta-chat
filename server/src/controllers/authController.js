@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const admin = require("../config/firebaseAdmin");
 const { queueRemoteAvatarProcessing } = require("../services/avatarQueueService");
 const { queuePasswordResetEmail } = require("../services/passwordResetNotificationService");
+const { sendError } = require("../utils/apiResponse");
 // Hàm helper để validate email
 const validateEmail = (email) => {
   return String(email)
@@ -98,16 +99,20 @@ exports.login = async (req, res) => {
       });
     }
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
+      return sendError(res, {
+        status: 400,
+        code: "INVALID_CREDENTIALS",
+        message: "Email hoặc mật khẩu không đúng",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
+      return sendError(res, {
+        status: 400,
+        code: "INVALID_CREDENTIALS",
+        message: "Email hoặc mật khẩu không đúng",
+      });
     }
 
     user.activityStatus = {

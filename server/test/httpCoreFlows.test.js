@@ -303,6 +303,12 @@ test("profile endpoint rejects missing tokens and returns the authenticated user
 
     const missingTokenResult = await testServer.request("/api/users/profile");
     assert.equal(missingTokenResult.response.status, 401);
+    assert.equal(missingTokenResult.body.success, false);
+    assert.deepEqual(missingTokenResult.body.error, {
+      code: "AUTH_REQUIRED",
+      message: "Truy cập bị từ chối. Vui lòng đăng nhập!",
+    });
+    assert.ok(missingTokenResult.body.requestId);
 
     const profileResult = await testServer.request("/api/users/profile", {
       headers: {
@@ -314,6 +320,44 @@ test("profile endpoint rejects missing tokens and returns the authenticated user
     assert.equal(profileResult.body.success, true);
     assert.equal(profileResult.body.user.email, "alice@example.com");
     assert.equal(profileResult.body.user.password, undefined);
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("auth login returns a standardized error for invalid credentials", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Alice",
+        email: "alice@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+
+    const loginResult = await testServer.request("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "x-request-id": "req-invalid-login",
+      },
+      body: JSON.stringify({
+        email: "alice@example.com",
+        password: "WrongPassword1!",
+      }),
+    });
+
+    assert.equal(loginResult.response.status, 400);
+    assert.equal(loginResult.body.success, false);
+    assert.deepEqual(loginResult.body.error, {
+      code: "INVALID_CREDENTIALS",
+      message: "Email hoặc mật khẩu không đúng",
+    });
+    assert.equal(loginResult.body.message, "Email hoặc mật khẩu không đúng");
+    assert.equal(loginResult.body.requestId, "req-invalid-login");
   } finally {
     await testServer.close();
   }
@@ -342,6 +386,34 @@ test("message create and fetch work through the Express HTTP API", async () => {
     assert.equal(fetchResult.body.success, true);
     assert.equal(fetchResult.body.data.length, 1);
     assert.equal(fetchResult.body.data[0].text, "hello from integration test");
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("message create returns a standardized validation error when receiver is missing", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const createResult = await testServer.request("/api/messages", {
+      method: "POST",
+      headers: {
+        "x-request-id": "req-message-validation",
+      },
+      body: JSON.stringify({
+        sender: "user-1",
+        text: "missing receiver",
+      }),
+    });
+
+    assert.equal(createResult.response.status, 400);
+    assert.equal(createResult.body.success, false);
+    assert.deepEqual(createResult.body.error, {
+      code: "MESSAGE_RECIPIENT_REQUIRED",
+      message: "Thiếu thông tin người gửi/nhận",
+    });
+    assert.equal(createResult.body.message, "Thiếu thông tin người gửi/nhận");
+    assert.equal(createResult.body.requestId, "req-message-validation");
   } finally {
     await testServer.close();
   }
