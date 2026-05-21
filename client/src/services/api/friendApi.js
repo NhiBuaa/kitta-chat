@@ -15,3 +15,6 @@ export const acceptFriendRequest = (senderId) =>
 
 export const rejectFriendRequest = (senderId) =>
   axiosClient.post(`${API_URL_USERS}/reject-friend`, { senderId })
+
+export const removeFriend = (friendId) =>
+  axiosClient.post(`${API_URL_USERS}/remove-friend`, { friendId })

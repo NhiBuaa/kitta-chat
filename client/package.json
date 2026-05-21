@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test src/features/chat/socket/messageSocketState.test.js src/features/calls/pages/callPageState.test.js src/features/calls/components/callHistoryState.test.js src/features/calls/context/callHistoryBadgeState.test.js src/features/calls/context/callMediaState.test.js src/features/profile/hooks/presenceState.test.js src/features/friends/socket/friendshipState.test.js src/features/friends/socket/useFriendSocket.test.js",
+    "test": "node --test src/features/chat/socket/messageSocketState.test.js src/features/calls/pages/callPageState.test.js src/features/calls/components/callHistoryState.test.js src/features/calls/context/callHistoryBadgeState.test.js src/features/calls/context/callMediaState.test.js src/features/profile/hooks/presenceState.test.js src/features/friends/socket/friendshipState.test.js src/features/friends/socket/useFriendSocket.test.js src/features/friends/actions/removeFriendAction.test.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

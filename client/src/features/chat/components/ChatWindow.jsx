@@ -10,7 +10,9 @@ import {
   FaPaperclip,
   FaArrowDown,
   FaExclamationTriangle,
+  FaUserMinus,
 } from "react-icons/fa";
+import { toast } from "react-toastify";
 import UserStatus from "@/features/profile/components/UserStatus.jsx";
 import { formatTimeAgo } from "@/utils/formatTime.js";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
@@ -18,6 +20,8 @@ import Loader from "@/components/common/Loader.jsx";
 import MessageSeenBy from '@/features/chat/components/MessageSeenBy.jsx';
 import OfflineBanner from "@/features/chat/components/OfflineBanner.jsx";
 import CallLogItem from "@/features/calls/components/CallLogItem.jsx";
+import { removeFriend } from "@/services/api/friendApi.js";
+import { runRemoveFriendAction } from "@/features/friends/actions/removeFriendAction.js";
 
 
 const ChatWindow = ({
@@ -48,17 +52,37 @@ const ChatWindow = ({
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isRemovingFriend, setIsRemovingFriend] = useState(false);
   const topSentinelRef = useRef(null);
   const canLoadMoreFromTopRef = useRef(true);
+  const removeFriendInFlightRef = useRef(false);
 
   // BIẾN
   const isGroupChat = Boolean(activeChat?.members);
   const shouldShowOnlineStatus =
     !isGroupChat && Boolean(currentChatUser?.isFriend);
+  const canRemoveFriend = !isGroupChat && Boolean(currentChatUser?.isFriend);
 
   useEffect(() => {
     canLoadMoreFromTopRef.current = true;
   }, [activeChat?._id]);
+
+  useEffect(() => {
+    removeFriendInFlightRef.current = false;
+    setIsRemovingFriend(false);
+  }, [activeChat?._id]);
+
+  const handleRemoveFriend = async () => {
+    await runRemoveFriendAction({
+      friendId: currentChatUser?._id,
+      friendName: getUserDisplayName(currentChatUser),
+      confirmRemove: window.confirm,
+      removeFriend,
+      toast,
+      loadingRef: removeFriendInFlightRef,
+      setLoading: setIsRemovingFriend,
+    });
+  };
 
   useEffect(() => {
     const root = scrollRef?.current;
@@ -198,6 +222,17 @@ const ChatWindow = ({
               title="Quản lý thành viên"
             >
               <FaInfoCircle />
+            </button>
+          )}
+
+          {canRemoveFriend && (
+            <button
+              onClick={handleRemoveFriend}
+              className="hover:bg-red-50 p-2 rounded-full transition-colors text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Hủy kết bạn"
+              disabled={isRemovingFriend}
+            >
+              <FaUserMinus />
             </button>
           )}
         </div>
