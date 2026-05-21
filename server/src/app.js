@@ -9,12 +9,17 @@ const callHistoryRoutes = require("./routes/callHistory");
 const groupRoutes = require("./routes/group");
 const fileRoutes = require("./routes/file");
 const { connectionManager: defaultRabbitConnectionManager } = require("./queues/rabbitmq");
+const { createRequestLoggingMiddleware } = require("./middlewares/requestLogging");
 
-const createApp = ({ rabbitConnectionManager = defaultRabbitConnectionManager } = {}) => {
+const createApp = ({
+  rabbitConnectionManager = defaultRabbitConnectionManager,
+  logger,
+} = {}) => {
   const app = express();
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
+  app.use(createRequestLoggingMiddleware({ logger }));
   app.use(express.json({ limit: "10kb" }));
 
   app.use((req, res, next) => {
