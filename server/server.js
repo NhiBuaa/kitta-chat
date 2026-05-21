@@ -1,145 +1,17 @@
-const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const dotenv = require("dotenv");
 const http = require("http");
 
-const authRoutes = require("./src/routes/auth");
-const userRoutes = require("./src/routes/user");
-const messageRoutes = require("./src/routes/messages");
-const callHistoryRoutes = require("./src/routes/callHistory");
+const { createApp } = require("./src/app");
 const { initSocket } = require("./src/socket");
 const { connectCacheRedis } = require("./src/config/redis");
-const { connectionManager: rabbitConnectionManager } = require("./src/queues/rabbitmq");
 
 dotenv.config();
 
 // =========================================================
 // EXPRESS APP SETUP
 // =========================================================
-const app = express();
-
-// CRITICAL: Trust Proxy (Nhận IP thật từ Nginx)
-// Đặt TRƯỚC tất cả middleware
-app.set("trust proxy", 1);
-
-// SECURITY: Ẩn tech stack
-app.disable("x-powered-by");
-
-// SECURITY: Giới hạn JSON payload (chặn OOM attack)
-app.use(express.json({ limit: "10kb" }));
-
-// CORS HELPER: Nginx forward Origin as "Accept" header -> restore sang req.headers.origin
-// để cors package đọc được. Đặt TRƯỚC cors() middleware.
-app.use((req, res, next) => {
-  if (req.headers.accept && !req.headers.origin) {
-    req.headers.origin = req.headers.accept;
-  }
-  next();
-});
-
-app.use(
-  cors({
-    origin: true, // cho phép mọi origin — chỉ khi credentials: true + origin whitelist
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-// =========================================================
-// HEALTH CHECK ENDPOINTS
-// Docker healthcheck: wget http://localhost:3000/healthz
-// Nginx proxy tới backend:3000/healthz
-// =========================================================
-app.get("/healthz", async (req, res) => {
-  const mongoStatus =
-    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
-  const rabbitmqStatus = await rabbitConnectionManager.checkStatus();
-  const healthy = mongoStatus === "connected";
-
-  res.status(healthy ? 200 : 503).json({
-    status: healthy ? "healthy" : "unhealthy",
-    timestamp: new Date().toISOString(),
-    instance: {
-      name: process.env.NODE_NAME || "backend",
-      pid: process.pid,
-      uptime: Math.floor(process.uptime()),
-      memory: {
-        rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`,
-        heapUsed: `${Math.round(
-          process.memoryUsage().heapUsed / 1024 / 1024
-        )}MB`,
-      },
-    },
-    services: {
-      mongo: mongoStatus,
-      redis: "unknown",
-      rabbitmq: rabbitmqStatus,
-    },
-  });
-});
-
-app.get("/readyz", async (req, res) => {
-  const mongoReady = mongoose.connection.readyState === 1;
-  if (mongoReady) {
-    res.status(200).json({ status: "ready" });
-  } else {
-    res.status(503).json({ status: "not ready", reason: "MongoDB disconnected" });
-  }
-});
-
-// =========================================================
-// ROUTES
-// =========================================================
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/calls", callHistoryRoutes);
-app.use("/api/groups", require("./src/routes/group"));
-app.use("/api/files", require("./src/routes/file"));
-
-// =========================================================
-// 404 HANDLER
-// =========================================================
-app.use((req, res, next) => {
-  res.status(404).json({
-    error: "Not Found",
-    message: `Route ${req.method} ${req.originalUrl} not found`,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// =========================================================
-// GLOBAL ERROR HANDLER - Phải đặt CUỐI CÙNG
-// Không lộ stack trace ra client
-// =========================================================
-app.use((err, req, res, next) => {
-  console.error(`[Error] ${req.method} ${req.originalUrl}:`, err.message);
-
-  // Xử lý lỗi JSON limit
-  if (err.type === "entity.parse.failed") {
-    return res.status(400).json({
-      error: "Bad Request",
-      message: "Invalid JSON payload",
-    });
-  }
-
-  // Xử lý lỗi payload quá lớn
-  if (err.type === "entity.too.large") {
-    return res.status(413).json({
-      error: "Payload Too Large",
-      message: "Request body exceeds 10kb limit",
-    });
-  }
-
-  // Generic error: KHÔNG lộ stack trace
-  res.status(err.status || 500).json({
-    error: err.name || "Internal Server Error",
-    message: err.message || "Something went wrong",
-    timestamp: new Date().toISOString(),
-  });
-});
+const app = createApp();
 
 // =========================================================
 // HTTP SERVER

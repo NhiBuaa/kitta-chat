@@ -95,3 +95,5 @@ nginx/ssl/*.pfx
 *.local.key
 
 /data
+/.agents
+skills-lock.json
