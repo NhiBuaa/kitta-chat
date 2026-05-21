@@ -635,6 +635,64 @@ const rejectFriendRequest = async (req, res) => {
   }
 };
 
+const removeFriend = async (req, res) => {
+  try {
+    const { friendId } = req.body;
+    const currentUserId = req.user.id;
+    const io = req.app.get("socketio");
+
+    if (!friendId) {
+      return res.status(400).json({ success: false, message: "Thiếu friendId" });
+    }
+
+    if (toComparableId(friendId) === toComparableId(currentUserId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể hủy kết bạn với chính mình",
+      });
+    }
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId),
+      User.findById(friendId),
+    ]);
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: "Người dùng không tồn tại" });
+    }
+
+    if (!currentUser || !includesId(currentUser.friends, friendId)) {
+      return res.json({ success: true, alreadyRemoved: true });
+    }
+
+    const { conversationId, hadMessages } = await removeFriendWriteThrough(currentUserId, friendId);
+
+    emitToUserRoom(io, currentUserId, "friendRemoved", {
+      removedUserId: toComparableId(friendId),
+      byUserId: toComparableId(currentUserId),
+      conversationId,
+      hadMessages,
+    });
+
+    emitToUserRoom(io, friendId, "friendRemoved", {
+      removedUserId: toComparableId(currentUserId),
+      byUserId: toComparableId(currentUserId),
+      conversationId,
+      hadMessages,
+    });
+
+    return res.json({
+      success: true,
+      removedUserId: toComparableId(friendId),
+      conversationId,
+      hadMessages,
+    });
+  } catch (error) {
+    console.error("Lỗi hủy kết bạn:", error);
+    return res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+};
+
 module.exports = {
   getUserProfile,
   getUserById,
@@ -647,6 +705,7 @@ module.exports = {
   getSidebarUsers,
   sendFriendRequest,
   rejectFriendRequest,
+  removeFriend,
   getOnlineFriends,
   _buildSidebarLastMessage: buildSidebarLastMessage,
 };

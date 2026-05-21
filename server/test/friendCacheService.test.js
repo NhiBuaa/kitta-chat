@@ -28,7 +28,7 @@ const clearFriendCacheServiceCache = () => {
   }
 };
 
-const loadFriendCacheService = ({ messageCount = 0 } = {}) => {
+const loadFriendCacheService = ({ messageCount = 0, redisFails = false } = {}) => {
   clearFriendCacheServiceCache();
 
   const calls = [];
@@ -38,6 +38,7 @@ const loadFriendCacheService = ({ messageCount = 0 } = {}) => {
       isOpen: true,
       async sRem(key, value) {
         calls.push(["sRem", key, value]);
+        if (redisFails) throw new Error("redis down");
       },
     },
   });
@@ -71,11 +72,33 @@ test("removeFriendWriteThrough removes friendship cache and conversation entry w
   await service.removeFriendWriteThrough("user-a", "user-b");
 
   assert.deepEqual(calls, [
-    ["findByIdAndUpdate", "user-a", { $pull: { friends: "user-b" } }],
-    ["findByIdAndUpdate", "user-b", { $pull: { friends: "user-a" } }],
+    ["findByIdAndUpdate", "user-a", { $pull: { friends: "user-b", friendRequests: "user-b" } }],
+    ["findByIdAndUpdate", "user-b", { $pull: { friends: "user-a", friendRequests: "user-a" } }],
     ["sRem", "cache:friends:user-a", "user-b"],
     ["sRem", "cache:friends:user-b", "user-a"],
     ["countDocuments", { conversationId: "user-a_user-b" }],
     ["updateConversationRemove", "user-a_user-b", ["user-a", "user-b"]],
   ]);
+});
+
+test("removeFriendWriteThrough keeps conversation entry when messages exist", async () => {
+  const { service, calls } = loadFriendCacheService({ messageCount: 2 });
+
+  const result = await service.removeFriendWriteThrough("user-a", "user-b");
+
+  assert.equal(result.conversationId, "user-a_user-b");
+  assert.equal(result.hadMessages, true);
+  assert.equal(calls.some((call) => call[0] === "updateConversationRemove"), false);
+});
+
+test("removeFriendWriteThrough preserves Mongo update when Redis cache removal fails", async () => {
+  const { service, calls } = loadFriendCacheService({ redisFails: true });
+
+  await assert.doesNotReject(() => service.removeFriendWriteThrough("user-a", "user-b"));
+
+  assert.deepEqual(calls.slice(0, 2), [
+    ["findByIdAndUpdate", "user-a", { $pull: { friends: "user-b", friendRequests: "user-b" } }],
+    ["findByIdAndUpdate", "user-b", { $pull: { friends: "user-a", friendRequests: "user-a" } }],
+  ]);
+  assert.ok(calls.some((call) => call[0] === "countDocuments"));
 });
