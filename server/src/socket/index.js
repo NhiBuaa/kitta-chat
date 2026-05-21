@@ -11,7 +11,7 @@ const { registerTypingHandlers } = require("./handlers/typingHandler");
 const { registerCallHandlers } = require("./handlers/call/index");
 const { createCallTimeoutFinalizer } = require("./handlers/call/services/callTimeoutFinalizer");
 
-const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
+const NODE_NAME = process.env.NODE_NAME || "backend";
 const logPrefix = `[Socket][node=${NODE_NAME}]`;
 const deliveryLogPrefix = `[Delivery][node=${NODE_NAME}]`;
 

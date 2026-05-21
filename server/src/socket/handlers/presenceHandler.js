@@ -5,7 +5,7 @@ const {
     renewHeartbeat,
 } = require("../../services/presenceService");
 
-const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
+const NODE_NAME = process.env.NODE_NAME || "backend";
 const logPrefix = `[Presence][node=${NODE_NAME}]`;
 
 /**
