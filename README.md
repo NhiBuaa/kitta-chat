@@ -178,6 +178,15 @@ npm test
 npm run build
 ```
 
+## CI Pipeline
+
+GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to
+`main`/`master`.
+
+- `Server Tests`: installs `server/` with `npm ci` and runs `npm test`.
+- `Client Build`: installs `client/` with `npm ci` and runs `npm run build`.
+- Lint and Docker image builds are intentionally not part of this small CI slice yet.
+
 ## Manual Smoke Checklist
 
 Before freezing/releasing:

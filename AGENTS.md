@@ -2,12 +2,35 @@
 
 ## Skills Workflow
 
-* Feature design → grill-with-docs
-* Implementation → tdd
-* Debugging → diagnose
-* Architecture review → zoom-out
-* Refactor → improve-codebase-architecture
-* Session summary → handoff
+### Setup & Management
+
+* Initialization → `setup-matt-pocock-skills`
+* Issue triage → `triage`
+* Issue creation → `to-issues`
+
+### Design & Planning
+
+* Feature design → `grill-with-docs`
+* Non-code alignment → `grill-me`
+* PRD synthesis → `to-prd`
+
+### Development & Execution
+
+* Prototyping → `prototype`
+* Implementation → `tdd`
+
+### Debugging & Quality
+
+* Debugging → `diagnose`
+* Architecture review → `zoom-out`
+* Refactor → `improve-codebase-architecture`
+
+### Productivity & Session Wrap-up
+
+* Session summary → `handoff`
+* Token saving → `caveman`
+* Skill creation → `write-a-skill`
+
 
 Long-term guidance for AI agents working in the `web-socket` repository.
 
