@@ -459,6 +459,108 @@ test("worker bootstrap publishes failed jobs to DLQ at max attempts", async () =
   assert.deepEqual(amqp.calls.nack, []);
 });
 
+test("worker bootstrap routes malformed JSON poison messages directly to DLQ", async () => {
+  const amqp = createFakeAmqp();
+  const logs = [];
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+
+  await startQueueWorker({
+    queueName: IMAGE_JOB_QUEUE,
+    connectionManager: manager,
+    maxAttempts: 3,
+    processJob: async () => {
+      throw new Error("processJob should not be called for malformed JSON");
+    },
+    logger: {
+      error: (...args) => logs.push(["error", ...args]),
+      warn: (...args) => logs.push(["warn", ...args]),
+    },
+  });
+
+  const message = {
+    content: Buffer.from("{bad json"),
+    properties: { correlationId: "corr-poison-1", headers: { correlationId: "corr-poison-1" } },
+  };
+  await amqp.calls.consume[0].handler(message);
+
+  assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.dlq");
+  assert.equal(amqp.calls.sendToQueue[0].payload.correlationId, "corr-poison-1");
+  assert.deepEqual(amqp.calls.sendToQueue[0].payload.job, {
+    type: "poison",
+    raw: "{bad json",
+    parseFailed: true,
+  });
+  assert.match(amqp.calls.sendToQueue[0].payload.error.message, /JSON/);
+  assert.equal(amqp.calls.sendToQueue[0].payload.error.originalQueue, IMAGE_JOB_QUEUE);
+  assert.equal(amqp.calls.sendToQueue[0].options.correlationId, "corr-poison-1");
+  assert.equal(amqp.calls.sendToQueue[0].options.headers.correlationId, "corr-poison-1");
+  assert.deepEqual(logs[0], [
+    "error",
+    "worker_job_poison",
+    {
+      queue: IMAGE_JOB_QUEUE,
+      jobType: "poison",
+      attempt: 0,
+      correlationId: "corr-poison-1",
+      reason: logs[0][2].reason,
+    },
+  ]);
+  assert.deepEqual(logs[1], [
+    "error",
+    "worker_job_dlq",
+    {
+      queue: IMAGE_JOB_QUEUE,
+      jobType: "poison",
+      attempt: 0,
+      maxAttempts: 3,
+      correlationId: "corr-poison-1",
+      reason: logs[1][2].reason,
+    },
+  ]);
+  assert.deepEqual(amqp.calls.ack, [message]);
+  assert.deepEqual(amqp.calls.nack, []);
+});
+
+test("worker bootstrap leaves poison messages unacked when DLQ publish fails", async () => {
+  const amqp = createFakeAmqp();
+  amqp.channel.sendToQueue = (queueName, buffer, options, callback) => {
+    amqp.calls.sendToQueue.push({
+      queueName,
+      payload: JSON.parse(buffer.toString("utf8")),
+      options,
+    });
+    callback(new Error("dlq down"));
+    return true;
+  };
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+
+  await startQueueWorker({
+    queueName: IMAGE_JOB_QUEUE,
+    connectionManager: manager,
+    maxAttempts: 3,
+    processJob: async () => {},
+    logger: { error() {}, warn() {} },
+  });
+
+  const message = {
+    content: Buffer.from("{bad json"),
+    properties: { headers: { correlationId: "corr-poison-2" } },
+  };
+  await amqp.calls.consume[0].handler(message);
+
+  assert.equal(amqp.calls.sendToQueue[0].queueName, "image.process.dlq");
+  assert.deepEqual(amqp.calls.ack, []);
+  assert.deepEqual(amqp.calls.nack, []);
+});
+
 test("worker bootstrap leaves the original job unacked when retry publish fails", async () => {
   const amqp = createFakeAmqp();
   amqp.channel.sendToQueue = (queueName, buffer, options, callback) => {

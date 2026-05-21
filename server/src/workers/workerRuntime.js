@@ -59,6 +59,26 @@ const buildRetryPayload = ({ job, attempts }) => ({
   attempts,
 });
 
+const parseJobMessage = (message) => {
+  const raw = message.content.toString("utf8");
+
+  try {
+    return {
+      job: JSON.parse(raw),
+      parseError: null,
+    };
+  } catch (error) {
+    return {
+      job: {
+        type: "poison",
+        raw,
+        parseFailed: true,
+      },
+      parseError: error,
+    };
+  }
+};
+
 const buildWorkerLogFields = ({
   queueName,
   job,
@@ -111,13 +131,20 @@ const startQueueWorker = async ({
     let job = null;
 
     try {
-      job = JSON.parse(message.content.toString("utf8"));
+      const parsedMessage = parseJobMessage(message);
+      job = parsedMessage.job;
+
+      if (parsedMessage.parseError) {
+        throw parsedMessage.parseError;
+      }
+
       await processJob(job, message);
       channel.ack(message);
     } catch (error) {
       try {
         const attempts = getAttempts(job, message);
         const correlationId = getCorrelationId(job, message);
+        const poisonMessage = job?.parseFailed === true;
         const failureFields = buildWorkerLogFields({
           queueName,
           job,
@@ -126,9 +153,9 @@ const startQueueWorker = async ({
           error,
         });
 
-        logger.error?.("worker_job_failed", failureFields);
+        logger.error?.(poisonMessage ? "worker_job_poison" : "worker_job_failed", failureFields);
 
-        if (attempts < maxAttempts) {
+        if (!poisonMessage && attempts < maxAttempts) {
           const nextAttempts = attempts + 1;
           logger.warn?.(
             "worker_job_retry",
@@ -249,6 +276,7 @@ module.exports = {
   buildWorkerLogFields,
   getAttempts,
   getMaxAttempts,
+  parseJobMessage,
   sleep,
   startQueueWorker,
 };

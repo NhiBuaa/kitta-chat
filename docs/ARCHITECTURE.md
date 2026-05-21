@@ -34,9 +34,13 @@ Redis failures should be logged/swallowed on coordination/cache paths where Mong
 
 RabbitMQ is used for background work only: image/file processing, notification/email jobs, and audit/statistics/background processing. It must not decide realtime call/chat lifecycle.
 
+See `docs/RABBITMQ_WORKER_FLOWS.md` for the current queue topology, producers, workers, retry queues, DLQs, correlation IDs, and poison-message handling.
+
 ## Socket.IO Realtime Flow
 
 Socket auth verifies JWT and joins the authenticated user room. Messages, typing, presence, friend updates, call signaling, media state, and call lifecycle notifications are delivered synchronously through Socket.IO.
+
+See `docs/SOCKET_IO_SCALING.md` for the current client connection flow, JWT socket authentication, user/group rooms, Redis adapter fan-out across backend replicas, reconnect behavior, heartbeat, and offline grace period.
 
 ## Call Lifecycle Hardening
 
