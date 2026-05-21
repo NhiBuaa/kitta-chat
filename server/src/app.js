@@ -14,11 +14,12 @@ const {
   buildReadinessPayload,
   createDefaultHealthChecks,
 } = require("./services/healthService");
+const { logger: defaultLogger } = require("./utils/logger");
 
 const createApp = ({
   rabbitConnectionManager = defaultRabbitConnectionManager,
   healthChecks = createDefaultHealthChecks({ rabbitConnectionManager }),
-  logger,
+  logger = defaultLogger,
 } = {}) => {
   const app = express();
 
@@ -69,7 +70,13 @@ const createApp = ({
   });
 
   app.use((err, req, res, next) => {
-    console.error(`[Error] ${req.method} ${req.originalUrl}:`, err.message);
+    logger.error("http_request_error", {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.originalUrl,
+      userId: req.user?.id || req.user?._id,
+      reason: err.message,
+    });
 
     if (err.type === "entity.parse.failed") {
       return res.status(400).json({

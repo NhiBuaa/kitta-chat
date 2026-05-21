@@ -1,3 +1,8 @@
+const {
+  getCorrelationId,
+  getJobType,
+} = require("../queues/correlation");
+
 const getMaxAttempts = () => Number(process.env.RABBITMQ_MAX_ATTEMPTS || 3);
 
 const publishConfirmed = (channel, queueName, payload, options = {}) =>
@@ -6,10 +11,13 @@ const publishConfirmed = (channel, queueName, payload, options = {}) =>
       queueName,
       Buffer.from(JSON.stringify(payload)),
       {
-        contentType: "application/json",
-        persistent: true,
-        ...options,
-      },
+          contentType: "application/json",
+          persistent: true,
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+          },
+        },
       (error) => {
         if (error) {
           reject(error);
@@ -21,12 +29,14 @@ const publishConfirmed = (channel, queueName, payload, options = {}) =>
     );
   });
 
-const buildDeadLetterPayload = ({ job, error, queueName }) => ({
+const buildDeadLetterPayload = ({ job, error, queueName, correlationId }) => ({
+  correlationId,
   job,
   error: {
     message: error.message,
     failedAt: new Date().toISOString(),
     originalQueue: queueName,
+    correlationId,
   },
 });
 
@@ -48,6 +58,32 @@ const buildRetryPayload = ({ job, attempts }) => ({
   ...job,
   attempts,
 });
+
+const buildWorkerLogFields = ({
+  queueName,
+  job,
+  attempts,
+  correlationId,
+  error,
+  maxAttempts,
+}) => {
+  const fields = {
+    queue: queueName,
+    jobType: getJobType(job),
+    attempt: attempts,
+    correlationId,
+  };
+
+  if (maxAttempts !== undefined) {
+    fields.maxAttempts = maxAttempts;
+  }
+
+  if (error?.message) {
+    fields.reason = error.message;
+  }
+
+  return fields;
+};
 
 const sleep = (delayMs) =>
   new Promise((resolve) => {
@@ -79,32 +115,63 @@ const startQueueWorker = async ({
       await processJob(job, message);
       channel.ack(message);
     } catch (error) {
-      logger.error?.(`[Worker] queue=${queueName} job failed:`, error);
-
       try {
         const attempts = getAttempts(job, message);
+        const correlationId = getCorrelationId(job, message);
+        const failureFields = buildWorkerLogFields({
+          queueName,
+          job,
+          attempts,
+          correlationId,
+          error,
+        });
+
+        logger.error?.("worker_job_failed", failureFields);
 
         if (attempts < maxAttempts) {
           const nextAttempts = attempts + 1;
           logger.warn?.(
-            `[Worker] queue=${queueName} retry attempt=${nextAttempts}/${maxAttempts}`,
+            "worker_job_retry",
+            buildWorkerLogFields({
+              queueName,
+              job,
+              attempts: nextAttempts,
+              correlationId,
+              error,
+              maxAttempts,
+            }),
           );
 
           await publishConfirmed(
             channel,
             `${queueName}.retry`,
             buildRetryPayload({ job, attempts: nextAttempts }),
-            { headers: { attempts: nextAttempts } },
+            {
+              correlationId,
+              headers: { attempts: nextAttempts, correlationId },
+            },
           );
         } else {
           logger.error?.(
-            `[Worker] queue=${queueName} routing to DLQ attempts=${attempts}/${maxAttempts}`,
+            "worker_job_dlq",
+            buildWorkerLogFields({
+              queueName,
+              job,
+              attempts,
+              correlationId,
+              error,
+              maxAttempts,
+            }),
           );
 
           await publishConfirmed(
             channel,
             `${queueName}.dlq`,
-            buildDeadLetterPayload({ job, error, queueName }),
+            buildDeadLetterPayload({ job, error, queueName, correlationId }),
+            {
+              correlationId,
+              headers: { correlationId },
+            },
           );
         }
 
@@ -179,6 +246,7 @@ const startQueueWorker = async ({
 module.exports = {
   buildDeadLetterPayload,
   buildRetryPayload,
+  buildWorkerLogFields,
   getAttempts,
   getMaxAttempts,
   sleep,

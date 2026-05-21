@@ -31,9 +31,11 @@ const buildChatImageJob = ({
   file,
   userId,
   requestId = crypto.randomUUID(),
+  correlationId,
 }) => ({
   type: "chat-image",
   requestId,
+  correlationId,
   userId,
   source: buildSourcePayload(source),
   file: buildFilePayload(file),
@@ -46,9 +48,11 @@ const buildAvatarImageJob = ({
   userId,
   profileUpdates = {},
   requestId = crypto.randomUUID(),
+  correlationId,
 }) => ({
   type: "avatar-image",
   requestId,
+  correlationId,
   userId,
   profileUpdates,
   source: buildSourcePayload(source),
@@ -62,6 +66,7 @@ const buildRemoteAvatarImageJob = ({
   displayName = "google-avatar",
   profileUpdates = {},
   requestId = crypto.randomUUID(),
+  correlationId,
 }) => {
   if (!avatarUrl) {
     throw new Error("Remote avatar URL is required");
@@ -77,6 +82,7 @@ const buildRemoteAvatarImageJob = ({
     userId,
     profileUpdates,
     requestId,
+    correlationId,
   });
 };
 

@@ -204,6 +204,7 @@ exports.googleLogin = async (req, res) => {
           avatarUrl: avatar,
           userId: user._id,
           displayName,
+          correlationId: req.requestId,
         });
 
         if (!avatarQueueResult.queued) {
@@ -221,6 +222,7 @@ exports.googleLogin = async (req, res) => {
             avatarUrl: avatar,
             userId: user._id,
             displayName,
+            correlationId: req.requestId,
           });
 
           if (!avatarQueueResult.queued) {
@@ -303,6 +305,7 @@ exports.forgotPassword = async (req, res) => {
     const emailQueueResult = await queuePasswordResetEmail({
       user,
       resetUrl,
+      correlationId: req.requestId,
     });
 
     if (!emailQueueResult.queued) {
