@@ -5,9 +5,21 @@ const buildConversationId = require("../../../../utils/buildConversationId");
 const { activeTimeouts, tempIdToDbId, bindSocketToCall } = require("../state");
 const { CALL_TIMEOUT_MS } = require("../constants");
 const { checkRateLimit } = require("../rateLimit");
-const { createCallLogMessage } = require("../callLog");
 const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync } = require("../emitters");
+const {
+    resolveCallHistoryId,
+    storeTempCallMapping,
+} = require("../services/callSessionResolver");
+const {
+    storeCallTimeoutDue,
+    removeCallTimeoutDue,
+} = require("../services/callTimeoutDueStore");
+const { finalizeCallOnce } = require("../services/callFinalizer");
+const {
+    storeSocketCallBinding,
+    storeUserActiveCall,
+} = require("../services/callSocketBindingStore");
 
 /**
  * "callUser" — sends the WebRTC offer to the callee.
@@ -45,7 +57,13 @@ const registerCallUser = (socket, io) => {
             let callRecordId = null;
 
             if (callId?.startsWith("temp_")) {
-                callRecordId = tempIdToDbId.get(callId) ?? null;
+                callRecordId = await resolveCallHistoryId({
+                    callId,
+                    userId,
+                    userToCall,
+                    redisClient: io.redisClient,
+                    localTempIdToDbId: tempIdToDbId,
+                });
                 if (callRecordId) {
                     console.log(`[callUser] Reusing existing record ${callRecordId} from initCall`);
                 }
@@ -65,11 +83,18 @@ const registerCallUser = (socket, io) => {
 
                 if (callId?.startsWith("temp_") && !tempIdToDbId.has(callId)) {
                     tempIdToDbId.set(callId, callRecordId);
+                    await storeTempCallMapping({
+                        redisClient: io.redisClient,
+                        tempCallId: callId,
+                        callHistoryId: callRecordId,
+                    });
                     console.log(`[callUser] NEW mapping temp ${callId} -> ${callRecordId}`);
                 }
             }
 
             bindSocketToCall(socket.id, callRecordId);
+            await storeSocketCallBinding(socket.id, callRecordId, io.redisClient);
+            await storeUserActiveCall(userId, callRecordId, io.redisClient);
 
             io.to(userId).emit("outgoingCallCreated", {
                 callId: callRecordId,
@@ -77,14 +102,6 @@ const registerCallUser = (socket, io) => {
                 conversationId,
                 type: typeCall,
             });
-
-            // ── Only proceed with signal if receiver is online ───────────────────
-            const receiverRoom = io.sockets.adapter.rooms.get(userToCall);
-            if (!receiverRoom || receiverRoom.size === 0) {
-                console.log(`[callUser] Receiver ${userToCall} offline — waiting 45 s`);
-                _startTimeout({ io, callRecordId, userId, userToCall });
-                return;
-            }
 
             const callerInfo = await User.findById(userId)
                 .select("_id displayName avatar username")
@@ -109,7 +126,29 @@ const registerCallUser = (socket, io) => {
             }
 
             // ── Normal call ───────────────────────────────────────────────────────
-            io.to(userToCall).emit("callUser", {
+            const targetRoom = String(userToCall);
+            let targetSockets = [];
+            try {
+                targetSockets = Array.from(await io.in(targetRoom).allSockets());
+            } catch (err) {
+                console.warn("[CALL_DIAG][server:callUser:allSockets:error]", {
+                    callerUserId: userId,
+                    userToCall: targetRoom,
+                    callId: callRecordId,
+                    error: err.message,
+                });
+            }
+
+            console.log("[CALL_DIAG][server:callUser:beforeEmit]", {
+                callerUserId: userId,
+                callerSocketId: socket.id,
+                userToCall: targetRoom,
+                callId: callRecordId,
+                targetSocketCount: targetSockets.length,
+                targetSockets,
+            });
+
+            io.to(targetRoom).emit("callUser", {
                 signal: signalData,
                 from,
                 callerDbId: userId,
@@ -119,8 +158,15 @@ const registerCallUser = (socket, io) => {
                 typeCall,
                 callId: callRecordId,
             });
+            await storeUserActiveCall(userToCall, callRecordId, io.redisClient);
+            console.log("[CALL_DIAG][server:callUser:afterEmit]", {
+                callerUserId: userId,
+                userToCall: targetRoom,
+                callId: callRecordId,
+                targetSocketCount: targetSockets.length,
+            });
 
-            _startTimeout({ io, callRecordId, userId, userToCall });
+            await _startTimeout({ io, callRecordId, userId, userToCall });
         } catch (err) {
             console.error("[callUser] error:", err);
             socket.emit("callRejected", { reason: "Server error" });
@@ -131,28 +177,37 @@ const registerCallUser = (socket, io) => {
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
 /** Start the 45-second "missed" timeout for an unanswered call. */
-const _startTimeout = ({ io, callRecordId, userId, userToCall }) => {
+const _startTimeout = async ({ io, callRecordId, userId, userToCall }) => {
+    const timeoutAt = Date.now() + CALL_TIMEOUT_MS;
+    await storeCallTimeoutDue({
+        redisClient: io.redisClient,
+        callId: callRecordId,
+        timeoutAt,
+    });
+
     const timeoutId = setTimeout(async () => {
         try {
-            const updated = await CallHistory.findOneAndUpdate(
-                { _id: callRecordId, status: "pending" },
-                { status: "missed", endedAt: new Date() },
-                { returnDocument: "after" },
-            ).populate([
-                { path: "callerId", select: "_id displayName avatar username" },
-                { path: "receiverId", select: "_id displayName avatar username" },
-            ]);
+            const finalizeResult = await finalizeCallOnce({
+                callId: callRecordId,
+                status: "missed",
+                endedAt: new Date(),
+                requireUnanswered: true,
+                activeStatuses: ["pending"],
+            });
+            const updated = finalizeResult.call;
 
-            if (updated) {
-                const msg = await createCallLogMessage(updated);
+            if (finalizeResult.finalized && updated) {
                 emitCallHistorySync(io, updated, userId);
-                emitCallLogMessage(io, msg);
+                emitCallLogMessage(io, finalizeResult.callLogMessage);
                 io.to(userId).emit("callTimeout", { callId: callRecordId });
                 io.to(userToCall).emit("callTimeout", { callId: callRecordId });
+            } else {
+                console.log(`[callUser] Timeout no-op for ${callRecordId}; already answered or finalized`);
             }
         } catch (err) {
             console.error("[callUser] timeout error:", err);
         } finally {
+            await removeCallTimeoutDue({ redisClient: io.redisClient, callId: callRecordId });
             activeTimeouts.delete(callRecordId);
         }
     }, CALL_TIMEOUT_MS);
@@ -188,6 +243,7 @@ const _resolveGlare = async ({
             clearTimeout(reverseTimeout);
             activeTimeouts.delete(reverseCall._id.toString());
         }
+        await removeCallTimeoutDue({ redisClient: io.redisClient, callId: reverseCall._id.toString() });
 
         await CallHistory.findByIdAndUpdate(reverseCall._id, {
             status: "missed",
@@ -221,6 +277,7 @@ const _resolveGlare = async ({
             clearTimeout(myTimeout);
             activeTimeouts.delete(callRecordId);
         }
+        await removeCallTimeoutDue({ redisClient: io.redisClient, callId: callRecordId });
 
         await CallHistory.findByIdAndUpdate(callRecordId, {
             status: "missed",

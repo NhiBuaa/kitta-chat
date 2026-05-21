@@ -5,7 +5,7 @@ const getSafeUserName = require("../utils/getSafeUserName");
 const { queueProfileAvatarProcessing } = require("../services/profileAvatarQueueService");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
-const { getMultiPresence, setPresenceWriteThrough } = require("../services/presenceService");
+const { getMultiPresence, getUserPresence, setPresenceWriteThrough } = require("../services/presenceService");
 const { getRecentConversations } = require("../services/conversationCacheService");
 const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
 
@@ -19,6 +19,9 @@ const emitToUserRoom = (io, userId, eventName, payload) => {
   io.to(toComparableId(userId)).emit(eventName, payload);
 };
 
+const isRealtimeOnline = (presence) =>
+  presence?.status === "online" || presence?.status === "active";
+
 const buildRelationshipFlags = (targetUser, currentUser) => {
   const currentUserId = toComparableId(currentUser?._id || currentUser?.id);
 
@@ -26,6 +29,35 @@ const buildRelationshipFlags = (targetUser, currentUser) => {
     isFriend: includesId(targetUser?.friends, currentUserId),
     isSent: includesId(targetUser?.friendRequests, currentUserId),
     isReceived: includesId(currentUser?.friendRequests, targetUser?._id),
+  };
+};
+
+const buildSidebarLastMessage = (lastMsg) => {
+  if (!lastMsg) return null;
+
+  let previewContent = lastMsg.text || "";
+  if (lastMsg.type === "call_log" && lastMsg.callData?.type) {
+    previewContent = lastMsg.callData.type === "video"
+      ? "[Cuộc gọi video]"
+      : "[Cuộc gọi thoại]";
+  } else if (!previewContent && lastMsg.attachments?.length > 0) {
+    const file = lastMsg.attachments[0];
+    const isImage =
+      file?.type?.startsWith("image/") ||
+      file?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+    previewContent = isImage ? "[Hình ảnh]" : (file?.name || "[Tệp đính kèm]");
+  }
+  if (!previewContent) previewContent = "Tin nhắn";
+
+  return {
+    content: previewContent,
+    senderId: lastMsg.sender,
+    createdAt: lastMsg.createdAt,
+    isRead: lastMsg.isRead,
+    messageId: lastMsg._id ? toComparableId(lastMsg._id) : null,
+    callHistoryId: lastMsg.callData?.callHistoryId
+      ? toComparableId(lastMsg.callData.callHistoryId)
+      : null,
   };
 };
 
@@ -339,6 +371,10 @@ const accceptFriendRequest = async (req, res) => {
 
     // Lấy lại sender sau khi update để emit thông tin
     const sender = await User.findById(senderId);
+    const [senderPresence, receiverPresence] = await Promise.all([
+      getUserPresence(senderId),
+      getUserPresence(receiverId),
+    ]);
 
     // Emit event cho người gửi (sender) để cập nhật sidebar
     emitToUserRoom(io, senderId, "friendRequestAccepted", {
@@ -346,6 +382,14 @@ const accceptFriendRequest = async (req, res) => {
       newFriendName: getSafeUserName(receiver),
       newFriendAvatar: receiver.avatar,
     });
+
+    if (isRealtimeOnline(receiverPresence)) {
+      emitToUserRoom(io, senderId, "userStatusChanged", {
+        userId: toComparableId(receiverId),
+        status: "online",
+        lastSeen: receiverPresence.lastSeen,
+      });
+    }
 
     emitToUserRoom(io, receiverId, "friendRequestHandled", {
       action: "accepted",
@@ -356,6 +400,14 @@ const accceptFriendRequest = async (req, res) => {
         avatar: sender?.avatar,
       },
     });
+
+    if (isRealtimeOnline(senderPresence)) {
+      emitToUserRoom(io, receiverId, "userStatusChanged", {
+        userId: toComparableId(senderId),
+        status: "online",
+        lastSeen: senderPresence.lastSeen,
+      });
+    }
 
     res.json({ success: true, message: "Đã chấp nhận lời mời kết bạn." });
   } catch (error) {
@@ -477,29 +529,11 @@ const getSidebarUsers = async (req, res) => {
       const unreadCount = convId ? (unreadMap.get(convId) || 0) : 0;
 
       if (lastMsg) {
-        let previewContent = lastMsg.text || "";
-        if (lastMsg.type === "call_log" && lastMsg.callData?.type) {
-          previewContent = lastMsg.callData.type === "video"
-            ? "[Cuộc gọi video]"
-            : "[Cuộc gọi thoại]";
-        } else if (!previewContent && lastMsg.attachments?.length > 0) {
-          const file = lastMsg.attachments[0];
-          const isImage =
-            file?.type?.startsWith("image/") ||
-            file?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-          previewContent = isImage ? "[Hình ảnh]" : (file?.name || "[Tệp đính kèm]");
-        }
-        if (!previewContent) previewContent = "Tin nhắn";
 
         return {
           ...userObj,
           ...getRelationshipFlags(targetId, userObj),
-          lastMessage: {
-            content: previewContent,
-            senderId: lastMsg.sender,
-            createdAt: lastMsg.createdAt,
-            isRead: lastMsg.isRead,
-          },
+          lastMessage: buildSidebarLastMessage(lastMsg),
           hasUnread: unreadCount > 0,
           unreadCount,
         };
@@ -601,6 +635,64 @@ const rejectFriendRequest = async (req, res) => {
   }
 };
 
+const removeFriend = async (req, res) => {
+  try {
+    const { friendId } = req.body;
+    const currentUserId = req.user.id;
+    const io = req.app.get("socketio");
+
+    if (!friendId) {
+      return res.status(400).json({ success: false, message: "Thiếu friendId" });
+    }
+
+    if (toComparableId(friendId) === toComparableId(currentUserId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể hủy kết bạn với chính mình",
+      });
+    }
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId),
+      User.findById(friendId),
+    ]);
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: "Người dùng không tồn tại" });
+    }
+
+    if (!currentUser || !includesId(currentUser.friends, friendId)) {
+      return res.json({ success: true, alreadyRemoved: true });
+    }
+
+    const { conversationId, hadMessages } = await removeFriendWriteThrough(currentUserId, friendId);
+
+    emitToUserRoom(io, currentUserId, "friendRemoved", {
+      removedUserId: toComparableId(friendId),
+      byUserId: toComparableId(currentUserId),
+      conversationId,
+      hadMessages,
+    });
+
+    emitToUserRoom(io, friendId, "friendRemoved", {
+      removedUserId: toComparableId(currentUserId),
+      byUserId: toComparableId(currentUserId),
+      conversationId,
+      hadMessages,
+    });
+
+    return res.json({
+      success: true,
+      removedUserId: toComparableId(friendId),
+      conversationId,
+      hadMessages,
+    });
+  } catch (error) {
+    console.error("Lỗi hủy kết bạn:", error);
+    return res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+};
+
 module.exports = {
   getUserProfile,
   getUserById,
@@ -613,5 +705,7 @@ module.exports = {
   getSidebarUsers,
   sendFriendRequest,
   rejectFriendRequest,
+  removeFriend,
   getOnlineFriends,
+  _buildSidebarLastMessage: buildSidebarLastMessage,
 };

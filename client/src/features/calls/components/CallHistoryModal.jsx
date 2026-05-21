@@ -3,6 +3,7 @@ import { FaPhone, FaVideo, FaArrowLeft, FaPhoneVolume, FaSearch } from "react-ic
 import { getCallHistory, markAllCallsRead } from "@/services/webrtc/callService.js";
 import { formatDuration, formatCallTime } from "@/utils/formatTime.js";
 import { useCallHistory } from "@/features/calls/context/CallHistoryContext.js";
+import { mergeCallHistoryPage } from "@/features/calls/components/callHistoryState.js";
 
 const TABS = [
   { key: "all", label: "Tất cả" },
@@ -127,19 +128,40 @@ const CallHistoryModal = ({ isOpen, onClose, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const cursorRef = useRef(null);
   const sentinelRef = useRef(null);
+  const isFetchingRef = useRef(false);
+  const resetInFlightRef = useRef(false);
+  const requestIdRef = useRef(0);
+  const callsLengthRef = useRef(0);
+
+  useEffect(() => {
+    callsLengthRef.current = calls.length;
+  }, [calls.length]);
 
   const currentUserId = currentUser?._id || currentUser?.id;
 
   const fetchCalls = useCallback(
     async (reset = false) => {
-      if (isLoading || (!reset && !hasMore)) return;
+      if (isFetchingRef.current || (!reset && !hasMore)) return;
+      if (!reset && (resetInFlightRef.current || (!cursorRef.current && callsLengthRef.current === 0))) return;
+
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
+      isFetchingRef.current = true;
+      resetInFlightRef.current = reset;
       setIsLoading(true);
       try {
         const cursor = reset ? undefined : cursorRef.current;
         const response = await getCallHistory(cursor);
+        if (requestId !== requestIdRef.current) return;
+
         if (response.data.success) {
           const newCalls = response.data.data.calls || [];
-          setCalls((prev) => (reset ? newCalls : [...prev, ...newCalls]));
+          if (reset) cursorRef.current = null;
+          setCalls((prev) => mergeCallHistoryPage({
+            previousCalls: prev,
+            incomingCalls: newCalls,
+            reset,
+          }));
           const lastCall = newCalls[newCalls.length - 1];
           if (lastCall) cursorRef.current = lastCall._id;
           setHasMore(response.data.data.pagination?.hasMore ?? false);
@@ -147,10 +169,14 @@ const CallHistoryModal = ({ isOpen, onClose, currentUser }) => {
       } catch (error) {
         console.error("Failed to fetch call history:", error);
       } finally {
-        setIsLoading(false);
+        if (requestId === requestIdRef.current) {
+          isFetchingRef.current = false;
+          resetInFlightRef.current = false;
+          setIsLoading(false);
+        }
       }
     },
-    [isLoading, hasMore]
+    [hasMore]
   );
 
   // Initial load — fetch + clear badge

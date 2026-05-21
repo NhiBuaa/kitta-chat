@@ -3,9 +3,18 @@ const CallHistory = require("../../../../models/CallHistory");
 const buildConversationId = require("../../../../utils/buildConversationId");
 const { activeTimeouts, tempIdToDbId, bindSocketToCall } = require("../state");
 const { CALL_TIMEOUT_MS } = require("../constants");
-const { createCallLogMessage } = require("../callLog");
 const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync } = require("../emitters");
+const { storeTempCallMapping } = require("../services/callSessionResolver");
+const {
+    storeCallTimeoutDue,
+    removeCallTimeoutDue,
+} = require("../services/callTimeoutDueStore");
+const { finalizeCallOnce } = require("../services/callFinalizer");
+const {
+    storeSocketCallBinding,
+    storeUserActiveCall,
+} = require("../services/callSocketBindingStore");
 
 /**
  * "initCall" — client fires this immediately before sending the WebRTC offer
@@ -39,32 +48,48 @@ const registerInitCall = (socket, io) => {
 
             const callRecordId = callRecord._id.toString();
             tempIdToDbId.set(callId, callRecordId);
+            await storeTempCallMapping({
+                redisClient: io.redisClient,
+                tempCallId: callId,
+                callHistoryId: callRecordId,
+            });
             console.log(`[initCall] MAPPED temp ${callId} -> ${callRecordId}`);
 
             bindSocketToCall(socket.id, callRecordId);
+            await storeSocketCallBinding(socket.id, callRecordId, io.redisClient);
+            await storeUserActiveCall(userId, callRecordId, io.redisClient);
+
+            const timeoutAt = Date.now() + CALL_TIMEOUT_MS;
+            await storeCallTimeoutDue({
+                redisClient: io.redisClient,
+                callId: callRecordId,
+                timeoutAt,
+            });
 
             // Auto-miss after timeout
             const timeoutId = setTimeout(async () => {
                 try {
-                    const updated = await CallHistory.findOneAndUpdate(
-                        { _id: callRecordId, status: "pending" },
-                        { status: "missed", endedAt: new Date() },
-                        { returnDocument: "after" },
-                    ).populate([
-                        { path: "callerId", select: "_id displayName avatar username" },
-                        { path: "receiverId", select: "_id displayName avatar username" },
-                    ]);
+                    const finalizeResult = await finalizeCallOnce({
+                        callId: callRecordId,
+                        status: "missed",
+                        endedAt: new Date(),
+                        requireUnanswered: true,
+                        activeStatuses: ["pending"],
+                    });
+                    const updated = finalizeResult.call;
 
-                    if (updated) {
-                        const msg = await createCallLogMessage(updated);
+                    if (finalizeResult.finalized && updated) {
                         emitCallHistorySync(io, updated, userId);
-                        emitCallLogMessage(io, msg);
+                        emitCallLogMessage(io, finalizeResult.callLogMessage);
                         io.to(userId).emit("callTimeout", { callId: callRecordId });
                         io.to(userToCall).emit("callTimeout", { callId: callRecordId });
+                    } else {
+                        console.log(`[initCall] Timeout no-op for ${callRecordId}; already answered or finalized`);
                     }
                 } catch (err) {
                     console.error("[initCall] timeout error:", err);
                 } finally {
+                    await removeCallTimeoutDue({ redisClient: io.redisClient, callId: callRecordId });
                     activeTimeouts.delete(callRecordId);
                 }
             }, CALL_TIMEOUT_MS);

@@ -1,8 +1,10 @@
 const mongoose = require("mongoose");
 const CallHistory = require("../../../../models/CallHistory");
 const { activeTimeouts, tempIdToDbId, unbindSocketFromCall } = require("../state");
-const { createCallLogMessage, emitCallLogMessage } = require("../callLog");
+const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync, emitCallEndedToParticipants } = require("../emitters");
+const { finalizeCallOnce } = require("../services/callFinalizer");
+const { removeCallTimeoutDue } = require("../services/callTimeoutDueStore");
 
 const POPULATE = [
     { path: "callerId", select: "_id displayName avatar username" },
@@ -32,7 +34,7 @@ const registerRejectCall = (socket, io) => {
         const actualCallId = await _resolveCallId({ callId, userId, to, label: "rejectCall" });
         if (!actualCallId) return;
 
-        _cancelTimeout(actualCallId);
+        const timeoutCancelled = await _cancelTimeout({ redisClient: io.redisClient, callId: actualCallId });
 
         try {
             const call = await CallHistory.findById(actualCallId);
@@ -42,20 +44,34 @@ const registerRejectCall = (socket, io) => {
             }
 
             const status = deriveStatus(reason, call.answeredAt);
-            const updated = await CallHistory.findByIdAndUpdate(
+            console.log("[CALL_DIAG][server:rejectCall]", {
+                socketUserId: userId,
+                socketId: socket.id,
+                to,
+                callId,
                 actualCallId,
-                { status, endedAt: new Date(), endedBy: new mongoose.Types.ObjectId(userId) },
-                { returnDocument: "after" },
-            ).populate(POPULATE);
+                reason,
+                status,
+                timeoutCancelled,
+                answeredAt: call.answeredAt,
+            });
+            const finalizeResult = await finalizeCallOnce({
+                callId: actualCallId,
+                status,
+                endedAt: new Date(),
+                endedBy: new mongoose.Types.ObjectId(userId),
+            });
+            const updated = finalizeResult.call;
 
-            if (updated) {
+            if (finalizeResult.finalized && updated) {
                 console.log(`[rejectCall] ${actualCallId} -> "${status}"`);
                 console.log(`[rejectCall] Will emit callHistorySync to caller=${userId} receiver=${to}`);
-                const msg = await createCallLogMessage(updated);
                 emitCallHistorySync(io, updated, userId);
-                emitCallLogMessage(io, msg);
+                emitCallLogMessage(io, finalizeResult.callLogMessage);
                 _broadcastEnd({ io, updated, actualCallId, to, reason, userId });
                 console.log(`[rejectCall] Finished emitting all events`);
+            } else if (finalizeResult.alreadyFinalized && updated) {
+                console.log(`[rejectCall] Idempotent: ${actualCallId} already finalized`);
             }
         } catch (err) {
             console.error("[rejectCall] error:", err);
@@ -68,9 +84,16 @@ const registerRejectCall = (socket, io) => {
 };
 
 // Private helpers
-const _cancelTimeout = (callId) => {
+const _cancelTimeout = async ({ redisClient, callId }) => {
     const t = activeTimeouts.get(callId);
-    if (t) { clearTimeout(t); activeTimeouts.delete(callId); }
+    if (t) {
+        clearTimeout(t);
+        activeTimeouts.delete(callId);
+        await removeCallTimeoutDue({ redisClient, callId });
+        return true;
+    }
+    await removeCallTimeoutDue({ redisClient, callId });
+    return false;
 };
 
 const _resolveCallId = async ({ callId, userId, to, label }) => {

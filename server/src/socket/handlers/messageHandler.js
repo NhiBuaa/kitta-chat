@@ -14,7 +14,7 @@ const {
   emitToUser,
 } = require("../realtimePublisher");
 
-const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
+const NODE_NAME = process.env.NODE_NAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
 
 const createRegisterMessageHandlers = ({

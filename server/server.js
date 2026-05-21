@@ -217,7 +217,7 @@ mongoose
     await connectCacheRedis();
 
     // Init Socket.IO sau khi DB + Cache ready
-    const io = initSocket(server, app);
+    const io = await initSocket(server, app);
     global.io = io;
 
     const PORT = process.env.PORT || 3000;
@@ -234,7 +234,7 @@ mongoose
     });
   })
   .catch((err) => {
-    console.error("❌ MongoDB Connection Error:", err);
+    console.error("[Server] Startup Error:", err);
     process.exit(1);
   });
 

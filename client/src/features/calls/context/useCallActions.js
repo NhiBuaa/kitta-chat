@@ -4,6 +4,7 @@ import { SOCKET_EVENTS } from '@/constants/socketEvents.js';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { clearCallStorage } from '@/features/calls/context/callStorage.js';
+import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
 
 /**
  * Các action thực hiện cuộc gọi: callUser, answerCall, rejectCall, leaveCall.
@@ -28,9 +29,9 @@ export const useCallActions = ({ socket, bag }) => {
         const peer = new Peer({ initiator, trickle: false, stream, config: ICE_SERVERS });
         peer.on('signal', onSignal);
         peer.on('stream', onStream);
-        peer.on('error', onError ?? (() => leaveCall()));
+        peer.on('error', onError ?? (() => leaveCall('peer:error')));
         peer.on('close', () => {
-            if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall();
+            if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall('peer:close-connected');
         });
         return peer;
     };
@@ -94,6 +95,12 @@ export const useCallActions = ({ socket, bag }) => {
             setCallState(CALL_STATES.CONNECTED);
             callStateRef.current = CALL_STATES.CONNECTED;
             if (payload?.mediaStatus) setPartnerMediaStatus(payload.mediaStatus);
+            sendLocalMediaStatusSnapshot({
+                socket,
+                to: receiverUserId,
+                stream: localStreamRef.current,
+                fallback: { cam: isCamOn, mic: isMicOn },
+            });
             peer.signal(signal);
         });
 
@@ -159,11 +166,22 @@ export const useCallActions = ({ socket, bag }) => {
         cleanupConnection();
     };
 
-    const leaveCall = () => {
+    const leaveCall = (source = 'unspecified') => {
         if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
         const partnerUserId =
             localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
         const callId = localStorage.getItem('tempCallId') || null;
+        const willEmitCancelled = Boolean(socket && partnerUserId && callId && !callAcceptedRef.current);
+
+        console.log('[CALL_DIAG][client:leaveCall]', {
+            source,
+            socketId: socket?.id,
+            partnerUserId,
+            callId,
+            callAccepted: callAcceptedRef.current,
+            callState: callStateRef.current,
+            willEmitRejectCancelled: willEmitCancelled,
+        });
 
         if (socket && partnerUserId) {
             // Dùng ref để tránh stale closure

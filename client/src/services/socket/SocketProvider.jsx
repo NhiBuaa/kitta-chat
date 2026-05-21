@@ -4,6 +4,7 @@ import { SOCKET_EVENTS } from "@/constants/socketEvents.js";
 import { syncMessages } from "@/services/api/messageApi.js";
 import { getOnlineFriends } from "@/services/api/userApi.js";
 import { SocketContext } from "@/services/socket/SocketContext.js";
+import { dispatchCallHistoryRefresh } from "@/features/calls/context/callHistoryBadgeState.js";
 
 const AUTH_CHANGED_EVENT = "auth-changed";
 // Event để sync tin nhắn bị miss giữa các React component
@@ -137,6 +138,7 @@ export const SocketProvider = ({ children }) => {
         newSocket.on("connect", () => {
             console.log("[Socket] Connected:", newSocket.id);
             newSocket.emit(SOCKET_EVENTS.USER_CONNECTED, userId);
+            dispatchCallHistoryRefresh();
 
             // Sync tin nhắn bị miss khi reconnect
             const lastId = lastMessageIdRef.current;

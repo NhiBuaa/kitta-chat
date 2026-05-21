@@ -23,6 +23,10 @@ import { useUploader } from "@/hooks/useUploader.js";
 
 // Custom Hooks
 import { useFriendActions } from "@/features/friends/hooks/useFriendActions.js";
+import {
+  applyFriendRemovedToActiveChat,
+  applyFriendRemovedToList,
+} from "@/features/friends/socket/friendshipState.js";
 import { useSearch } from "@/hooks/useSearch.js";
 import { useScrollBehavior } from "@/features/chat/hooks/useScrollBehavior.js";
 import { useChatMessages } from "@/features/chat/hooks/useChatMessages.js";
@@ -164,6 +168,18 @@ const Home = () => {
     [patchUsers],
   );
 
+  const markFriendshipRemoved = useCallback((payload) => {
+    const removedUserId = payload?.removedUserId;
+    if (!removedUserId) return;
+
+    setUsers((prev) => applyFriendRemovedToList(prev, payload));
+    setSearchResult((prev) => applyFriendRemovedToList(prev, {
+      ...payload,
+      removeWhenNoMessages: false,
+    }));
+    setActiveChat((prev) => applyFriendRemovedToActiveChat(prev, payload));
+  }, [setUsers, setSearchResult, setActiveChat]);
+
   useEffect(() => {
     const handleAvatarUpdated = (event) => {
       const updatedUser = event.detail?.user;
@@ -241,6 +257,7 @@ const Home = () => {
     markFriendRequestSent,
     markFriendshipActive,
     clearSentFriendRequest,
+    markFriendshipRemoved,
   });
 
   useGroupSocket({

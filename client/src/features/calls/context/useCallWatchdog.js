@@ -12,13 +12,13 @@ export const useCallWatchdog = ({ callAccepted, callEnded, connectionRef, remote
 
         const id = setInterval(() => {
             if (!connectionRef.current) {
-                leaveCall();
+                leaveCall('watchdog:no-connection');
                 return;
             }
             if (!remoteStream || remoteStream.getTracks().length === 0) {
                 const callStartTime = parseInt(localStorage.getItem('callStartTime') || '0', 10);
                 if (Date.now() - callStartTime > MIN_CALL_DURATION_MS) {
-                    leaveCall();
+                    leaveCall('watchdog:no-remote-stream');
                 }
             }
         }, WATCHDOG_INTERVAL_MS);

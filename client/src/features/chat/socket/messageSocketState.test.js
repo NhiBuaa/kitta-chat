@@ -279,3 +279,73 @@ test("duplicate recovered group message does not increment unread twice", () => 
     assert.equal(twice[0].lastMessage.messageId, "recovered-group-2");
     assert.equal(twice[0].unreadCount, 1);
 });
+
+test("sidebar item hydrated with messageId does not increment for same recovered message", () => {
+    const hydrated = [
+        {
+            ...baseFriendList()[0],
+            unreadCount: 1,
+            hasUnread: true,
+            lastMessage: {
+                content: "Recovered text",
+                senderId: "friend-1",
+                createdAt: "2026-05-18T11:00:00.000Z",
+                isRead: false,
+                messageId: "message-1",
+                callHistoryId: null,
+            },
+        },
+    ];
+
+    const updated = updateListWithMessagePreview(hydrated, {
+        data: {
+            _id: "message-1",
+            createdAt: "2026-05-18T11:00:00.000Z",
+        },
+        targetId: "friend-1",
+        senderId: "friend-1",
+        isUnread: true,
+        isCallLog: false,
+        previewContent: "Recovered text",
+    });
+
+    assert.equal(updated[0].unreadCount, 1);
+});
+
+test("sidebar item hydrated with callHistoryId does not increment for same recovered call_log", () => {
+    const hydrated = [
+        {
+            ...baseFriendList()[0],
+            unreadCount: 1,
+            hasUnread: true,
+            lastMessage: {
+                content: "[Cuộc gọi video]",
+                senderId: "friend-1",
+                createdAt: "2026-05-18T11:05:00.000Z",
+                isRead: false,
+                messageId: "call-message-1",
+                callHistoryId: "call-history-1",
+            },
+        },
+    ];
+
+    const updated = updateListWithMessagePreview(hydrated, {
+        data: {
+            _id: "call-message-1",
+            type: "call_log",
+            callData: {
+                callHistoryId: "call-history-1",
+                status: "missed",
+                type: "video",
+            },
+            createdAt: "2026-05-18T11:05:00.000Z",
+        },
+        targetId: "friend-1",
+        senderId: "friend-1",
+        isUnread: true,
+        isCallLog: true,
+        previewContent: "[Cuộc gọi video]",
+    });
+
+    assert.equal(updated[0].unreadCount, 1);
+});
