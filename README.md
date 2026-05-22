@@ -204,6 +204,7 @@ Before freezing/releasing:
 - Offline missed call creates one `CallHistory` and one `call_log`.
 - Answered call does not become missed after stale local timeout.
 - Docker/nginx with 3 backend replicas keeps Socket.IO, call signaling, and badges correct.
+- Backend operational checks through nginx: `curl.exe -i http://localhost/backend-healthz`, `curl.exe -i http://localhost/readyz`, and `curl.exe -i http://localhost/ops`.
 - Optional: set `CALL_DISTRIBUTED_TIMEOUT_ENABLED=true` and confirm all backend replicas start the poller without duplicate `call_log` records.
 
 ## Known Constraints
