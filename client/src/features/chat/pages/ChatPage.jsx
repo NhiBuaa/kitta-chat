@@ -5,6 +5,7 @@ import { getGroups } from "@/services/api/groupApi.js";
 import { getFriendRequests } from "@/services/api/friendApi.js";
 import { getSidebarUsers, getUserProfile } from "@/services/api/userApi.js";
 import { clearAuthSession, getAccessToken } from "@/services/auth/authSession.js";
+import { useAuth } from "@/services/auth/AuthProvider.jsx";
 
 // Components
 import Sidebar from "@/components/layout/Sidebar.jsx";
@@ -73,6 +74,7 @@ const Home = () => {
 
   // Context / global hooks
   const { onlineUsers, socket } = useSocket();
+  const { logout } = useAuth();
   const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
 
   const API_URL_USERS = import.meta.env.VITE_API_URL_USERS || '/api/users';
@@ -437,10 +439,9 @@ const Home = () => {
     [upsertGroup],
   );
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (socket) socket.disconnect();
-    clearAuthSession();
-    window.dispatchEvent(new Event("auth-changed"));
+    await logout();
     // setCurrentUser(null);   xóa di để ko bị reset avt khi bấm logout
     window.location.href = "/login";
   };

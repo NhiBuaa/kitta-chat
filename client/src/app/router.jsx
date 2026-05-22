@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { axiosClient } from "@/services/api/axiosClient.js";
-import { clearAuthSession, getAccessToken } from "@/services/auth/authSession.js";
+import { clearAuthSession } from "@/services/auth/authSession.js";
+import { useAuth } from "@/services/auth/AuthProvider.jsx";
 
 // Pages
 import Login from "@/features/auth/pages/Login.jsx";
@@ -37,14 +38,20 @@ axiosClient.interceptors.response.use(
 
 // Component bảo vệ Route (Kiểm tra xem đã login chưa)
 const ProtectedRoute = ({ children }) => {
-  const token = getAccessToken();
-  return token ? children : <Navigate to="/login" />;
+  const { isAuthenticated, isChecking } = useAuth();
+
+  if (isChecking) return null;
+
+  return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 // Component ngăn user đã login truy cập lại trang login/register
 const PublicRoute = ({ children }) => {
-  const token = getAccessToken();
-  return token ? <Navigate to="/" /> : children;
+  const { isAuthenticated, isChecking } = useAuth();
+
+  if (isChecking) return null;
+
+  return isAuthenticated ? <Navigate to="/" /> : children;
 };
 
 function App() {

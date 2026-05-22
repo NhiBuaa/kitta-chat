@@ -7,6 +7,7 @@ console.log("Check API URL:", API_URL);
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -28,6 +29,9 @@ axiosInstance.interceptors.request.use(
 export const register = (data) => axiosInstance.post("/register", data);
 export const login = (data) => axiosInstance.post("/login", data);
 export const loginWithGoogle = (data) => axiosInstance.post("/google", data);
+export const getSession = () => axiosInstance.get("/session");
+export const refreshSession = () => axiosInstance.post("/refresh");
+export const logoutSession = () => axiosInstance.post("/logout");
 export const changePassword = (data) =>
   axiosInstance.post("/change-password", data);
 export const forgotPassword = (data) =>
