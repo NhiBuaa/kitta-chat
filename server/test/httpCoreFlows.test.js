@@ -154,7 +154,7 @@ const createInMemoryModels = () => {
   return { User, Message, Group, users, messages };
 };
 
-const createTestServer = async () => {
+const createTestServer = async ({ authRateLimits } = {}) => {
   clearAppCache();
 
   const models = createInMemoryModels();
@@ -208,6 +208,7 @@ const createTestServer = async () => {
     rabbitConnectionManager: {
       checkStatus: async () => "mocked",
     },
+    authRateLimits,
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
@@ -414,6 +415,120 @@ test("message create returns a standardized validation error when receiver is mi
     });
     assert.equal(createResult.body.message, "Thiếu thông tin người gửi/nhận");
     assert.equal(createResult.body.requestId, "req-message-validation");
+  } finally {
+    await testServer.close();
+  }
+});
+
+
+test("auth rate limiter returns standardized 429 after repeated login attempts", async () => {
+  const testServer = await createTestServer({
+    authRateLimits: {
+      login: { windowMs: 60_000, max: 2 },
+      register: { windowMs: 60_000, max: 100 },
+      forgotPassword: { windowMs: 60_000, max: 100 },
+    },
+  });
+
+  try {
+    await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Alice",
+        email: "alice@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const result = await testServer.request("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "alice@example.com",
+          password: "WrongPassword1!",
+        }),
+      });
+      assert.equal(result.response.status, 400);
+    }
+
+    const limitedResult = await testServer.request("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "x-request-id": "req-rate-limit-login",
+      },
+      body: JSON.stringify({
+        email: "alice@example.com",
+        password: "WrongPassword1!",
+      }),
+    });
+
+    assert.equal(limitedResult.response.status, 429);
+    assert.equal(limitedResult.body.success, false);
+    assert.deepEqual(limitedResult.body.error, {
+      code: "RATE_LIMITED",
+      message: "Too many login attempts. Please try again later.",
+    });
+    assert.equal(limitedResult.body.message, "Too many login attempts. Please try again later.");
+    assert.equal(limitedResult.body.requestId, "req-rate-limit-login");
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("auth rate limiter protects register and forgot-password routes", async () => {
+  const testServer = await createTestServer({
+    authRateLimits: {
+      login: { windowMs: 60_000, max: 100 },
+      register: { windowMs: 60_000, max: 1 },
+      forgotPassword: { windowMs: 60_000, max: 1 },
+    },
+  });
+
+  try {
+    const firstRegister = await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Alice",
+        email: "alice@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    assert.equal(firstRegister.response.status, 201);
+
+    const limitedRegister = await testServer.request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "x-request-id": "req-rate-limit-register",
+      },
+      body: JSON.stringify({
+        displayName: "Bob",
+        email: "bob@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    assert.equal(limitedRegister.response.status, 429);
+    assert.equal(limitedRegister.body.error.code, "RATE_LIMITED");
+    assert.equal(limitedRegister.body.requestId, "req-rate-limit-register");
+
+    const firstForgot = await testServer.request("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email: "alice@example.com" }),
+    });
+    assert.equal(firstForgot.response.status, 200);
+
+    const limitedForgot = await testServer.request("/api/auth/forgot-password", {
+      method: "POST",
+      headers: {
+        "x-request-id": "req-rate-limit-forgot",
+      },
+      body: JSON.stringify({ email: "alice@example.com" }),
+    });
+    assert.equal(limitedForgot.response.status, 429);
+    assert.equal(limitedForgot.body.error.code, "RATE_LIMITED");
+    assert.equal(limitedForgot.body.requestId, "req-rate-limit-forgot");
   } finally {
     await testServer.close();
   }

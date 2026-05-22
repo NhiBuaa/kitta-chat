@@ -22,6 +22,7 @@ const createApp = ({
   rabbitConnectionManager = defaultRabbitConnectionManager,
   healthChecks = createDefaultHealthChecks({ rabbitConnectionManager }),
   logger = defaultLogger,
+  authRateLimits,
 } = {}) => {
   const app = express();
 
@@ -64,7 +65,9 @@ const createApp = ({
     res.status(200).json(payload);
   });
 
-  app.use("/api/auth", authRoutes);
+  app.use("/api/auth", authRoutes.createAuthRouter
+    ? authRoutes.createAuthRouter({ rateLimits: authRateLimits })
+    : authRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/messages", messageRoutes);
   app.use("/api/calls", callHistoryRoutes);

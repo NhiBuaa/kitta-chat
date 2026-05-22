@@ -194,6 +194,31 @@ Express app, such as in narrow tests or non-socket bootstraps.
 
 ## Auth
 
+### App-Level Rate Limits
+
+Nginx still provides the outer IP-based rate limiting for Docker/nginx traffic.
+Express also applies lightweight in-process limits to sensitive auth routes so
+local/dev and direct backend traffic get the same basic protection.
+
+Current default Express limits:
+
+- `POST /api/auth/login`: 10 attempts per 15 minutes per client IP.
+- `POST /api/auth/register`: 5 attempts per hour per client IP.
+- `POST /api/auth/forgot-password`: 5 attempts per hour per client IP.
+
+Rate-limit responses use the standardized error envelope:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many login attempts. Please try again later."
+  },
+  "message": "Too many login attempts. Please try again later.",
+  "requestId": "demo-request-1"
+}
+```
 ### `POST /api/auth/register`
 
 Auth: none.
@@ -233,6 +258,7 @@ Common errors:
 - `400` invalid email
 - `400` weak password
 - `400` duplicate email
+- `429` too many registration attempts
 - `500` server error
 
 ### `POST /api/auth/login`
@@ -273,6 +299,7 @@ Common errors:
 
 - `400` wrong email/password
 - `400` account uses Google provider
+- `429` too many login attempts
 - `500` server error
 
 Invalid credential example:
@@ -333,6 +360,11 @@ Success `200`:
 
 The endpoint intentionally returns a generic success-style message even when the
 email does not exist. Password reset email sending is queued through RabbitMQ.
+
+Common errors:
+
+- `429` too many password reset email attempts
+- `500` server error
 
 ### `POST /api/auth/reset-password/:id/:token`
 
