@@ -12,7 +12,7 @@ The current architecture is intentionally conservative:
 For deeper architecture notes, see `docs/ARCHITECTURE.md`. For REST endpoint
 examples, see `docs/API.md`. For the RabbitMQ queue, retry, DLQ, and
 poison-message flow, see `docs/RABBITMQ_WORKER_FLOWS.md`. For Socket.IO
-multi-replica delivery with the Redis adapter, see `docs/SOCKET_IO_SCALING.md`.
+multi-replica delivery with the Redis adapter, see `docs/SOCKET_IO_SCALING.md`. For local Docker deployment and smoke checks, see `docs/DEPLOYMENT_AND_SMOKE_TESTS.md`. For an honest interview retrospective and CV-safe claims, see `docs/INTERVIEW_NOTES.md`.
 
 ## Features
 

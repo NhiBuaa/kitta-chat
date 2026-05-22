@@ -78,3 +78,11 @@ For multi-replica behavior, use Docker Compose and nginx manual smoke tests.
 ## API Reference
 
 See `docs/API.md` for the current REST endpoint surface, auth requirements, request/response examples, request ID behavior, and honest limitations.
+
+## Deployment And Smoke Verification
+
+See `docs/DEPLOYMENT_AND_SMOKE_TESTS.md` for the current Docker Compose startup flow, nginx/backend operational endpoint checks, RabbitMQ UI verification, auth rate-limit smoke tests, poison-message checks, teardown/reset commands, and common startup recovery steps.
+
+## Interview Retrospective
+
+See `docs/INTERVIEW_NOTES.md` for project-specific engineering decisions, tradeoffs, debugging lessons, reliability lessons, operational lessons, likely interviewer questions, and honest CV-safe claims.
