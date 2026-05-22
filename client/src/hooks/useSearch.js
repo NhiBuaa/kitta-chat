@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { getAccessToken } from "@/services/auth/authSession.js";
 
 /**
  * Tìm kiếm user theo keyword (debounce 500ms).
@@ -25,7 +26,7 @@ export const useSearch = ({ API_URL, users, searchResult, setSearchResult }) => 
         const timer = setTimeout(async () => {
             setIsSearching(true);
             try {
-                const token = localStorage.getItem("token");
+                const token = getAccessToken();
                 const res = await axios.get(
                     `${API_URL}/search?keyword=${encodeURIComponent(searchTerm)}`,
                     { headers: { Authorization: `Bearer ${token}` } }

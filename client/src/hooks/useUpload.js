@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { initUpload, getPresignedUrl, completeUpload } from '@/services/api/fileApi.js';
+import { getAccessToken } from '@/services/auth/authSession.js';
 
 // BIẾN
 const VITE_API_URL_FILES = import.meta.env.VITE_API_URL_FILES || '/api/files';
@@ -49,7 +50,7 @@ export const uploadFileSingle = async (file, onProgress) => {
         formData.append("file", file);
         
         // Lấy token để gửi kèm header
-        const token = localStorage.getItem('token');
+        const token = getAccessToken();
 
         // Gọi API upload single ở BE
         const response = await axios.post(`${VITE_API_URL_FILES}/upload-single`, formData, {

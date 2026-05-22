@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
+import { getAccessToken, setStoredUser } from "@/services/auth/authSession.js";
 const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const URL_UPDATE_PROFILE = `${VITE_API_URL_USERS}/profile`;
@@ -102,7 +103,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
       }
 
       // Lấy Token
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
 
       // Gọi API
       // Thay URL bằng địa chỉ Backend thực tế của bạn
@@ -128,7 +129,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
             avatar: formData.avatarPreview,
           } : res.data.user;
 
-          localStorage.setItem("user", JSON.stringify(res.data.user));
+          setStoredUser(res.data.user);
           setFormData((prev) => ({
             ...prev,
             avatarFile: null,
@@ -139,7 +140,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
         }
         toast.success("Cập nhật hồ sơ thành công!");
 
-        localStorage.setItem("user", JSON.stringify(res.data.user));
+        setStoredUser(res.data.user);
 
         // Gọi callback để Home cập nhật lại UI ngay lập tức
         if (onUpdateSuccess) onUpdateSuccess(res.data.user);

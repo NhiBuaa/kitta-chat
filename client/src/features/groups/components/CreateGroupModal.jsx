@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { FaTimes, FaCheck } from "react-icons/fa";
 import { FiX, FiCheck, FiUsers } from "react-icons/fi";
+import { getAccessToken } from "@/services/auth/authSession.js";
 
 
 const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
@@ -43,7 +44,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const res = await axios.post(
         `${API_URL}/`,
         {

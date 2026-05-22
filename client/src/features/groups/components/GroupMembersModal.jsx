@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import AddMemberModal from "@/features/groups/components/AddMemberModal.jsx";
 import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import { getAccessToken } from "@/services/auth/authSession.js";
 
 const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   const [members, setMembers] = useState([]);
@@ -28,7 +29,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   });
 
   const API_URL = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
 
   const adminId =
     group.admin && typeof group.admin === "object"

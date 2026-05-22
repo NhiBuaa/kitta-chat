@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { axiosClient } from "@/services/api/axiosClient.js";
+import { clearAuthSession, getAccessToken } from "@/services/auth/authSession.js";
 
 // Pages
 import Login from "@/features/auth/pages/Login.jsx";
@@ -25,8 +26,7 @@ axiosClient.interceptors.response.use(
     if (error.response && error.response.status === 403) {
       console.log("Token hết hạn, đang đăng xuất...");
       // Xóa sạch dữ liệu cũ
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      clearAuthSession();
       window.dispatchEvent(new Event("auth-changed"));
 
       window.location.href = '/login';
@@ -37,13 +37,13 @@ axiosClient.interceptors.response.use(
 
 // Component bảo vệ Route (Kiểm tra xem đã login chưa)
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
   return token ? children : <Navigate to="/login" />;
 };
 
 // Component ngăn user đã login truy cập lại trang login/register
 const PublicRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
   return token ? <Navigate to="/" /> : children;
 };
 

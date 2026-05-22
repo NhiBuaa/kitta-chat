@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuthSession, getAccessToken } from '@/services/auth/authSession.js'
 
 export const axiosClient = axios.create({
   headers: {
@@ -8,7 +9,7 @@ export const axiosClient = axios.create({
 
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = getAccessToken()
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -23,8 +24,7 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && [401, 403].includes(error.response.status)) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      clearAuthSession()
       window.dispatchEvent(new Event('auth-changed'))
 
       if (window.location.pathname !== '/login') {

@@ -13,6 +13,7 @@ import {
     subscribeCallHistoryAuthRefresh,
     subscribeCallHistoryRefresh,
 } from '@/features/calls/context/callHistoryBadgeState.js';
+import { getAccessToken, getStoredUser } from '@/services/auth/authSession.js';
 
 export const CallHistoryProvider = ({ children }) => {
     const { socket, currentUser } = useSocket();
@@ -27,7 +28,7 @@ export const CallHistoryProvider = ({ children }) => {
     const fetchMissedCount = useCallback(async () => {
         try {
             await hydrateMissedCount({
-                getToken: () => localStorage.getItem('token'),
+                getToken: getAccessToken,
                 getMissedCalls,
                 setMissedCount,
                 isFetchingRef: isFetchingMissedCountRef,
@@ -112,7 +113,8 @@ export const CallHistoryProvider = ({ children }) => {
 
         const handleCallLogMessage = (data) => {
             if (data.type !== 'call_log') return;
-            const currentUserId = JSON.parse(localStorage.getItem('user') || '{}')._id || JSON.parse(localStorage.getItem('user') || '{}').id;
+            const storedUser = getStoredUser() || {};
+            const currentUserId = storedUser._id || storedUser.id;
             setMissedCount((prev) => applyCallLogMessageToMissedCount({
                 previousCount: prev,
                 data,

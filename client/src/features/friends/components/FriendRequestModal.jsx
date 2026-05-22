@@ -4,6 +4,7 @@ import { FaTimes, FaUserCheck, FaUserTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSocket } from "@/services/socket/SocketContext.js";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import { getAccessToken } from "@/services/auth/authSession.js";
 
 const API_URL =
   import.meta.env.VITE_API_URL_USERS || "/api/users";
@@ -21,7 +22,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
 
   const handleAccept = async (senderId) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       await axios.post(
         `${API_URL}/accept-friend`,
         { senderId },
@@ -38,7 +39,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
 
   const handleReject = async (senderId) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       await axios.post(
         `${API_URL}/reject-friend`,
         { senderId },
@@ -55,7 +56,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         const res = await axios.get(`${API_URL}/friend-requests`, {
           headers: { Authorization: `Bearer ${token}` },
         });

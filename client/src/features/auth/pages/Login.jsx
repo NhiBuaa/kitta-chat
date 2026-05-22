@@ -4,6 +4,7 @@ import { login, loginWithGoogle } from "@/services/api/authApi.js";
 import { loginWithGoogleFirebase } from "@/services/firebase/firebaseClient.js";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
+import { setAccessToken, setStoredUser } from "@/services/auth/authSession.js";
 
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 
@@ -23,8 +24,8 @@ const Login = () => {
     try {
       const res = await login(data);
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      setAccessToken(res.data.token);
+      setStoredUser(res.data.user);
       window.dispatchEvent(new Event("auth-changed"));
 
       toast.success(`Chào mừng ${res.data.user.displayName} quay trở lại!`);
@@ -50,8 +51,8 @@ const Login = () => {
         token,
       });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      setAccessToken(res.data.token);
+      setStoredUser(res.data.user);
       window.dispatchEvent(new Event("auth-changed"));
 
       toast.success(`Chào mừng ${res.data.user.displayName}!`);

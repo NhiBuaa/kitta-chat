@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { persistPartnerMediaStatus } from '@/features/calls/context/callMediaState.js';
+import { getStoredUser } from '@/services/auth/authSession.js';
 
 /**
  * Đăng ký / hủy toàn bộ socket event listeners liên quan đến cuộc gọi.
@@ -37,7 +38,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
             const callerId = data.callerDbId;
             let loggedInUserId = null;
             try {
-                const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+                const storedUser = getStoredUser();
                 loggedInUserId = storedUser?._id || storedUser?.id || null;
             } catch {
                 loggedInUserId = null;
@@ -222,7 +223,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
 
             // Loser tạo initiator peer gửi offer cho Winner
             if (localStreamRef.current) {
-                const user = localStorage.getItem('user');
+                const user = getStoredUser();
                 const peer = makePeer({
                     initiator: true,
                     stream: localStreamRef.current,
@@ -231,7 +232,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
                             userToCall: winnerDbId,
                             signalData: myOfferSignal,
                             from: socket.id,
-                            callerDbId: user ? JSON.parse(user)._id : null,
+                            callerDbId: user?._id || null,
                             mediaStatus: {
                                 cam: localStreamRef.current.getVideoTracks()[0]?.enabled ?? false,
                                 mic: localStreamRef.current.getAudioTracks()[0]?.enabled ?? true,

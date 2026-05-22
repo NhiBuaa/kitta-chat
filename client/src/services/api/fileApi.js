@@ -1,10 +1,11 @@
 import axios from 'axios';
+import { getAccessToken } from '@/services/auth/authSession.js';
 
 const API_URL = import.meta.env.VITE_API_URL_FILES || '/api/files';
 
 // Hàm lấy Token từ LocalStorage
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     return {
         headers: {
             Authorization: `Bearer ${token}`

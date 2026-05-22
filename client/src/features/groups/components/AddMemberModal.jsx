@@ -3,6 +3,7 @@ import { FaTimes, FaUserPlus } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import { getAccessToken } from "@/services/auth/authSession.js";
 
 const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
   const [friends, setFriends] = useState([]);
@@ -10,7 +11,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
   const [loading, setLoading] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL_USERS || '/api/users';
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
 
   useEffect(() => {
     if (isOpen) {

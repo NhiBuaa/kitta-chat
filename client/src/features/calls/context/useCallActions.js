@@ -5,6 +5,7 @@ import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { clearCallStorage } from '@/features/calls/context/callStorage.js';
 import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
+import { getStoredUser } from '@/services/auth/authSession.js';
 
 /**
  * Các action thực hiện cuộc gọi: callUser, answerCall, rejectCall, leaveCall.
@@ -38,8 +39,7 @@ export const useCallActions = ({ socket, bag }) => {
 
     // ─── Actions ──────────────────────────────────────────────────────────────
     const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = 'video') => {
-        const userStr = localStorage.getItem('user');
-        const freshUser = userStr ? JSON.parse(userStr) : null;
+        const freshUser = getStoredUser();
         if (!freshUser) { toast.error('Phiên đăng nhập hết hạn.'); return; }
         if (!receiverUserId || !localStream) return;
         if (!socket?.id) { toast.error('Mất kết nối máy chủ.'); return; }

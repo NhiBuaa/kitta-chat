@@ -5,21 +5,14 @@ import { syncMessages } from "@/services/api/messageApi.js";
 import { getOnlineFriends } from "@/services/api/userApi.js";
 import { SocketContext } from "@/services/socket/SocketContext.js";
 import { dispatchCallHistoryRefresh } from "@/features/calls/context/callHistoryBadgeState.js";
+import { getAccessToken, getStoredUser, setStoredUser } from "@/services/auth/authSession.js";
 
 const AUTH_CHANGED_EVENT = "auth-changed";
 // Event để sync tin nhắn bị miss giữa các React component
 const SYNC_MESSAGE_EVENT = "sync-message-recovered";
 const SERVER_URL = import.meta.env.VITE_API_URL || "";
 
-const parseStoredUser = () => {
-    const userString = localStorage.getItem("user");
-    if (!userString) return null;
-    try {
-        return JSON.parse(userString);
-    } catch {
-        return null;
-    }
-};
+const parseStoredUser = () => getStoredUser();
 
 export const SocketProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(() => parseStoredUser());
@@ -98,7 +91,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         if (!token) {
             console.warn("[Socket] No token found, skipping connection");
             return;
@@ -199,7 +192,7 @@ export const SocketProvider = ({ children }) => {
             const updatedUser = payload?.user;
             const updatedUserId = updatedUser?._id || updatedUser?.id;
             if (updatedUserId && String(updatedUserId) === String(userId)) {
-                localStorage.setItem("user", JSON.stringify(updatedUser));
+                setStoredUser(updatedUser);
                 window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
             }
             window.dispatchEvent(

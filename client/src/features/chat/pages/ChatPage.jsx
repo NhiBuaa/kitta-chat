@@ -4,6 +4,7 @@ import { SOCKET_EVENTS } from "@/constants/socketEvents.js";
 import { getGroups } from "@/services/api/groupApi.js";
 import { getFriendRequests } from "@/services/api/friendApi.js";
 import { getSidebarUsers, getUserProfile } from "@/services/api/userApi.js";
+import { clearAuthSession, getAccessToken } from "@/services/auth/authSession.js";
 
 // Components
 import Sidebar from "@/components/layout/Sidebar.jsx";
@@ -281,7 +282,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         if (!token) {
           window.location.href = "/login";
           return;
@@ -303,7 +304,7 @@ const Home = () => {
       } catch (error) {
         console.error("[Home] fetchData error:", error);
         if (error.response?.status === 401) {
-          localStorage.removeItem("token");
+          clearAuthSession();
           window.location.href = "/login";
         }
       } finally {
@@ -313,7 +314,7 @@ const Home = () => {
 
     const fetchGroups = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         if (!token) return;
         const res = await getGroups();
         if (res.data.success) setGroups(res.data.groups);
@@ -438,8 +439,7 @@ const Home = () => {
 
   const handleLogout = () => {
     if (socket) socket.disconnect();
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearAuthSession();
     window.dispatchEvent(new Event("auth-changed"));
     // setCurrentUser(null);   xóa di để ko bị reset avt khi bấm logout
     window.location.href = "/login";
