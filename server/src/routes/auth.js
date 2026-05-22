@@ -6,6 +6,9 @@ const {
   forgotPassword,
   resetPassword,
   googleLogin,
+  session,
+  refresh,
+  logout,
 } = require("../controllers/authController");
 
 const defaultAuthRateLimits = {
@@ -36,6 +39,9 @@ const createAuthRouter = ({ rateLimits = defaultAuthRateLimits } = {}) => {
   router.post("/register", registerLimiter, register);
   router.post("/login", loginLimiter, login);
   router.post("/google", googleLogin);
+  router.get("/session", session);
+  router.post("/refresh", refresh);
+  router.post("/logout", logout);
   router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
   router.post("/reset-password/:id/:token", resetPassword);
 

@@ -8,6 +8,7 @@ const authRoutesPath = require.resolve("../src/routes/auth");
 const userRoutesPath = require.resolve("../src/routes/user");
 const messageRoutesPath = require.resolve("../src/routes/messages");
 const authControllerPath = require.resolve("../src/controllers/authController");
+const authSessionServicePath = require.resolve("../src/services/authSessionService");
 const userControllerPath = require.resolve("../src/controllers/userController");
 const messageControllerPath = require.resolve("../src/controllers/messageController");
 const userModelPath = require.resolve("../src/models/User");
@@ -30,6 +31,7 @@ const pathsToClear = [
   userRoutesPath,
   messageRoutesPath,
   authControllerPath,
+  authSessionServicePath,
   userControllerPath,
   messageControllerPath,
   userModelPath,
@@ -201,7 +203,11 @@ const createTestServer = async ({ authRateLimits } = {}) => {
   });
 
   const previousJwtSecret = process.env.JWT_SECRET;
+  const previousRefreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+  const previousNodeEnv = process.env.NODE_ENV;
   process.env.JWT_SECRET = "http-integration-test-secret";
+  process.env.REFRESH_TOKEN_SECRET = "http-refresh-test-secret";
+  process.env.NODE_ENV = "test";
 
   const { createApp } = require(appPath);
   const app = createApp({
@@ -238,6 +244,16 @@ const createTestServer = async ({ authRateLimits } = {}) => {
       } else {
         process.env.JWT_SECRET = previousJwtSecret;
       }
+      if (previousRefreshTokenSecret === undefined) {
+        delete process.env.REFRESH_TOKEN_SECRET;
+      } else {
+        process.env.REFRESH_TOKEN_SECRET = previousRefreshTokenSecret;
+      }
+      if (previousNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = previousNodeEnv;
+      }
       clearAppCache();
     },
   };
@@ -261,6 +277,8 @@ test("auth register and login work through the Express HTTP API", async () => {
     assert.equal(registerResult.body.success, true);
     assert.equal(registerResult.body.user.email, "alice@example.com");
     assert.equal(registerResult.body.user.password, undefined);
+    assert.equal(typeof registerResult.body.token, "string");
+    assert.match(getCookieHeader(registerResult.response, "kittachat_refresh"), /^kittachat_refresh=/);
 
     const loginResult = await testServer.request("/api/auth/login", {
       method: "POST",
@@ -529,6 +547,176 @@ test("auth rate limiter protects register and forgot-password routes", async () 
     assert.equal(limitedForgot.response.status, 429);
     assert.equal(limitedForgot.body.error.code, "RATE_LIMITED");
     assert.equal(limitedForgot.body.requestId, "req-rate-limit-forgot");
+  } finally {
+    await testServer.close();
+  }
+});
+
+const getCookieHeader = (response, cookieName) => {
+  const setCookie = response.headers.getSetCookie
+    ? response.headers.getSetCookie()
+    : response.headers.get("set-cookie")?.split(/,(?=\s*[^;]+=)/) || [];
+  return setCookie.find((cookie) => cookie.startsWith(`${cookieName}=`));
+};
+
+test("login sets an HttpOnly refresh cookie while keeping bearer token response", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Alice",
+        email: "alice@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+
+    const result = await testServer.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "alice@example.com",
+        password: "Password1!",
+      }),
+    });
+
+    assert.equal(result.response.status, 200);
+    assert.equal(result.body.success, true);
+    assert.equal(typeof result.body.token, "string");
+    assert.equal(result.body.user.email, "alice@example.com");
+
+    const cookie = getCookieHeader(result.response, "kittachat_refresh");
+    assert.match(cookie, /^kittachat_refresh=/);
+    assert.match(cookie, /HttpOnly/i);
+    assert.match(cookie, /SameSite=Lax/i);
+    assert.doesNotMatch(cookie, /Secure/i);
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("refresh with valid cookie returns a new access token and user", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Alice",
+        email: "alice@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const loginResult = await testServer.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "alice@example.com", password: "Password1!" }),
+    });
+    const cookie = getCookieHeader(loginResult.response, "kittachat_refresh");
+
+    const refreshResult = await testServer.request("/api/auth/refresh", {
+      method: "POST",
+      headers: { cookie },
+    });
+
+    assert.equal(refreshResult.response.status, 200);
+    assert.equal(refreshResult.body.success, true);
+    assert.equal(typeof refreshResult.body.token, "string");
+    assert.equal(refreshResult.body.user.email, "alice@example.com");
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("session with valid cookie returns current session state without requiring bearer token", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Alice",
+        email: "alice@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const loginResult = await testServer.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "alice@example.com", password: "Password1!" }),
+    });
+    const cookie = getCookieHeader(loginResult.response, "kittachat_refresh");
+
+    const sessionResult = await testServer.request("/api/auth/session", {
+      headers: { cookie },
+    });
+
+    assert.equal(sessionResult.response.status, 200);
+    assert.deepEqual(sessionResult.body, {
+      success: true,
+      authenticated: true,
+      user: {
+        id: "user-1",
+        _id: "user-1",
+        displayName: "Alice",
+        email: "alice@example.com",
+        avatar: sessionResult.body.user.avatar,
+        status: sessionResult.body.user.status,
+        activityStatus: sessionResult.body.user.activityStatus,
+      },
+    });
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("logout clears the refresh cookie", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const result = await testServer.request("/api/auth/logout", { method: "POST" });
+
+    assert.equal(result.response.status, 200);
+    assert.equal(result.body.success, true);
+    const cookie = getCookieHeader(result.response, "kittachat_refresh");
+    assert.match(cookie, /^kittachat_refresh=;/);
+    assert.match(cookie, /HttpOnly/i);
+    assert.match(cookie, /SameSite=Lax/i);
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("session and refresh return standardized 401 without a valid cookie", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const sessionResult = await testServer.request("/api/auth/session", {
+      headers: { "x-request-id": "req-session-missing" },
+    });
+    assert.equal(sessionResult.response.status, 401);
+    assert.equal(sessionResult.body.success, false);
+    assert.deepEqual(sessionResult.body.error, {
+      code: "SESSION_REQUIRED",
+      message: "Authentication session is required",
+    });
+    assert.equal(sessionResult.body.requestId, "req-session-missing");
+
+    const refreshResult = await testServer.request("/api/auth/refresh", {
+      method: "POST",
+      headers: {
+        cookie: "kittachat_refresh=invalid",
+        "x-request-id": "req-refresh-invalid",
+      },
+    });
+    assert.equal(refreshResult.response.status, 401);
+    assert.equal(refreshResult.body.success, false);
+    assert.deepEqual(refreshResult.body.error, {
+      code: "INVALID_SESSION",
+      message: "Authentication session is invalid or expired",
+    });
+    assert.equal(refreshResult.body.requestId, "req-refresh-invalid");
   } finally {
     await testServer.close();
   }

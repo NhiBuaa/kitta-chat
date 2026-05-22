@@ -45,7 +45,7 @@ Local login returns a JWT. Protected REST endpoints expect:
 Authorization: Bearer <token>
 ```
 
-The token is signed with `JWT_SECRET` and currently expires after `1d`.
+The access token is signed with `JWT_SECRET` and currently expires after `1d`. Login, register, and Google login also set an HttpOnly `kittachat_refresh` cookie as a migration foundation for a future memory-token auth model. Current REST and Socket.IO flows still support `Authorization: Bearer <token>` for compatibility.
 
 Common auth errors:
 
@@ -336,6 +336,86 @@ Common errors:
 - `400` email already registered with local password
 - `401` invalid Firebase token
 - `500` server error
+
+
+Successful `register`, `login`, and `google` responses also include a `Set-Cookie` header for `kittachat_refresh`:
+
+```http
+Set-Cookie: kittachat_refresh=<refresh-jwt>; Path=/api/auth; HttpOnly; SameSite=Lax; Max-Age=604800
+```
+
+The cookie is intentionally not readable by JavaScript. In production it is marked `Secure` unless `AUTH_COOKIE_SECURE=false` is explicitly configured for controlled non-HTTPS testing.
+
+### `GET /api/auth/session`
+
+Auth: valid `kittachat_refresh` cookie.
+
+Returns current session state without requiring a Bearer access token. This endpoint is a migration foundation for future app startup auth bootstrap; the current frontend does not rely on it yet.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "authenticated": true,
+  "user": {
+    "id": "665f1f...",
+    "_id": "665f1f...",
+    "displayName": "Alice",
+    "email": "alice@example.com",
+    "avatar": "https://...",
+    "status": "Chào bạn, tôi đang dùng KittaChat.",
+    "activityStatus": {
+      "state": "active",
+      "lastSeen": "2026-05-21T15:00:00.000Z"
+    }
+  }
+}
+```
+
+Missing cookie returns standardized `401 SESSION_REQUIRED`. Invalid or expired cookie returns standardized `401 INVALID_SESSION`.
+
+### `POST /api/auth/refresh`
+
+Auth: valid `kittachat_refresh` cookie.
+
+Issues a new access token and refresh cookie. This keeps Bearer compatibility while enabling a later move to memory-only access tokens.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "token": "<new-jwt>",
+  "user": {
+    "id": "665f1f...",
+    "_id": "665f1f...",
+    "displayName": "Alice",
+    "email": "alice@example.com",
+    "avatar": "https://...",
+    "status": "Chào bạn, tôi đang dùng KittaChat.",
+    "activityStatus": {
+      "state": "active",
+      "lastSeen": "2026-05-21T15:00:00.000Z"
+    }
+  }
+}
+```
+
+### `POST /api/auth/logout`
+
+Auth: none required.
+
+Clears the refresh cookie. Current frontend logout still clears its existing client-side token/user storage separately.
+
+Success `200`:
+
+```json
+{
+  "success": true,
+  "message": "Đăng xuất thành công"
+}
+```
 
 ### `POST /api/auth/forgot-password`
 
