@@ -11,6 +11,7 @@ const { connectionManager: defaultRabbitConnectionManager } = require("./queues/
 const { createRequestLoggingMiddleware } = require("./middlewares/requestLogging");
 const {
   buildHealthPayload,
+  buildOpsPayload,
   buildReadinessPayload,
   createDefaultHealthChecks,
 } = require("./services/healthService");
@@ -53,6 +54,14 @@ const createApp = ({
   app.get("/readyz", async (req, res) => {
     const payload = await buildReadinessPayload(healthChecks);
     res.status(payload.status === "ready" ? 200 : 503).json(payload);
+  });
+
+  app.get("/ops", async (req, res) => {
+    const payload = await buildOpsPayload({
+      healthChecks,
+      io: req.app.get("socketio"),
+    });
+    res.status(200).json(payload);
   });
 
   app.use("/api/auth", authRoutes);

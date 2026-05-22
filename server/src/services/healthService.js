@@ -107,9 +107,50 @@ const buildReadinessPayload = async (healthChecks) => {
   };
 };
 
+const toDependencySummary = (services) => Object.fromEntries(
+  Object.entries(services).map(([name, details]) => [
+    name,
+    { status: details.status || "unknown" },
+  ]),
+);
+
+const getActiveSocketCount = (io) => {
+  const sockets = io?.of?.("/")?.sockets;
+  if (!sockets) return null;
+  return typeof sockets.size === "number" ? sockets.size : null;
+};
+
+const buildOpsPayload = async ({ healthChecks, io } = {}) => {
+  const services = await checkServices(healthChecks);
+  const memoryUsage = process.memoryUsage();
+
+  return {
+    status: getOverallStatus(services),
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+    memory: {
+      rssBytes: memoryUsage.rss,
+      heapTotalBytes: memoryUsage.heapTotal,
+      heapUsedBytes: memoryUsage.heapUsed,
+      externalBytes: memoryUsage.external,
+    },
+    dependencies: toDependencySummary(services),
+    runtime: {
+      nodeEnv: process.env.NODE_ENV || "development",
+      nodeVersion: process.version,
+      activeSocketCount: getActiveSocketCount(io),
+    },
+    monitoring: {
+      kind: "lightweight-ops",
+      prometheus: false,
+    },
+  };
+};
+
 module.exports = {
   buildHealthPayload,
   buildReadinessPayload,
+  buildOpsPayload,
   checkServices,
   createDefaultHealthChecks,
   getOverallStatus,

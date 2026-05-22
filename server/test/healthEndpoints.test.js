@@ -17,6 +17,12 @@ const createServer = async ({ mongoStatus, redisStatus, rabbitmqStatus }) => {
       rabbitmq: async () => rabbitmqStatus,
     },
   });
+  app.set("socketio", {
+    of() {
+      return { sockets: new Map([["socket-1", {}], ["socket-2", {}]]) };
+    },
+  });
+
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
 
@@ -128,5 +134,55 @@ test("/readyz reports ready only when required startup dependencies are connecte
     assert.equal(body.services.redis.status, "unavailable");
   } finally {
     await notReadyServer.close();
+  }
+});
+
+
+test("/ops returns safe operational signals without exposing sensitive config", async () => {
+  const previousEnv = {
+    JWT_SECRET: process.env.JWT_SECRET,
+    MONGO_URI: process.env.MONGO_URI,
+    RABBITMQ_URL: process.env.RABBITMQ_URL,
+  };
+  process.env.JWT_SECRET = "super-secret-token";
+  process.env.MONGO_URI = "mongodb://user:password@mongo:27017/shot-chat";
+  process.env.RABBITMQ_URL = "amqp://guest:guest@rabbitmq:5672";
+
+  const server = await createServer({
+    mongoStatus: { status: "connected" },
+    redisStatus: { status: "connected" },
+    rabbitmqStatus: { status: "unavailable", error: "rabbit down" },
+  });
+
+  try {
+    const { response, body } = await server.get("/ops");
+
+    assert.equal(response.status, 200);
+    assert.equal(body.status, "degraded");
+    assert.ok(body.timestamp);
+    assert.equal(typeof body.uptime, "number");
+    assert.equal(typeof body.memory.rssBytes, "number");
+    assert.equal(typeof body.memory.heapUsedBytes, "number");
+    assert.equal(body.dependencies.mongo.status, "connected");
+    assert.equal(body.dependencies.redis.status, "connected");
+    assert.equal(body.dependencies.rabbitmq.status, "unavailable");
+    assert.equal(body.runtime.activeSocketCount, 2);
+    assert.equal(body.monitoring.kind, "lightweight-ops");
+    assert.equal(body.monitoring.prometheus, false);
+
+    const serialized = JSON.stringify(body);
+    assert.doesNotMatch(serialized, /super-secret-token/);
+    assert.equal(serialized.includes("mongodb://"), false);
+    assert.equal(serialized.includes("amqp://"), false);
+    assert.doesNotMatch(serialized, /password/);
+  } finally {
+    await server.close();
+    for (const [key, value] of Object.entries(previousEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
   }
 });

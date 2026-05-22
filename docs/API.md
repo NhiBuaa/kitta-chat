@@ -150,6 +150,48 @@ Readiness checks required startup dependencies: MongoDB and Redis.
 }
 ```
 
+### `GET /ops`
+
+Auth: none.
+
+Returns lightweight operational JSON for local debugging and interview-ready
+observability. This is not a Prometheus endpoint and should not be treated as a
+complete production monitoring system.
+
+The payload intentionally avoids secrets, tokens, email addresses, user PII, and
+raw connection strings. Dependency details are summarized as statuses only.
+
+```json
+{
+  "status": "degraded",
+  "timestamp": "2026-05-22T10:00:00.000Z",
+  "uptime": 42,
+  "memory": {
+    "rssBytes": 99614720,
+    "heapTotalBytes": 35651584,
+    "heapUsedBytes": 29360128,
+    "externalBytes": 1048576
+  },
+  "dependencies": {
+    "mongo": { "status": "connected" },
+    "redis": { "status": "connected" },
+    "rabbitmq": { "status": "unavailable" }
+  },
+  "runtime": {
+    "nodeEnv": "development",
+    "nodeVersion": "v22.0.0",
+    "activeSocketCount": 2
+  },
+  "monitoring": {
+    "kind": "lightweight-ops",
+    "prometheus": false
+  }
+}
+```
+
+`activeSocketCount` is `null` when Socket.IO has not been attached to the
+Express app, such as in narrow tests or non-socket bootstraps.
+
 ## Auth
 
 ### `POST /api/auth/register`
@@ -1177,6 +1219,7 @@ Check health:
 ```bash
 curl -s http://localhost:3000/healthz
 curl -s http://localhost:3000/readyz
+curl -s http://localhost:3000/ops
 ```
 
 ## Honest Limitations
