@@ -1,6 +1,9 @@
 const ACCESS_TOKEN_KEY = "token";
 const STORED_USER_KEY = "user";
 
+let memoryAccessToken = null;
+let memoryUser = null;
+
 const getStorage = () => {
   if (typeof window !== "undefined" && window.localStorage) {
     return window.localStorage;
@@ -11,9 +14,11 @@ const getStorage = () => {
   return null;
 };
 
-export const getAccessToken = () => getStorage()?.getItem(ACCESS_TOKEN_KEY) || null;
+export const getAccessToken = () => memoryAccessToken || getStorage()?.getItem(ACCESS_TOKEN_KEY) || null;
 
 export const setAccessToken = (token) => {
+  memoryAccessToken = token || null;
+
   const storage = getStorage();
   if (!storage) return;
 
@@ -25,22 +30,25 @@ export const setAccessToken = (token) => {
 };
 
 export const clearAccessToken = () => {
+  memoryAccessToken = null;
   getStorage()?.removeItem(ACCESS_TOKEN_KEY);
 };
 
-export const getStoredUser = () => {
-  const userString = getStorage()?.getItem(STORED_USER_KEY);
+const parseStoredUser = (userString) => {
   if (!userString) return null;
 
   try {
     return JSON.parse(userString);
-  } catch (error) {
-    console.error("[authSession] Failed to parse stored user:", error);
+  } catch {
     return null;
   }
 };
 
+export const getStoredUser = () => memoryUser || parseStoredUser(getStorage()?.getItem(STORED_USER_KEY));
+
 export const setStoredUser = (user) => {
+  memoryUser = user || null;
+
   const storage = getStorage();
   if (!storage) return;
 
@@ -52,10 +60,16 @@ export const setStoredUser = (user) => {
 };
 
 export const clearStoredUser = () => {
+  memoryUser = null;
   getStorage()?.removeItem(STORED_USER_KEY);
 };
 
 export const clearAuthSession = () => {
   clearAccessToken();
   clearStoredUser();
+};
+
+export const resetAuthSessionMemoryForTests = () => {
+  memoryAccessToken = null;
+  memoryUser = null;
 };
