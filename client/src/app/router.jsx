@@ -1,8 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { axiosClient } from "@/services/api/axiosClient.js";
-import { clearAuthSession } from "@/services/auth/authSession.js";
 import { useAuth } from "@/services/auth/AuthProvider.jsx";
 
 // Pages
@@ -16,25 +14,6 @@ import VideoCallPage from '@/features/calls/pages/CallPage.jsx';
 
 // Components
 import CallNotification from '@/features/calls/components/CallNotification.jsx';
-
-// Xử lý token hết hạn
-axiosClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    // Nếu Backend trả về lỗi
-    if (error.response && error.response.status === 403) {
-      console.log("Token hết hạn, đang đăng xuất...");
-      // Xóa sạch dữ liệu cũ
-      clearAuthSession();
-      window.dispatchEvent(new Event("auth-changed"));
-
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
 
 // Component bảo vệ Route (Kiểm tra xem đã login chưa)
 const ProtectedRoute = ({ children }) => {

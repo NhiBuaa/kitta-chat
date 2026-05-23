@@ -7,7 +7,6 @@ const { finalizeCallOnce } = require("./services/callFinalizer");
 const { removeCallTimeoutDue } = require("./services/callTimeoutDueStore");
 const {
     resolveSocketCallBinding,
-    resolveUserActiveCall,
     removeSocketCallBinding,
     removeUserActiveCall,
 } = require("./services/callSocketBindingStore");
@@ -98,7 +97,7 @@ const _resolveCallIdFromDisconnect = async ({ socketId, userId, redisClient }) =
     const socketCallId = await resolveSocketCallBinding(socketId, redisClient);
     if (socketCallId) return socketCallId;
 
-    return resolveUserActiveCall(userId, redisClient);
+    return null;
 };
 
 const _cleanupRedisBindings = async ({ redisClient, socketId, userId, call }) => {

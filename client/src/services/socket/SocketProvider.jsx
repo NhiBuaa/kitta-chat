@@ -1,11 +1,13 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import io from "socket.io-client";
 import { SOCKET_EVENTS } from "@/constants/socketEvents.js";
 import { syncMessages } from "@/services/api/messageApi.js";
 import { getOnlineFriends } from "@/services/api/userApi.js";
 import { SocketContext } from "@/services/socket/SocketContext.js";
 import { dispatchCallHistoryRefresh } from "@/features/calls/context/callHistoryBadgeState.js";
-import { getAccessToken, getStoredUser, setStoredUser } from "@/services/auth/authSession.js";
+import { getStoredUser, setStoredUser } from "@/services/auth/authSession.js";
+import { useAuth } from "@/services/auth/AuthProvider.jsx";
+import { getSocketAuthState } from "@/services/socket/socketAuthState.js";
 
 const AUTH_CHANGED_EVENT = "auth-changed";
 // Event để sync tin nhắn bị miss giữa các React component
@@ -15,12 +17,20 @@ const SERVER_URL = import.meta.env.VITE_API_URL || "";
 const parseStoredUser = () => getStoredUser();
 
 export const SocketProvider = ({ children }) => {
-    const [currentUser, setCurrentUser] = useState(() => parseStoredUser());
+    const { token, user: authUser, isChecking, isAuthenticated } = useAuth();
+    const [currentUser, setCurrentUser] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     // Dùng useState để trigger re-render khi socket thay đổi
     const [socket, setSocket] = useState(null);
 
     const userId = currentUser?._id || currentUser?.id || null;
+    const socketAuthState = useMemo(() => getSocketAuthState({
+        isAuthenticated,
+        isChecking,
+        token,
+        user: authUser,
+        fallbackUser: parseStoredUser(),
+    }), [authUser, isAuthenticated, isChecking, token]);
     const socketRef = useRef(null);
     const lastMessageIdRef = useRef(localStorage.getItem("last_message_id") || null);
     // Debounce timer ref - theo dõi timeout để clear khi unmount
@@ -31,6 +41,18 @@ export const SocketProvider = ({ children }) => {
     if (!userId && socket !== null) {
         setSocket(null);
     }
+
+    useEffect(() => {
+        if (isChecking) return;
+
+        if (!isAuthenticated) {
+            setCurrentUser(null);
+            setOnlineUsers([]);
+            return;
+        }
+
+        setCurrentUser(socketAuthState.user);
+    }, [isAuthenticated, isChecking, socketAuthState.user]);
 
     // =========================================================
     // Lưu last_message_id với debounce (5s) + clear on unmount
@@ -82,6 +104,8 @@ export const SocketProvider = ({ children }) => {
     // Dùng useState để Context trigger re-render
     // =========================================================
     useEffect(() => {
+        if (isChecking || !isAuthenticated) return;
+
         // Không có user -> không tạo socket
         if (!userId) {
             if (socketRef.current) {
@@ -91,9 +115,8 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const token = getAccessToken();
-        if (!token) {
-            console.warn("[Socket] No token found, skipping connection");
+        if (!socketAuthState.shouldConnect) {
+            console.warn("[Socket] Auth state is not ready, skipping connection");
             return;
         }
 
@@ -105,7 +128,7 @@ export const SocketProvider = ({ children }) => {
             transports: ["websocket"],
 
             // Dùng auth object - server verify JWT để lấy userId
-            auth: { token },
+            auth: { token: socketAuthState.token },
 
             reconnection: true,
             reconnectionAttempts: Infinity,
@@ -244,7 +267,7 @@ export const SocketProvider = ({ children }) => {
                 saveLastIdTimer.current = null;
             }
         };
-    }, [userId, syncMissedMessages, saveLastMessageId]);
+    }, [isAuthenticated, isChecking, socketAuthState.shouldConnect, socketAuthState.token, userId, syncMissedMessages, saveLastMessageId]);
 
     // Lưu last_message_id khi user đóng tab
     useEffect(() => {
@@ -255,23 +278,6 @@ export const SocketProvider = ({ children }) => {
         };
         window.addEventListener("beforeunload", handleBeforeUnload);
         return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-    }, []);
-
-    // =========================================================
-    // Auth state sync (localStorage event)
-    // =========================================================
-    useEffect(() => {
-        const syncUser = () => {
-            const nextUser = parseStoredUser();
-            setCurrentUser(nextUser);
-            if (!nextUser) setOnlineUsers([]);
-        };
-        window.addEventListener("storage", syncUser);
-        window.addEventListener(AUTH_CHANGED_EVENT, syncUser);
-        return () => {
-            window.removeEventListener("storage", syncUser);
-            window.removeEventListener(AUTH_CHANGED_EVENT, syncUser);
-        };
     }, []);
 
     return (

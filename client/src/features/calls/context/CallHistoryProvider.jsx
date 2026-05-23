@@ -14,9 +14,11 @@ import {
     subscribeCallHistoryRefresh,
 } from '@/features/calls/context/callHistoryBadgeState.js';
 import { getAccessToken, getStoredUser } from '@/services/auth/authSession.js';
+import { useAuth } from '@/services/auth/AuthProvider.jsx';
 
 export const CallHistoryProvider = ({ children }) => {
     const { socket, currentUser } = useSocket();
+    const { isAuthenticated, isChecking } = useAuth();
     const [missedCount, setMissedCount] = useState(0);
     const isFetchingMissedCountRef = useRef(false);
     const currentUserId = getCurrentUserId(currentUser);
@@ -26,6 +28,8 @@ export const CallHistoryProvider = ({ children }) => {
 
     // FETCH MISSED CALLS ON MOUNT
     const fetchMissedCount = useCallback(async () => {
+        if (isChecking || !isAuthenticated) return;
+
         try {
             await hydrateMissedCount({
                 getToken: getAccessToken,
@@ -36,7 +40,7 @@ export const CallHistoryProvider = ({ children }) => {
         } catch (error) {
             console.error("Failed to fetch missed calls:", error);
         }
-    }, []);
+    }, [isAuthenticated, isChecking]);
 
     // Effect 1: fetch số lượng missed call khi component mount
     useEffect(() => {

@@ -276,7 +276,7 @@ function _handleGlareWinner({ data, callerId, socket, bag, leaveCall }) {
     const {
         isGlareWaitingRef, glareWinnerDataRef,
         connectionRef, callTimeoutRef, localStreamRef, userVideo,
-        callStateRef, isOutgoingCallRef,
+        callStateRef, callAcceptedRef, isOutgoingCallRef,
         setCallAccepted, setCallEnded, setCallState, setIsCalling, setRemoteStream,
     } = bag;
 
@@ -315,6 +315,7 @@ function _handleGlareWinner({ data, callerId, socket, bag, leaveCall }) {
         setRemoteStream(remote);
         if (userVideo.current) userVideo.current.srcObject = remote;
         setCallAccepted(true);
+        callAcceptedRef.current = true;
         setCallEnded(false);
         setCallState(CALL_STATES.CONNECTED);
         callStateRef.current = CALL_STATES.CONNECTED;

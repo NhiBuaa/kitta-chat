@@ -6,6 +6,7 @@ import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { clearCallStorage } from '@/features/calls/context/callStorage.js';
 import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
 import { getStoredUser } from '@/services/auth/authSession.js';
+import { getLeaveCallEvent } from '@/features/calls/context/callLifecycleState.js';
 
 /**
  * Các action thực hiện cuộc gọi: callUser, answerCall, rejectCall, leaveCall.
@@ -47,6 +48,7 @@ export const useCallActions = ({ socket, bag }) => {
         updateStream(localStream);
         localStreamRef.current = localStream;
         setCallAccepted(false);
+        callAcceptedRef.current = false;
         setCallEnded(false);
         setIsCalling(true);
         setCall({});
@@ -91,6 +93,7 @@ export const useCallActions = ({ socket, bag }) => {
             clearTimeout(callTimeoutRef.current);
             const signal = payload?.signal || payload;
             setCallAccepted(true);
+            callAcceptedRef.current = true;
             setCallEnded(false);
             setCallState(CALL_STATES.CONNECTED);
             callStateRef.current = CALL_STATES.CONNECTED;
@@ -120,6 +123,7 @@ export const useCallActions = ({ socket, bag }) => {
         const signalToUse = JSON.parse(savedSignal);
 
         setCallAccepted(true);
+        callAcceptedRef.current = true;
         setCallEnded(false);
         setCallState(CALL_STATES.CONNECTED);
         callStateRef.current = CALL_STATES.CONNECTED;
@@ -171,7 +175,13 @@ export const useCallActions = ({ socket, bag }) => {
         const partnerUserId =
             localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
         const callId = localStorage.getItem('tempCallId') || null;
-        const willEmitCancelled = Boolean(socket && partnerUserId && callId && !callAcceptedRef.current);
+        const leaveCallEvent = getLeaveCallEvent({
+            socket,
+            partnerUserId,
+            callId,
+            callAccepted: callAcceptedRef.current,
+        });
+        const willEmitCancelled = leaveCallEvent?.event === SOCKET_EVENTS.CALL_REJECT;
 
         console.log('[CALL_DIAG][client:leaveCall]', {
             source,
@@ -183,13 +193,8 @@ export const useCallActions = ({ socket, bag }) => {
             willEmitRejectCancelled: willEmitCancelled,
         });
 
-        if (socket && partnerUserId) {
-            // Dùng ref để tránh stale closure
-            if (!callAcceptedRef.current) {
-                if (callId) socket.emit(SOCKET_EVENTS.CALL_REJECT, { to: partnerUserId, callId, reason: 'cancelled' });
-            } else {
-                if (callId) socket.emit(SOCKET_EVENTS.CALL_END, { to: partnerUserId, callId });
-            }
+        if (leaveCallEvent) {
+            socket.emit(leaveCallEvent.event, leaveCallEvent.payload);
         }
 
         clearStoredCallState();
