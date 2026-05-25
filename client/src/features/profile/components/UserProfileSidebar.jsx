@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
-import { getAccessToken, setStoredUser } from "@/services/auth/authSession.js";
+import { setStoredUser } from "@/services/auth/authSession.js";
 import { updateUserProfile } from "@/services/api/userApi.js";
 const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
-  const URL_UPDATE_PROFILE = `${VITE_API_URL_USERS}/profile`;
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
   // Khởi tạo state cho form
   const [formData, setFormData] = useState({
@@ -102,14 +100,8 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
         dataPayload.append("activityStatus", JSON.stringify(activityStatus));
         dataPayload.append("avatar", formData.avatarFile);
 
-        // Lấy Token
-        const token = getAccessToken();
-
-        // Gọi API
-        // Thay URL bằng địa chỉ Backend thực tế của bạn
-        res = await axios.put(URL_UPDATE_PROFILE, dataPayload, {
+        res = await updateUserProfile(dataPayload, {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         });
