@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
 import { getAccessToken, setStoredUser } from "@/services/auth/authSession.js";
+import { updateUserProfile } from "@/services/api/userApi.js";
 const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const URL_UPDATE_PROFILE = `${VITE_API_URL_USERS}/profile`;
@@ -85,34 +86,40 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
     try {
       setLoading(true);
 
-      // Chuẩn bị FormData
-      const dataPayload = new FormData();
-      dataPayload.append("displayName", formData.displayName);
-      dataPayload.append("status", formData.status);
-
       // Xử lý status online/offline
       const activityStatus = {
         state: formData.isOnline ? "active" : "offline",
         lastSeen: new Date(),
       };
-      dataPayload.append("activityStatus", JSON.stringify(activityStatus));
 
-      // Chỉ gửi avatar nếu người dùng CÓ chọn file mới
+      let res;
+
       if (formData.avatarFile) {
+        // Chuẩn bị FormData
+        const dataPayload = new FormData();
+        dataPayload.append("displayName", formData.displayName);
+        dataPayload.append("status", formData.status);
+        dataPayload.append("activityStatus", JSON.stringify(activityStatus));
         dataPayload.append("avatar", formData.avatarFile);
+
+        // Lấy Token
+        const token = getAccessToken();
+
+        // Gọi API
+        // Thay URL bằng địa chỉ Backend thực tế của bạn
+        res = await axios.put(URL_UPDATE_PROFILE, dataPayload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        res = await updateUserProfile({
+          displayName: formData.displayName,
+          status: formData.status,
+          activityStatus: JSON.stringify(activityStatus),
+        });
       }
-
-      // Lấy Token
-      const token = getAccessToken();
-
-      // Gọi API
-      // Thay URL bằng địa chỉ Backend thực tế của bạn
-      const res = await axios.put(URL_UPDATE_PROFILE, dataPayload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
 
       if (res.data.success) {
         if (formData.avatarFile) {
