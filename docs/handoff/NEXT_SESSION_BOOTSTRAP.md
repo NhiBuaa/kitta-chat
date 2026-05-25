@@ -1,197 +1,181 @@
-﻿# Next Session Bootstrap: Backend Reliability / OPSWAT Prep
+﻿# Next Session Bootstrap: Auth Migration + Group Realtime Fix
 
 Use this file to bootstrap the next agent session for the `web-socket` repository.
 
-## Current Goal
+## Current Completed Issue
 
-Continue preparing this realtime distributed chat project for backend/software engineering internship applications such as OPSWAT.
+Most recent completed implementation: **group creation realtime/sidebar metadata fix**.
 
-Prioritize small, verifiable backend engineering slices:
+Problem fixed:
 
-1. config/env validation
-2. CI pipeline
-3. API response/error consistency
-4. operational signals/metrics
-5. app-level rate limits/security polish
-6. Socket.IO integration tests
+- Before: group creation persisted the system message, but immediate create response and `groupUpserted` realtime payload lacked `lastMessage`, `hasUnread`, and `unreadCount`.
+- Result: refresh showed correct sidebar state, but realtime sidebar state was stale/incomplete.
+- Now:
+  - Creator receives group sidebar payload with latest system message, `hasUnread=false`, `unreadCount=0`.
+  - Invited members receive group sidebar payload with latest system message, `hasUnread=true`, `unreadCount=1`.
+  - Invited members join the Socket.IO group room after receiving `groupUpserted`, so first normal group message can arrive without refresh.
+  - Opening a group clears group unread state on the sidebar.
 
-Avoid large refactors.
+Recently completed auth migration slices:
 
-## Current Architecture
+- Issue A: centralized `authSession` wrapper.
+- Issue B: backend cookie-capable `/api/auth/session`, `/api/auth/refresh`, `/api/auth/logout` while preserving Bearer JWT.
+- Issue C: `AuthProvider` bootstrap from refresh/session cookie with localStorage fallback.
+- Issue D: shared `axiosClient` refresh-once retry.
+- Issue E: `SocketProvider` uses `AuthProvider` token state.
+- Issue F0: `authSession` memory-first with localStorage fallback.
+- Issue F1: `ChatPage` startup auth gates use `AuthProvider` state.
+- Issue F2: `useSearch` uses `userApi`/shared `axiosClient`.
+- Issue F3: friends feature uses `friendApi`/shared `axiosClient`.
+- Issue F4: group JSON REST flows use `groupApi`/shared `axiosClient`.
 
-- `client/`: React + Vite frontend.
-- `server/`: Express backend + Socket.IO + Mongoose.
-- `server/server.js`: process startup/shutdown only; connects MongoDB, Redis cache, initializes Socket.IO, then listens.
-- `server/src/app.js`: Express app factory; owns middleware, routes, request logging, health/readiness, error handling.
-- MongoDB is the durable source of truth.
-- Redis is used for Socket.IO adapter fan-out, presence, caches, and short-lived call coordination.
-- Socket.IO is the realtime path for chat, typing, presence, friendship events, WebRTC signaling, and call lifecycle events.
-- RabbitMQ is background-only for image processing, notification/email, and audit jobs. Do not use RabbitMQ for realtime chat/call delivery.
-- Docker Compose runs nginx, 3 backend replicas, Redis, MongoDB, RabbitMQ, and workers.
+## Current Bug / Issue In Progress
 
-## Recently Completed Slices
+No active implementation is intentionally left half-finished.
 
-- Issue 1: HTTP integration tests.
-  - `server/test/httpCoreFlows.test.js`
-  - `server/src/app.js` introduced as testable Express app factory.
+Recommended next work is a **manual verification / diagnose pass** for the group creation realtime fix, because code/tests pass but the user-reported behavior needs browser/manual confirmation with two accounts.
 
-- Issue 3: structured request logging + request IDs.
-  - `server/src/middlewares/requestLogging.js`
-  - `server/src/utils/logger.js`
-  - Preserves/generates `x-request-id`, returns it in response, logs request fields.
+Potential follow-up if manual verification passes:
 
-- Issue 5: hardened health/readiness endpoints.
-  - `server/src/services/healthService.js`
-  - `/healthz`: MongoDB, Redis, RabbitMQ, uptime, memory, `healthy|degraded|unhealthy`.
-  - `/readyz`: required startup deps are MongoDB + Redis; RabbitMQ can be degraded.
+- Plan the next auth migration slice for profile or file/upload.
+- Prefer profile before upload/call if continuing auth migration.
+- Defer call service and upload/file clients because they have higher lifecycle/multipart risk.
 
-- Issue 4: RabbitMQ correlation propagation.
-  - `server/src/queues/correlation.js`
-  - `server/src/queues/producer.js`
-  - `server/src/workers/workerRuntime.js`
-  - HTTP `requestId` propagates to RabbitMQ `correlationId`, retry, DLQ, and worker logs.
+## Files Changed In Current Working Tree
 
-- Issue 14: RabbitMQ poison-message handling and reliability tests.
-  - Malformed JSON routes directly to DLQ.
-  - Original message is not acked if retry/DLQ publish fails.
-  - Covered in `server/test/rabbitmqInfrastructure.test.js`.
+Current changed files include both the F4 auth migration and the group realtime/sidebar fix:
 
-- Issue 6: RabbitMQ worker flow docs.
-  - `docs/RABBITMQ_WORKER_FLOWS.md`
+- `client/src/services/api/groupApi.js`
+  - Added `createGroup`, `addGroupMember`, `removeGroupMember`, `transferGroupAdmin`, `deleteGroup` wrappers via shared `axiosClient`.
+- `client/src/features/groups/components/CreateGroupModal.jsx`
+  - Uses `createGroup()` instead of raw axios/token header.
+- `client/src/features/groups/components/AddMemberModal.jsx`
+  - Uses `getFriends()` and `addGroupMember()` instead of raw axios/token header.
+- `client/src/features/groups/components/GroupMembersModal.jsx`
+  - Uses `removeGroupMember()`, `transferGroupAdmin()`, `deleteGroup()` instead of raw axios/token header.
+- `client/src/features/groups/socket/useGroupSocket.js`
+  - Emits `joinGroup` when current user receives `groupUpserted` for a group they belong to.
+- `client/src/features/chat/hooks/useChatMessages.js`
+  - Accepts `setGroups`; clears group unread state when a group chat is opened.
+- `client/src/features/chat/pages/ChatPage.jsx`
+  - Passes `setGroups` into `useChatMessages`.
+- `client/src/features/chat/socket/useMessageSocket.js`
+  - Clears group sidebar unread state when current user read event arrives.
+- `server/src/controllers/groupController.js`
+  - Builds sidebar-ready group payload for create response and per-member `groupUpserted` emits.
+- `server/src/controllers/messageController.js`
+  - `createSystemMessage(groupId, text, options)` supports optional `readBy`.
+- `server/test/groupController.test.js`
+  - Added regression test for creator/invited group creation sidebar metadata.
 
-- Issue 7: Socket.IO multi-replica scaling docs.
-  - `docs/SOCKET_IO_SCALING.md`
+Also note:
 
-- Issue 8: REST API docs.
-  - `docs/API.md`
+- `.codegraph/` is untracked. Do not touch unless the user asks.
+- Git may warn that LF will be replaced by CRLF on Windows; this was already observed during `git diff`.
 
-- Handoff doc:
-  - `docs/handoff/HANDOFF_BACKEND_RELIABILITY_PHASE_1.md`
+## Tests / Manual Tests Already Passed
 
-## Important Docs To Read First
+Automated checks passed after the group realtime/sidebar fix:
 
-Read these before making backend reliability changes:
+```powershell
+cd server
+npm.cmd test -- test/groupController.test.js
+```
 
-- `AGENTS.md`
-- `docs/handoff/HANDOFF_BACKEND_RELIABILITY_PHASE_1.md`
-- `docs/ARCHITECTURE.md`
-- `docs/API.md`
-- `docs/RABBITMQ_WORKER_FLOWS.md`
-- `docs/SOCKET_IO_SCALING.md`
-
-## Verification Status
-
-Last full server test after runtime changes:
+Result: `5/5` group controller tests passed.
 
 ```powershell
 cd server
 npm.cmd test
 ```
 
-Result at that time: `146` tests passed, `0` failed.
+Result: `165/165` server tests passed.
 
-PowerShell blocks `npm.ps1` in this environment, so use `npm.cmd test` rather than `npm test` from PowerShell.
+```powershell
+cd client
+npm.cmd test
+```
 
-Docs-only slices after that did not require tests because no doc/link-check script exists.
+Result: `95/95` client tests passed.
 
-## Current Known Gaps
+```powershell
+cd client
+npm.cmd run build
+```
 
-From the OPSWAT-oriented audit, remaining gaps include:
+Result: build passed.
 
-1. Centralized env/config validation.
-2. GitHub Actions CI pipeline.
-3. Consistent API error/response shapes.
-4. Basic operational signals or metrics endpoint.
-5. App-level rate limiting for sensitive routes/events.
-6. Security hygiene polish: Helmet/CORS/upload/JWT validation docs or baseline.
-7. Socket.IO integration tests for authenticated connection/message delivery.
-8. Optional OpenAPI later; current `docs/API.md` is hand-written and intentionally honest.
+Known build warning:
 
-## Recommended Next Slice
+- Vite still warns that one chunk is larger than 500 kB. This is existing/non-blocking and unrelated.
 
-Recommended next implementation slice: **centralized env/config validation**.
+Manual tests still recommended, not yet confirmed in browser after latest fix:
 
-Why:
+1. A creates group with B/C.
+2. A immediately sees group sidebar latest message: `A đã tạo nhóm`, not bold, no unread badge.
+3. B/C immediately see new group with latest message: `A đã tạo nhóm`, bold, unread badge `1`.
+4. B opens the group; unread badge clears.
+5. A sends first normal group message; B/C receive it without refresh.
+6. Refresh A/B/C; sidebar state matches realtime state.
 
-- High backend-engineering value for OPSWAT.
-- Complements health/readiness and Docker Compose docs.
-- Can be implemented test-first with small scope.
+## Risks / Caveats
 
-Suggested TDD scope:
+- The backend now persists creator read state for the create-group system message via `readBy: [adminId]`.
+- `createSystemMessage` now accepts optional `readBy`; existing callers keep default `[]` behavior.
+- Group creation emits `groupUpserted` per member instead of one shared payload, because unread state is user-specific.
+- Client joins group room on `groupUpserted`; this is intentional for newly created/added groups so future group messages arrive without refresh.
+- `useChatMessages` now clears group unread state when opening group chats; this aligns with existing `markRead` behavior.
+- There is no browser/E2E test for multi-account realtime group creation yet, so manual verification is important.
+- Do not remove localStorage token persistence yet. Remaining higher-risk auth readers still exist in profile/upload/file/call areas.
+- Defer `callService` migration: it has active-call lifecycle and hard `401 -> clear token -> /login` behavior.
+- Defer upload/file migration: multipart and presigned S3 PUT flows are higher risk than JSON REST calls.
 
-- Add a config/env module for server and worker contexts.
-- Validate required variables:
-  - server: `MONGO_URI`, `JWT_SECRET`, frontend URL/CORS setting where applicable, Redis URL/host/port
-  - RabbitMQ publishers/workers: `RABBITMQ_URL` when queue use is required
-  - worker-specific concurrency/retry values should parse as numbers with defaults
-- Keep Docker Compose injected env compatible.
-- Add tests for missing/invalid env without starting real services.
-- Do not broadly rewrite startup.
+## Exact Next Recommended Skill
 
-Alternative lower-risk next slice: **GitHub Actions CI** once current working tree is clean.
+Use **`diagnose`** next.
 
-## Skills To Use
+Reason: the next safest step is to manually verify and diagnose the just-fixed realtime group creation behavior with two accounts before starting another migration slice.
 
-- Use `tdd` for env validation, CI-affecting scripts, API response consistency, metrics, rate limits, and socket integration tests.
-- Use `zoom-out` before touching Socket.IO/call architecture.
-- Use `diagnose` if tests fail unexpectedly.
-- Use `handoff` when compacting the session again.
+## Exact Next Prompt
+
+```text
+Use the diagnose skill.
+
+Verify the group creation realtime/sidebar fix manually and from code if needed.
+
+Context:
+- The backend now returns sidebar-ready group payloads on createGroup.
+- Creator should receive lastMessage "A đã tạo nhóm", hasUnread=false, unreadCount=0.
+- Invited members should receive the same lastMessage, hasUnread=true, unreadCount=1.
+- Client useGroupSocket now emits joinGroup on groupUpserted for current user's memberships.
+- useChatMessages now clears group unread state when opening a group.
+
+Manual verification goals:
+1. A creates group with B/C.
+2. A immediately sees latest message "A đã tạo nhóm", not bold, no unread badge.
+3. B/C immediately see the group, latest message "A đã tạo nhóm", bold, badge 1.
+4. B opens group; badge clears.
+5. A sends first normal group message; B/C receive it without refresh.
+6. Refresh A/B/C; sidebar state matches realtime state.
+
+If manual verification fails:
+- Diagnose root cause first.
+- Do not refactor broadly.
+- Propose the smallest safe fix.
+
+If manual verification passes:
+- Recommend the next smallest auth migration slice.
+
+Do not modify files unless a reproducible failure is found and the smallest safe fix is clear.
+```
 
 ## Do Not Change Casually
 
-- Do not remove `server/src/app.js`; it is the Express test seam.
-- Do not move process startup back into `app.js`.
 - Do not use RabbitMQ for realtime chat/call delivery.
-- Do not make RabbitMQ a hard dependency for chat API readiness unless explicitly designed.
-- Do not treat Redis as durable source of truth.
+- Do not remove MongoDB as source of truth.
+- Do not remove localStorage token persistence yet.
+- Do not change backend Socket.IO auth to cookie auth yet.
+- Do not refactor call lifecycle broadly.
 - Do not remove `idempotencyKey` behavior from message send.
-- Do not remove RabbitMQ `correlationId`, retry, DLQ, or poison-message behavior.
-- Do not refactor call flow broadly without reading call handler services and tests.
-- Do not overstate production readiness in docs or CV notes.
-
-## Files Most Likely Needed Next
-
-Backend reliability:
-
-- `server/server.js`
-- `server/src/app.js`
-- `server/src/services/healthService.js`
-- `server/src/middlewares/requestLogging.js`
-- `server/src/utils/logger.js`
-- `server/src/queues/producer.js`
-- `server/src/queues/correlation.js`
-- `server/src/workers/workerRuntime.js`
-- `server/test/httpCoreFlows.test.js`
-- `server/test/healthEndpoints.test.js`
-- `server/test/requestLoggingMiddleware.test.js`
-- `server/test/rabbitmqInfrastructure.test.js`
-
-Docs:
-
-- `README.md`
-- `docs/ARCHITECTURE.md`
-- `docs/API.md`
-- `docs/RABBITMQ_WORKER_FLOWS.md`
-- `docs/SOCKET_IO_SCALING.md`
-- `docs/handoff/HANDOFF_BACKEND_RELIABILITY_PHASE_1.md`
-
-## Honest CV-Safe Claims Right Now
-
-Safe:
-
-- Realtime chat backend using Express, Socket.IO, MongoDB, Redis adapter, RabbitMQ, and Docker Compose.
-- Multi-replica Socket.IO delivery documented with Redis adapter fan-out.
-- Request ID and queue correlation ID tracing from HTTP to RabbitMQ retry/DLQ.
-- RabbitMQ retry queues, DLQs, poison-message routing, and tests.
-- Health/readiness endpoints with degraded states.
-- HTTP integration tests for core REST flows.
-- Hand-written REST API, RabbitMQ, and Socket.IO architecture docs.
-
-Not safe yet:
-
-- Full production observability.
-- Full OpenAPI/Swagger automation.
-- TypeScript backend.
-- Complete CI/CD.
-- Production-grade security hardening.
-- Complete end-to-end distributed-system test coverage.
+- Do not change normal group message unread semantics while verifying group creation.
+- Do not touch `.codegraph/` unless requested.

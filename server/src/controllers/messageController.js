@@ -105,7 +105,7 @@ exports.getMessages = async (req, res) => {
   }
 };
 
-exports.createSystemMessage = async (groupId, text) => {
+exports.createSystemMessage = async (groupId, text, options = {}) => {
   try {
     const systemMessage = new Message({
       conversationId: groupId,
@@ -114,6 +114,7 @@ exports.createSystemMessage = async (groupId, text) => {
       receiver: null,
       text: text,
       attachments: [],
+      readBy: options.readBy || [],
     });
     await systemMessage.save();
     return systemMessage;

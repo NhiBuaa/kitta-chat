@@ -235,7 +235,7 @@ const Home = () => {
   } = useChatMessages({
     activeChat, currentUser, socket,
     uploadQueue, clearUploads, armAutoScrollLock, scrollRef,
-    setHasNewUnread, setUsers, fetchNewConversation, scrollChatToBottom, setShowEmoji,
+    setHasNewUnread, setUsers, setGroups, fetchNewConversation, scrollChatToBottom, setShowEmoji,
   });
 
   // Typing hook

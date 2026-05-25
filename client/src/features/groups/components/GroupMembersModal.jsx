@@ -6,12 +6,15 @@ import {
   FaUserPlus,
   FaTrash,
 } from "react-icons/fa";
-import axios from "axios";
 import { toast } from "react-toastify";
 import AddMemberModal from "@/features/groups/components/AddMemberModal.jsx";
 import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
-import { getAccessToken } from "@/services/auth/authSession.js";
+import {
+  deleteGroup,
+  removeGroupMember,
+  transferGroupAdmin,
+} from "@/services/api/groupApi.js";
 
 const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   const [members, setMembers] = useState([]);
@@ -27,9 +30,6 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
     isDangerous: false,
     onConfirm: null,
   });
-
-  const API_URL = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
-  const token = getAccessToken();
 
   const adminId =
     group.admin && typeof group.admin === "object"
@@ -67,11 +67,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
       onConfirm: async () => {
         setLoading(true);
         try {
-          const res = await axios.post(
-            `${API_URL}/${group._id}/remove-member`,
-            { memberId },
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
+          const res = await removeGroupMember(group._id, memberId);
 
           if (res.data.success) {
             if (isCurrentUser) {
@@ -110,11 +106,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
       onConfirm: async () => {
         setLoading(true);
         try {
-          const res = await axios.post(
-            `${API_URL}/${group._id}/transfer-admin`,
-            { newAdminId },
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
+          const res = await transferGroupAdmin(group._id, newAdminId);
 
           if (res.data.success) {
             toast.success("Chuyển quyền trưởng nhóm thành công");
@@ -148,9 +140,7 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
       onConfirm: async () => {
         setLoading(true);
         try {
-          const res = await axios.delete(`${API_URL}/${group._id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await deleteGroup(group._id);
 
           if (res.data.success) {
             toast.success("Giải tán nhóm thành công");

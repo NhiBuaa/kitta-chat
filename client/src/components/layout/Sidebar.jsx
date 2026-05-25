@@ -127,11 +127,15 @@ const Sidebar = ({
             <div className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase">
               Nhóm chat
             </div>
-            {groups.map((group) => (
+            {groups.map((group) => {
+              const unreadCount = Number(group.unreadCount || 0);
+              const hasUnread = unreadCount > 0;
+
+              return (
               <div
                 key={group._id}
                 onClick={() => handleSelectUser(group)}
-                className={`flex items-center p-4 cursor-pointer border-b border-gray-50 ${group.hasUnread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
+                className={`flex items-center p-4 cursor-pointer border-b border-gray-50 ${hasUnread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"}`}
               >
                 <img
                   src={getAvatarUrl(group.avatar)}
@@ -140,11 +144,11 @@ const Sidebar = ({
                 />
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className={`text-sm truncate pr-2 ${group.hasUnread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
+                    <h3 className={`text-sm truncate pr-2 ${hasUnread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
                       {group.name}
                     </h3>
                     {group.lastMessage && (
-                      <span className={`text-[10px] flex-shrink-0 ${group.hasUnread ? "text-blue-600 font-bold" : "text-gray-400"}`}>
+                      <span className={`text-[10px] flex-shrink-0 ${hasUnread ? "text-blue-600 font-bold" : "text-gray-400"}`}>
                         {new Date(group.lastMessage.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -154,19 +158,20 @@ const Sidebar = ({
                   </div>
                   <p className="text-xs truncate text-gray-500">
                     {group.lastMessage
-                      ? renderLastMessage(group, currentUser._id)
+                      ? renderLastMessage({ ...group, hasUnread }, currentUser._id)
                       : `${group.members.length} thành viên`}
                   </p>
                 </div>
-                {group.hasUnread && (
+                {unreadCount > 0 && (
                   <div className="ml-2 flex-shrink-0">
                     <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow animate-bounce">
-                      {group.unreadCount > 9 ? "9+" : group.unreadCount}
+                      {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </>
         )}
 
@@ -186,7 +191,7 @@ const Sidebar = ({
               user.isReceived ||
               sentRequests.includes(user._id),
             );
-            const hasUnread = Boolean(user.hasUnread);
+            const hasUnread = (user.unreadCount || 0) > 0;
 
             return (
               <div
@@ -267,7 +272,7 @@ const Sidebar = ({
                     )}
                   </div>
                 )}
-                {hasUnread && isFriend && (
+                {user.unreadCount > 0 && isFriend && (
                   <div className="ml-2 flex-shrink-0">
                     <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow animate-bounce">
                       {user.unreadCount > 9 ? "9+" : user.unreadCount}
@@ -308,3 +313,5 @@ const Sidebar = ({
 };
 
 export default Sidebar;
+
+
