@@ -1,13 +1,11 @@
 import {
   clearAuthSession,
-  getAccessToken,
   getStoredUser,
   setAccessToken,
   setStoredUser,
 } from "./authSession.js";
 
 const defaultTokenStore = {
-  getAccessToken,
   setAccessToken,
   getStoredUser,
   setStoredUser,
@@ -39,18 +37,8 @@ export const bootstrapAuth = async ({
         });
       }
     } catch {
-      // Cookie bootstrap is optional during migration; fall back to local token.
+      // Cookie bootstrap is optional during migration; unauthenticated state is handled below.
     }
-  }
-
-  const fallbackToken = tokenStore.getAccessToken?.() || null;
-  if (fallbackToken) {
-    return createAuthState({
-      status: "authenticated",
-      source: "local-storage-fallback",
-      token: fallbackToken,
-      user: tokenStore.getStoredUser?.() || null,
-    });
   }
 
   return createAuthState({

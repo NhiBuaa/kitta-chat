@@ -9,7 +9,10 @@ const createTokenStore = ({ token = null, user = null } = {}) => {
   let currentUser = user;
   return {
     calls,
-    getAccessToken: () => currentToken,
+    getAccessToken: () => {
+      calls.push(["getAccessToken"]);
+      return currentToken;
+    },
     setAccessToken: (nextToken) => {
       calls.push(["setAccessToken", nextToken]);
       currentToken = nextToken;
@@ -52,7 +55,7 @@ test("bootstrapAuth prefers refresh cookie and stores the returned token and use
   ]);
 });
 
-test("bootstrapAuth falls back to the existing local token when refresh is unavailable", async () => {
+test("bootstrapAuth returns unauthenticated when refresh is unavailable without reading token fallback", async () => {
   const user = { id: "user-1" };
   const tokenStore = createTokenStore({ token: "stored-token", user });
 
@@ -66,11 +69,12 @@ test("bootstrapAuth falls back to the existing local token when refresh is unava
   });
 
   assert.deepEqual(state, {
-    status: "authenticated",
-    source: "local-storage-fallback",
-    token: "stored-token",
-    user,
+    status: "unauthenticated",
+    source: "none",
+    token: null,
+    user: null,
   });
+  assert.deepEqual(tokenStore.calls, []);
 });
 
 test("bootstrapAuth returns unauthenticated when refresh and local fallback are unavailable", async () => {
