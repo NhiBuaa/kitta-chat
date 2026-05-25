@@ -14,19 +14,11 @@ const getStorage = () => {
   return null;
 };
 
-export const getAccessToken = () => memoryAccessToken || getStorage()?.getItem(ACCESS_TOKEN_KEY) || null;
+export const getAccessToken = () => memoryAccessToken;
 
 export const setAccessToken = (token) => {
   memoryAccessToken = token || null;
-
-  const storage = getStorage();
-  if (!storage) return;
-
-  if (token) {
-    storage.setItem(ACCESS_TOKEN_KEY, token);
-  } else {
-    storage.removeItem(ACCESS_TOKEN_KEY);
-  }
+  getStorage()?.removeItem(ACCESS_TOKEN_KEY);
 };
 
 export const clearAccessToken = () => {

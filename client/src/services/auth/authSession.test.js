@@ -32,12 +32,12 @@ test.afterEach(() => {
   delete globalThis.localStorage;
 });
 
-test("access token helpers preserve current localStorage behavior", () => {
+test("access token helpers keep token in memory only", () => {
   assert.equal(getAccessToken(), null);
 
   setAccessToken("jwt-token");
 
-  assert.equal(globalThis.localStorage.getItem("token"), "jwt-token");
+  assert.equal(globalThis.localStorage.getItem("token"), null);
   assert.equal(getAccessToken(), "jwt-token");
 
   clearAccessToken();
@@ -71,13 +71,13 @@ test("clearAuthSession clears token and stored user together", () => {
 });
 
 
-test("access token reads localStorage fallback when memory is empty", () => {
+test("access token ignores localStorage when memory is empty", () => {
   globalThis.localStorage.setItem("token", "stored-token");
 
-  assert.equal(getAccessToken(), "stored-token");
+  assert.equal(getAccessToken(), null);
 });
 
-test("memory access token wins over localStorage fallback", () => {
+test("memory access token is not affected by localStorage", () => {
   globalThis.localStorage.setItem("token", "stored-token");
 
   setAccessToken("memory-token");
@@ -86,7 +86,8 @@ test("memory access token wins over localStorage fallback", () => {
   assert.equal(getAccessToken(), "memory-token");
 });
 
-test("clearAccessToken clears memory and localStorage", () => {
+test("clearAccessToken clears memory and removes legacy localStorage token", () => {
+  globalThis.localStorage.setItem("token", "legacy-token");
   setAccessToken("memory-token");
 
   clearAccessToken();
@@ -119,7 +120,8 @@ test("malformed localStorage user returns null when memory is empty", () => {
   assert.equal(getStoredUser(), null);
 });
 
-test("clearAuthSession clears memory and localStorage", () => {
+test("clearAuthSession clears memory token, legacy token, and persisted user", () => {
+  globalThis.localStorage.setItem("token", "legacy-token");
   setAccessToken("memory-token");
   setStoredUser({ id: "user-1" });
 

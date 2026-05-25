@@ -1,102 +1,64 @@
-﻿# Next Session Bootstrap: Auth Migration + Group Realtime Fix
+# Next Session Bootstrap: F-Final Auth Migration
 
 Use this file to bootstrap the next agent session for the `web-socket` repository.
 
 ## Current Completed Issue
 
-Most recent completed implementation: **group creation realtime/sidebar metadata fix**.
+Most recent completed issue: **frontend app-backend auth migration to shared `axiosClient`**.
 
-Problem fixed:
+Completed slices:
 
-- Before: group creation persisted the system message, but immediate create response and `groupUpserted` realtime payload lacked `lastMessage`, `hasUnread`, and `unreadCount`.
-- Result: refresh showed correct sidebar state, but realtime sidebar state was stale/incomplete.
-- Now:
-  - Creator receives group sidebar payload with latest system message, `hasUnread=false`, `unreadCount=0`.
-  - Invited members receive group sidebar payload with latest system message, `hasUnread=true`, `unreadCount=1`.
-  - Invited members join the Socket.IO group room after receiving `groupUpserted`, so first normal group message can arrive without refresh.
-  - Opening a group clears group unread state on the sidebar.
+- Search, friends, groups, messages, profile JSON, file upload control-plane, single multipart upload, call-history REST, and profile avatar multipart now use shared `axiosClient`.
+- Shared `axiosClient` provides Bearer injection plus refresh-once retry.
+- Profile avatar multipart keeps existing compression, preview, queued-avatar behavior, and warning path.
+- Group creation unread/realtime bug was previously fixed and regression-covered:
+  - Creator refresh/realtime should show creation system message as read, no badge.
+  - Invited members should see creation system message unread with badge `1`.
 
-Recently completed auth migration slices:
+Current F-final gated migration status:
 
-- Issue A: centralized `authSession` wrapper.
-- Issue B: backend cookie-capable `/api/auth/session`, `/api/auth/refresh`, `/api/auth/logout` while preserving Bearer JWT.
-- Issue C: `AuthProvider` bootstrap from refresh/session cookie with localStorage fallback.
-- Issue D: shared `axiosClient` refresh-once retry.
-- Issue E: `SocketProvider` uses `AuthProvider` token state.
-- Issue F0: `authSession` memory-first with localStorage fallback.
-- Issue F1: `ChatPage` startup auth gates use `AuthProvider` state.
-- Issue F2: `useSearch` uses `userApi`/shared `axiosClient`.
-- Issue F3: friends feature uses `friendApi`/shared `axiosClient`.
-- Issue F4: group JSON REST flows use `groupApi`/shared `axiosClient`.
+- **Step 1 approved and implemented:** access token is now memory-only in `authSession`.
+- User persistence remains unchanged for now.
+- Bootstrap fallback removal is intentionally deferred to Step 2.
 
 ## Current Bug / Issue In Progress
 
-No active implementation is intentionally left half-finished.
+Active work in progress: **F-final auth migration � remove sensitive token/user persistence from `localStorage` safely**.
 
-Recommended next work is a **manual verification / diagnose pass** for the group creation realtime fix, because code/tests pass but the user-reported behavior needs browser/manual confirmation with two accounts.
+Current state:
 
-Potential follow-up if manual verification passes:
+- Step 1 changed access token behavior only.
+- `bootstrapAuth` still contains the fallback branch, but it is effectively dead/no-op for persisted tokens because `getAccessToken()` no longer reads `localStorage["token"]`.
+- Step 2 is next: remove the dead token bootstrap fallback explicitly and update bootstrap tests.
 
-- Plan the next auth migration slice for profile or file/upload.
-- Prefer profile before upload/call if continuing auth migration.
-- Defer call service and upload/file clients because they have higher lifecycle/multipart risk.
+No known failing tests at the checkpoint.
 
 ## Files Changed In Current Working Tree
 
-Current changed files include both the F4 auth migration and the group realtime/sidebar fix:
+Current `git status --short` shows only Step 1 files changed:
 
-- `client/src/services/api/groupApi.js`
-  - Added `createGroup`, `addGroupMember`, `removeGroupMember`, `transferGroupAdmin`, `deleteGroup` wrappers via shared `axiosClient`.
-- `client/src/features/groups/components/CreateGroupModal.jsx`
-  - Uses `createGroup()` instead of raw axios/token header.
-- `client/src/features/groups/components/AddMemberModal.jsx`
-  - Uses `getFriends()` and `addGroupMember()` instead of raw axios/token header.
-- `client/src/features/groups/components/GroupMembersModal.jsx`
-  - Uses `removeGroupMember()`, `transferGroupAdmin()`, `deleteGroup()` instead of raw axios/token header.
-- `client/src/features/groups/socket/useGroupSocket.js`
-  - Emits `joinGroup` when current user receives `groupUpserted` for a group they belong to.
-- `client/src/features/chat/hooks/useChatMessages.js`
-  - Accepts `setGroups`; clears group unread state when a group chat is opened.
-- `client/src/features/chat/pages/ChatPage.jsx`
-  - Passes `setGroups` into `useChatMessages`.
-- `client/src/features/chat/socket/useMessageSocket.js`
-  - Clears group sidebar unread state when current user read event arrives.
-- `server/src/controllers/groupController.js`
-  - Builds sidebar-ready group payload for create response and per-member `groupUpserted` emits.
-- `server/src/controllers/messageController.js`
-  - `createSystemMessage(groupId, text, options)` supports optional `readBy`.
-- `server/test/groupController.test.js`
-  - Added regression test for creator/invited group creation sidebar metadata.
+- `client/src/services/auth/authSession.js`
+  - `getAccessToken()` now returns memory token only.
+  - `setAccessToken()` updates memory and removes any legacy `localStorage["token"]`.
+  - `clearAccessToken()` still clears memory and removes legacy token.
+  - User persistence remains unchanged.
+- `client/src/services/auth/authSession.test.js`
+  - Updated token assertions to memory-only semantics.
+  - Kept stored-user localStorage tests unchanged.
+  - Updated clear-session expectations to preserve Step 1 behavior: token is not persisted, user is still persisted/cleared.
 
-Also note:
-
-- `.codegraph/` is untracked. Do not touch unless the user asks.
-- Git may warn that LF will be replaced by CRLF on Windows; this was already observed during `git diff`.
+Important: prior auth migration slices may already be in the working branch/history, but current unstaged diff at handoff time only shows these Step 1 files.
 
 ## Tests / Manual Tests Already Passed
 
-Automated checks passed after the group realtime/sidebar fix:
-
-```powershell
-cd server
-npm.cmd test -- test/groupController.test.js
-```
-
-Result: `5/5` group controller tests passed.
-
-```powershell
-cd server
-npm.cmd test
-```
-
-Result: `165/165` server tests passed.
+Automated checks passed after Step 1:
 
 ```powershell
 cd client
-npm.cmd test
+npm.cmd test -- src/services/auth/authSession.test.js
 ```
 
-Result: `95/95` client tests passed.
+Result: client test command passed with `95/95` tests. Note: this repo's test script always runs the configured client suite and appended file arg.
 
 ```powershell
 cd client
@@ -107,75 +69,95 @@ Result: build passed.
 
 Known build warning:
 
-- Vite still warns that one chunk is larger than 500 kB. This is existing/non-blocking and unrelated.
+- Vite still warns that one chunk is larger than 500 kB. Existing/non-blocking.
 
-Manual tests still recommended, not yet confirmed in browser after latest fix:
+Search/check performed:
 
-1. A creates group with B/C.
-2. A immediately sees group sidebar latest message: `A đã tạo nhóm`, not bold, no unread badge.
-3. B/C immediately see new group with latest message: `A đã tạo nhóm`, bold, unread badge `1`.
-4. B opens the group; unread badge clears.
-5. A sends first normal group message; B/C receive it without refresh.
-6. Refresh A/B/C; sidebar state matches realtime state.
+```powershell
+rg -n "ACCESS_TOKEN_KEY|localStorage\.getItem\(\"token\"\)|localStorage\.setItem\(\"token\"|getStorage\(\)\?\.getItem\(ACCESS_TOKEN_KEY\)|setItem\(ACCESS_TOKEN_KEY" client/src/services/auth client/src/features/auth client/src/services/api client/src/services/socket --glob '!**/*.test.js'
+```
+
+Result: no token localStorage read/write matches outside tests.
+
+Manual tests not yet run after Step 1:
+
+1. Login creates no `localStorage["token"]`.
+2. Hard refresh with valid refresh cookie stays authenticated.
+3. Expired access token + valid refresh cookie retries through `axiosClient`.
+4. Expired/missing refresh cookie logs out.
+5. User profile still exists in `localStorage["user"]` for now.
 
 ## Risks / Caveats
 
-- The backend now persists creator read state for the create-group system message via `readBy: [adminId]`.
-- `createSystemMessage` now accepts optional `readBy`; existing callers keep default `[]` behavior.
-- Group creation emits `groupUpserted` per member instead of one shared payload, because unread state is user-specific.
-- Client joins group room on `groupUpserted`; this is intentional for newly created/added groups so future group messages arrive without refresh.
-- `useChatMessages` now clears group unread state when opening group chats; this aligns with existing `markRead` behavior.
-- There is no browser/E2E test for multi-account realtime group creation yet, so manual verification is important.
-- Do not remove localStorage token persistence yet. Remaining higher-risk auth readers still exist in profile/upload/file/call areas.
-- Defer `callService` migration: it has active-call lifecycle and hard `401 -> clear token -> /login` behavior.
-- Defer upload/file migration: multipart and presigned S3 PUT flows are higher risk than JSON REST calls.
+- Step 1 intentionally does **not** remove user persistence.
+- Step 1 intentionally does **not** remove `bootstrapAuth` fallback code; that is Step 2.
+- Since `getAccessToken()` is memory-only now, a hard refresh depends on refresh-cookie bootstrap even before Step 2.
+- If refresh cookie config is broken in a manual environment, users may appear logged out after hard refresh.
+- Cross-tab auth sync is not fully solved yet; removing token persistence weakens storage-event token sync, but active-tab `auth-changed` still exists.
+- `SocketProvider` and call code still have stored-user fallback paths; do not remove user persistence until those are diagnosed/planned.
+- Do not remove non-auth `localStorage` keys such as pending message queue, `last_message_id`, call temp state, or media state.
+- Do not change backend auth or Socket.IO backend auth unless tests prove it is required.
 
 ## Exact Next Recommended Skill
 
-Use **`diagnose`** next.
+Use **`tdd`** next.
 
-Reason: the next safest step is to manually verify and diagnose the just-fixed realtime group creation behavior with two accounts before starting another migration slice.
+Reason: Step 2 is a small implementation slice with clear tests: remove the dead token bootstrap fallback from `bootstrapAuth` and update `authBootstrap` tests.
+
+If Step 2 produces unexpected failures, switch to **`diagnose`** immediately and stop broad implementation.
 
 ## Exact Next Prompt
 
 ```text
-Use the diagnose skill.
+Use the tdd skill.
 
-Verify the group creation realtime/sidebar fix manually and from code if needed.
+Implement F-final Step 2 only: remove token bootstrap fallback.
 
 Context:
-- The backend now returns sidebar-ready group payloads on createGroup.
-- Creator should receive lastMessage "A đã tạo nhóm", hasUnread=false, unreadCount=0.
-- Invited members should receive the same lastMessage, hasUnread=true, unreadCount=1.
-- Client useGroupSocket now emits joinGroup on groupUpserted for current user's memberships.
-- useChatMessages now clears group unread state when opening a group.
+- Step 1 is complete: authSession access token is memory-only.
+- getAccessToken() no longer reads localStorage["token"].
+- User persistence remains unchanged and must not be touched.
+- bootstrapAuth still contains the old fallback branch, but it is now dead/no-op for persisted tokens.
 
-Manual verification goals:
-1. A creates group with B/C.
-2. A immediately sees latest message "A đã tạo nhóm", not bold, no unread badge.
-3. B/C immediately see the group, latest message "A đã tạo nhóm", bold, badge 1.
-4. B opens group; badge clears.
-5. A sends first normal group message; B/C receive it without refresh.
-6. Refresh A/B/C; sidebar state matches realtime state.
+Scope:
+- Modify only:
+  - client/src/services/auth/authBootstrap.js
+  - client/src/services/auth/authBootstrap.test.js
+- Do not change authSession in this step.
+- Do not remove user persistence.
+- Do not touch SocketProvider, call contexts, backend auth, axiosClient, or non-auth localStorage keys.
 
-If manual verification fails:
-- Diagnose root cause first.
-- Do not refactor broadly.
-- Propose the smallest safe fix.
+Requirements:
+- Remove the fallback branch that authenticates from tokenStore.getAccessToken() after refreshSession fails or returns no token.
+- Remove source "local-storage-fallback" from bootstrap behavior.
+- Refresh-cookie success should still:
+  - setAccessToken(result.token)
+  - setStoredUser(result.user) when present
+  - return authenticated source "refresh-cookie"
+- Refresh failure/no token should return unauthenticated source "none".
+- Keep logoutAuth behavior unchanged.
 
-If manual verification passes:
-- Recommend the next smallest auth migration slice.
+Tests:
+- Update authBootstrap tests:
+  - keep refresh-cookie success test
+  - replace local-token fallback test with: refresh unavailable returns unauthenticated even if tokenStore has a token/user
+  - keep unauthenticated when refresh returns success false/no token
+  - keep logout test
+- Run:
+  cd client && npm.cmd test -- src/services/auth/authBootstrap.test.js
+  cd client && npm.cmd run build
 
-Do not modify files unless a reproducible failure is found and the smallest safe fix is clear.
+Stop:
+- Stop after Step 2 and report checkpoint in the required CAVEMAN CHECKPOINT format.
+- Do not continue to Step 3 without explicit approval.
 ```
 
 ## Do Not Change Casually
 
-- Do not use RabbitMQ for realtime chat/call delivery.
-- Do not remove MongoDB as source of truth.
-- Do not remove localStorage token persistence yet.
-- Do not change backend Socket.IO auth to cookie auth yet.
-- Do not refactor call lifecycle broadly.
-- Do not remove `idempotencyKey` behavior from message send.
-- Do not change normal group message unread semantics while verifying group creation.
-- Do not touch `.codegraph/` unless requested.
+- Do not remove user persistence yet.
+- Do not clean SocketProvider/call stored-user fallback until a separate diagnose/plan step.
+- Do not remove non-auth localStorage keys.
+- Do not change backend auth or Socket.IO backend auth.
+- Do not refactor unrelated features.
+- Do not hide failures; diagnose them.
+- Do not commit unless user explicitly asks.
