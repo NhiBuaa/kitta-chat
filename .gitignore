@@ -96,4 +96,5 @@ nginx/ssl/*.pfx
 
 /data
 /.agents
+/.codex
 skills-lock.json
