@@ -1,40 +1,29 @@
-import axios from 'axios';
-import { getAccessToken } from '@/services/auth/authSession.js';
+import { axiosClient } from '@/services/api/axiosClient.js';
 
 const API_URL = import.meta.env.VITE_API_URL_FILES || '/api/files';
 
-// Hàm lấy Token từ LocalStorage
-const getAuthHeaders = () => {
-    const token = getAccessToken();
-    return {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    };
-};
-
 export const initUpload = async (fileName, fileType, fileHash) => {
-    const res = await axios.post(`${API_URL}/init`, {
+    const res = await axiosClient.post(`${API_URL}/init`, {
         fileName,
         fileType,
         fileHash
-    }, getAuthHeaders());
+    });
 
     return res.data;
 };
 
 export const getPresignedUrl = async (uploadId, key, partNumber) => {
-    const res = await axios.post(`${API_URL}/get-presigned-url`, {
+    const res = await axiosClient.post(`${API_URL}/get-presigned-url`, {
         uploadId,
         key,
         partNumber
-    }, getAuthHeaders());
+    });
 
     return res.data.url;
 };
 
 export const completeUpload = async (uploadId, key, parts, fileInfo) => {
-    const res = await axios.post(`${API_URL}/complete`, {
+    const res = await axiosClient.post(`${API_URL}/complete`, {
         uploadId,
         key,
         parts,
@@ -42,7 +31,7 @@ export const completeUpload = async (uploadId, key, parts, fileInfo) => {
         fileType: fileInfo.type,
         fileSize: fileInfo.size,
         fileHash: fileInfo.hash
-    }, getAuthHeaders());
+    });
 
     return res.data.file;
 };
