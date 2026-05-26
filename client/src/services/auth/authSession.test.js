@@ -46,13 +46,13 @@ test("access token helpers keep token in memory only", () => {
   assert.equal(getAccessToken(), null);
 });
 
-test("stored user helpers serialize and clear the current user", () => {
+test("stored user helpers keep the current user in memory only", () => {
   const user = { id: "user-1", displayName: "Kitta" };
 
   setStoredUser(user);
 
   assert.deepEqual(getStoredUser(), user);
-  assert.equal(globalThis.localStorage.getItem("user"), JSON.stringify(user));
+  assert.equal(globalThis.localStorage.getItem("user"), null);
 
   clearStoredUser();
 
@@ -96,19 +96,21 @@ test("clearAccessToken clears memory and removes legacy localStorage token", () 
   assert.equal(getAccessToken(), null);
 });
 
-test("stored user reads localStorage fallback when memory is empty", () => {
+test("stored user ignores localStorage fallback when memory is empty", () => {
   const user = { id: "user-1", displayName: "Stored" };
   globalThis.localStorage.setItem("user", JSON.stringify(user));
 
-  assert.deepEqual(getStoredUser(), user);
+  assert.equal(getStoredUser(), null);
 });
 
-test("memory stored user wins over localStorage fallback", () => {
+test("memory stored user is not affected by localStorage", () => {
   const memoryUser = { id: "user-1", displayName: "Memory" };
   const storedUser = { id: "user-1", displayName: "Stored" };
   globalThis.localStorage.setItem("user", JSON.stringify(storedUser));
 
   setStoredUser(memoryUser);
+  assert.equal(globalThis.localStorage.getItem("user"), null);
+
   globalThis.localStorage.setItem("user", JSON.stringify({ id: "user-1", displayName: "Stale" }));
 
   assert.deepEqual(getStoredUser(), memoryUser);
@@ -122,6 +124,7 @@ test("malformed localStorage user returns null when memory is empty", () => {
 
 test("clearAuthSession clears memory token, legacy token, and persisted user", () => {
   globalThis.localStorage.setItem("token", "legacy-token");
+  globalThis.localStorage.setItem("last_message_id", "message-1");
   setAccessToken("memory-token");
   setStoredUser({ id: "user-1" });
 
@@ -129,6 +132,7 @@ test("clearAuthSession clears memory token, legacy token, and persisted user", (
 
   assert.equal(globalThis.localStorage.getItem("token"), null);
   assert.equal(globalThis.localStorage.getItem("user"), null);
+  assert.equal(globalThis.localStorage.getItem("last_message_id"), "message-1");
   assert.equal(getAccessToken(), null);
   assert.equal(getStoredUser(), null);
 });

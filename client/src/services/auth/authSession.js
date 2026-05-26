@@ -26,29 +26,11 @@ export const clearAccessToken = () => {
   getStorage()?.removeItem(ACCESS_TOKEN_KEY);
 };
 
-const parseStoredUser = (userString) => {
-  if (!userString) return null;
-
-  try {
-    return JSON.parse(userString);
-  } catch {
-    return null;
-  }
-};
-
-export const getStoredUser = () => memoryUser || parseStoredUser(getStorage()?.getItem(STORED_USER_KEY));
+export const getStoredUser = () => memoryUser;
 
 export const setStoredUser = (user) => {
   memoryUser = user || null;
-
-  const storage = getStorage();
-  if (!storage) return;
-
-  if (user) {
-    storage.setItem(STORED_USER_KEY, JSON.stringify(user));
-  } else {
-    storage.removeItem(STORED_USER_KEY);
-  }
+  getStorage()?.removeItem(STORED_USER_KEY);
 };
 
 export const clearStoredUser = () => {

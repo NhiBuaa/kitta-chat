@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     status: "checking",
     source: "startup",
     token: getAccessToken(),
-    user: getStoredUser(),
+    user: null,
   }));
 
   const refreshAuth = useCallback(async () => {
@@ -51,15 +51,24 @@ export const AuthProvider = ({ children }) => {
     return nextState;
   }, []);
 
-  const syncFromClientStorage = useCallback(() => {
+  const syncFromClientSession = useCallback(() => {
     const token = getAccessToken();
     const user = getStoredUser();
     setAuthState({
       status: token ? "authenticated" : "unauthenticated",
-      source: token ? "client-storage-sync" : "client-storage-empty",
+      source: token ? "client-session-sync" : "client-session-empty",
       token,
       user,
     });
+  }, []);
+
+  const updateUser = useCallback((nextUser) => {
+    setStoredUser(nextUser);
+    setAuthState((current) => ({
+      ...current,
+      user: nextUser || null,
+    }));
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
   }, []);
 
   const logout = useCallback(async () => {
@@ -98,13 +107,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    window.addEventListener(AUTH_CHANGED_EVENT, syncFromClientStorage);
-    window.addEventListener("storage", syncFromClientStorage);
+    window.addEventListener(AUTH_CHANGED_EVENT, syncFromClientSession);
     return () => {
-      window.removeEventListener(AUTH_CHANGED_EVENT, syncFromClientStorage);
-      window.removeEventListener("storage", syncFromClientStorage);
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncFromClientSession);
     };
-  }, [syncFromClientStorage]);
+  }, [syncFromClientSession]);
 
   const value = useMemo(
     () => ({
@@ -112,9 +119,10 @@ export const AuthProvider = ({ children }) => {
       isChecking: authState.status === "checking",
       isAuthenticated: authState.status === "authenticated",
       refreshAuth,
+      updateUser,
       logout,
     }),
-    [authState, logout, refreshAuth],
+    [authState, logout, refreshAuth, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

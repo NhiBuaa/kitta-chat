@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
-import { setStoredUser } from "@/services/auth/authSession.js";
+import { useAuth } from "@/services/auth/AuthProvider.jsx";
 import { updateUserProfile } from "@/services/api/userApi.js";
 const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
+  const { updateUser } = useAuth();
   // Khởi tạo state cho form
   const [formData, setFormData] = useState({
     displayName: "",
@@ -128,7 +129,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
             avatar: formData.avatarPreview,
           } : res.data.user;
 
-          setStoredUser(res.data.user);
+          updateUser(res.data.user);
           setFormData((prev) => ({
             ...prev,
             avatarFile: null,
@@ -139,7 +140,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
         }
         toast.success("Cập nhật hồ sơ thành công!");
 
-        setStoredUser(res.data.user);
+        updateUser(res.data.user);
 
         // Gọi callback để Home cập nhật lại UI ngay lập tức
         if (onUpdateSuccess) onUpdateSuccess(res.data.user);
