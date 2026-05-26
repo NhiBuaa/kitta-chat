@@ -52,8 +52,8 @@ flowchart LR
 The client socket lifecycle is in
 `client/src/services/socket/SocketProvider.jsx`.
 
-1. The provider reads `user` and `token` from `localStorage`.
-2. If no user or token exists, it does not create a socket.
+1. The provider reads `user` and `token` from `useAuth()` / AuthProvider memory state.
+2. If AuthProvider is still checking, or no authenticated memory token/user exists, it does not create a socket.
 3. It connects to `VITE_API_URL` / `SERVER_URL` with:
    - `transports: ["websocket"]`
    - `auth: { token }`

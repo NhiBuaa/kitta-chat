@@ -39,13 +39,17 @@ curl -i http://localhost:3000/healthz \
 
 ### Authentication
 
-Local login returns a JWT. Protected REST endpoints expect:
+Local login returns an access JWT. Protected REST endpoints expect:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-The access token is signed with `JWT_SECRET` and currently expires after `1d`. Login, register, and Google login also set an HttpOnly `kittachat_refresh` cookie as a migration foundation for a future memory-token auth model. Current REST and Socket.IO flows still support `Authorization: Bearer <token>` for compatibility.
+The access token is signed with `JWT_SECRET` and currently expires after `1d`. In the browser client, the access token and current user are kept in memory only and are not persisted to `localStorage`. Login, register, Google login, and refresh responses hydrate that memory session.
+
+Login, register, Google login, and refresh also set an HttpOnly `kittachat_refresh` cookie. The frontend uses that refresh cookie for reload/session recovery: on startup, `AuthProvider` calls the refresh endpoint, then hydrates the returned access token and user into memory. REST requests still use `Authorization: Bearer <token>`; `axiosClient` reads the token from memory, refreshes once on `401`/`403`, and only clears auth state/redirects to `/login` if refresh fails.
+
+Non-sensitive UI or temporary recovery state may still use `localStorage`, but sensitive auth data (`token`, `user`) should not be stored there.
 
 Common auth errors:
 
@@ -379,7 +383,7 @@ Missing cookie returns standardized `401 SESSION_REQUIRED`. Invalid or expired c
 
 Auth: valid `kittachat_refresh` cookie.
 
-Issues a new access token and refresh cookie. This keeps Bearer compatibility while enabling a later move to memory-only access tokens.
+Issues a new access token, current user payload, and refresh cookie. The frontend uses this endpoint for reload/session recovery and for the refresh-once retry path in `axiosClient`; the returned token/user hydrate memory-only auth state.
 
 Success `200`:
 
@@ -406,7 +410,7 @@ Success `200`:
 
 Auth: none required.
 
-Clears the refresh cookie. Current frontend logout still clears its existing client-side token/user storage separately.
+Clears the refresh cookie. Current frontend logout also clears memory-only auth state and removes any legacy auth `localStorage` keys without removing unrelated UI/temp keys.
 
 Success `200`:
 
@@ -1317,6 +1321,8 @@ curl -s http://localhost:3000/api/auth/login \
 ```
 
 Call protected profile after assigning the token:
+
+The curl examples manually copy the token from the login/refresh response to demonstrate the HTTP contract. The browser client keeps that access token in memory and uses the HttpOnly refresh cookie after reload; it does not persist the token/user in `localStorage`.
 
 ```bash
 TOKEN="<jwt-from-login>"
