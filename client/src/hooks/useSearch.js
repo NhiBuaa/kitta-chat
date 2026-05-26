@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { searchUsers } from "@/services/api/userApi.js";
 
 /**
  * Tìm kiếm user theo keyword (debounce 500ms).
@@ -7,12 +7,11 @@ import axios from "axios";
  * để Home có thể dùng setSearchResult trong patchUserEverywhere.
  *
  * @param {object} deps
- * @param {string}   deps.API_URL
  * @param {Array}    deps.users          - friend list (fallback khi không tìm kiếm)
  * @param {Array}    deps.searchResult   - state từ Home
  * @param {Function} deps.setSearchResult
  */
-export const useSearch = ({ API_URL, users, searchResult, setSearchResult }) => {
+export const useSearch = ({ users, searchResult, setSearchResult }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isSearching, setIsSearching] = useState(false);
 
@@ -25,11 +24,7 @@ export const useSearch = ({ API_URL, users, searchResult, setSearchResult }) => 
         const timer = setTimeout(async () => {
             setIsSearching(true);
             try {
-                const token = localStorage.getItem("token");
-                const res = await axios.get(
-                    `${API_URL}/search?keyword=${encodeURIComponent(searchTerm)}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
+                const res = await searchUsers(searchTerm);
                 if (res.data.success) setSearchResult(res.data.users);
             } catch (error) {
                 console.error("[useSearch] error:", error);
@@ -39,7 +34,7 @@ export const useSearch = ({ API_URL, users, searchResult, setSearchResult }) => 
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchTerm, API_URL, setSearchResult]);
+    }, [searchTerm, setSearchResult]);
 
     const isSearchingMode = searchTerm.trim() !== "";
     const usersToDisplay = isSearchingMode ? searchResult : users;

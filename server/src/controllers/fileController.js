@@ -92,7 +92,12 @@ const createFileController = ({
         "queue-sources",
       );
 
-      job = buildChatImageJob({ source, file: req.file, userId });
+      job = buildChatImageJob({
+        source,
+        file: req.file,
+        userId,
+        correlationId: req.requestId,
+      });
       await imageQueue.publishImageJob(job);
 
       res.status(202).json({

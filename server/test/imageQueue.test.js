@@ -22,11 +22,13 @@ test("buildChatImageJob only puts S3 source metadata on the queue", () => {
     },
     userId: "user-1",
     requestId: "req-1",
+    correlationId: "http-req-1",
   });
 
   assert.equal(job.type, "chat-image");
   assert.equal(job.userId, "user-1");
   assert.equal(job.requestId, "req-1");
+  assert.equal(job.correlationId, "http-req-1");
   assert.equal(job.file.originalName, "hello world.png");
   assert.equal(job.file.mimeType, "image/png");
   assert.equal(job.source.key, "queue-sources/req-1.png");
@@ -48,9 +50,11 @@ test("buildAvatarImageJob keeps profile fields separate from image work", () => 
     userId: "user-1",
     profileUpdates: { displayName: "Alice", status: "Hi" },
     requestId: "req-2",
+    correlationId: "http-req-2",
   });
 
   assert.equal(job.type, "avatar-image");
+  assert.equal(job.correlationId, "http-req-2");
   assert.deepEqual(job.profileUpdates, { displayName: "Alice", status: "Hi" });
   assert.equal(job.source.key, "queue-sources/req-2.jpg");
   assert.equal(job.file.bufferBase64, undefined);

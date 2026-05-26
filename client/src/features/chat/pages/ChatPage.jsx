@@ -4,6 +4,7 @@ import { SOCKET_EVENTS } from "@/constants/socketEvents.js";
 import { getGroups } from "@/services/api/groupApi.js";
 import { getFriendRequests } from "@/services/api/friendApi.js";
 import { getSidebarUsers, getUserProfile } from "@/services/api/userApi.js";
+import { useAuth } from "@/services/auth/useAuth.js";
 
 // Components
 import Sidebar from "@/components/layout/Sidebar.jsx";
@@ -23,6 +24,10 @@ import { useUploader } from "@/hooks/useUploader.js";
 
 // Custom Hooks
 import { useFriendActions } from "@/features/friends/hooks/useFriendActions.js";
+import {
+  applyFriendRemovedToActiveChat,
+  applyFriendRemovedToList,
+} from "@/features/friends/socket/friendshipState.js";
 import { useSearch } from "@/hooks/useSearch.js";
 import { useScrollBehavior } from "@/features/chat/hooks/useScrollBehavior.js";
 import { useChatMessages } from "@/features/chat/hooks/useChatMessages.js";
@@ -68,6 +73,7 @@ const Home = () => {
 
   // Context / global hooks
   const { onlineUsers, socket } = useSocket();
+  const { token, isChecking, isAuthenticated, logout } = useAuth();
   const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
 
   const API_URL_USERS = import.meta.env.VITE_API_URL_USERS || '/api/users';
@@ -164,6 +170,18 @@ const Home = () => {
     [patchUsers],
   );
 
+  const markFriendshipRemoved = useCallback((payload) => {
+    const removedUserId = payload?.removedUserId;
+    if (!removedUserId) return;
+
+    setUsers((prev) => applyFriendRemovedToList(prev, payload));
+    setSearchResult((prev) => applyFriendRemovedToList(prev, {
+      ...payload,
+      removeWhenNoMessages: false,
+    }));
+    setActiveChat((prev) => applyFriendRemovedToActiveChat(prev, payload));
+  }, [setUsers, setSearchResult, setActiveChat]);
+
   useEffect(() => {
     const handleAvatarUpdated = (event) => {
       const updatedUser = event.detail?.user;
@@ -217,7 +235,7 @@ const Home = () => {
   } = useChatMessages({
     activeChat, currentUser, socket,
     uploadQueue, clearUploads, armAutoScrollLock, scrollRef,
-    setHasNewUnread, setUsers, fetchNewConversation, scrollChatToBottom, setShowEmoji,
+    setHasNewUnread, setUsers, setGroups, fetchNewConversation, scrollChatToBottom, setShowEmoji,
   });
 
   // Typing hook
@@ -241,6 +259,7 @@ const Home = () => {
     markFriendRequestSent,
     markFriendshipActive,
     clearSentFriendRequest,
+    markFriendshipRemoved,
   });
 
   useGroupSocket({
@@ -262,18 +281,23 @@ const Home = () => {
 
   // Initial data fetch
   useEffect(() => {
+    if (isChecking) return;
+
+    if (!isAuthenticated || !token) {
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          window.location.href = "/login";
-          return;
-        }
         const [profileRes, sidebarRes, requestRes] = await Promise.all([
           getUserProfile(),
           getSidebarUsers(),
           getFriendRequests(),
         ]);
+        if (cancelled) return;
         if (profileRes.data.success) setCurrentUser(profileRes.data.user);
         if (sidebarRes.data.success) {
           const list = sidebarRes.data.users || sidebarRes.data.friends || [];
@@ -285,20 +309,15 @@ const Home = () => {
           setRequestCount(requestRes.data.requests.length);
       } catch (error) {
         console.error("[Home] fetchData error:", error);
-        if (error.response?.status === 401) {
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     const fetchGroups = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
         const res = await getGroups();
+        if (cancelled) return;
         if (res.data.success) setGroups(res.data.groups);
       } catch (error) {
         console.error("[Home] fetchGroups error:", error);
@@ -307,7 +326,11 @@ const Home = () => {
 
     fetchData();
     fetchGroups();
-  }, [API_URL_USERS]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isChecking, isAuthenticated, token]);
 
   // Sync online status vào users list
   useEffect(() => {
@@ -419,11 +442,9 @@ const Home = () => {
     [upsertGroup],
   );
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (socket) socket.disconnect();
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.dispatchEvent(new Event("auth-changed"));
+    await logout();
     // setCurrentUser(null);   xóa di để ko bị reset avt khi bấm logout
     window.location.href = "/login";
   };

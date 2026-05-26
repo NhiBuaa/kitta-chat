@@ -12,6 +12,7 @@ const {
   getFriendRequests,
   getSidebarUsers,
   rejectFriendRequest,
+  removeFriend,
   getOnlineFriends
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/auth");
@@ -27,6 +28,7 @@ router.post("/accept-friend", authMiddleware, accceptFriendRequest);
 router.get("/sidebar-list", authMiddleware, getSidebarUsers);
 router.post("/friend-request", authMiddleware, sendFriendRequest);
 router.post("/reject-friend", authMiddleware, rejectFriendRequest);
+router.post("/remove-friend", authMiddleware, removeFriend);
 router.get("/search", authMiddleware, searchUsers);
 router.get("/:id", authMiddleware, getUserById);
 router.get("/", authMiddleware, getAllUsers);

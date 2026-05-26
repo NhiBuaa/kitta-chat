@@ -3,12 +3,15 @@ import Peer from 'simple-peer';
 import { toast } from 'react-toastify';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
+import { persistPartnerMediaStatus } from '@/features/calls/context/callMediaState.js';
+import { useAuth } from '@/services/auth/useAuth.js';
 
 /**
  * Đăng ký / hủy toàn bộ socket event listeners liên quan đến cuộc gọi.
  * Không chứa logic state riêng — chỉ phối hợp bag + actions.
  */
 export const useSocketEvents = ({ socket, bag, actions }) => {
+    const { user: authUser } = useAuth();
     const {
         callStateRef, isPreparingCallRef, isOutgoingCallRef,
         mySocketIdRef, isGlareWaitingRef, glareWinnerDataRef,
@@ -34,6 +37,17 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         // ── callUser (incoming) ──────────────────────────────────────────────
         const handleIncomingCall = (data) => {
             const callerId = data.callerDbId;
+            const loggedInUserId = authUser?._id || authUser?.id || null;
+            console.log('[CALL_DIAG][client:callUser:received]', {
+                loggedInUserId,
+                socketId: socket?.id,
+                callerId,
+                callerSocketId: data.from,
+                callId: data.callId || null,
+                clientCallId: localStorage.getItem('tempCallId'),
+                pathname: window.location.pathname,
+                callState: callStateRef.current,
+            });
 
             // Nếu đang mở popup CallPage thì tự đóng, không xử lý tiếp
             if (window.location.pathname.includes('/call') && callStateRef.current === CALL_STATES.IDLE) {
@@ -149,7 +163,11 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         };
 
         // ── updateMediaStatus ─────────────────────────────────────────────────
-        const handleUpdateMediaStatus = ({ cam, mic }) => setPartnerMediaStatus({ cam, mic });
+        const handleUpdateMediaStatus = ({ cam, mic }) => {
+            const mediaStatus = { cam, mic };
+            persistPartnerMediaStatus(mediaStatus);
+            setPartnerMediaStatus(mediaStatus);
+        };
 
         // ── outgoingCallCreated ───────────────────────────────────────────────
         const handleOutgoingCallCreated = ({ callId: createdCallId, userToCall }) => {
@@ -200,7 +218,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
 
             // Loser tạo initiator peer gửi offer cho Winner
             if (localStreamRef.current) {
-                const user = localStorage.getItem('user');
+                if (!authUser) return;
                 const peer = makePeer({
                     initiator: true,
                     stream: localStreamRef.current,
@@ -209,7 +227,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
                             userToCall: winnerDbId,
                             signalData: myOfferSignal,
                             from: socket.id,
-                            callerDbId: user ? JSON.parse(user)._id : null,
+                            callerDbId: authUser?._id || null,
                             mediaStatus: {
                                 cam: localStreamRef.current.getVideoTracks()[0]?.enabled ?? false,
                                 mic: localStreamRef.current.getAudioTracks()[0]?.enabled ?? true,
@@ -244,7 +262,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         Object.entries(events).forEach(([event, handler]) => socket.on(event, handler));
         return () => Object.entries(events).forEach(([event, handler]) => socket.off(event, handler));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [socket]);
+    }, [socket, authUser]);
 };
 
 // ─── Private helpers (glare branches) ────────────────────────────────────────
@@ -253,7 +271,7 @@ function _handleGlareWinner({ data, callerId, socket, bag, leaveCall }) {
     const {
         isGlareWaitingRef, glareWinnerDataRef,
         connectionRef, callTimeoutRef, localStreamRef, userVideo,
-        callStateRef, isOutgoingCallRef,
+        callStateRef, callAcceptedRef, isOutgoingCallRef,
         setCallAccepted, setCallEnded, setCallState, setIsCalling, setRemoteStream,
     } = bag;
 
@@ -292,14 +310,15 @@ function _handleGlareWinner({ data, callerId, socket, bag, leaveCall }) {
         setRemoteStream(remote);
         if (userVideo.current) userVideo.current.srcObject = remote;
         setCallAccepted(true);
+        callAcceptedRef.current = true;
         setCallEnded(false);
         setCallState(CALL_STATES.CONNECTED);
         callStateRef.current = CALL_STATES.CONNECTED;
     });
 
-    peer.on('error', () => leaveCall());
+    peer.on('error', () => leaveCall('glareWinner:peer:error'));
     peer.on('close', () => {
-        if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall();
+        if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall('glareWinner:peer:close-connected');
     });
 
     peer.signal(validSignal);

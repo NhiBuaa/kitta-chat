@@ -126,6 +126,54 @@ test("sendMessage publishes message.created after realtime delivery succeeds", a
   assert.equal(published[0].text, undefined);
 });
 
+test("sendMessage duplicate retry returns existing message and does not publish audit again", async () => {
+  const { handlers, emissions, socket, io } = createSocketHarness();
+  const published = [];
+  const callbacks = [];
+  const savedDoc = {
+    _id: "msg-existing",
+    conversationId: "user-1_user-2",
+    sender: "user-1",
+    receiver: "user-2",
+    type: "text",
+    attachments: [],
+    createdAt: new Date("2026-05-17T10:00:00.000Z"),
+  };
+  const saveResults = [
+    { doc: savedDoc, isDuplicate: false },
+    { doc: savedDoc, isDuplicate: true },
+  ];
+  const registerMessageHandlers = createRegisterMessageHandlers({
+    getCachedUserProfile: async () => ({ displayName: "Alice", avatar: "a.png" }),
+    saveMessage: async () => saveResults.shift(),
+    auditQueue: {
+      async publishMessageCreatedJob(job) {
+        published.push(job);
+      },
+    },
+  });
+
+  registerMessageHandlers(socket, io);
+
+  const messagePayload = {
+    sender: "user-1",
+    receiverId: "user-2",
+    text: "hello once",
+    idempotencyKey: "idem-duplicate",
+  };
+
+  await handlers.sendMessage(messagePayload, (payload) => callbacks.push(payload));
+  await handlers.sendMessage(messagePayload, (payload) => callbacks.push(payload));
+
+  assert.deepEqual(callbacks, [
+    { success: true, realId: "msg-existing", isDuplicate: false },
+    { success: true, realId: "msg-existing", isDuplicate: true },
+  ]);
+  assert.equal(emissions.length, 4);
+  assert.equal(published.length, 1);
+  assert.equal(published[0].messageId, "msg-existing");
+});
+
 test("sendMessage remains successful when message.created job publish fails", async () => {
   const { handlers, emissions, socket, io } = createSocketHarness();
   const registerMessageHandlers = createRegisterMessageHandlers({

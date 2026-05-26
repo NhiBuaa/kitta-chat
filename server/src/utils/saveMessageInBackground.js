@@ -63,16 +63,14 @@ async function saveMessageInBackground(data) {
                     $setOnInsert: messageToSave,
                 },
                 {
+                    includeResultMetadata: true,
                     returnDocument: "after",
                     upsert: true,
                     runValidators: true,
                 }
             );
-            savedMessage = result;
-
-            isDuplicate = !result?.createdAt ||
-                (result.createdAt && Date.now() - new Date(result.createdAt).getTime() > 1000) === false;
-            isDuplicate = false;
+            savedMessage = result?.value ?? result;
+            isDuplicate = Boolean(result?.lastErrorObject?.updatedExisting);
         } else {
             // Không có idempotencyKey -> tạo bình thường (group messages, system messages)
             savedMessage = await Message.create(messageToSave);

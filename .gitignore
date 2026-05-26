@@ -1,4 +1,4 @@
-# =========================
+﻿# =========================
 # General
 # =========================
 .DS_Store
@@ -94,5 +94,7 @@ nginx/ssl/*.p12
 nginx/ssl/*.pfx
 *.local.key
 
-/docs
 /data
+/.agents
+/.codex
+skills-lock.json

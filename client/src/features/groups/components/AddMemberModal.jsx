@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { FaTimes, FaUserPlus } from "react-icons/fa";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import { getFriends } from "@/services/api/friendApi.js";
+import { addGroupMember } from "@/services/api/groupApi.js";
 
 const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
   const [friends, setFriends] = useState([]);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  const API_URL = import.meta.env.VITE_API_URL_USERS || '/api/users';
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (isOpen) {
@@ -20,9 +18,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
 
   const loadFriends = async () => {
     try {
-      const res = await axios.get(`${API_URL}/friends`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await getFriends();
       const friendsNotInGroup = res.data.friends.filter(
         (friend) => !group.members.some((member) => member._id === friend._id),
       );
@@ -41,11 +37,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
 
     setLoading(true);
     try {
-      const res = await axios.post(
-        `/api/groups/${group._id}/add-member`,
-        { memberId: selectedFriend._id },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const res = await addGroupMember(group._id, selectedFriend._id);
 
       if (res.data.success) {
         toast.success("Thêm thành viên thành công");
@@ -63,7 +55,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "https://via.placeholder.com/40";
     if (avatar.startsWith("http")) return avatar;
-    return `${API_URL}/${avatar}`;
+    return `${import.meta.env.VITE_API_URL_USERS || '/api/users'}/${avatar}`;
   };
 
   if (!isOpen) return null;

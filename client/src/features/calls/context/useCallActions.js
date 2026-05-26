@@ -1,15 +1,20 @@
 import Peer from 'simple-peer';
+import { useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { SOCKET_EVENTS } from '@/constants/socketEvents.js';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { clearCallStorage } from '@/features/calls/context/callStorage.js';
+import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
+import { useAuth } from '@/services/auth/useAuth.js';
+import { getLeaveCallEvent } from '@/features/calls/context/callLifecycleState.js';
 
 /**
  * Các action thực hiện cuộc gọi: callUser, answerCall, rejectCall, leaveCall.
  * Nhận vào socket và bag (từ useCallState) để thao tác state/refs.
  */
 export const useCallActions = ({ socket, bag }) => {
+    const { user: authUser } = useAuth();
     const {
         callStateRef, callAcceptedRef,
         isOutgoingCallRef, connectionRef, callTimeoutRef, localStreamRef, userVideo,
@@ -19,33 +24,70 @@ export const useCallActions = ({ socket, bag }) => {
     } = bag;
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
-    const clearStoredCallState = () => {
+    const clearStoredCallState = useCallback(() => {
         clearCallStorage();
         setCallId(null);
-    };
+    }, [setCallId]);
 
-    const makePeer = ({ initiator, stream, onSignal, onStream, onError }) => {
+    const leaveCall = useCallback((source = 'unspecified') => {
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+        const partnerUserId =
+            localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
+        const callId = localStorage.getItem('tempCallId') || null;
+        const leaveCallEvent = getLeaveCallEvent({
+            socket,
+            partnerUserId,
+            callId,
+            callAccepted: callAcceptedRef.current,
+        });
+        const willEmitCancelled = leaveCallEvent?.event === SOCKET_EVENTS.CALL_REJECT;
+
+        console.log('[CALL_DIAG][client:leaveCall]', {
+            source,
+            socketId: socket?.id,
+            partnerUserId,
+            callId,
+            callAccepted: callAcceptedRef.current,
+            callState: callStateRef.current,
+            willEmitRejectCancelled: willEmitCancelled,
+        });
+
+        if (leaveCallEvent) {
+            socket.emit(leaveCallEvent.event, leaveCallEvent.payload);
+        }
+
+        clearStoredCallState();
+        cleanupConnection();
+    }, [
+        callAcceptedRef,
+        callStateRef,
+        callTimeoutRef,
+        cleanupConnection,
+        clearStoredCallState,
+        socket,
+    ]);
+
+    const makePeer = useCallback(({ initiator, stream, onSignal, onStream, onError }) => {
         const peer = new Peer({ initiator, trickle: false, stream, config: ICE_SERVERS });
         peer.on('signal', onSignal);
         peer.on('stream', onStream);
-        peer.on('error', onError ?? (() => leaveCall()));
+        peer.on('error', onError ?? (() => leaveCall('peer:error')));
         peer.on('close', () => {
-            if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall();
+            if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall('peer:close-connected');
         });
         return peer;
-    };
+    }, [callStateRef, leaveCall]);
 
     // ─── Actions ──────────────────────────────────────────────────────────────
-    const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = 'video') => {
-        const userStr = localStorage.getItem('user');
-        const freshUser = userStr ? JSON.parse(userStr) : null;
-        if (!freshUser) { toast.error('Phiên đăng nhập hết hạn.'); return; }
+    const callUser = useCallback((receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = 'video') => {
+        if (!authUser) { toast.error('Phiên đăng nhập hết hạn.'); return; }
         if (!receiverUserId || !localStream) return;
         if (!socket?.id) { toast.error('Mất kết nối máy chủ.'); return; }
 
         updateStream(localStream);
         localStreamRef.current = localStream;
         setCallAccepted(false);
+        callAcceptedRef.current = false;
         setCallEnded(false);
         setIsCalling(true);
         setCall({});
@@ -73,7 +115,7 @@ export const useCallActions = ({ socket, bag }) => {
                     userToCall: receiverUserId,
                     signalData: data,
                     from: socket.id,
-                    callerDbId: freshUser._id || freshUser.id,
+                    callerDbId: authUser._id || authUser.id,
                     mediaStatus: { cam: isCamOn, mic: isMicOn },
                     typeCall: callType,
                     callId: tempCallId,
@@ -90,15 +132,42 @@ export const useCallActions = ({ socket, bag }) => {
             clearTimeout(callTimeoutRef.current);
             const signal = payload?.signal || payload;
             setCallAccepted(true);
+            callAcceptedRef.current = true;
             setCallEnded(false);
             setCallState(CALL_STATES.CONNECTED);
             callStateRef.current = CALL_STATES.CONNECTED;
             if (payload?.mediaStatus) setPartnerMediaStatus(payload.mediaStatus);
+            sendLocalMediaStatusSnapshot({
+                socket,
+                to: receiverUserId,
+                stream: localStreamRef.current,
+                fallback: { cam: isCamOn, mic: isMicOn },
+            });
             peer.signal(signal);
         });
 
         connectionRef.current = peer;
-    };
+    }, [
+        authUser,
+        callAcceptedRef,
+        callStateRef,
+        callTimeoutRef,
+        connectionRef,
+        isOutgoingCallRef,
+        localStreamRef,
+        makePeer,
+        setCall,
+        setCallAccepted,
+        setCallEnded,
+        setCallId,
+        setCallState,
+        setIsCalling,
+        setPartnerMediaStatus,
+        setRemoteStream,
+        socket,
+        updateStream,
+        userVideo,
+    ]);
 
     const answerCall = (currentStream, isCamOn = true, isMicOn = true) => {
         const callerUserId = localStorage.getItem('tempCallerUserId');
@@ -113,6 +182,7 @@ export const useCallActions = ({ socket, bag }) => {
         const signalToUse = JSON.parse(savedSignal);
 
         setCallAccepted(true);
+        callAcceptedRef.current = true;
         setCallEnded(false);
         setCallState(CALL_STATES.CONNECTED);
         callStateRef.current = CALL_STATES.CONNECTED;
@@ -155,25 +225,6 @@ export const useCallActions = ({ socket, bag }) => {
             socket.emit(SOCKET_EVENTS.CALL_REJECT, { to: callerUserId, callId, reason: 'rejected' });
         }
         setCall((prev) => ({ ...prev, isReceivingCall: false }));
-        clearStoredCallState();
-        cleanupConnection();
-    };
-
-    const leaveCall = () => {
-        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
-        const partnerUserId =
-            localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
-        const callId = localStorage.getItem('tempCallId') || null;
-
-        if (socket && partnerUserId) {
-            // Dùng ref để tránh stale closure
-            if (!callAcceptedRef.current) {
-                if (callId) socket.emit(SOCKET_EVENTS.CALL_REJECT, { to: partnerUserId, callId, reason: 'cancelled' });
-            } else {
-                if (callId) socket.emit(SOCKET_EVENTS.CALL_END, { to: partnerUserId, callId });
-            }
-        }
-
         clearStoredCallState();
         cleanupConnection();
     };

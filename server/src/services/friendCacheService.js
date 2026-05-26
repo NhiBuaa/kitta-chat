@@ -20,7 +20,10 @@ const { cacheClient } = require("../config/redis");
 const User = require("../models/User");
 const Message = require("../models/Message");
 const buildConversationId = require("../utils/buildConversationId");
-const { updateConversationWriteThrough } = require("./conversationCacheService");
+const {
+    updateConversationWriteThrough,
+    updateConversationRemove,
+} = require("./conversationCacheService");
 
 const FRIEND_CACHE_PREFIX = "cache:friends:";
 
@@ -75,16 +78,20 @@ const removeFriendWriteThrough = async (userIdA, userIdB) => {
 
     // Xóa khoi MongoDB
     await Promise.all([
-        User.findByIdAndUpdate(userIdA, { $pull: { friends: userIdB } }),
-        User.findByIdAndUpdate(userIdB, { $pull: { friends: userIdA } }),
+        User.findByIdAndUpdate(userIdA, { $pull: { friends: userIdB, friendRequests: userIdB } }),
+        User.findByIdAndUpdate(userIdB, { $pull: { friends: userIdA, friendRequests: userIdA } }),
     ]);
 
     // Xóa khoi Redis SET — an toàn khi Redis chưa kết nối
     if (cacheClient.isOpen) {
-        await Promise.all([
-            cacheClient.sRem(keyA, userIdB.toString()),
-            cacheClient.sRem(keyB, userIdA.toString()),
-        ]);
+        try {
+            await Promise.all([
+                cacheClient.sRem(keyA, userIdB.toString()),
+                cacheClient.sRem(keyB, userIdA.toString()),
+            ]);
+        } catch (err) {
+            console.warn("[Friend Cache] Redis remove friend error:", err.message);
+        }
     }
 
     // Xóa conversation khoi sorted set nếu chưa có tin nhắn
@@ -97,6 +104,8 @@ const removeFriendWriteThrough = async (userIdA, userIdB) => {
     console.log(
         `[Write-Through] Friend removed: ${userIdA} <-/-> ${userIdB}`
     );
+
+    return { conversationId, hadMessages: hasMessages };
 };
 
 // O(1) Friend Check

@@ -4,6 +4,14 @@ const jwt = require("jsonwebtoken");
 const admin = require("../config/firebaseAdmin");
 const { queueRemoteAvatarProcessing } = require("../services/avatarQueueService");
 const { queuePasswordResetEmail } = require("../services/passwordResetNotificationService");
+const { sendError } = require("../utils/apiResponse");
+const {
+  buildAuthUser,
+  clearRefreshCookie,
+  getRefreshTokenFromRequest,
+  issueAuthSession,
+  verifyRefreshToken,
+} = require("../services/authSessionService");
 // Hàm helper để validate email
 const validateEmail = (email) => {
   return String(email)
@@ -68,14 +76,13 @@ exports.register = async (req, res) => {
     });
 
     await newUser.save();
-
-    const userResponse = newUser.toObject();
-    delete userResponse.password;
+    const authSession = issueAuthSession(res, newUser);
 
     res.status(201).json({
       success: true,
       message: "Đăng ký thành công",
-      user: userResponse,
+      token: authSession.token,
+      user: authSession.user,
     });
   } catch (error) {
     console.error("Register Error:", error);
@@ -98,42 +105,34 @@ exports.login = async (req, res) => {
       });
     }
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
+      return sendError(res, {
+        status: 400,
+        code: "INVALID_CREDENTIALS",
+        message: "Email hoặc mật khẩu không đúng",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
+      return sendError(res, {
+        status: 400,
+        code: "INVALID_CREDENTIALS",
+        message: "Email hoặc mật khẩu không đúng",
+      });
     }
 
     user.activityStatus = {
       state: "active",
       lastSeen: new Date(),
     };
-    await user.save();  
-
-    
-    // tạo token
-    const token = jwt.sign({ id: user._id }, getJwtSecret(), {
-      expiresIn: "1d",
-    });
+    await user.save();
+    const authSession = issueAuthSession(res, user);
 
     res.json({
       success: true,
       message: "Đăng nhập thành công",
-      token,
-      user: {
-        id: user._id,
-        displayName: user.displayName,
-        email: user.email,
-        avatar: user.avatar,
-        status: user.status,
-        activityStatus: user.activityStatus,
-      },
+      token: authSession.token,
+      user: authSession.user,
     });
   } catch (error) {
     console.error("Login Error:", error);
@@ -204,6 +203,7 @@ exports.googleLogin = async (req, res) => {
           avatarUrl: avatar,
           userId: user._id,
           displayName,
+          correlationId: req.requestId,
         });
 
         if (!avatarQueueResult.queued) {
@@ -221,6 +221,7 @@ exports.googleLogin = async (req, res) => {
             avatarUrl: avatar,
             userId: user._id,
             displayName,
+            correlationId: req.requestId,
           });
 
           if (!avatarQueueResult.queued) {
@@ -238,25 +239,15 @@ exports.googleLogin = async (req, res) => {
       lastSeen: new Date(),
     };
 
-    await user.save();  
-
-    // 4. tạo tolen như login
-    const jwtToken = jwt.sign({ id: user._id }, getJwtSecret(), {
-      expiresIn: "1d",
-    });
+    await user.save();
+    const authSession = issueAuthSession(res, user);
 
     // 5. gui ve fe
     res.json({
       success: true,
       message: "Đăng nhập bằng Google thành công",
-      token: jwtToken,
-      user: {
-        id: user._id,
-        displayName: user.displayName,
-        email: user.email,
-        avatar: user.avatar,
-        activityStatus: user.activityStatus,
-      },
+      token: authSession.token,
+      user: authSession.user,
       avatarQueue: avatarQueueResult
         ? {
             queued: avatarQueueResult.queued,
@@ -272,6 +263,102 @@ exports.googleLogin = async (req, res) => {
       message: "Token không hợp lệ",
     });
   }
+};
+
+
+const findSessionUser = async (req, res) => {
+  const refreshToken = getRefreshTokenFromRequest(req);
+
+  if (!refreshToken) {
+    sendError(res, {
+      status: 401,
+      code: "SESSION_REQUIRED",
+      message: "Authentication session is required",
+    });
+    return null;
+  }
+
+  let decoded;
+  try {
+    decoded = verifyRefreshToken(refreshToken);
+  } catch (error) {
+    sendError(res, {
+      status: 401,
+      code: "INVALID_SESSION",
+      message: "Authentication session is invalid or expired",
+    });
+    return null;
+  }
+
+  if (decoded.type !== "refresh" || !decoded.id) {
+    sendError(res, {
+      status: 401,
+      code: "INVALID_SESSION",
+      message: "Authentication session is invalid or expired",
+    });
+    return null;
+  }
+
+  const user = await User.findById(decoded.id);
+  if (!user) {
+    sendError(res, {
+      status: 401,
+      code: "INVALID_SESSION",
+      message: "Authentication session is invalid or expired",
+    });
+    return null;
+  }
+
+  return user;
+};
+
+exports.session = async (req, res) => {
+  try {
+    const user = await findSessionUser(req, res);
+    if (!user) return;
+
+    res.json({
+      success: true,
+      authenticated: true,
+      user: buildAuthUser(user),
+    });
+  } catch (error) {
+    console.error("Session Error:", error);
+    sendError(res, {
+      status: 500,
+      code: "SESSION_ERROR",
+      message: "Unable to read authentication session",
+    });
+  }
+};
+
+exports.refresh = async (req, res) => {
+  try {
+    const user = await findSessionUser(req, res);
+    if (!user) return;
+
+    const authSession = issueAuthSession(res, user);
+    res.json({
+      success: true,
+      token: authSession.token,
+      user: authSession.user,
+    });
+  } catch (error) {
+    console.error("Refresh Error:", error);
+    sendError(res, {
+      status: 500,
+      code: "REFRESH_ERROR",
+      message: "Unable to refresh authentication session",
+    });
+  }
+};
+
+exports.logout = async (req, res) => {
+  clearRefreshCookie(res);
+  res.json({
+    success: true,
+    message: "Đăng xuất thành công",
+  });
 };
 
 // quen mk------------------------------------------
@@ -303,6 +390,7 @@ exports.forgotPassword = async (req, res) => {
     const emailQueueResult = await queuePasswordResetEmail({
       user,
       resetUrl,
+      correlationId: req.requestId,
     });
 
     if (!emailQueueResult.queued) {

@@ -9,12 +9,14 @@ const queueRemoteAvatarProcessing = async ({
   displayName,
   imageQueue = defaultImageQueue,
   requestId,
+  correlationId,
 }) => {
   const job = buildRemoteAvatarImageJob({
     avatarUrl,
     userId,
     displayName,
     requestId,
+    correlationId,
   });
 
   try {

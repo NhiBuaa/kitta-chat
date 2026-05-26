@@ -14,10 +14,12 @@ test("password reset email job contains delivery metadata and reset link", () =>
     displayName: "Alice",
     resetUrl: "https://app.local/reset-password/user-1/token-1",
     requestId: "req-reset-1",
+    correlationId: "http-req-reset-1",
   });
 
   assert.equal(job.type, "email.password_reset");
   assert.equal(job.requestId, "req-reset-1");
+  assert.equal(job.correlationId, "http-req-reset-1");
   assert.equal(job.to, "alice@example.com");
   assert.equal(job.template, "password_reset");
   assert.match(job.subject, /KittaChat/);

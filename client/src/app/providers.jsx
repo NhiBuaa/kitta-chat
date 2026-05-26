@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { AuthProvider } from '@/services/auth/AuthProvider.jsx'
 import { SocketProvider } from '@/services/socket/SocketProvider.jsx'
 import { CallProvider } from '@/features/calls/context/CallContext.jsx'
 import { CallHistoryProvider } from '@/features/calls/context/CallHistoryProvider.jsx'
@@ -6,11 +7,13 @@ import { CallHistoryProvider } from '@/features/calls/context/CallHistoryProvide
 export const AppProviders = ({ children }) => {
   return (
     <StrictMode>
-      <SocketProvider>
-        <CallProvider>
-          <CallHistoryProvider>{children}</CallHistoryProvider>
-        </CallProvider>
-      </SocketProvider>
+      <AuthProvider>
+        <SocketProvider>
+          <CallProvider>
+            <CallHistoryProvider>{children}</CallHistoryProvider>
+          </CallProvider>
+        </SocketProvider>
+      </AuthProvider>
     </StrictMode>
   )
 }

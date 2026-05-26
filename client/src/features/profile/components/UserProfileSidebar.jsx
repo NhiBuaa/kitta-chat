@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
+import { useAuth } from "@/services/auth/useAuth.js";
+import { updateUserProfile } from "@/services/api/userApi.js";
 const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
-  const URL_UPDATE_PROFILE = `${VITE_API_URL_USERS}/profile`;
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
+  const { updateUser } = useAuth();
   // Khởi tạo state cho form
   const [formData, setFormData] = useState({
     displayName: "",
@@ -84,34 +85,34 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
     try {
       setLoading(true);
 
-      // Chuẩn bị FormData
-      const dataPayload = new FormData();
-      dataPayload.append("displayName", formData.displayName);
-      dataPayload.append("status", formData.status);
-
       // Xử lý status online/offline
       const activityStatus = {
         state: formData.isOnline ? "active" : "offline",
         lastSeen: new Date(),
       };
-      dataPayload.append("activityStatus", JSON.stringify(activityStatus));
 
-      // Chỉ gửi avatar nếu người dùng CÓ chọn file mới
+      let res;
+
       if (formData.avatarFile) {
+        // Chuẩn bị FormData
+        const dataPayload = new FormData();
+        dataPayload.append("displayName", formData.displayName);
+        dataPayload.append("status", formData.status);
+        dataPayload.append("activityStatus", JSON.stringify(activityStatus));
         dataPayload.append("avatar", formData.avatarFile);
+
+        res = await updateUserProfile(dataPayload, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        res = await updateUserProfile({
+          displayName: formData.displayName,
+          status: formData.status,
+          activityStatus: JSON.stringify(activityStatus),
+        });
       }
-
-      // Lấy Token
-      const token = localStorage.getItem("token");
-
-      // Gọi API
-      // Thay URL bằng địa chỉ Backend thực tế của bạn
-      const res = await axios.put(URL_UPDATE_PROFILE, dataPayload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
 
       if (res.data.success) {
         if (formData.avatarFile) {
@@ -128,7 +129,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
             avatar: formData.avatarPreview,
           } : res.data.user;
 
-          localStorage.setItem("user", JSON.stringify(res.data.user));
+          updateUser(res.data.user);
           setFormData((prev) => ({
             ...prev,
             avatarFile: null,
@@ -139,7 +140,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
         }
         toast.success("Cập nhật hồ sơ thành công!");
 
-        localStorage.setItem("user", JSON.stringify(res.data.user));
+        updateUser(res.data.user);
 
         // Gọi callback để Home cập nhật lại UI ngay lập tức
         if (onUpdateSuccess) onUpdateSuccess(res.data.user);

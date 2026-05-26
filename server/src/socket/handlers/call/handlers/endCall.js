@@ -3,6 +3,8 @@ const CallHistory = require("../../../../models/CallHistory");
 const { activeTimeouts, tempIdToDbId, unbindSocketFromCall } = require("../state");
 const { createCallLogMessage, emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync, emitCallEndedToParticipants } = require("../emitters");
+const { finalizeCallOnce } = require("../services/callFinalizer");
+const { removeCallTimeoutDue } = require("../services/callTimeoutDueStore");
 
 const POPULATE = [
     { path: "callerId", select: "_id displayName avatar username" },
@@ -24,6 +26,8 @@ const registerEndCall = (socket, io) => {
         const actualCallId = await _resolveCallId({ callId, userId, to, label: "endCall" });
         if (!actualCallId) return;
 
+        await _cancelTimeout({ redisClient: io.redisClient, callId: actualCallId });
+
         try {
             const call = await CallHistory.findById(actualCallId).populate(POPULATE);
             if (!call) {
@@ -31,16 +35,13 @@ const registerEndCall = (socket, io) => {
                 return;
             }
 
-            // Idempotent: already ended -> just re-emit so the UI closes
-            if (call.endedBy) {
+            // Idempotent: already ended -> no duplicate side effects.
+            if (call.endedAt) {
                 console.log(`[endCall] Idempotent: ${actualCallId} already ended`);
-                emitCallEndedToParticipants(io, call, actualCallId);
                 return;
             }
 
-            _cancelTimeout(actualCallId);
-
-            const now = new Date();
+            const now = new Date(Date.now());
             // Nếu chưa answered -> status là "missed" (không trả lời / bỏ cuộc).
             // Chỉ "completed" khi cuộc gọi đã được kết nối (có answeredAt).
             const isAnswered = Boolean(call.answeredAt);
@@ -49,21 +50,25 @@ const registerEndCall = (socket, io) => {
                 ? Math.round((now - call.answeredAt) / 1000)
                 : null;
 
-            const updated = await CallHistory.findByIdAndUpdate(
-                actualCallId,
-                { status, endedBy: new mongoose.Types.ObjectId(userId), endedAt: now, duration },
-                { returnDocument: "after" },
-            ).populate(POPULATE);
+            const finalizeResult = await finalizeCallOnce({
+                callId: actualCallId,
+                status,
+                endedBy: new mongoose.Types.ObjectId(userId),
+                endedAt: now,
+                duration,
+            });
+            const updated = finalizeResult.call;
 
-            if (updated) {
+            if (finalizeResult.finalized && updated) {
                 const callerIdStr = updated.callerId?._id?.toString() ?? updated.callerId?.toString();
                 const receiverIdStr = updated.receiverId?._id?.toString() ?? updated.receiverId?.toString();
                 console.log(`[endCall] ${actualCallId} -> ${status} (answered=${isAnswered}, duration=${duration}s)`);
                 console.log(`[endCall] Emitting callHistorySync to caller=${callerIdStr} receiver=${receiverIdStr}, trigger=${userId}`);
-                const msg = await createCallLogMessage(updated);
                 emitCallHistorySync(io, updated, userId);
-                emitCallLogMessage(io, msg);
+                emitCallLogMessage(io, finalizeResult.callLogMessage);
                 emitCallEndedToParticipants(io, updated, actualCallId);
+            } else if (finalizeResult.alreadyFinalized) {
+                console.log(`[endCall] Idempotent: ${actualCallId} already finalized`);
             }
         } catch (err) {
             console.error("[endCall] error:", err);
@@ -75,9 +80,13 @@ const registerEndCall = (socket, io) => {
 };
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
-const _cancelTimeout = (callId) => {
+const _cancelTimeout = async ({ redisClient, callId }) => {
     const t = activeTimeouts.get(callId);
-    if (t) { clearTimeout(t); activeTimeouts.delete(callId); }
+    if (t) {
+        clearTimeout(t);
+        activeTimeouts.delete(callId);
+    }
+    await removeCallTimeoutDue({ redisClient, callId });
 };
 
 /**

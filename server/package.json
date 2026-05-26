@@ -28,5 +28,8 @@
     "worker:audit": "node src/workers/auditWorker.js",
     "worker:notification": "node src/workers/notificationWorker.js",
     "test": "node --test"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
   }
 }

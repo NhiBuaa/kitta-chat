@@ -10,14 +10,25 @@ import {
   FaPaperclip,
   FaArrowDown,
   FaExclamationTriangle,
+  FaUserMinus,
 } from "react-icons/fa";
+import { toast } from "react-toastify";
 import UserStatus from "@/features/profile/components/UserStatus.jsx";
 import { formatTimeAgo } from "@/utils/formatTime.js";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 import Loader from "@/components/common/Loader.jsx";
+import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
 import MessageSeenBy from '@/features/chat/components/MessageSeenBy.jsx';
 import OfflineBanner from "@/features/chat/components/OfflineBanner.jsx";
 import CallLogItem from "@/features/calls/components/CallLogItem.jsx";
+import { removeFriend } from "@/services/api/friendApi.js";
+import { runRemoveFriendAction } from "@/features/friends/actions/removeFriendAction.js";
+import {
+  closeRemoveFriendModal,
+  createClosedRemoveFriendModalState,
+  finishRemoveFriendSubmit,
+  openRemoveFriendModal,
+} from "@/features/friends/actions/removeFriendModalState.js";
 
 
 const ChatWindow = ({
@@ -48,17 +59,54 @@ const ChatWindow = ({
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [removeFriendModal, setRemoveFriendModal] = useState(
+    createClosedRemoveFriendModalState,
+  );
   const topSentinelRef = useRef(null);
   const canLoadMoreFromTopRef = useRef(true);
+  const removeFriendSubmitInFlightRef = useRef(false);
 
   // BIẾN
   const isGroupChat = Boolean(activeChat?.members);
   const shouldShowOnlineStatus =
     !isGroupChat && Boolean(currentChatUser?.isFriend);
+  const canRemoveFriend = !isGroupChat && Boolean(currentChatUser?.isFriend);
 
   useEffect(() => {
     canLoadMoreFromTopRef.current = true;
   }, [activeChat?._id]);
+
+  const handleOpenRemoveFriendModal = () => {
+    setRemoveFriendModal(openRemoveFriendModal(currentChatUser));
+  };
+
+  const handleCloseRemoveFriendModal = () => {
+    setRemoveFriendModal((prev) => closeRemoveFriendModal(prev));
+  };
+
+  const handleConfirmRemoveFriend = async () => {
+    if (removeFriendSubmitInFlightRef.current) return;
+
+    // Read state synchronously before any setState to avoid closure race.
+    const snapshot = removeFriendModal;
+    if (!snapshot.isOpen || !snapshot.targetUser || snapshot.isLoading) return;
+    const targetUserId = snapshot.targetUser._id;
+    if (!targetUserId) return;
+
+    removeFriendSubmitInFlightRef.current = true;
+    setRemoveFriendModal((prev) => ({ ...prev, isLoading: true }));
+
+    const result = await runRemoveFriendAction({
+      friendId: targetUserId,
+      removeFriend,
+      toast,
+    });
+
+    removeFriendSubmitInFlightRef.current = false;
+    setRemoveFriendModal((prev) =>
+      finishRemoveFriendSubmit(prev, { closeOnSuccess: Boolean(result.success) }),
+    );
+  };
 
   useEffect(() => {
     const root = scrollRef?.current;
@@ -200,8 +248,32 @@ const ChatWindow = ({
               <FaInfoCircle />
             </button>
           )}
+
+          {canRemoveFriend && (
+            <button
+              onClick={handleOpenRemoveFriendModal}
+              className="hover:bg-red-50 p-2 rounded-full transition-colors text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Hủy kết bạn"
+              disabled={removeFriendModal.isLoading}
+            >
+              <FaUserMinus />
+            </button>
+          )}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={removeFriendModal.isOpen}
+        title="Hủy kết bạn?"
+        message={`Bạn có chắc muốn hủy kết bạn với ${getUserDisplayName(removeFriendModal.targetUser || currentChatUser)} không?`}
+        type="danger"
+        confirmText="Hủy kết bạn"
+        cancelText="Đóng"
+        isDangerous
+        isLoading={removeFriendModal.isLoading}
+        onConfirm={handleConfirmRemoveFriend}
+        onCancel={handleCloseRemoveFriendModal}
+      />
 
       <div
         className="flex-1 overflow-y-auto p-6 space-y-4 relative bg-gradient-to-b from-gray-50 via-white to-gray-100"
@@ -522,3 +594,4 @@ const ChatWindow = ({
 };
 
 export default ChatWindow;
+

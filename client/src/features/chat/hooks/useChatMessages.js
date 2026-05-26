@@ -30,6 +30,7 @@ export const useChatMessages = ({
     armAutoScrollLock,
     scrollRef,
     setUsers,
+    setGroups,
     scrollChatToBottom,
     setShowEmoji,
 }) => {
@@ -87,11 +88,21 @@ export const useChatMessages = ({
                 if (res.data?.success) {
                     setMessages(res.data.data);
                     setHasMore(res.data.hasMore);
-                    setUsers((prev) =>
-                        prev.map((u) =>
-                            u._id === activeChat._id ? { ...u, unreadCount: 0, hasUnread: false } : u
-                        )
-                    );
+                    if (activeChatIsGroup) {
+                        setGroups((prev) =>
+                            prev.map((group) =>
+                                group._id === activeChat._id
+                                    ? { ...group, unreadCount: 0, hasUnread: false }
+                                    : group
+                            )
+                        );
+                    } else {
+                        setUsers((prev) =>
+                            prev.map((u) =>
+                                u._id === activeChat._id ? { ...u, unreadCount: 0, hasUnread: false } : u
+                            )
+                        );
+                    }
                 }
 
                 if (socket) {

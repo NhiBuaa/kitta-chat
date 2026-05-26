@@ -12,6 +12,7 @@ const buildPasswordResetEmailJob = ({
   displayName = "bạn",
   resetUrl,
   requestId = crypto.randomUUID(),
+  correlationId,
 }) => {
   if (!resetUrl) {
     throw new Error("Password reset email job requires resetUrl");
@@ -20,6 +21,7 @@ const buildPasswordResetEmailJob = ({
   return {
     type: "email.password_reset",
     requestId,
+    correlationId,
     to: normalizeEmail(to),
     template: "password_reset",
     subject: "Yêu cầu đặt lại mật khẩu - KittaChat",

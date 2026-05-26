@@ -18,11 +18,13 @@ test("queuePasswordResetEmail publishes a password reset email job", async () =>
       },
     },
     requestId: "req-reset-1",
+    correlationId: "http-req-reset-1",
   });
 
   assert.equal(result.queued, true);
   assert.equal(result.requestId, "req-reset-1");
   assert.equal(published[0].type, "email.password_reset");
+  assert.equal(published[0].correlationId, "http-req-reset-1");
   assert.equal(published[0].to, "alice@example.com");
   assert.match(published[0].html, /token-1/);
 });

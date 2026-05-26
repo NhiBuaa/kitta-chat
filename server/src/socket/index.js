@@ -9,8 +9,9 @@ const { registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
 const { registerCallHandlers } = require("./handlers/call/index");
+const { createCallTimeoutFinalizer } = require("./handlers/call/services/callTimeoutFinalizer");
 
-const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
+const NODE_NAME = process.env.NODE_NAME || "backend";
 const logPrefix = `[Socket][node=${NODE_NAME}]`;
 const deliveryLogPrefix = `[Delivery][node=${NODE_NAME}]`;
 
@@ -27,9 +28,9 @@ if (!JWT_SECRET) {
  *
  * @param {import("http").Server} httpServer
  * @param {import("express").Application} app
- * @returns {import("socket.io").Server} io
+ * @returns {Promise<import("socket.io").Server>} io
  */
-const initSocket = (httpServer, app) => {
+const initSocket = async (httpServer, app) => {
     const io = new Server(httpServer, {
         cors: {
             origin: process.env.URL_FRONTEND,
@@ -49,20 +50,20 @@ const initSocket = (httpServer, app) => {
     pubClient.on("error", (err) => console.error(`${logPrefix}[RedisPub] Error:`, err));
     subClient.on("error", (err) => console.error(`${logPrefix}[RedisSub] Error:`, err));
 
-    Promise.all([pubClient.connect(), subClient.connect()])
-        .then(() => {
-            io.adapter(createAdapter(pubClient, subClient));
-            console.log(`${logPrefix} Redis adapter connected`);
-        })
-        .catch((err) => {
+    try {
+        await Promise.all([pubClient.connect(), subClient.connect()]);
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log(`${logPrefix} Redis adapter connected`);
+    } catch (err) {
             // FAIL FAST: Redis là core dependency, không chạy nếu không có Redis
-            console.error(`${logPrefix} FATAL: Redis connection failed: ${err.message}`);
-            process.exit(1);
-        });
+        throw new Error(`Redis connection failed: ${err.message}`);
+    }
 
     app.set("socketio", io);
     app.set("redisClient", pubClient);
     io.redisClient = pubClient;
+    io.callTimeoutFinalizer = createCallTimeoutFinalizer({ io, redisClient: pubClient });
+    io.callTimeoutFinalizer.start();
 
     // Proof log cho multi-node: backend nào đang giữ socket của receiver
     // sẽ tự in log "received" khi nhận được sự kiện nội bộ này.

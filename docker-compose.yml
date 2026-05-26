@@ -180,6 +180,8 @@ services:
     image: mongo:7
     container_name: chat_mongo
     restart: always
+    ports:
+      - "27018:27017"
     volumes:
       - mongo_data:/data/db
     networks:

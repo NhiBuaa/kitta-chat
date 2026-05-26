@@ -12,6 +12,7 @@ const { IMAGE_JOB_QUEUE } = require("../queues/imageJobs");
 const { startQueueWorker } = require("./workerRuntime");
 const { createSocketEmitter } = require("../socket/emitter");
 const { cacheClient, connectCacheRedis } = require("../config/redis");
+const { validateWorkerEnv } = require("../config/env");
 
 dotenv.config();
 
@@ -249,7 +250,9 @@ const processImageJob = async (
 };
 
 const startImageWorker = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
+  const workerConfig = validateWorkerEnv({ workerName: "image" });
+
+  await mongoose.connect(workerConfig.mongoUri);
   await connectCacheRedis();
 
   const io = await createSocketEmitter();
@@ -258,7 +261,7 @@ const startImageWorker = async () => {
   const worker = await startQueueWorker({
     queueName: IMAGE_JOB_QUEUE,
     connectionManager,
-    prefetch: Number(process.env.IMAGE_WORKER_CONCURRENCY || 2),
+    prefetch: workerConfig.workerConcurrency,
     processJob: async (job) => {
       await processImageJob(job, { sharp, s3Service, FileModel, UserModel, invalidateUserProfile, httpClient: axios, io });
     },
