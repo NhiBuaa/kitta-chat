@@ -27,6 +27,14 @@ export const useGroupSocket = ({
             const existedBefore = groupsRef.current.some((g) => g._id === group._id);
             upsertGroup(group);
 
+            const isCurrentUserMember = group.members?.some((member) => {
+                const memberId = typeof member === "object" ? member?._id : member;
+                return memberId === currentUser._id;
+            });
+            if (isCurrentUserMember) {
+                try { socket.emit("joinGroup", group._id); } catch (err) { console.error(err); }
+            }
+
             const isCurrentUserAdded =
                 action === "member-added" && addedMemberId === currentUser._id;
             const isInvitedWhenCreated =

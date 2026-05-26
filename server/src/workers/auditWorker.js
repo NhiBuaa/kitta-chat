@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const { AUDIT_EVENTS_QUEUE } = require("../queues/auditJobs");
 const { closeRabbitMQ, connectionManager } = require("../queues/rabbitmq");
 const { startQueueWorker } = require("./workerRuntime");
+const { validateWorkerEnv } = require("../config/env");
 
 dotenv.config();
 
@@ -25,10 +26,12 @@ const processAuditJob = async (job, { logger = console } = {}) => {
 };
 
 const startAuditWorker = async () => {
+  const workerConfig = validateWorkerEnv({ workerName: "audit" });
+
   const worker = await startQueueWorker({
     queueName: AUDIT_EVENTS_QUEUE,
     connectionManager,
-    prefetch: Number(process.env.AUDIT_WORKER_CONCURRENCY || 10),
+    prefetch: workerConfig.workerConcurrency,
     processJob: processAuditJob,
     logger: console,
   });

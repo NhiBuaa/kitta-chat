@@ -1,5 +1,6 @@
 const Message = require("../models/Message");
 const Group = require("../models/Group");
+const { sendError } = require("../utils/apiResponse");
 
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
@@ -14,9 +15,11 @@ exports.createMessage = async (req, res) => {
       conversationId = receiver;
     } else {
       if (!sender || !receiver) {
-        return res
-          .status(400)
-          .json({ message: "Thiếu thông tin người gửi/nhận" });
+        return sendError(res, {
+          status: 400,
+          code: "MESSAGE_RECIPIENT_REQUIRED",
+          message: "Thiếu thông tin người gửi/nhận",
+        });
       }
       conversationId = [sender, receiver].sort().join("_");
     }
@@ -102,7 +105,7 @@ exports.getMessages = async (req, res) => {
   }
 };
 
-exports.createSystemMessage = async (groupId, text) => {
+exports.createSystemMessage = async (groupId, text, options = {}) => {
   try {
     const systemMessage = new Message({
       conversationId: groupId,
@@ -111,6 +114,7 @@ exports.createSystemMessage = async (groupId, text) => {
       receiver: null,
       text: text,
       attachments: [],
+      readBy: options.readBy || [],
     });
     await systemMessage.save();
     return systemMessage;

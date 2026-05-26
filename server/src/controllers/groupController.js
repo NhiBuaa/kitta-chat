@@ -63,6 +63,15 @@ const buildGroupLastMessagePreview = (message, currentUserId) => {
   };
 };
 
+const buildGroupSidebarUnreadState = (lastMessagePreview) => {
+  const unreadCount = lastMessagePreview?.isRead === false ? 1 : 0;
+
+  return {
+    hasUnread: unreadCount > 0,
+    unreadCount,
+  };
+};
+
 const emitToUserRooms = (io, userIds, eventName, payload) => {
   if (!io) return;
 
@@ -80,6 +89,17 @@ const emitGroupUpsert = (io, group, extraPayload = {}) => {
     group,
     ...extraPayload,
   });
+};
+
+const buildGroupSidebarState = (group, lastMessage, currentUserId) => {
+  const lastMessagePreview = buildGroupLastMessagePreview(lastMessage, currentUserId);
+  const unreadState = buildGroupSidebarUnreadState(lastMessagePreview);
+
+  return {
+    ...toPlainObject(group),
+    lastMessage: lastMessagePreview,
+    ...unreadState,
+  };
 };
 
 const buildGroupSystemMessagePayload = (groupId, systemMessage) => ({
@@ -122,17 +142,24 @@ const createGroup = async (req, res) => {
     const fullGroup = await populateGroup(Group.findById(newGroup._id));
     const admin = await User.findById(adminId).select("displayName username");
 
-    await createSystemMessage(
+    const systemMessage = await createSystemMessage(
       newGroup._id.toString(),
-      `${getSafeUserName(admin)} đã tạo nhóm`,
+      `${getSafeUserName(admin)} \u0111\u00e3 t\u1ea1o nh\u00f3m`,
+      { readBy: [adminId] },
     );
 
-    emitGroupUpsert(io, fullGroup, {
-      action: "created",
-      actorId: adminId,
+    allMembers.forEach((memberId) => {
+      emitToUserRooms(io, [memberId], "groupUpserted", {
+        group: buildGroupSidebarState(fullGroup, systemMessage, memberId),
+        action: "created",
+        actorId: adminId,
+      });
     });
 
-    res.json({ success: true, group: fullGroup });
+    res.json({
+      success: true,
+      group: buildGroupSidebarState(fullGroup, systemMessage, adminId),
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Lỗi tạo nhóm" });
@@ -515,3 +542,5 @@ module.exports = {
   deleteGroup,
   getGroupById,
 };
+
+

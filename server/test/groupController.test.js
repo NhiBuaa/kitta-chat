@@ -52,12 +52,12 @@ const createGroupQuery = (groups) => ({
   },
 });
 
-const loadGroupController = ({ groups, aggregateResults, aggregateCalls }) => {
+const loadGroupController = ({ groups, aggregateResults, aggregateCalls, expectedMemberId = "507f1f77bcf86cd799439011" }) => {
   clearControllerCache();
 
   mockModule(groupModelPath, {
     find(query) {
-      assert.deepEqual(query, { members: "507f1f77bcf86cd799439011" });
+      assert.deepEqual(query, { members: expectedMemberId });
       return createGroupQuery(groups);
     },
   });
@@ -223,6 +223,136 @@ test("getMyGroups unread aggregation uses group readBy state and counts system m
   assert.equal(res.body.groups[0].unreadCount, 0);
 });
 
+
+test("getMyGroups keeps creator group creation system message read on refresh", async () => {
+  const aggregateCalls = [];
+  const creatorId = "507f1f77bcf86cd799439011";
+  const invitedId = "507f1f77bcf86cd799439012";
+  const groups = [
+    {
+      _id: "group-1",
+      name: "Project Group",
+      admin: creatorId,
+      members: [creatorId, invitedId, "507f1f77bcf86cd799439013"],
+      avatar: "group.png",
+      createdAt: new Date("2026-05-18T08:00:00.000Z"),
+      updatedAt: new Date("2026-05-18T08:30:00.000Z"),
+      toObject() {
+        return {
+          _id: this._id,
+          name: this.name,
+          admin: this.admin,
+          members: this.members,
+          avatar: this.avatar,
+          createdAt: this.createdAt,
+          updatedAt: this.updatedAt,
+        };
+      },
+    },
+  ];
+  const aggregateResults = [
+    [
+      {
+        _id: "group-1",
+        lastMsg: {
+          _id: "system-message-1",
+          conversationId: "group-1",
+          type: "system",
+          text: "A has created group",
+          sender: null,
+          createdAt: new Date("2026-05-18T09:00:00.000Z"),
+          readBy: [creatorId],
+        },
+      },
+    ],
+    [],
+  ];
+  const { getMyGroups } = loadGroupController({
+    groups,
+    aggregateResults,
+    aggregateCalls,
+    expectedMemberId: creatorId,
+  });
+  const req = { user: { id: creatorId } };
+  const res = createResponse();
+
+  await getMyGroups(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(res.body.groups.length, 1);
+  assert.equal(res.body.groups[0].lastMessage.content, "A has created group");
+  assert.equal(res.body.groups[0].lastMessage.text, "A has created group");
+  assert.equal(res.body.groups[0].lastMessage.type, "system");
+  assert.equal(res.body.groups[0].lastMessage.isRead, true);
+  assert.equal(res.body.groups[0].unreadCount, 0);
+  assert.equal(res.body.groups[0].hasUnread, false);
+});
+
+test("getMyGroups marks invited member group creation system message unread on refresh", async () => {
+  const aggregateCalls = [];
+  const creatorId = "507f1f77bcf86cd799439011";
+  const invitedId = "507f1f77bcf86cd799439012";
+  const groups = [
+    {
+      _id: "group-1",
+      name: "Project Group",
+      admin: creatorId,
+      members: [creatorId, invitedId, "507f1f77bcf86cd799439013"],
+      avatar: "group.png",
+      createdAt: new Date("2026-05-18T08:00:00.000Z"),
+      updatedAt: new Date("2026-05-18T08:30:00.000Z"),
+      toObject() {
+        return {
+          _id: this._id,
+          name: this.name,
+          admin: this.admin,
+          members: this.members,
+          avatar: this.avatar,
+          createdAt: this.createdAt,
+          updatedAt: this.updatedAt,
+        };
+      },
+    },
+  ];
+  const aggregateResults = [
+    [
+      {
+        _id: "group-1",
+        lastMsg: {
+          _id: "system-message-1",
+          conversationId: "group-1",
+          type: "system",
+          text: "A has created group",
+          sender: null,
+          createdAt: new Date("2026-05-18T09:00:00.000Z"),
+          readBy: [creatorId],
+        },
+      },
+    ],
+    [{ _id: "group-1", count: 1 }],
+  ];
+  const { getMyGroups } = loadGroupController({
+    groups,
+    aggregateResults,
+    aggregateCalls,
+    expectedMemberId: invitedId,
+  });
+  const req = { user: { id: invitedId } };
+  const res = createResponse();
+
+  await getMyGroups(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(res.body.groups.length, 1);
+  assert.equal(res.body.groups[0].lastMessage.content, "A has created group");
+  assert.equal(res.body.groups[0].lastMessage.text, "A has created group");
+  assert.equal(res.body.groups[0].lastMessage.type, "system");
+  assert.equal(res.body.groups[0].lastMessage.isRead, false);
+  assert.equal(res.body.groups[0].unreadCount, 1);
+  assert.equal(res.body.groups[0].hasUnread, true);
+});
 test("getMyGroups treats unread system messages as unread last messages", async () => {
   const aggregateCalls = [];
   const groups = [
@@ -316,3 +446,4 @@ test("renameGroup emits a complete realtime system message payload", async () =>
     },
   });
 });
+

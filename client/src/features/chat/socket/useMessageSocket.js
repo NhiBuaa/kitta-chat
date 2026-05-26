@@ -101,6 +101,9 @@ export const useMessageSocket = ({
             setGroups((prev) =>
                 prev.map((g) => {
                     if (g._id !== groupId || !g.lastMessage) return g;
+                    if (readerId === currentUser._id) {
+                        return { ...g, hasUnread: false, unreadCount: 0, lastMessage: { ...g.lastMessage, isRead: true } };
+                    }
                     const readBy = g.lastMessage.readBy
                         ? Array.from(new Set(g.lastMessage.readBy))
                         : [];

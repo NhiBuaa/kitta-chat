@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
+import { axiosClient } from "@/services/api/axiosClient.js";
 import { sendFriendRequest } from "@/services/api/friendApi.js";
 
 /**
@@ -19,10 +19,7 @@ export const useFriendActions = ({ API_URL, setUsers, setActiveChat, setSentRequ
     // Nhận fullURL thay vì tự ghép — tránh double /api/
     const fetchNewConversation = useCallback(async (fullUrl, messageData) => {
         try {
-            const token = localStorage.getItem("token");
-            const res = await axios.get(fullUrl, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await axiosClient.get(fullUrl);
 
             if (res.data.success) {
                 const newItem = res.data.data || res.data.user || res.data.group;

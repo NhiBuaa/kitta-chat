@@ -34,9 +34,13 @@ Redis failures should be logged/swallowed on coordination/cache paths where Mong
 
 RabbitMQ is used for background work only: image/file processing, notification/email jobs, and audit/statistics/background processing. It must not decide realtime call/chat lifecycle.
 
+See `docs/RABBITMQ_WORKER_FLOWS.md` for the current queue topology, producers, workers, retry queues, DLQs, correlation IDs, and poison-message handling.
+
 ## Socket.IO Realtime Flow
 
 Socket auth verifies JWT and joins the authenticated user room. Messages, typing, presence, friend updates, call signaling, media state, and call lifecycle notifications are delivered synchronously through Socket.IO.
+
+See `docs/SOCKET_IO_SCALING.md` for the current client connection flow, JWT socket authentication, user/group rooms, Redis adapter fan-out across backend replicas, reconnect behavior, heartbeat, and offline grace period.
 
 ## Call Lifecycle Hardening
 
@@ -70,3 +74,15 @@ Use targeted tests first, then broader regression:
 - Client build: `cd client && npm run build`
 
 For multi-replica behavior, use Docker Compose and nginx manual smoke tests.
+
+## API Reference
+
+See `docs/API.md` for the current REST endpoint surface, auth requirements, request/response examples, request ID behavior, and honest limitations.
+
+## Deployment And Smoke Verification
+
+See `docs/DEPLOYMENT_AND_SMOKE_TESTS.md` for the current Docker Compose startup flow, nginx/backend operational endpoint checks, RabbitMQ UI verification, auth rate-limit smoke tests, poison-message checks, teardown/reset commands, and common startup recovery steps.
+
+## Interview Retrospective
+
+See `docs/INTERVIEW_NOTES.md` for project-specific engineering decisions, tradeoffs, debugging lessons, reliability lessons, operational lessons, likely interviewer questions, and honest CV-safe claims.

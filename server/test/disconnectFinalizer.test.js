@@ -196,11 +196,11 @@ test("disconnect resolves Redis socket binding when local binding is missing", a
   assert.ok(redisClient.calls.some((entry) => entry[0] === "get" && entry[1] === "call:socket:socket-1"));
 });
 
-test("disconnect resolves Redis user binding when socket binding is missing", async () => {
+test("disconnect does not finalize from Redis user binding alone", async () => {
   clearModules();
   const callsById = { [redisUserCallId]: createCall({ id: redisUserCallId }) };
   installCallHistoryMock({ callsById });
-  installCallLogMock();
+  const logCalls = installCallLogMock();
   const { finalizeCallFromDisconnect } = require("../src/socket/handlers/call/disconnect");
   const redisClient = createRedisClient({
     values: { [`call:user:${callerId}`]: redisUserCallId },
@@ -208,11 +208,12 @@ test("disconnect resolves Redis user binding when socket binding is missing", as
 
   await finalizeCallFromDisconnect({ socketId: "socket-1", userId: callerId, io: createIo(redisClient) });
 
-  assert.equal(callsById[redisUserCallId].status, "rejected");
+  assert.equal(callsById[redisUserCallId].status, "pending");
+  assert.equal(logCalls.length, 0);
   assert.deepEqual(redisClient.calls.filter((entry) => entry[0] === "get"), [
     ["get", "call:socket:socket-1"],
-    ["get", `call:user:${callerId}`],
   ]);
+  assert.ok(redisClient.calls.some((entry) => entry[0] === "del" && entry[1] === `call:user:${callerId}`));
 });
 
 test("answered call disconnect finalizes completed once", async () => {

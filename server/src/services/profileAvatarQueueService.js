@@ -8,6 +8,7 @@ const queueProfileAvatarProcessing = async ({
   userId,
   storage = s3Service,
   imageQueue = defaultImageQueue,
+  correlationId,
 }) => {
   const source = await storage.uploadObject(
     file.buffer,
@@ -21,6 +22,7 @@ const queueProfileAvatarProcessing = async ({
     file,
     userId,
     profileUpdates: {},
+    correlationId,
   });
 
   try {

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { FaTimes, FaCheck } from "react-icons/fa";
 import { FiX, FiCheck, FiUsers } from "react-icons/fi";
+import { createGroup } from "@/services/api/groupApi.js";
 
 
 const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
@@ -10,8 +10,6 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL_GROUPS || '/api/groups';
-
   if (!isOpen) return null;
 
   const toggleMember = (userId) => {
@@ -43,17 +41,7 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_URL}/`,
-        {
-          name: groupName,
-          members: selectedMembers,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await createGroup({ name: groupName, members: selectedMembers });
 
       if (res.data.success) {
         toast.success("Tạo nhóm thành công!");

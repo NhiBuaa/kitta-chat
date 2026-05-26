@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { FaTimes, FaUserCheck, FaUserTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSocket } from "@/services/socket/SocketContext.js";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
-
-const API_URL =
-  import.meta.env.VITE_API_URL_USERS || "/api/users";
+import {
+  acceptFriendRequest,
+  getFriendRequests,
+  rejectFriendRequest,
+} from "@/services/api/friendApi.js";
 
 const FriendRequestModal = ({ onClose, setRequestCount }) => {
   const [requests, setRequests] = useState([]);
@@ -21,12 +22,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
 
   const handleAccept = async (senderId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_URL}/accept-friend`,
-        { senderId },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await acceptFriendRequest(senderId);
 
       toast.success("Đã đồng ý lời mời kết bạn!");
       setRequests((prev) => prev.filter((request) => request._id !== senderId));
@@ -38,12 +34,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
 
   const handleReject = async (senderId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_URL}/reject-friend`,
-        { senderId },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await rejectFriendRequest(senderId);
 
       setRequests((prev) => prev.filter((request) => request._id !== senderId));
     } catch (error) {
@@ -55,10 +46,7 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_URL}/friend-requests`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await getFriendRequests();
         if (res.data.success) {
           setRequests(res.data.requests);
           setRequestCount?.(res.data.requests.length);

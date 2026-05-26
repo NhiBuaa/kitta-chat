@@ -148,6 +148,7 @@ const updateUserProfile = async (req, res) => {
       avatarQueueResult = await queueProfileAvatarProcessing({
         file: req.file,
         userId,
+        correlationId: req.requestId,
       });
 
       if (!avatarQueueResult.queued) {

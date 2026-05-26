@@ -27,8 +27,10 @@ test("queueProfileAvatarProcessing reports queued false when RabbitMQ is unavail
           deletedObjects.push(key);
         },
       },
+      correlationId: "http-req-avatar-1",
       imageQueue: {
-        async publishImageJob() {
+        async publishImageJob(job) {
+          assert.equal(job.correlationId, "http-req-avatar-1");
           const error = new AggregateError([
             new Error("connect ECONNREFUSED ::1:5672"),
             new Error("connect ECONNREFUSED 127.0.0.1:5672"),

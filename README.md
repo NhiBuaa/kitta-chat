@@ -9,7 +9,10 @@ The current architecture is intentionally conservative:
 - RabbitMQ is a background side-effect bus only; it is not used for realtime chat/call decisions.
 - Socket.IO remains the synchronous realtime path for messaging, presence, calls, and friendship updates.
 
-For deeper architecture notes, see `docs/ARCHITECTURE.md`.
+For deeper architecture notes, see `docs/ARCHITECTURE.md`. For REST endpoint
+examples, see `docs/API.md`. For the RabbitMQ queue, retry, DLQ, and
+poison-message flow, see `docs/RABBITMQ_WORKER_FLOWS.md`. For Socket.IO
+multi-replica delivery with the Redis adapter, see `docs/SOCKET_IO_SCALING.md`. For local Docker deployment and smoke checks, see `docs/DEPLOYMENT_AND_SMOKE_TESTS.md`. For an honest interview retrospective and CV-safe claims, see `docs/INTERVIEW_NOTES.md`.
 
 ## Features
 
@@ -154,6 +157,9 @@ See `docs/ARCHITECTURE.md` for the detailed current architecture. Short version:
 - Socket.IO handles realtime message delivery, typing, presence, friend updates, and WebRTC signaling.
 - MongoDB remains authoritative; Redis mirrors are disposable and rebuildable.
 - RabbitMQ workers process side effects in the background and never decide realtime call/chat lifecycle.
+- REST endpoint examples are documented in `docs/API.md`.
+- Socket.IO multi-replica delivery is documented in `docs/SOCKET_IO_SCALING.md`.
+- RabbitMQ worker flow details are documented in `docs/RABBITMQ_WORKER_FLOWS.md`.
 
 ## Testing Commands
 
@@ -172,6 +178,15 @@ npm test
 npm run build
 ```
 
+## CI Pipeline
+
+GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to
+`main`/`master`.
+
+- `Server Tests`: installs `server/` with `npm ci` and runs `npm test`.
+- `Client Build`: installs `client/` with `npm ci` and runs `npm run build`.
+- Lint and Docker image builds are intentionally not part of this small CI slice yet.
+
 ## Manual Smoke Checklist
 
 Before freezing/releasing:
@@ -189,6 +204,7 @@ Before freezing/releasing:
 - Offline missed call creates one `CallHistory` and one `call_log`.
 - Answered call does not become missed after stale local timeout.
 - Docker/nginx with 3 backend replicas keeps Socket.IO, call signaling, and badges correct.
+- Backend operational checks through nginx: `curl.exe -i http://localhost/backend-healthz`, `curl.exe -i http://localhost/readyz`, and `curl.exe -i http://localhost/ops`.
 - Optional: set `CALL_DISTRIBUTED_TIMEOUT_ENABLED=true` and confirm all backend replicas start the poller without duplicate `call_log` records.
 
 ## Known Constraints

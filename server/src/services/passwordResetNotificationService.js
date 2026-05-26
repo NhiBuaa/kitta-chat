@@ -7,12 +7,14 @@ const queuePasswordResetEmail = async ({
   resetUrl,
   notificationQueue = defaultNotificationQueue,
   requestId,
+  correlationId,
 }) => {
   const emailJob = buildPasswordResetEmailJob({
     to: user.email,
     displayName: user.displayName,
     resetUrl,
     requestId,
+    correlationId,
   });
 
   try {
