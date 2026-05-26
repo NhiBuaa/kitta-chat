@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const test = require("node:test");
 const jwt = require("jsonwebtoken");
-const { io: createClient } = require("../../client/node_modules/socket.io-client");
+const { io: createClient } = require("socket.io-client");
 
 const socketIndexPath = require.resolve("../src/socket/index");
 const messageHandlerPath = require.resolve("../src/socket/handlers/messageHandler");
