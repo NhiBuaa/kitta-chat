@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
-import { useAuth } from "@/services/auth/AuthProvider.jsx";
+import { useAuth } from "@/services/auth/useAuth.js";
 import { updateUserProfile } from "@/services/api/userApi.js";
 const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {

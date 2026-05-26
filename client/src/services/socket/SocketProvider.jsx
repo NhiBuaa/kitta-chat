@@ -5,7 +5,7 @@ import { syncMessages } from "@/services/api/messageApi.js";
 import { getOnlineFriends } from "@/services/api/userApi.js";
 import { SocketContext } from "@/services/socket/SocketContext.js";
 import { dispatchCallHistoryRefresh } from "@/features/calls/context/callHistoryBadgeState.js";
-import { useAuth } from "@/services/auth/AuthProvider.jsx";
+import { useAuth } from "@/services/auth/useAuth.js";
 import { getSocketAuthState } from "@/services/socket/socketAuthState.js";
 
 // Event để sync tin nhắn bị miss giữa các React component

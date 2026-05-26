@@ -5,7 +5,7 @@ import test from "node:test";
 const source = await readFile(new URL("./useCallActions.js", import.meta.url), "utf8");
 
 test("useCallActions reads caller identity from AuthProvider context", () => {
-    assert.match(source, /import \{ useAuth \} from ['"]@\/services\/auth\/AuthProvider\.jsx['"]/);
+    assert.match(source, /import \{ useAuth \} from ['"]@\/services\/auth\/useAuth\.js['"]/);
     assert.match(source, /const \{ user: authUser \} = useAuth\(\)/);
     assert.doesNotMatch(source, /getStoredUser/);
 });

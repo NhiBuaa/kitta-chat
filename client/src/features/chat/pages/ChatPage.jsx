@@ -4,7 +4,7 @@ import { SOCKET_EVENTS } from "@/constants/socketEvents.js";
 import { getGroups } from "@/services/api/groupApi.js";
 import { getFriendRequests } from "@/services/api/friendApi.js";
 import { getSidebarUsers, getUserProfile } from "@/services/api/userApi.js";
-import { useAuth } from "@/services/auth/AuthProvider.jsx";
+import { useAuth } from "@/services/auth/useAuth.js";
 
 // Components
 import Sidebar from "@/components/layout/Sidebar.jsx";

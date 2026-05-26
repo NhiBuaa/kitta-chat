@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { logoutSession, refreshSession } from "@/services/api/authApi.js";
 import { bootstrapAuth, logoutAuth } from "@/services/auth/authBootstrap.js";
+import { AuthContext } from "@/services/auth/AuthContext.js";
 import {
   clearAuthSession,
   getAccessToken,
@@ -11,8 +12,6 @@ import {
 } from "@/services/auth/authSession.js";
 
 const AUTH_CHANGED_EVENT = "auth-changed";
-
-const AuthContext = createContext(null);
 
 const tokenStore = {
   getAccessToken,
@@ -126,12 +125,4 @@ export const AuthProvider = ({ children }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
 };

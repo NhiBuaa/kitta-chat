@@ -6,7 +6,7 @@ import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { clearCallStorage } from '@/features/calls/context/callStorage.js';
 import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
-import { useAuth } from '@/services/auth/AuthProvider.jsx';
+import { useAuth } from '@/services/auth/useAuth.js';
 import { getLeaveCallEvent } from '@/features/calls/context/callLifecycleState.js';
 
 /**

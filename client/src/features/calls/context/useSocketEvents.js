@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { persistPartnerMediaStatus } from '@/features/calls/context/callMediaState.js';
-import { useAuth } from '@/services/auth/AuthProvider.jsx';
+import { useAuth } from '@/services/auth/useAuth.js';
 
 /**
  * Đăng ký / hủy toàn bộ socket event listeners liên quan đến cuộc gọi.

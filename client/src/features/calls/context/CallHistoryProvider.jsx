@@ -14,7 +14,7 @@ import {
     subscribeCallHistoryRefresh,
 } from '@/features/calls/context/callHistoryBadgeState.js';
 import { getAccessToken } from '@/services/auth/authSession.js';
-import { useAuth } from '@/services/auth/AuthProvider.jsx';
+import { useAuth } from '@/services/auth/useAuth.js';
 
 export const CallHistoryProvider = ({ children }) => {
     const { socket, currentUser } = useSocket();
