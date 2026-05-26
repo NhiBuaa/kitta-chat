@@ -5,16 +5,12 @@ import { syncMessages } from "@/services/api/messageApi.js";
 import { getOnlineFriends } from "@/services/api/userApi.js";
 import { SocketContext } from "@/services/socket/SocketContext.js";
 import { dispatchCallHistoryRefresh } from "@/features/calls/context/callHistoryBadgeState.js";
-import { getStoredUser, setStoredUser } from "@/services/auth/authSession.js";
 import { useAuth } from "@/services/auth/AuthProvider.jsx";
 import { getSocketAuthState } from "@/services/socket/socketAuthState.js";
 
-const AUTH_CHANGED_EVENT = "auth-changed";
 // Event để sync tin nhắn bị miss giữa các React component
 const SYNC_MESSAGE_EVENT = "sync-message-recovered";
 const SERVER_URL = import.meta.env.VITE_API_URL || "";
-
-const parseStoredUser = () => getStoredUser();
 
 export const SocketProvider = ({ children }) => {
     const { token, user: authUser, isChecking, isAuthenticated } = useAuth();
@@ -29,7 +25,6 @@ export const SocketProvider = ({ children }) => {
         isChecking,
         token,
         user: authUser,
-        fallbackUser: parseStoredUser(),
     }), [authUser, isAuthenticated, isChecking, token]);
     const socketRef = useRef(null);
     const lastMessageIdRef = useRef(localStorage.getItem("last_message_id") || null);
@@ -45,14 +40,37 @@ export const SocketProvider = ({ children }) => {
     useEffect(() => {
         if (isChecking) return;
 
-        if (!isAuthenticated) {
-            setCurrentUser(null);
-            setOnlineUsers([]);
-            return;
-        }
+        let isActive = true;
+        queueMicrotask(() => {
+            if (!isActive) return;
 
-        setCurrentUser(socketAuthState.user);
+            if (!isAuthenticated) {
+                setCurrentUser(null);
+                return;
+            }
+
+            setCurrentUser(socketAuthState.user);
+        });
+
+        return () => {
+            isActive = false;
+        };
     }, [isAuthenticated, isChecking, socketAuthState.user]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            let isActive = true;
+            queueMicrotask(() => {
+                if (isActive) {
+                    setOnlineUsers([]);
+                }
+            });
+
+            return () => {
+                isActive = false;
+            };
+        }
+    }, [isAuthenticated]);
 
     // =========================================================
     // Lưu last_message_id với debounce (5s) + clear on unmount
@@ -215,8 +233,7 @@ export const SocketProvider = ({ children }) => {
             const updatedUser = payload?.user;
             const updatedUserId = updatedUser?._id || updatedUser?.id;
             if (updatedUserId && String(updatedUserId) === String(userId)) {
-                setStoredUser(updatedUser);
-                window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+                setCurrentUser(updatedUser);
             }
             window.dispatchEvent(
                 new CustomEvent("avatar-updated", { detail: payload })

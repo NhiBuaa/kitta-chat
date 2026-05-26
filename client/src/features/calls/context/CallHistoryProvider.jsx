@@ -13,7 +13,7 @@ import {
     subscribeCallHistoryAuthRefresh,
     subscribeCallHistoryRefresh,
 } from '@/features/calls/context/callHistoryBadgeState.js';
-import { getAccessToken, getStoredUser } from '@/services/auth/authSession.js';
+import { getAccessToken } from '@/services/auth/authSession.js';
 import { useAuth } from '@/services/auth/AuthProvider.jsx';
 
 export const CallHistoryProvider = ({ children }) => {
@@ -117,8 +117,7 @@ export const CallHistoryProvider = ({ children }) => {
 
         const handleCallLogMessage = (data) => {
             if (data.type !== 'call_log') return;
-            const storedUser = getStoredUser() || {};
-            const currentUserId = storedUser._id || storedUser.id;
+            if (!currentUserId) return;
             setMissedCount((prev) => applyCallLogMessageToMissedCount({
                 previousCount: prev,
                 data,
@@ -129,7 +128,7 @@ export const CallHistoryProvider = ({ children }) => {
 
         socket.on('callLogMessage', handleCallLogMessage);
         return () => socket.off('callLogMessage', handleCallLogMessage);
-    }, [socket]);
+    }, [socket, currentUserId]);
 
     // Effect 4: callHistorySync là NGUỒN DUY NHẤT tăng badge.
     // KHÔNG dùng callTimeout/callRejected/callCancelled/callEnded

@@ -4,13 +4,14 @@ import { toast } from 'react-toastify';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { persistPartnerMediaStatus } from '@/features/calls/context/callMediaState.js';
-import { getStoredUser } from '@/services/auth/authSession.js';
+import { useAuth } from '@/services/auth/AuthProvider.jsx';
 
 /**
  * Đăng ký / hủy toàn bộ socket event listeners liên quan đến cuộc gọi.
  * Không chứa logic state riêng — chỉ phối hợp bag + actions.
  */
 export const useSocketEvents = ({ socket, bag, actions }) => {
+    const { user: authUser } = useAuth();
     const {
         callStateRef, isPreparingCallRef, isOutgoingCallRef,
         mySocketIdRef, isGlareWaitingRef, glareWinnerDataRef,
@@ -36,13 +37,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         // ── callUser (incoming) ──────────────────────────────────────────────
         const handleIncomingCall = (data) => {
             const callerId = data.callerDbId;
-            let loggedInUserId = null;
-            try {
-                const storedUser = getStoredUser();
-                loggedInUserId = storedUser?._id || storedUser?.id || null;
-            } catch {
-                loggedInUserId = null;
-            }
+            const loggedInUserId = authUser?._id || authUser?.id || null;
             console.log('[CALL_DIAG][client:callUser:received]', {
                 loggedInUserId,
                 socketId: socket?.id,
@@ -223,7 +218,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
 
             // Loser tạo initiator peer gửi offer cho Winner
             if (localStreamRef.current) {
-                const user = getStoredUser();
+                if (!authUser) return;
                 const peer = makePeer({
                     initiator: true,
                     stream: localStreamRef.current,
@@ -232,7 +227,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
                             userToCall: winnerDbId,
                             signalData: myOfferSignal,
                             from: socket.id,
-                            callerDbId: user?._id || null,
+                            callerDbId: authUser?._id || null,
                             mediaStatus: {
                                 cam: localStreamRef.current.getVideoTracks()[0]?.enabled ?? false,
                                 mic: localStreamRef.current.getAudioTracks()[0]?.enabled ?? true,
@@ -267,7 +262,7 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         Object.entries(events).forEach(([event, handler]) => socket.on(event, handler));
         return () => Object.entries(events).forEach(([event, handler]) => socket.off(event, handler));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [socket]);
+    }, [socket, authUser]);
 };
 
 // ─── Private helpers (glare branches) ────────────────────────────────────────

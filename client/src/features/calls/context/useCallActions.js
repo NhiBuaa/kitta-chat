@@ -1,11 +1,12 @@
 import Peer from 'simple-peer';
+import { useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { SOCKET_EVENTS } from '@/constants/socketEvents.js';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { clearCallStorage } from '@/features/calls/context/callStorage.js';
 import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
-import { getStoredUser } from '@/services/auth/authSession.js';
+import { useAuth } from '@/services/auth/AuthProvider.jsx';
 import { getLeaveCallEvent } from '@/features/calls/context/callLifecycleState.js';
 
 /**
@@ -13,6 +14,7 @@ import { getLeaveCallEvent } from '@/features/calls/context/callLifecycleState.j
  * Nhận vào socket và bag (từ useCallState) để thao tác state/refs.
  */
 export const useCallActions = ({ socket, bag }) => {
+    const { user: authUser } = useAuth();
     const {
         callStateRef, callAcceptedRef,
         isOutgoingCallRef, connectionRef, callTimeoutRef, localStreamRef, userVideo,
@@ -22,12 +24,50 @@ export const useCallActions = ({ socket, bag }) => {
     } = bag;
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
-    const clearStoredCallState = () => {
+    const clearStoredCallState = useCallback(() => {
         clearCallStorage();
         setCallId(null);
-    };
+    }, [setCallId]);
 
-    const makePeer = ({ initiator, stream, onSignal, onStream, onError }) => {
+    const leaveCall = useCallback((source = 'unspecified') => {
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+        const partnerUserId =
+            localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
+        const callId = localStorage.getItem('tempCallId') || null;
+        const leaveCallEvent = getLeaveCallEvent({
+            socket,
+            partnerUserId,
+            callId,
+            callAccepted: callAcceptedRef.current,
+        });
+        const willEmitCancelled = leaveCallEvent?.event === SOCKET_EVENTS.CALL_REJECT;
+
+        console.log('[CALL_DIAG][client:leaveCall]', {
+            source,
+            socketId: socket?.id,
+            partnerUserId,
+            callId,
+            callAccepted: callAcceptedRef.current,
+            callState: callStateRef.current,
+            willEmitRejectCancelled: willEmitCancelled,
+        });
+
+        if (leaveCallEvent) {
+            socket.emit(leaveCallEvent.event, leaveCallEvent.payload);
+        }
+
+        clearStoredCallState();
+        cleanupConnection();
+    }, [
+        callAcceptedRef,
+        callStateRef,
+        callTimeoutRef,
+        cleanupConnection,
+        clearStoredCallState,
+        socket,
+    ]);
+
+    const makePeer = useCallback(({ initiator, stream, onSignal, onStream, onError }) => {
         const peer = new Peer({ initiator, trickle: false, stream, config: ICE_SERVERS });
         peer.on('signal', onSignal);
         peer.on('stream', onStream);
@@ -36,12 +76,11 @@ export const useCallActions = ({ socket, bag }) => {
             if (callStateRef.current === CALL_STATES.CONNECTED) leaveCall('peer:close-connected');
         });
         return peer;
-    };
+    }, [callStateRef, leaveCall]);
 
     // ─── Actions ──────────────────────────────────────────────────────────────
-    const callUser = (receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = 'video') => {
-        const freshUser = getStoredUser();
-        if (!freshUser) { toast.error('Phiên đăng nhập hết hạn.'); return; }
+    const callUser = useCallback((receiverUserId, localStream, isCamOn = true, isMicOn = true, callType = 'video') => {
+        if (!authUser) { toast.error('Phiên đăng nhập hết hạn.'); return; }
         if (!receiverUserId || !localStream) return;
         if (!socket?.id) { toast.error('Mất kết nối máy chủ.'); return; }
 
@@ -76,7 +115,7 @@ export const useCallActions = ({ socket, bag }) => {
                     userToCall: receiverUserId,
                     signalData: data,
                     from: socket.id,
-                    callerDbId: freshUser._id || freshUser.id,
+                    callerDbId: authUser._id || authUser.id,
                     mediaStatus: { cam: isCamOn, mic: isMicOn },
                     typeCall: callType,
                     callId: tempCallId,
@@ -108,7 +147,27 @@ export const useCallActions = ({ socket, bag }) => {
         });
 
         connectionRef.current = peer;
-    };
+    }, [
+        authUser,
+        callAcceptedRef,
+        callStateRef,
+        callTimeoutRef,
+        connectionRef,
+        isOutgoingCallRef,
+        localStreamRef,
+        makePeer,
+        setCall,
+        setCallAccepted,
+        setCallEnded,
+        setCallId,
+        setCallState,
+        setIsCalling,
+        setPartnerMediaStatus,
+        setRemoteStream,
+        socket,
+        updateStream,
+        userVideo,
+    ]);
 
     const answerCall = (currentStream, isCamOn = true, isMicOn = true) => {
         const callerUserId = localStorage.getItem('tempCallerUserId');
@@ -166,37 +225,6 @@ export const useCallActions = ({ socket, bag }) => {
             socket.emit(SOCKET_EVENTS.CALL_REJECT, { to: callerUserId, callId, reason: 'rejected' });
         }
         setCall((prev) => ({ ...prev, isReceivingCall: false }));
-        clearStoredCallState();
-        cleanupConnection();
-    };
-
-    const leaveCall = (source = 'unspecified') => {
-        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
-        const partnerUserId =
-            localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
-        const callId = localStorage.getItem('tempCallId') || null;
-        const leaveCallEvent = getLeaveCallEvent({
-            socket,
-            partnerUserId,
-            callId,
-            callAccepted: callAcceptedRef.current,
-        });
-        const willEmitCancelled = leaveCallEvent?.event === SOCKET_EVENTS.CALL_REJECT;
-
-        console.log('[CALL_DIAG][client:leaveCall]', {
-            source,
-            socketId: socket?.id,
-            partnerUserId,
-            callId,
-            callAccepted: callAcceptedRef.current,
-            callState: callStateRef.current,
-            willEmitRejectCancelled: willEmitCancelled,
-        });
-
-        if (leaveCallEvent) {
-            socket.emit(leaveCallEvent.event, leaveCallEvent.payload);
-        }
-
         clearStoredCallState();
         cleanupConnection();
     };
