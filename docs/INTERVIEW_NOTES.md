@@ -399,3 +399,41 @@ Avoid saying:
 - Kafka experience from this project.
 - RabbitMQ-backed realtime message delivery.
 - Redis-backed durable storage.
+
+## F-Final Auth Migration Completed
+
+The frontend auth migration is complete. The final architecture intentionally separates server-backed refresh-cookie session recovery from client-side memory-only access token and user state.
+
+### Key Decisions
+
+- Access tokens are memory-only and must not be persisted to localStorage.
+- Current user identity is memory-only and must not be persisted to localStorage.
+- Page refresh identity recovery comes from the backend refresh/session response, not browser storage.
+- `auth-changed` remains the lightweight browser event used to sync providers after login, refresh-on-401, profile update, and logout.
+- `AuthContext` and `useAuth()` live outside `AuthProvider.jsx` so the provider file exports only a component and satisfies React Fast Refresh.
+- Socket and call identity flows depend on AuthProvider context, not `getStoredUser()` fallbacks.
+- Non-auth localStorage keys for chat/call recovery are intentionally preserved.
+
+### Final Auth Flow
+
+1. Startup mounts `AuthProvider` with `status: "checking"`, memory token if present, and `user: null`.
+2. `AuthProvider` calls `bootstrapAuth()` with `refreshSession()`.
+3. `/refresh` success hydrates memory token/user and returns authenticated state with source `refresh-cookie`.
+4. Login success calls memory auth helpers and dispatches `auth-changed`.
+5. Axios request interceptors read the memory access token.
+6. Axios 401/403 retry calls refresh once, hydrates memory token/user, dispatches `auth-changed`, then retries.
+7. Logout clears backend session when possible, then clears memory auth state and legacy auth storage keys.
+
+### Guardrails For Future Work
+
+- Never add `localStorage.getItem("token")`, `localStorage.setItem("token")`, `localStorage.getItem("user")`, or `localStorage.setItem("user")` back to auth flows.
+- Keep `getStoredUser()` / `setStoredUser()` as auth-core memory helpers only; they are not persistence APIs.
+- Keep `AuthProvider.jsx` component-only; import `useAuth` from `@/services/auth/useAuth.js`.
+- Keep `AuthProvider` as the source of truth for authenticated UI identity.
+- Preserve `last_message_id` and call recovery localStorage keys unless a separate migration replaces them.
+
+### Verification Snapshot
+
+- Client tests: `npm.cmd test` passed with 101 tests.
+- Targeted auth lint: `AuthProvider.jsx`, `useAuth.js`, and `AuthContext.js` passed with 0 errors.
+- Client build: `npm.cmd run build` passed.

@@ -1,74 +1,94 @@
-﻿# Next Session Bootstrap: F-Final Auth Migration
+﻿# F-Final Migration — Completed
 
-## Migration Progress
+## Final Auth Architecture
 
-| Step | Status | Commit |
-|------|--------|--------|
-| Step 1 — Memory-only access token | ✅ Done | feat(auth): memory-only access token — step 1 |
-| Step 2 — Remove bootstrap fallback | ✅ Done | feat(auth): refresh-cookie-only bootstrap — step 2 |
-| Step 3-preflight — Map user persistence | ✅ Done | (no commit — read-only analysis) |
-| Step 4A — SocketProvider identity | ✅ Done | feat(auth): remove stored-user dependency from socket/call layer — step 4 |
-| Step 4B — Call/badge consumers | ✅ Done | (same commit as 4A) |
-| Step 4 lint fix — setState/useCallback | ✅ Done | |
-| Step 3 — Memory-only user | ⏳ Next | |
-| Step 5 — Full regression | ⬜ Pending | |
-| Step 6 — Docs update | ⬜ Pending | |
+Authentication now uses a refresh-cookie bootstrap plus memory-only client session state. The browser keeps the refresh cookie via the backend, while the frontend stores the access token and current user only in module memory.
 
-## What Changed (accumulated)
+On app startup, `AuthProvider` starts in `checking`, then calls `bootstrapAuth()` through `/refresh`. A successful refresh response hydrates the memory access token and memory user, and `AuthProvider` exposes that state through `AuthContext`. Login and refresh-on-401 also hydrate the same memory session and dispatch the shared `auth-changed` event so dependent providers can sync.
 
-### authSession.js
-- getAccessToken() / setAccessToken() / clearAccessToken() — memory-only
-- getStoredUser() / setStoredUser() — STILL localStorage (Step 3 sẽ xóa)
+Logout clears the backend session when possible, then clears only auth memory plus legacy auth localStorage keys. Page refresh relies on the refresh cookie/session response to restore identity; it does not read `localStorage["token"]` or `localStorage["user"]`.
 
-### authBootstrap.js
-- Refresh-cookie-only bootstrap
-- Removed: fallback branch (source: "local-storage-fallback")
-- Removed: getAccessToken import
+## What Changed (per file)
 
-### SocketProvider.jsx
-- Removed: getStoredUser() / setStoredUser() imports
-- getSocketAuthState() dùng AuthProvider context (authUser)
-- AVATAR_UPDATED: setCurrentUser(updatedUser) thay vì setStoredUser()
-- Split thành 2 effects riêng: auth user sync + logout online-user clearing
-  (fix React Compiler lint: setState sync in effect)
+- `client/src/services/auth/authSession.js`
+  - Access token and user are memory-only (`memoryAccessToken`, `memoryUser`).
+  - `setAccessToken()`, `clearAccessToken()`, `setStoredUser()`, and `clearStoredUser()` remove legacy `localStorage["token"]` / `localStorage["user"]` without writing auth data back.
 
-### useCallActions.js
-- Removed: getStoredUser() — dùng useAuth() hook
-- callUser wrapped trong useCallback (fix React Compiler lint: impure function)
-- clearStoredCallState, leaveCall, makePeer stabilized thành useCallback
+- `client/src/services/auth/authBootstrap.js`
+  - Bootstrap is refresh-cookie-only and no longer uses persisted token fallback.
+  - Successful refresh stores token/user through the injected token store; failures return unauthenticated state.
 
-### useSocketEvents.js
-- Removed: getStoredUser() — dùng useAuth() hook
-- callerDbId lấy từ authUser thay vì stored user
+- `client/src/services/auth/AuthContext.js`
+  - Owns the shared `AuthContext` so `AuthProvider.jsx` only exports a component for Fast Refresh compatibility.
 
-### CallHistoryProvider.jsx
-- Removed: getStoredUser() — dùng SocketProvider.currentUser
+- `client/src/services/auth/useAuth.js`
+  - Owns the `useAuth()` hook and preserves the existing provider guard error.
 
-## Current Test Baseline
-- client: all pass (full suite)
-- 0 lint errors trong SocketProvider.jsx và useCallActions.js
+- `client/src/services/auth/AuthProvider.jsx`
+  - Provides auth state from refresh/login/logout memory session only.
+  - Initial user is `null`; user hydration comes from refresh/session response or explicit memory updates, not localStorage.
+  - Exposes `refreshAuth`, `updateUser`, and `logout`; listens to `auth-changed` for memory-session sync.
+
+- `client/src/services/api/axiosClient.js`
+  - Injects the current memory access token into requests.
+  - On 401/403, refreshes once, updates memory token/user, dispatches `auth-changed`, and retries the original request.
+  - On refresh failure, clears auth session and redirects to `/login`.
+
+- `client/src/features/auth/pages/Login.jsx`
+  - Login success stores token/user through memory auth helpers and dispatches `auth-changed`.
+  - Does not write `localStorage["user"]` or `localStorage["token"]`.
+
+- `client/src/features/profile/components/UserProfileSidebar.jsx`
+  - Profile/avatar updates call `AuthProvider`'s `updateUser()` instead of writing stored user data.
+  - Local UI update callback behavior remains unchanged.
+
+- `client/src/services/socket/SocketProvider.jsx`
+  - Socket auth identity comes from `useAuth()` context via `getSocketAuthState()`.
+  - Avatar update events update in-memory socket current user and dispatch UI events; no stored-user writes.
+  - Keeps non-auth `last_message_id` localStorage behavior for missed-message recovery.
+
+- `client/src/features/calls/context/useCallActions.js`
+  - Reads caller identity from `useAuth()` instead of stored user fallback.
+  - Stabilized call helpers with callbacks during the migration.
+
+- `client/src/features/calls/context/useSocketEvents.js`
+  - Reads call user identity from `useAuth()` instead of stored user fallback.
+
+- `client/src/features/calls/context/CallHistoryProvider.jsx`
+  - Uses `SocketProvider.currentUser` for current user identity instead of `getStoredUser()`.
+
+## localStorage Policy (final state)
+
+- Auth keys are no longer used as persistence:
+  - `localStorage["token"]` is never read and is removed when token helpers run.
+  - `localStorage["user"]` is never read and is removed when user helpers run.
+
+- Non-auth localStorage keys remain allowed and should not be removed by auth cleanup:
+  - `last_message_id`
+  - `tempCallId`
+  - `activePartnerUserId`
+  - `callStartTime`
+  - `tempCallerUserId`
+  - `tempCallSignal`
+  - `tempCallerId`
+  - Other call/message recovery keys unrelated to auth persistence.
 
 ## Do Not Change
-- Non-auth localStorage keys: last_message_id, tempCallId, activePartnerUserId,
-  callStartTime, tempCallerUserId, tempCallSignal, tempCallerId
-- WebRTC signaling logic
-- Socket event names
-- Backend auth / Socket.IO backend auth unless a later step explicitly requires it
-- Unrelated feature code or broad refactors
 
-## Next Recommended Step
+- Do not reintroduce `localStorage["token"]` or `localStorage["user"]` reads/writes.
+- Do not replace refresh-cookie bootstrap with client-side persisted token fallback.
+- Do not remove non-auth localStorage keys used by chat/call recovery.
+- Do not change backend auth/session endpoints or Socket.IO backend auth for this migration.
+- Do not change WebRTC signaling behavior or socket event names.
+- Do not merge `useAuth()` back into `AuthProvider.jsx`; Fast Refresh requires the provider file to export only components.
+- Do not broadly refactor unrelated chat, friend, group, call, or upload flows.
 
-Use `/tdd` for Step 3 — Memory-only user.
+## Test Baseline
 
-Scope:
-- client/src/services/auth/authSession.js
-- client/src/services/auth/authSession.test.js
-- Any direct tests that assert persisted user behavior
-
-Goal:
-- getStoredUser() reads memory only
-- setStoredUser() writes memory only and removes legacy localStorage["user"]
-- clearStoredUser() clears memory and removes legacy localStorage["user"]
-- clearAuthSession() does not remove non-auth localStorage keys
-
-Stop after Step 3 gate passes. Do not start Step 5 without explicit approval.
+- `npm.cmd test` in `client`: 101 tests passed, 0 failed.
+- Targeted lint after Fast Refresh split:
+  - `npx.cmd eslint src/services/auth/AuthProvider.jsx`: 0 errors.
+  - `npx.cmd eslint src/services/auth/useAuth.js`: 0 errors.
+  - `npx.cmd eslint src/services/auth/AuthContext.js`: 0 errors.
+- `npm.cmd run build` in `client`: passed.
+- Full `npm.cmd run lint` is still expected to report unrelated existing project/cache lint issues unless `.vite-cache` is excluded.
