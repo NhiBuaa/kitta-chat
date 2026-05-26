@@ -97,4 +97,6 @@ nginx/ssl/*.pfx
 /data
 /.agents
 /.codex
+/.claude
+/.codegraph
 skills-lock.json

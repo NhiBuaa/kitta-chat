@@ -1,87 +1,67 @@
-# KittaChat / web-socket
+# KittaChat
 
-Interview-ready real-time chat project built with React, Express, Socket.IO, MongoDB, Redis, RabbitMQ, nginx, and Docker Compose.
+Realtime Chat & Calling Platform built with React, Express, Socket.IO, MongoDB, Redis, RabbitMQ, nginx, and Docker Compose.
 
-The current architecture is intentionally conservative:
+KittaChat is intentionally conservative in its architecture:
 
-- MongoDB is the canonical source of truth for durable data.
-- Redis is used for Socket.IO adapter fan-out, presence/cache, and short-lived call coordination mirrors.
-- RabbitMQ is a background side-effect bus only; it is not used for realtime chat/call decisions.
-- Socket.IO remains the synchronous realtime path for messaging, presence, calls, and friendship updates.
+- MongoDB is the source of truth for durable users, messages, friendships, groups, files, and calls.
+- Socket.IO is the realtime path for chat, presence, friendship updates, and WebRTC signaling.
+- RabbitMQ is a background side-effect bus for image, notification/email, and audit/statistics jobs.
+- Redis is adapter/cache/coordination infrastructure for Socket.IO fan-out, presence/cache, and short-lived call mirrors.
+- nginx is the reverse proxy for the frontend, REST APIs, Socket.IO, and operational endpoints.
 
-For deeper architecture notes, see `docs/ARCHITECTURE.md`. For REST endpoint
-examples, see `docs/API.md`. For the RabbitMQ queue, retry, DLQ, and
-poison-message flow, see `docs/RABBITMQ_WORKER_FLOWS.md`. For Socket.IO
-multi-replica delivery with the Redis adapter, see `docs/SOCKET_IO_SCALING.md`. For local Docker deployment and smoke checks, see `docs/DEPLOYMENT_AND_SMOKE_TESTS.md`. For an honest interview retrospective and CV-safe claims, see `docs/INTERVIEW_NOTES.md`.
+For deeper implementation notes, see `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/SOCKET_IO_SCALING.md`, `docs/RABBITMQ_WORKER_FLOWS.md`, `docs/DEPLOYMENT_AND_SMOKE_TESTS.md`, and `docs/INTERVIEW_NOTES.md`.
+
+## Screenshots
+
+Add reviewer screenshots here before publishing the portfolio page:
+
+- Chat inbox and active conversation.
+- Group chat and unread badges.
+- Audio/video call window.
+- RabbitMQ management UI showing worker queues.
 
 ## Features
 
-- Direct and group chat with Socket.IO.
-- Message history, read state, typing indicators, file/image attachments.
-- Friend requests, accept/reject, remove friend/unfriend with realtime `friendRemoved` sync.
-- Presence with multi-tab/user socket tracking.
-- WebRTC audio/video calls with call history, missed-call badges, media-state sync, and hardened call finalization.
-- Redis-backed conversation/friend/presence caches.
-- RabbitMQ-backed image, notification/email, and audit/background workers.
-- Docker Compose stack with nginx, 3 backend replicas, MongoDB, Redis, RabbitMQ, and workers.
+- Direct and group messaging with realtime Socket.IO delivery.
+- Online presence, typing indicators, unread badges, friendship updates, and group updates.
+- Audio/video calling with WebRTC signaling over Socket.IO.
+- Memory-only frontend auth state with HttpOnly refresh-cookie session recovery.
+- File/avatar upload flow with S3 or CloudFront-compatible delivery when configured.
+- Redis-backed Socket.IO adapter, cache, presence, and call coordination mirrors.
+- RabbitMQ-backed background workers with retry/DLQ-oriented flow documentation.
+- Docker Compose stack with nginx, backend replicas, MongoDB, Redis, RabbitMQ, and workers.
 
 ## Tech Stack
 
-### Client
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, Vite, Tailwind CSS, Socket.IO Client, WebRTC APIs |
+| Backend | Node.js, Express 5, Socket.IO 4, Mongoose, JWT, Firebase Admin SDK |
+| Data/infra | MongoDB, Redis, RabbitMQ, nginx, Docker Compose |
+| Workers | RabbitMQ consumers for image, notification/email, and audit/statistics jobs |
+| Tests/CI | Node test runner, client behavior tests, server integration/unit tests, GitHub Actions |
 
-- React 19 + Vite
-- Socket.IO Client
-- Axios
-- React Router
-- Tailwind CSS
-- Simple Peer/WebRTC
-- Firebase Web SDK for Google login (client config currently lives in `client/src/services/firebase/firebaseClient.js`)
+## One-Command Docker Quickstart
 
-### Server
-
-- Node.js + Express 5
-- Socket.IO 4 + Redis adapter
-- MongoDB + Mongoose
-- Redis
-- RabbitMQ via `amqplib`
-- Firebase Admin SDK (`server/src/config/firebase-service.json`)
-- AWS S3 / CloudFront-compatible file URLs
-- Nodemailer
-- Sharp image processing
-
-### Infrastructure
-
-- Docker Compose
-- nginx reverse proxy/load balancer
-- MongoDB 7
-- Redis Alpine
-- RabbitMQ 3 Management
-
-## Quick Start With Docker Compose
-
-From the repository root:
+The reviewer-friendly path is Docker Compose. It builds the React frontend inside Docker, serves it from nginx, and starts the backend, replicas, workers, MongoDB, Redis, and RabbitMQ.
 
 ```powershell
 Copy-Item server/.env.example server/.env
-Copy-Item client/.env.example client/.env
-
-# Edit server/.env and client/.env with local secrets/config.
-cd client
-npm install
-npm run build
-cd ..
-
-docker compose -f docker-compose.yml up -d --build
+# Edit server/.env and replace placeholder secrets/config.
+docker compose up --build
 ```
 
-Useful logs:
+Detached mode:
 
 ```powershell
-docker compose logs -f backend
-docker compose logs -f image-worker
-docker compose logs -f notification-worker
-docker compose logs -f audit-worker
-docker compose logs -f nginx
+docker compose up -d --build
+```
+
+Older Compose installations may use:
+
+```powershell
+docker-compose up --build
 ```
 
 Stop the stack:
@@ -90,22 +70,59 @@ Stop the stack:
 docker compose down
 ```
 
+Notes:
+
+- `server/.env` is still a required one-time setup step; do not commit real secrets.
+- Docker quickstart does not require local `npm install`, local `npm run build`, `client/.env`, or a pre-existing `client/dist` folder.
+- Google login requires `server/src/config/firebase-service.json`; do not commit that file.
+- Email and S3-compatible file delivery require real provider credentials before those integrations work end-to-end.
+
 ## Services And Ports
 
-| Service | Role | Port |
+| Service | Purpose | Host access |
 | --- | --- | --- |
-| `nginx` | Reverse proxy for static client, `/api`, and `/socket.io` | `80`, `443` |
-| `backend` | Express + Socket.IO app, 3 Compose replicas | internal `3000` |
-| `mongo` | MongoDB source of truth | host `27018` -> container `27017` |
-| `redis` | Socket.IO adapter, cache, presence, call coordination | internal `6379` |
-| `rabbitmq` | Background job broker | `5672`, management UI `15672` |
-| `image-worker` | Image/file background jobs | internal |
-| `notification-worker` | Email/notification jobs | internal |
-| `audit-worker` | Audit/statistics/background jobs | internal |
+| `nginx` | Reverse proxy and static frontend server | `http://localhost`, `https://localhost` |
+| `backend` | Express + Socket.IO app replicas | internal `3000` via nginx |
+| `mongo` | MongoDB source of truth | `localhost:27018` |
+| `redis` | Redis adapter/cache/coordination | internal `6379` |
+| `rabbitmq` | RabbitMQ broker and management UI | `localhost:5672`, `http://localhost:15672` |
+| `image-worker` | Image/avatar background jobs | internal worker |
+| `notification-worker` | Email/notification jobs | internal worker |
+| `audit-worker` | Audit/statistics jobs | internal worker |
 
-Primary app URL through nginx: `http://localhost`.
+## Smoke Verification
+
+After `docker compose up --build`, verify the stack through nginx:
+
+```powershell
+curl.exe -i http://localhost/healthz
+curl.exe -i http://localhost/backend-healthz
+curl.exe -i http://localhost/readyz
+curl.exe -i http://localhost/ops
+```
+
+Manual reviewer checklist:
+
+- Open `http://localhost` and load the frontend.
+- Open RabbitMQ management UI at `http://localhost:15672`.
+- Register or log in, then refresh the page and confirm the session recovers.
+- Send a direct message and confirm realtime sidebar/unread updates.
+- Start, accept, and end an audio/video call between two users.
+- If provider credentials are configured, test avatar/file upload and email-related flows.
+
+Useful logs:
+
+```powershell
+docker compose logs -f nginx
+docker compose logs -f backend
+docker compose logs -f image-worker
+docker compose logs -f notification-worker
+docker compose logs -f audit-worker
+```
 
 ## Local Development
+
+Run services locally when you want fast Vite HMR or backend iteration outside the production-style nginx path.
 
 Server:
 
@@ -123,53 +140,71 @@ npm install
 npm run dev
 ```
 
-Local client defaults point to `http://localhost:3000`; Docker/nginx production-style usage is served through `http://localhost`.
+Local client defaults point to `http://localhost:3000`. Docker/nginx usage is served through `http://localhost`.
 
-## Environment Files
+For containerized Vite development, use the explicit dev override rather than relying on automatic Compose overrides:
 
-- `server/.env.example` documents backend, worker, Redis, RabbitMQ, MongoDB, AWS, email, and feature flag variables.
-- `client/.env.example` documents Vite client variables.
-- Firebase client config is currently hardcoded in `client/src/services/firebase/firebaseClient.js`; Google login through Firebase Admin requires `server/src/config/firebase-service.json`, which must not be committed.
-- For Docker/nginx demo links and allowed origins, set `URL_FRONTEND=http://localhost`; for Vite dev, use `URL_FRONTEND=http://localhost:5173`.
-- Do not commit real secrets in `.env` files.
-- Docker Compose overrides some service-local connection values, e.g. Mongo/Redis/RabbitMQ container hostnames.
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+## Environment Model
+
+- `server/.env.example` documents backend, worker, Redis, RabbitMQ, MongoDB, AWS, email, Firebase Admin, and feature-flag variables.
+- `client/.env.example` documents local Vite variables. It is not required for the Docker/nginx quickstart.
+- For Vite dev, use `URL_FRONTEND=http://localhost:5173` in `server/.env`.
+- For Docker/nginx demo, use `URL_FRONTEND=http://localhost` in `server/.env`.
+- Docker Compose injects service-local connection values for MongoDB, Redis, and RabbitMQ.
+- Do not commit `.env` files, Firebase service account JSON, or real provider secrets.
 
 Important backend variables:
 
-- `JWT_SECRET` is required for REST and Socket.IO auth.
-- `MONGO_URI` is required outside Docker; Compose injects `mongodb://mongo:27017/shot-chat`.
-- `REDIS_URL` or `REDIS_HOST`/`REDIS_PORT` configures Redis.
-- `RABBITMQ_URL` configures background workers and queue publishers.
-- `AWS_*` and `CLOUDFRONT_URL` are needed for real file upload delivery.
-- `EMAIL_*` variables are needed for password reset / notification worker email delivery.
+- `JWT_SECRET` signs REST and Socket.IO access tokens.
+- `REFRESH_TOKEN_SECRET` signs refresh/session cookies; if omitted, the app falls back to `JWT_SECRET` for local workflow compatibility.
+- `AUTH_COOKIE_SECURE=false` is appropriate only for controlled non-HTTPS local testing.
+- `MONGO_URI`, `REDIS_URL`, and `RABBITMQ_URL` configure backing services outside Compose.
+- `AWS_*`, `CLOUDFRONT_URL`, and `EMAIL_*` are needed for real upload/email integrations.
 
-Known feature flags:
+## Auth Model
 
-- `CALL_DISTRIBUTED_TIMEOUT_ENABLED=false` by default. Enables Redis sorted-set based distributed call timeout polling when set to `true`, `1`, `yes`, or `on`.
-- `CALL_DISTRIBUTED_TIMEOUT_POLL_MS=1000` controls poll interval when the distributed timeout finalizer is enabled.
-- `IMAGE_WORKER_CONCURRENCY`, `NOTIFICATION_WORKER_CONCURRENCY`, and `AUDIT_WORKER_CONCURRENCY` tune worker prefetch.
-- `RABBITMQ_MAX_ATTEMPTS`, `RABBITMQ_RETRY_DELAY_MS`, `RABBITMQ_WORKER_RECONNECT_DELAY_MS`, and `RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS` tune background job retry/reconnect behavior.
+- The frontend keeps the access token and current user in memory only.
+- The frontend does not persist token/user in `localStorage`; non-sensitive UI/temp keys may still use `localStorage`.
+- Reload/session recovery uses an HttpOnly refresh cookie.
+- REST requests still send `Authorization: Bearer <access token>` from memory.
+- Socket.IO authenticates with the in-memory token and user from `useAuth()`.
+- `axiosClient` refreshes once on `401/403`, then clears auth and redirects if refresh fails.
 
-## Architecture Overview
+This is a practical demo architecture, not a claim that the app is fully secure or XSS-proof.
 
-See `docs/ARCHITECTURE.md` for the detailed current architecture. Short version:
+## Realtime And Scaling
 
-- REST APIs handle auth, profile, friends, groups, messages, files, and call history.
-- Socket.IO handles realtime message delivery, typing, presence, friend updates, and WebRTC signaling.
+- Socket.IO remains the realtime path for messages, presence, friend events, group updates, and call signaling.
+- Redis adapter support lets multiple backend replicas deliver events through the same logical rooms.
 - MongoDB remains authoritative; Redis mirrors are disposable and rebuildable.
-- RabbitMQ workers process side effects in the background and never decide realtime call/chat lifecycle.
-- REST endpoint examples are documented in `docs/API.md`.
-- Socket.IO multi-replica delivery is documented in `docs/SOCKET_IO_SCALING.md`.
-- RabbitMQ worker flow details are documented in `docs/RABBITMQ_WORKER_FLOWS.md`.
+- Call coordination uses MongoDB idempotency gates with Redis/local mirrors for cross-replica routing and timeout coordination.
 
-## Testing Commands
+See `docs/SOCKET_IO_SCALING.md` for the detailed multi-replica delivery model.
 
-Server:
+## Background Processing
 
-```powershell
-cd server
-npm test
-```
+RabbitMQ is used for background side effects only. It does not decide realtime chat or call lifecycle behavior.
+
+- `image-worker`: remote avatar/image processing.
+- `notification-worker`: notification/email side effects.
+- `audit-worker`: audit/statistics events.
+
+See `docs/RABBITMQ_WORKER_FLOWS.md` for retry, delayed retry, DLQ, and poison-message notes.
+
+## Engineering Challenges Solved
+
+- Removed sensitive token/user persistence from frontend `localStorage` while preserving reload recovery through refresh cookies.
+- Split auth context/hook exports to satisfy React Fast Refresh without behavior changes.
+- Made server tests independent from `client/node_modules` by using server-local dev dependencies.
+- Made Firebase Admin safe to import in CI when `firebase-service.json` is absent.
+- Built frontend assets inside the nginx Docker image so `docker compose up --build` works after a fresh clone.
+- Stabilized realtime state around unread counts, call lifecycle idempotency, and cross-replica Socket.IO delivery.
+
+## Testing And CI
 
 Client:
 
@@ -179,39 +214,34 @@ npm test
 npm run build
 ```
 
-## CI Pipeline
+Server:
 
-GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to
-`main`/`master`.
+```powershell
+cd server
+npm test
+```
+
+GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `main`/`master`:
 
 - `Server Tests`: installs `server/` with `npm ci` and runs `npm test`.
 - `Client Build`: installs `client/` with `npm ci` and runs `npm run build`.
-- Lint and Docker image builds are intentionally not part of this small CI slice yet.
 
-## Manual Smoke Checklist
+Lint and Docker image builds are intentionally not part of the current small CI slice.
 
-Before freezing/releasing:
+## Known Production Gaps
 
-- Register/login with local auth and Google auth if Firebase is configured.
-- Direct message between two users through nginx.
-- Group create, group message, member list update.
-- Friend request accept/reject and remove friend/unfriend.
-- Unfriend with previous messages keeps the sidebar row as non-friend.
-- Unfriend without messages removes the sidebar row.
-- File/image upload and preview if AWS/S3 env is configured.
-- Presence online/offline across refresh and multiple tabs.
-- Audio call and video call between two users.
-- Receiver reject and receiver pre-call cancel finalize as rejected.
-- Offline missed call creates one `CallHistory` and one `call_log`.
-- Answered call does not become missed after stale local timeout.
-- Docker/nginx with 3 backend replicas keeps Socket.IO, call signaling, and badges correct.
-- Backend operational checks through nginx: `curl.exe -i http://localhost/backend-healthz`, `curl.exe -i http://localhost/readyz`, and `curl.exe -i http://localhost/ops`.
-- Optional: set `CALL_DISTRIBUTED_TIMEOUT_ENABLED=true` and confirm all backend replicas start the poller without duplicate `call_log` records.
+- Docker Compose is the demo/reviewer deployment path, not a Kubernetes or multi-region production deployment.
+- Secrets are file/env based for local demo; use a managed secret store for production.
+- Firebase Admin, SMTP/email, and S3-compatible delivery need real provider configuration.
+- Observability is currently health/readiness/ops endpoints plus logs, not a full metrics/tracing stack.
+- Some call lifecycle safeguards still include process-local fallbacks, with MongoDB/Redis guards mitigating multi-replica issues.
+- The frontend production build currently reports a chunk-size warning; code splitting is a safe later improvement.
 
-## Known Constraints
+## Useful Docs
 
-- This is a monorepo demo/project, not a polished SaaS product.
-- RabbitMQ is background-only; realtime features depend on Socket.IO.
-- Redis call coordination keys are mirrors/locks/indexes with TTL or disposable semantics, not durable call records.
-- The distributed timeout finalizer exists but remains disabled by default; local timeouts remain enabled as fallback.
-- Some UI files are intentionally large; avoid broad refactors without tests and smoke coverage.
+- `docs/API.md`: REST API examples and auth behavior.
+- `docs/ARCHITECTURE.md`: current architecture overview.
+- `docs/DEPLOYMENT_AND_SMOKE_TESTS.md`: deployment and manual smoke notes.
+- `docs/SOCKET_IO_SCALING.md`: Socket.IO Redis adapter and multi-replica behavior.
+- `docs/RABBITMQ_WORKER_FLOWS.md`: queue, retry, DLQ, and worker semantics.
+- `docs/INTERVIEW_NOTES.md`: CV-safe claims, trade-offs, and interview talking points.
