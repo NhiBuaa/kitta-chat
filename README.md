@@ -129,7 +129,8 @@ Local client defaults point to `http://localhost:3000`; Docker/nginx production-
 
 - `server/.env.example` documents backend, worker, Redis, RabbitMQ, MongoDB, AWS, email, and feature flag variables.
 - `client/.env.example` documents Vite client variables.
-- Firebase client config is currently hardcoded in `client/src/services/firebase/firebaseClient.js`; Firebase Admin uses `server/src/config/firebase-service.json`.
+- Firebase client config is currently hardcoded in `client/src/services/firebase/firebaseClient.js`; Google login through Firebase Admin requires `server/src/config/firebase-service.json`, which must not be committed.
+- For Docker/nginx demo links and allowed origins, set `URL_FRONTEND=http://localhost`; for Vite dev, use `URL_FRONTEND=http://localhost:5173`.
 - Do not commit real secrets in `.env` files.
 - Docker Compose overrides some service-local connection values, e.g. Mongo/Redis/RabbitMQ container hostnames.
 
