@@ -74,7 +74,7 @@ const ChatWindow = ({
   const canLoadMoreFromTopRef = useRef(true);
   const removeFriendSubmitInFlightRef = useRef(false);
 
-  // BIáº¾N
+  // BIẾN
   const isGroupChat = Boolean(activeChat?.members);
   const shouldShowOnlineStatus =
     !isGroupChat && Boolean(currentChatUser?.isFriend);

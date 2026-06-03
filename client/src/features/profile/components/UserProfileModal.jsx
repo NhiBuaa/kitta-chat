@@ -40,8 +40,8 @@ const UserProfileModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="relative h-28 bg-gradient-to-r from-[#4CAF50] to-[#66BB6A]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+        <div className="relative h-28 overflow-hidden rounded-t-2xl bg-gradient-to-r from-[#4CAF50] to-[#66BB6A]">
           <button
             type="button"
             onClick={onClose}
@@ -52,8 +52,8 @@ const UserProfileModal = ({
           </button>
         </div>
 
-        <div className="px-6 pb-6">
-          <div className="-mt-12 flex flex-col items-center text-center">
+        <div className="relative px-6 pb-6">
+          <div className="relative z-10 -mt-12 flex flex-col items-center text-center">
             <img
               src={avatarUrl}
               alt={displayName}
@@ -64,7 +64,7 @@ const UserProfileModal = ({
               <UserStatus user={user} isOnline={isOnline} />
             </div>
             <span className="mt-3 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-              {isFriend ? "Bạn bè" : "Chưa kết bạn"}
+              {isFriend ? "B\u1EA1n b\u00E8" : "Ch\u01B0a k\u1EBFt b\u1EA1n"}
             </span>
           </div>
 
