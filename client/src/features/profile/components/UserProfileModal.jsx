@@ -2,7 +2,10 @@ import React from "react";
 import { FaPhone, FaTimes, FaUserMinus, FaVideo } from "react-icons/fa";
 import UserStatus from "@/features/profile/components/UserStatus.jsx";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
-import { getUserProfileActions } from "@/features/profile/components/userProfileModalState.js";
+import {
+  getUserProfileActions,
+  getUserProfileStatusText,
+} from "@/features/profile/components/userProfileModalState.js";
 
 const UserProfileModal = ({
   isOpen,
@@ -21,6 +24,7 @@ const UserProfileModal = ({
   const avatarUrl = getAvatarUrl?.(user.avatar) || user.avatar;
   const isOnline = checkIsOnline?.(user);
   const isFriend = Boolean(user.isFriend);
+  const profileStatus = getUserProfileStatusText(user);
 
   const handleAction = (actionId) => {
     if (actionId === "audio") {
@@ -39,8 +43,8 @@ const UserProfileModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200" onClick={(event) => event.stopPropagation()}>
         <div className="relative h-28 overflow-hidden rounded-t-2xl bg-gradient-to-r from-[#4CAF50] to-[#66BB6A]">
           <button
             type="button"
@@ -66,6 +70,11 @@ const UserProfileModal = ({
             <span className="mt-3 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
               {isFriend ? "B\u1EA1n b\u00E8" : "Ch\u01B0a k\u1EBFt b\u1EA1n"}
             </span>
+            {profileStatus && (
+              <p className="mt-3 max-w-full whitespace-pre-wrap break-words rounded-xl bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-700">
+                {profileStatus}
+              </p>
+            )}
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-3">

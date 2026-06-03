@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   closeUserProfileModal,
   getUserProfileActions,
+  getUserProfileStatusText,
   openUserProfileModal,
 } from "./userProfileModalState.js";
 
@@ -59,4 +60,9 @@ test("group chats do not expose direct-user profile actions", () => {
   });
 
   assert.deepEqual(actions, []);
+});
+test("getUserProfileStatusText returns trimmed profile status", () => {
+  assert.equal(getUserProfileStatusText({ status: "  Available today  " }), "Available today");
+  assert.equal(getUserProfileStatusText({ status: "   " }), "");
+  assert.equal(getUserProfileStatusText(null), "");
 });

@@ -28,3 +28,7 @@ export const getUserProfileActions = ({ user, isGroupChat = false } = {}) => {
 
   return actions;
 };
+export const getUserProfileStatusText = (user) => {
+  const status = typeof user?.status === "string" ? user.status.trim() : "";
+  return status;
+};
