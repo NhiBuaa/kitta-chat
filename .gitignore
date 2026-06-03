@@ -99,4 +99,6 @@ nginx/ssl/*.pfx
 /.codex
 /.claude
 /.codegraph
+/.cursor
+/.gemini
 skills-lock.json
