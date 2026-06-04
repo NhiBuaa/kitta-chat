@@ -31,7 +31,7 @@ const VideoCallPage = () => {
     const urlName = searchParams.get("name") || "Nguoi dung";
     const urlAvatar = searchParams.get("avatar");
     const urlType = searchParams.get("type");
-    const urlCallId = searchParams.get("callId"); // callId tá»« CallNotification URL param
+    const urlCallId = searchParams.get("callId");
     const storedType = localStorage.getItem("tempCallType");
     const callType = urlType || storedType || "video";
     const isVideoCall = callType === "video";

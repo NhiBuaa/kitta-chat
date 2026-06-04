@@ -1,94 +1,343 @@
-﻿# F-Final Migration — Completed
+﻿# Conversation Read Model — Next Session Bootstrap
 
-## Final Auth Architecture
+This handoff captures the approved state after the Conversation Read Model ADR discussion. The next session should start from here and implement only the approved first slice: models and indexes.
 
-Authentication now uses a refresh-cookie bootstrap plus memory-only client session state. The browser keeps the refresh cookie via the backend, while the frontend stores the access token and current user only in module memory.
+## Suggested Skills
 
-On app startup, `AuthProvider` starts in `checking`, then calls `bootstrapAuth()` through `/refresh`. A successful refresh response hydrates the memory access token and memory user, and `AuthProvider` exposes that state through `AuthContext`. Login and refresh-on-401 also hydrate the same memory session and dispatch the shared `auth-changed` event so dependent providers can sync.
+- `handoff` if this file needs to be compacted again after new decisions.
+- `tdd` if the next session begins implementation of Slice 1 with tests first.
+- `diagnose` only if existing tests or model index behavior fail unexpectedly.
+- `grill-with-docs` only if a new architectural decision is proposed beyond the approved Slice 1 scope.
 
-Logout clears the backend session when possible, then clears only auth memory plus legacy auth localStorage keys. Page refresh relies on the refresh cookie/session response to restore identity; it does not read `localStorage["token"]` or `localStorage["user"]`.
+## Current Stabilized Architecture
 
-## What Changed (per file)
+### MongoDB Canonical Ownership
 
-- `client/src/services/auth/authSession.js`
-  - Access token and user are memory-only (`memoryAccessToken`, `memoryUser`).
-  - `setAccessToken()`, `clearAccessToken()`, `setStoredUser()`, and `clearStoredUser()` remove legacy `localStorage["token"]` / `localStorage["user"]` without writing auth data back.
+- MongoDB remains the source of truth for durable application state.
+- `Message.conversationId` is currently the stable conversation key.
+- Direct `conversationId` values are sorted user IDs joined with `_`.
+- Group `conversationId` values are the `Group._id` string.
+- No `Conversation` collection exists yet.
+- Current chat, call, friend, unfriend, and group behavior is stable and must not be disturbed by the first migration slice.
 
-- `client/src/services/auth/authBootstrap.js`
-  - Bootstrap is refresh-cookie-only and no longer uses persisted token fallback.
-  - Successful refresh stores token/user through the injected token store; failures return unauthenticated state.
+### Redis Coordination And Cache Role
 
-- `client/src/services/auth/AuthContext.js`
-  - Owns the shared `AuthContext` so `AuthProvider.jsx` only exports a component for Fast Refresh compatibility.
+- Redis is coordination/cache infrastructure, not durable source of truth.
+- Socket.IO uses the Redis adapter for multi-node realtime delivery.
+- Presence uses Redis online-user state and socket/user bindings.
+- Conversation/sidebar recency uses Redis sorted sets keyed by user, with legacy conversation IDs as values.
+- Recent message/sidebar cache may be rebuilt from MongoDB.
 
-- `client/src/services/auth/useAuth.js`
-  - Owns the `useAuth()` hook and preserves the existing provider guard error.
+### RabbitMQ Background-Only Role
 
-- `client/src/services/auth/AuthProvider.jsx`
-  - Provides auth state from refresh/login/logout memory session only.
-  - Initial user is `null`; user hydration comes from refresh/session response or explicit memory updates, not localStorage.
-  - Exposes `refreshAuth`, `updateUser`, and `logout`; listens to `auth-changed` for memory-session sync.
+- RabbitMQ is background-only.
+- It must not become part of synchronous message delivery, conversation access control, or sidebar correctness.
+- Background jobs may observe `conversationId`, but the migration should keep legacy IDs compatible.
 
-- `client/src/services/api/axiosClient.js`
-  - Injects the current memory access token into requests.
-  - On 401/403, refreshes once, updates memory token/user, dispatches `auth-changed`, and retries the original request.
-  - On refresh failure, clears auth session and redirects to `/login`.
+### Socket.IO Realtime Invariants
 
-- `client/src/features/auth/pages/Login.jsx`
-  - Login success stores token/user through memory auth helpers and dispatches `auth-changed`.
-  - Does not write `localStorage["user"]` or `localStorage["token"]`.
+- Socket rooms and public realtime payloads continue using legacy `conversationId` during early migration phases.
+- `Conversation._id` is backend-internal only in early phases.
+- Message delivery must remain stable if conversation read-model writes fail while feature flags are disabled or in early dual-write phases.
+- Redis adapter connectivity is a core Socket.IO dependency.
 
-- `client/src/features/profile/components/UserProfileSidebar.jsx`
-  - Profile/avatar updates call `AuthProvider`'s `updateUser()` instead of writing stored user data.
-  - Local UI update callback behavior remains unchanged.
+## Call Architecture State
 
-- `client/src/services/socket/SocketProvider.jsx`
-  - Socket auth identity comes from `useAuth()` context via `getSocketAuthState()`.
-  - Avatar update events update in-memory socket current user and dispatch UI events; no stored-user writes.
-  - Keeps non-auth `last_message_id` localStorage behavior for missed-message recovery.
+### `finalizeCallOnce`
 
-- `client/src/features/calls/context/useCallActions.js`
-  - Reads caller identity from `useAuth()` instead of stored user fallback.
-  - Stabilized call helpers with callbacks during the migration.
+- Call finalization is centralized through `finalizeCallOnce`.
+- Reject, end, timeout, and disconnect paths should converge through this idempotent finalizer.
+- Finalization is responsible for preventing duplicate terminal updates and duplicate call-log side effects.
 
-- `client/src/features/calls/context/useSocketEvents.js`
-  - Reads call user identity from `useAuth()` instead of stored user fallback.
+### Reject/End/Timeout/Disconnect Behavior
 
-- `client/src/features/calls/context/CallHistoryProvider.jsx`
-  - Uses `SocketProvider.currentUser` for current user identity instead of `getStoredUser()`.
+- Reject and end handlers finalize the call explicitly.
+- Timeout finalization handles unanswered or stale calls.
+- Disconnect cleanup must not create competing terminal states.
+- Call-log message creation remains tied to finalized call state and still uses legacy `conversationId`.
 
-## localStorage Policy (final state)
+### Distributed Timeout Finalizer
 
-- Auth keys are no longer used as persistence:
-  - `localStorage["token"]` is never read and is removed when token helpers run.
-  - `localStorage["user"]` is never read and is removed when user helpers run.
+- A distributed timeout finalizer scans Redis timeout due state and finalizes due calls.
+- Redis lock/failure paths are logged and should be safe to retry.
+- This supports multi-node timeout correctness.
 
-- Non-auth localStorage keys remain allowed and should not be removed by auth cleanup:
-  - `last_message_id`
-  - `tempCallId`
-  - `activePartnerUserId`
-  - `callStartTime`
-  - `tempCallerUserId`
-  - `tempCallSignal`
-  - `tempCallerId`
-  - Other call/message recovery keys unrelated to auth persistence.
+### `activeTimeouts` Fallback
 
-## Do Not Change
+- In-process `activeTimeouts` remains a local fallback for timeout behavior.
+- It is not the distributed source of truth.
+- It should be cleaned when calls finalize to avoid stale timers.
 
-- Do not reintroduce `localStorage["token"]` or `localStorage["user"]` reads/writes.
-- Do not replace refresh-cookie bootstrap with client-side persisted token fallback.
-- Do not remove non-auth localStorage keys used by chat/call recovery.
-- Do not change backend auth/session endpoints or Socket.IO backend auth for this migration.
-- Do not change WebRTC signaling behavior or socket event names.
-- Do not merge `useAuth()` back into `AuthProvider.jsx`; Fast Refresh requires the provider file to export only components.
-- Do not broadly refactor unrelated chat, friend, group, call, or upload flows.
+### Redis Socket/User Bindings
 
-## Test Baseline
+- Redis maintains socket/user/call bindings used by presence and call coordination.
+- These bindings support resolving users/sockets across nodes.
+- They remain separate from durable call history in MongoDB.
 
-- `npm.cmd test` in `client`: 101 tests passed, 0 failed.
-- Targeted lint after Fast Refresh split:
-  - `npx.cmd eslint src/services/auth/AuthProvider.jsx`: 0 errors.
-  - `npx.cmd eslint src/services/auth/useAuth.js`: 0 errors.
-  - `npx.cmd eslint src/services/auth/AuthContext.js`: 0 errors.
-- `npm.cmd run build` in `client`: passed.
-- Full `npm.cmd run lint` is still expected to report unrelated existing project/cache lint issues unless `.vite-cache` is excluded.
+## Unfriend Architecture State
+
+### Backend `remove-friend`
+
+- Backend remove-friend updates both users' friendship state and Redis friend cache.
+- It emits `friendRemoved` to both users.
+- It checks whether a direct conversation has messages to decide UI preservation semantics.
+
+### Frontend `friendRemoved` Flow
+
+- Frontend listens for `friendRemoved` socket events.
+- If message history exists, the sidebar row is preserved as a non-friend conversation.
+- If no message history exists, the friend-only sidebar row can be removed.
+- Active chat and search state are updated safely without treating groups as direct friend conversations.
+
+### History Preservation Semantics
+
+- Unfriending does not delete message history.
+- Unfriending does not delete call history.
+- Unfriending does not remove future `ConversationParticipant` rows.
+- Existing direct conversation access is controlled by conversation participation, not current friendship state.
+- Friendship remains scoped to friend lists, friend requests, friend-only UI, and possible future chat-initiation policy.
+
+## Conversation Read Model ADR — Approved
+
+### Chosen Direction
+
+- Add `Conversation` and `ConversationParticipant` collections.
+- Keep `Message.conversationId` unchanged during migration.
+- Keep `legacyConversationId` as the public/socket/cache bridge.
+- Keep `Conversation._id` internal backend-only in early phases.
+- Do not migrate Friendship/User friend state, Group membership ownership, Message attachments, Call participants, or the `Message` schema yet.
+
+### `Conversation` Schema
+
+```js
+Conversation {
+  _id: ObjectId,
+
+  kind: "direct" | "group",
+
+  legacyConversationId: String,
+  directKey: String | null,
+  groupId: ObjectId | null,
+
+  participantUserIds: [ObjectId],
+
+  lastMessageId: ObjectId | null,
+  lastMessageAt: Date | null,
+
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+Schema rules:
+
+- `legacyConversationId` is the public/socket/cache bridge.
+- `directKey` is required for direct conversations and equals the normalized sorted user-id pair.
+- `groupId` is set only for group conversations.
+- `participantUserIds` is a denormalized helper only, not canonical membership.
+- `Conversation.lastMessageId/lastMessageAt` represent global latest message for reconciliation, analytics, administration, and repair jobs.
+- `Conversation.search` is deferred to a later search-metadata slice.
+
+### `ConversationParticipant` Schema
+
+```js
+ConversationParticipant {
+  _id: ObjectId,
+
+  conversationId: ObjectId,
+  legacyConversationId: String,
+  userId: ObjectId,
+
+  role: "member" | "admin" | "owner" | null,
+
+  joinedAt: Date,
+  leftAt: Date | null,
+
+  state: {
+    pinnedAt: Date | null,
+    archivedAt: Date | null,
+    mutedUntil: Date | null,
+    deletedAt: Date | null,
+
+    lastReadMessageId: ObjectId | null,
+    lastReadAt: Date | null,
+
+    unreadCount: Number,
+
+    lastMessageId: ObjectId | null,
+    lastMessageAt: Date | null
+  },
+
+  settings: {
+    notifications: "default" | "muted",
+    customTitle: String | null
+  },
+
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+Schema rules:
+
+- `ConversationParticipant` is canonical for conversation access, unread state, mute/archive state, soft-delete state, and participant-level last-message state.
+- `state.lastMessageId/lastMessageAt` represent the latest message visible to that participant.
+- Sidebar sorting uses participant-level `state.lastMessageAt`.
+- Sidebar preview uses participant-level `state.lastMessageId`.
+- `leftAt` is meaningful only for group conversations; direct conversations keep `leftAt = null`.
+
+### Approved Indexes
+
+```js
+// Conversation
+{ legacyConversationId: 1 } unique
+{ kind: 1, directKey: 1 } unique sparse
+{ groupId: 1 } unique sparse
+{ participantUserIds: 1, lastMessageAt: -1 }
+{ kind: 1, lastMessageAt: -1 }
+
+// ConversationParticipant
+{ conversationId: 1, userId: 1 } unique
+{ legacyConversationId: 1, userId: 1 }
+{ userId: 1, leftAt: 1, "state.deletedAt": 1 }
+{ userId: 1, "state.archivedAt": 1, "state.pinnedAt": -1, "state.lastMessageAt": -1 }
+{ userId: 1, "state.unreadCount": -1 }
+{ conversationId: 1, leftAt: 1 }
+```
+
+### `deletedAt` Semantics
+
+- `deletedAt` is a per-user soft-delete watermark, not membership removal.
+- Messages created at or before `deletedAt` are hidden for that user.
+- Messages created after `deletedAt` are visible.
+- `deletedAt` is kept as a historical watermark and is not automatically cleared.
+- When `deletedAt` is set:
+  - `state.lastMessageId = null`
+  - `state.lastMessageAt = null`
+  - `state.unreadCount = 0`
+- A new visible message after `deletedAt` repopulates participant-level last-message fields and restores sidebar visibility.
+- Hard delete is out of scope.
+
+### `archivedAt` Semantics
+
+- `archivedAt` excludes a conversation from the default sidebar only.
+- Archived conversations remain readable and searchable.
+- Archived conversations retain unread count.
+- Archived conversations appear through an explicit archived view/filter.
+- New messages do not clear `archivedAt`.
+- Restore/unarchive is an explicit user action.
+
+### Muted Semantics
+
+- Muted conversations still increment `unreadCount`.
+- Muted conversations still update participant-level `lastMessageId/lastMessageAt`.
+- Mute only suppresses notifications and alert delivery.
+- Muting must never mark messages read.
+- Notification logic consults `mutedUntil/settings.notifications`, not `unreadCount`.
+
+### Unread Semantics
+
+- `state.unreadCount` is denormalized visible unread count.
+- Sidebar must use `state.unreadCount` and must not compute unread with `countDocuments` or aggregation in the hot path.
+- Setting `deletedAt` resets `unreadCount` to `0`.
+- Hidden messages must never contribute to unread count.
+- Only messages visible to the user can increment unread count.
+- Unread increments only after `Message` insert is confirmed non-duplicate.
+
+### Participant-Level Last Message Fields
+
+- `Conversation.lastMessageId/lastMessageAt` are global latest-message fields.
+- `ConversationParticipant.state.lastMessageId/lastMessageAt` are user-visible latest-message fields.
+- Hot-path sidebar rendering must not filter global conversation state.
+- `deletedAt` and group `leftAt` visibility rules apply when maintaining participant-level fields.
+
+### Friendship Boundary
+
+- Conversation access is controlled by `ConversationParticipant`, not current friendship state.
+- Existing direct conversations remain readable and searchable after unfriend if participant rows exist.
+- Unfriending does not remove participants, message history, call history, unread state, archive state, mute state, or soft-delete state.
+- Friendship controls friend lists, friend requests, friend-only UI, and future friend-gated chat initiation rules.
+
+### Group `leftAt` Boundary
+
+- `leftAt` is reserved for group membership lifecycle only.
+- Former group members may read/search historical messages only up to `leftAt`.
+- Message/search queries for former group members must apply `Message.createdAt <= leftAt`.
+- New message delivery and unread increments must ignore `leftAt != null` participants.
+- Sidebar excludes `leftAt != null` participants from active conversation lists.
+
+### `Group.members` Ownership
+
+- During migration, `Group.members` remains canonical for group membership writes.
+- Existing group flows continue using `Group.members`.
+- `ConversationParticipant` mirrors membership for the conversation read model.
+- Adding a group member ensures a corresponding `ConversationParticipant` exists.
+- Removing/leaving a group sets `ConversationParticipant.leftAt`.
+- `Group.members` remains responsible for membership ownership, permissions, admin/owner checks, and existing group management flows.
+- Migrating group membership ownership requires a future ADR.
+
+### Feature Flags
+
+All conversation migration flags default to false:
+
+```env
+CONVERSATION_DUAL_WRITE_ENABLED=false
+CONVERSATION_READ_MODEL_ENABLED=false
+CONVERSATION_SHADOW_COMPARE_ENABLED=false
+```
+
+### Rollout Phases
+
+1. **Models And Flags**: Add models/services behind disabled-by-default flags.
+2. **Dry-Run Backfill**: Scan legacy messages/groups, validate candidates, and report creates/updates/skips without writes.
+3. **Backfill Write**: Create missing `Conversation` and `ConversationParticipant` rows idempotently.
+4. **Dual-Write**: Enable `CONVERSATION_DUAL_WRITE_ENABLED`; confirmed non-duplicate message inserts update conversation state.
+5. **Shadow Compare**: Enable `CONVERSATION_SHADOW_COMPARE_ENABLED`; keep legacy sidebar authoritative while comparing read-model output.
+6. **Sidebar Read Model**: Enable `CONVERSATION_READ_MODEL_ENABLED`; sidebar reads from `ConversationParticipant` with legacy fallback.
+7. **Search Guard Integration**: Search resolves authorized participant rows before querying `Message`.
+8. **Future ADRs**: Decide later whether to add `Message.conversationObjectId`, migrate Redis keys, expose `Conversation._id`, add search metadata, or migrate group membership ownership.
+
+## Current Approved Next Step
+
+### Slice 1: Models And Indexes Only
+
+Implement only:
+
+- `Conversation` model.
+- `ConversationParticipant` model.
+- Approved indexes.
+- Model/index tests if the existing test style supports them.
+- Disabled-by-default feature flag definitions only if needed for model-level configuration visibility.
+
+Do not implement Slice 2 or Slice 3 yet.
+
+Future slices:
+
+- **Slice 2**: `ensureConversationForConfirmedMessage` service.
+- **Slice 3**: visibility/access helpers for `deletedAt`, `leftAt`, and search guards.
+
+## Explicit Constraints For Next Session
+
+- No runtime behavior changes.
+- No dual-write.
+- No sidebar migration.
+- No search implementation.
+- No backfill execution.
+- No feature flag activation.
+- Do not rewrite `Message` schema.
+- Do not expose `Conversation._id` to clients.
+- Do not migrate Friendship/User friend state.
+- Do not migrate `Group.members` ownership.
+- Do not migrate Message attachments or Call participants.
+
+## Expected First Prompt For Next Session
+
+Use the `tdd` skill. Implement Conversation Read Model Slice 1 only: add `Conversation` and `ConversationParticipant` Mongoose models with the approved schemas and indexes from `docs/handoff/NEXT_SESSION_BOOTSTRAP.md`. Do not change runtime behavior, do not enable feature flags, do not add dual-write, do not migrate sidebar/search/backfill, and do not touch `Message` behavior.
+
+## Startup Instructions For The Next Agent
+
+1. Read this file first.
+2. Inspect existing model style in `server/src/models/Message.js`, `server/src/models/Group.js`, and `server/src/models/User.js`.
+3. Check for any applicable `AGENTS.md` before editing files.
+4. Implement only Slice 1 models and indexes.
+5. Run the narrowest relevant model/test command available; if none exists, report that validation was limited to code inspection.
