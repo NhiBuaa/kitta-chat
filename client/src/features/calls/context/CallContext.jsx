@@ -40,6 +40,7 @@ export const CallProvider = ({ children }) => {
         callStateRef: bag.callStateRef,
         setCallState: bag.setCallState,
         setCallEnded: bag.setCallEnded,
+        setCallAnsweredAt: bag.setCallAnsweredAt,
         cleanupConnection: bag.cleanupConnection,
     });
 
@@ -49,6 +50,8 @@ export const CallProvider = ({ children }) => {
                 // State
                 call: bag.call,
                 callAccepted: bag.callAccepted,
+                callAnsweredAt: bag.callAnsweredAt,
+                callDisplayStartedAt: bag.callDisplayStartedAt,
                 callState: bag.callState,
                 callEnded: bag.callEnded,
                 isCalling: bag.isCalling,
@@ -65,6 +68,7 @@ export const CallProvider = ({ children }) => {
                 setStream: bag.updateStream,
                 setCall: bag.setCall,
                 setCallId: bag.setCallId,
+                setCallDisplayStartedAt: bag.setCallDisplayStartedAt,
                 setIsPreparingCall: bag.setIsPreparingCall,
                 // Actions
                 callUser: actions.callUser,

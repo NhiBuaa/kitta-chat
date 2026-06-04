@@ -90,13 +90,6 @@ const registerPresenceHandlers = (socket, io) => {
 
             // Join room userId để nhận tin nhắn 1-1
             socket.join(authenticatedUserId);
-            console.log("[CALL_DIAG][presence:addNewUser]", {
-                authUserId: socket.userId,
-                receivedUserId: requestedUserId,
-                socketId: socket.id,
-                rooms: Array.from(socket.rooms),
-                joinedUserRoom: socket.rooms.has(authenticatedUserId),
-            });
 
             // Join tất cả room Group mà user là thành viên
             const userGroups = await Group.find({ members: authenticatedUserId });

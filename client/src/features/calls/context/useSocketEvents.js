@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
 import { persistPartnerMediaStatus } from '@/features/calls/context/callMediaState.js';
+import { persistCallAnsweredAt } from '@/features/calls/context/callStorage.js';
 import { useAuth } from '@/services/auth/useAuth.js';
 
 /**
@@ -37,17 +38,6 @@ export const useSocketEvents = ({ socket, bag, actions }) => {
         // ── callUser (incoming) ──────────────────────────────────────────────
         const handleIncomingCall = (data) => {
             const callerId = data.callerDbId;
-            const loggedInUserId = authUser?._id || authUser?.id || null;
-            console.log('[CALL_DIAG][client:callUser:received]', {
-                loggedInUserId,
-                socketId: socket?.id,
-                callerId,
-                callerSocketId: data.from,
-                callId: data.callId || null,
-                clientCallId: localStorage.getItem('tempCallId'),
-                pathname: window.location.pathname,
-                callState: callStateRef.current,
-            });
 
             // Nếu đang mở popup CallPage thì tự đóng, không xử lý tiếp
             if (window.location.pathname.includes('/call') && callStateRef.current === CALL_STATES.IDLE) {
@@ -272,7 +262,7 @@ function _handleGlareWinner({ data, callerId, socket, bag, leaveCall }) {
         isGlareWaitingRef, glareWinnerDataRef,
         connectionRef, callTimeoutRef, localStreamRef, userVideo,
         callStateRef, callAcceptedRef, isOutgoingCallRef,
-        setCallAccepted, setCallEnded, setCallState, setIsCalling, setRemoteStream,
+        setCallAccepted, setCallAnsweredAt, setCallEnded, setCallState, setIsCalling, setRemoteStream,
     } = bag;
 
     if (!isGlareWaitingRef.current || !glareWinnerDataRef.current) return; // lag/duplicate → bỏ qua
@@ -303,6 +293,11 @@ function _handleGlareWinner({ data, callerId, socket, bag, leaveCall }) {
                 mic: localStreamRef.current.getAudioTracks()[0]?.enabled ?? true,
             },
             callId: data.callId || null,
+        }, (response) => {
+            if (response?.answeredAt) {
+                persistCallAnsweredAt(response.answeredAt);
+                setCallAnsweredAt(response.answeredAt);
+            }
         });
     });
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import {
   FaPaperPlane,
   FaArrowLeft,
@@ -10,7 +10,6 @@ import {
   FaPaperclip,
   FaArrowDown,
   FaExclamationTriangle,
-  FaUserMinus,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import UserStatus from "@/features/profile/components/UserStatus.jsx";
@@ -18,11 +17,17 @@ import { formatTimeAgo } from "@/utils/formatTime.js";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 import Loader from "@/components/common/Loader.jsx";
 import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
+import UserProfileModal from "@/features/profile/components/UserProfileModal.jsx";
 import MessageSeenBy from '@/features/chat/components/MessageSeenBy.jsx';
 import OfflineBanner from "@/features/chat/components/OfflineBanner.jsx";
 import CallLogItem from "@/features/calls/components/CallLogItem.jsx";
 import { removeFriend } from "@/services/api/friendApi.js";
 import { runRemoveFriendAction } from "@/features/friends/actions/removeFriendAction.js";
+import {
+  closeUserProfileModal,
+  createClosedUserProfileModalState,
+  openUserProfileModal,
+} from "@/features/profile/components/userProfileModalState.js";
 import {
   closeRemoveFriendModal,
   createClosedRemoveFriendModalState,
@@ -59,6 +64,9 @@ const ChatWindow = ({
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [userProfileModal, setUserProfileModal] = useState(
+    createClosedUserProfileModalState,
+  );
   const [removeFriendModal, setRemoveFriendModal] = useState(
     createClosedRemoveFriendModalState,
   );
@@ -70,7 +78,6 @@ const ChatWindow = ({
   const isGroupChat = Boolean(activeChat?.members);
   const shouldShowOnlineStatus =
     !isGroupChat && Boolean(currentChatUser?.isFriend);
-  const canRemoveFriend = !isGroupChat && Boolean(currentChatUser?.isFriend);
 
   useEffect(() => {
     canLoadMoreFromTopRef.current = true;
@@ -78,6 +85,19 @@ const ChatWindow = ({
 
   const handleOpenRemoveFriendModal = () => {
     setRemoveFriendModal(openRemoveFriendModal(currentChatUser));
+  };
+
+  const handleOpenUserProfileModal = () => {
+    if (isGroupChat) return;
+    setUserProfileModal(openUserProfileModal(currentChatUser));
+  };
+
+  const handleCloseUserProfileModal = () => {
+    setUserProfileModal(closeUserProfileModal());
+  };
+
+  const handleProfileUnfriend = () => {
+    handleOpenRemoveFriendModal();
   };
 
   const handleCloseRemoveFriendModal = () => {
@@ -106,6 +126,9 @@ const ChatWindow = ({
     setRemoveFriendModal((prev) =>
       finishRemoveFriendSubmit(prev, { closeOnSuccess: Boolean(result.success) }),
     );
+    if (result.success) {
+      setUserProfileModal(closeUserProfileModal());
+    }
   };
 
   useEffect(() => {
@@ -187,39 +210,47 @@ const ChatWindow = ({
       {/* CHAT HEADER */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
-          {/* chỉ hiện ở màn nhỏ */}
           <button
             onClick={() => setActiveChat(null)}
             className="sm:hidden mr-3 text-gray-600 hover:text-green-600"
           >
             <FaArrowLeft size={18} />
           </button>
-          <img
-            src={getAvatarUrl(currentChatUser.avatar)}
-            className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200"
-            alt="avatar"
-          />
-          <div>
-            <h3 className="font-bold text-gray-800">
-              {getUserDisplayName(currentChatUser)}
-            </h3>
-            {shouldShowOnlineStatus && (
-              <UserStatus
-                user={currentChatUser}
-                isOnline={checkIsOnline(currentChatUser)}
-              />
-            )}
+          <button
+            type="button"
+            onClick={handleOpenUserProfileModal}
+            disabled={isGroupChat}
+            className={`flex items-center text-left rounded-lg transition-colors ${
+              isGroupChat ? "cursor-default" : "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-200"
+            }`}
+            title={isGroupChat ? undefined : "Xem hồ sơ"}
+          >
+            <img
+              src={getAvatarUrl(currentChatUser.avatar)}
+              className="w-11 h-11 rounded-full mr-3 object-cover border border-gray-200"
+              alt="avatar"
+            />
+            <div>
+              <h3 className="font-bold text-gray-800">
+                {getUserDisplayName(currentChatUser)}
+              </h3>
+              {shouldShowOnlineStatus && (
+                <UserStatus
+                  user={currentChatUser}
+                  isOnline={checkIsOnline(currentChatUser)}
+                />
+              )}
 
-            {currentChatUser.members && (
-              <span className="text-xs text-gray-500">
-                {currentChatUser.members.length} thành viên
-              </span>
-            )}
-          </div>
+              {currentChatUser.members && (
+                <span className="text-xs text-gray-500">
+                  {currentChatUser.members.length} Thành viên
+                </span>
+              )}
+            </div>
+          </button>
         </div>
 
         <div className="flex space-x-4 text-green-600">
-          {/* Gọi audio */}
           <button
             onClick={() => handleCall("audio")}
             className="hover:bg-green-100 p-2 rounded-full transition-colors text-green-600"
@@ -249,18 +280,19 @@ const ChatWindow = ({
             </button>
           )}
 
-          {canRemoveFriend && (
-            <button
-              onClick={handleOpenRemoveFriendModal}
-              className="hover:bg-red-50 p-2 rounded-full transition-colors text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Hủy kết bạn"
-              disabled={removeFriendModal.isLoading}
-            >
-              <FaUserMinus />
-            </button>
-          )}
         </div>
       </div>
+
+      <UserProfileModal
+        isOpen={userProfileModal.isOpen}
+        user={userProfileModal.user || currentChatUser}
+        isGroupChat={isGroupChat}
+        getAvatarUrl={getAvatarUrl}
+        checkIsOnline={checkIsOnline}
+        onClose={handleCloseUserProfileModal}
+        onCall={handleCall}
+        onUnfriend={handleProfileUnfriend}
+      />
 
       <ConfirmationModal
         isOpen={removeFriendModal.isOpen}
@@ -304,7 +336,7 @@ const ChatWindow = ({
             </div>
           )}
 
-          {/* hiện hình với tên như ở fb khi chưa chat */}
+          {/* hiển thị hình với tên như ở fb khi chưa chat */}
           {Array.isArray(messages) &&
             messages.length === 0 &&
             !isChatBootstrapping && (
@@ -326,7 +358,6 @@ const ChatWindow = ({
             )}
 
           {Array.isArray(messages) && messages.map((message, index) => {
-            // 1. KHỞI TẠO BIẾN
             const senderId = typeof message.sender === "object" ? message.sender?._id : message.sender;
             const isMe = senderId === currentUser._id;
             const isGroup = Boolean(activeChat.members);
@@ -335,7 +366,7 @@ const ChatWindow = ({
             const senderAvatar = senderInfo?.avatar || activeChat.avatar;
 
             const isSystemMessage = message.type === "system";
-            const isCallLogMessage = message.type === "call_log"; // Đảm bảo biến này được khai báo
+            const isCallLogMessage = message.type === "call_log";
 
             const isSending = message.status === "sending";
             const isError = message.status === "error";
@@ -594,4 +625,3 @@ const ChatWindow = ({
 };
 
 export default ChatWindow;
-

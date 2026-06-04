@@ -31,7 +31,7 @@ const VideoCallPage = () => {
     const urlName = searchParams.get("name") || "Nguoi dung";
     const urlAvatar = searchParams.get("avatar");
     const urlType = searchParams.get("type");
-    const urlCallId = searchParams.get("callId"); // callId từ CallNotification URL param
+    const urlCallId = searchParams.get("callId"); // callId tá»« CallNotification URL param
     const storedType = localStorage.getItem("tempCallType");
     const callType = urlType || storedType || "video";
     const isVideoCall = callType === "video";
@@ -45,9 +45,11 @@ const VideoCallPage = () => {
         rejectCall,
         leaveCall,
         callAccepted,
+        callDisplayStartedAt,
         callEnded,
         myVideo,
         setCall,
+        setCallDisplayStartedAt,
         remoteStream,
         partnerMediaStatus,
     } = useContext(CallContext);
@@ -60,7 +62,7 @@ const VideoCallPage = () => {
     const [camOn, setCamOn] = useState(isVideoCall);
     const [isJoined, setIsJoined] = useState(false);
     const [mediaError, setMediaError] = useState(false);
-    const callDuration = useCallTimer(isJoined, callAccepted, callEnded);
+    const callDuration = useCallTimer(isJoined, callAccepted, callEnded, callDisplayStartedAt);
 
     const notifyMediaChange = (newCam, newMic) => {
         const targetId =
@@ -117,6 +119,15 @@ const VideoCallPage = () => {
 
         leaveCall('CallPage:handleEndCall');
     };
+    useEffect(() => {
+        if (!isJoined || !callAccepted || callEnded || callDisplayStartedAt) return undefined;
+
+        const timeoutId = setTimeout(() => {
+            setCallDisplayStartedAt(new Date().toISOString());
+        }, 0);
+
+        return () => clearTimeout(timeoutId);
+    }, [isJoined, callAccepted, callEnded, callDisplayStartedAt, setCallDisplayStartedAt]);
 
     useEffect(() => {
         if (!isJoined || !callAccepted || callEnded) return;

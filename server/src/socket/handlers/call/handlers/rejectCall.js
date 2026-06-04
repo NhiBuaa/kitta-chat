@@ -44,17 +44,6 @@ const registerRejectCall = (socket, io) => {
             }
 
             const status = deriveStatus(reason, call.answeredAt);
-            console.log("[CALL_DIAG][server:rejectCall]", {
-                socketUserId: userId,
-                socketId: socket.id,
-                to,
-                callId,
-                actualCallId,
-                reason,
-                status,
-                timeoutCancelled,
-                answeredAt: call.answeredAt,
-            });
             const finalizeResult = await finalizeCallOnce({
                 callId: actualCallId,
                 status,
