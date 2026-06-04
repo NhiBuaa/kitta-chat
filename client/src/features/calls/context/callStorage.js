@@ -1,7 +1,7 @@
 const CALL_STORAGE_KEYS = [
     'activePartnerUserId', 'tempCallerId', 'tempCallerUserId',
     'tempCallSignal', 'tempCallerMediaStatus', 'tempCallType',
-    'callStartTime', 'tempCallId',
+    'callStartTime', 'tempCallId', 'callAnsweredAt',
 ];
 
 export const clearCallStorage = () =>
@@ -28,4 +28,17 @@ export const isCallStorageStale = () => {
         Boolean(localStorage.getItem('tempCallId')) &&
         !['activePartnerUserId', 'tempCallerUserId', 'tempCallerId'].some((k) => localStorage.getItem(k));
     return (hasDangling && isExpired) || isBroken;
+};
+
+export const getStoredCallAnsweredAt = () => {
+    const answeredAt = localStorage.getItem('callAnsweredAt');
+    if (!answeredAt) return null;
+
+    return Number.isFinite(new Date(answeredAt).getTime()) ? answeredAt : null;
+};
+
+export const persistCallAnsweredAt = (answeredAt) => {
+    if (!answeredAt || !Number.isFinite(new Date(answeredAt).getTime())) return;
+
+    localStorage.setItem('callAnsweredAt', answeredAt);
 };

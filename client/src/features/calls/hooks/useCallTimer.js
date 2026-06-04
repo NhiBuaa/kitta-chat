@@ -1,21 +1,34 @@
-import {useState, useEffect} from 'react';
+import { useEffect, useState } from 'react';
+import {
+    getPopupDurationSeconds,
+    getDelayToNextDurationTick,
+} from '@/features/calls/utils/callDuration.js';
 
-export const useCallTimer = (isJoined, callAccept, callEnd) => {
-    const [callDuration, setCallDuration] = useState(0);
+export const useCallTimer = (isJoined, callAccept, callEnd, displayStartedAt) => {
+    const [now, setNow] = useState(() => new Date());
+    const isTimerActive = isJoined && callAccept && !callEnd && Boolean(displayStartedAt);
 
     useEffect(() => {
-        let interval;
+        if (!isTimerActive) return undefined;
 
-        if(isJoined && callAccept && !callEnd) {
-            interval = setInterval(() => {
-                setCallDuration((prev) => prev + 1);
-            }, 1000);
-        } else {
-            clearInterval(interval);
-        }
+        let timeoutId;
 
-        return () => clearInterval(interval);
-    }, [isJoined, callAccept, callEnd])
+        const scheduleNextTick = () => {
+            timeoutId = setTimeout(() => {
+                setNow(new Date());
+                scheduleNextTick();
+            }, getDelayToNextDurationTick({ answeredAt: displayStartedAt }));
+        };
 
-    return callDuration;
-}
+        timeoutId = setTimeout(() => {
+            setNow(new Date());
+            scheduleNextTick();
+        }, 0);
+
+        return () => clearTimeout(timeoutId);
+    }, [isTimerActive, displayStartedAt]);
+
+    if (!isTimerActive) return 0;
+
+    return getPopupDurationSeconds({ displayStartedAt, now });
+};

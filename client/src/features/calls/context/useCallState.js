@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
-import { getStoredPartnerMediaStatus } from '@/features/calls/context/callStorage.js';
+import { getStoredCallAnsweredAt, getStoredPartnerMediaStatus } from '@/features/calls/context/callStorage.js';
 
 /**
  * Quản lý toàn bộ state và refs của hệ thống gọi.
@@ -15,6 +15,8 @@ export const useCallState = () => {
     const [call, setCall] = useState({});
     const [callId, setCallId] = useState(null);
     const [callAccepted, setCallAccepted] = useState(false);
+    const [callAnsweredAt, setCallAnsweredAt] = useState(getStoredCallAnsweredAt);
+    const [callDisplayStartedAt, setCallDisplayStartedAt] = useState(null);
     const [callEnded, setCallEnded] = useState(false);
     const [isCalling, setIsCalling] = useState(false);
     const [me, setMe] = useState('');
@@ -65,6 +67,8 @@ export const useCallState = () => {
         setRemoteStream(null);
         setPartnerMediaStatus({ cam: true, mic: true });
         setCallAccepted(false);
+        setCallAnsweredAt(null);
+        setCallDisplayStartedAt(null);
         setIsCalling(false);
         setCallId(null);
         setCallState(CALL_STATES.IDLE);
@@ -80,6 +84,8 @@ export const useCallState = () => {
         call, setCall,
         callId, setCallId,
         callAccepted, setCallAccepted,
+        callAnsweredAt, setCallAnsweredAt,
+        callDisplayStartedAt, setCallDisplayStartedAt,
         callEnded, setCallEnded,
         isCalling, setIsCalling,
         me, setMe,

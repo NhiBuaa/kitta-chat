@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
+import { getStoredCallAnsweredAt } from '@/features/calls/context/callStorage.js';
 
 /**
  * Đồng bộ trạng thái cuộc gọi khi:
  * - Cửa sổ/tab bị đóng (pagehide / beforeunload)
  * - Tab khác xóa callStartTime khỏi localStorage
+ * - Tab khác nhận server answeredAt canonical
  */
-export const useWindowSync = ({ callStateRef, setCallState, setCallEnded, cleanupConnection }) => {
+export const useWindowSync = ({ callStateRef, setCallState, setCallEnded, setCallAnsweredAt, cleanupConnection }) => {
     useEffect(() => {
         const handleWindowClose = () => {
             if (callStateRef.current !== CALL_STATES.IDLE) {
@@ -22,6 +24,11 @@ export const useWindowSync = ({ callStateRef, setCallState, setCallEnded, cleanu
                 setCallState(CALL_STATES.IDLE);
                 setCallEnded(true);
                 cleanupConnection();
+                return;
+            }
+
+            if (e.key === 'callAnsweredAt') {
+                setCallAnsweredAt(getStoredCallAnsweredAt());
             }
         };
 

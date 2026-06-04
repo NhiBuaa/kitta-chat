@@ -479,3 +479,27 @@ test("local timeout still marks unanswered pending call as missed and emits side
   assert.equal(logCalls.createCallLogMessage.length, 1);
   assert.equal(emitted.filter((event) => event.eventName === "callTimeout").length, 2);
 });
+test("answerCall returns the saved answeredAt to caller and callee", async () => {
+  clearCallModules();
+  const calls = installCallHistoryMock();
+  const { registerAnswerCall } = require("../src/socket/handlers/call/handlers/answerCall");
+  const { socket, io, listeners, emitted } = createSocketIo({ userId: receiverId });
+  let ackPayload = null;
+
+  registerAnswerCall(socket, io);
+  await listeners.get("answerCall")({
+    to: callerId,
+    signal: { sdp: "answer" },
+    mediaStatus: { cam: false, mic: true },
+    callId,
+  }, (payload) => {
+    ackPayload = payload;
+  });
+
+  const savedAnsweredAt = calls.findByIdAndUpdate[0].update.answeredAt;
+  const callerAccepted = emitted.find((event) => event.target === callerId && event.eventName === "callAccepted");
+
+  assert.ok(savedAnsweredAt instanceof Date);
+  assert.equal(callerAccepted.payload.answeredAt, savedAnsweredAt.toISOString());
+  assert.deepEqual(ackPayload, { answeredAt: savedAnsweredAt.toISOString() });
+});

@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up",
-    "dev:docker:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+    "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d",
+    "dev:docker:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
     "prod:docker": "docker compose up --build"
   },
   "dependencies": {

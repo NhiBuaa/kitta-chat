@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { SOCKET_EVENTS } from '@/constants/socketEvents.js';
 import { CALL_STATES } from '@/features/calls/context/CallStates.js';
 import { ICE_SERVERS } from '@/features/calls/context/constants.js';
-import { clearCallStorage } from '@/features/calls/context/callStorage.js';
+import { clearCallStorage, persistCallAnsweredAt } from '@/features/calls/context/callStorage.js';
 import { sendLocalMediaStatusSnapshot } from '@/features/calls/context/callMediaState.js';
 import { useAuth } from '@/services/auth/useAuth.js';
 import { getLeaveCallEvent } from '@/features/calls/context/callLifecycleState.js';
@@ -18,7 +18,7 @@ export const useCallActions = ({ socket, bag }) => {
     const {
         callStateRef, callAcceptedRef,
         isOutgoingCallRef, connectionRef, callTimeoutRef, localStreamRef, userVideo,
-        setCallState, setCallAccepted, setCallEnded, setIsCalling,
+        setCallState, setCallAccepted, setCallAnsweredAt, setCallDisplayStartedAt, setCallEnded, setIsCalling,
         setCall, setCallId, setPartnerMediaStatus, setRemoteStream,
         updateStream, cleanupConnection,
     } = bag;
@@ -29,7 +29,7 @@ export const useCallActions = ({ socket, bag }) => {
         setCallId(null);
     }, [setCallId]);
 
-    const leaveCall = useCallback((source = 'unspecified') => {
+    const leaveCall = useCallback(() => {
         if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
         const partnerUserId =
             localStorage.getItem('activePartnerUserId') || localStorage.getItem('tempCallerUserId');
@@ -39,17 +39,6 @@ export const useCallActions = ({ socket, bag }) => {
             partnerUserId,
             callId,
             callAccepted: callAcceptedRef.current,
-        });
-        const willEmitCancelled = leaveCallEvent?.event === SOCKET_EVENTS.CALL_REJECT;
-
-        console.log('[CALL_DIAG][client:leaveCall]', {
-            source,
-            socketId: socket?.id,
-            partnerUserId,
-            callId,
-            callAccepted: callAcceptedRef.current,
-            callState: callStateRef.current,
-            willEmitRejectCancelled: willEmitCancelled,
         });
 
         if (leaveCallEvent) {
@@ -87,6 +76,8 @@ export const useCallActions = ({ socket, bag }) => {
         updateStream(localStream);
         localStreamRef.current = localStream;
         setCallAccepted(false);
+        setCallAnsweredAt(null);
+        setCallDisplayStartedAt(null);
         callAcceptedRef.current = false;
         setCallEnded(false);
         setIsCalling(true);
@@ -132,6 +123,10 @@ export const useCallActions = ({ socket, bag }) => {
             clearTimeout(callTimeoutRef.current);
             const signal = payload?.signal || payload;
             setCallAccepted(true);
+            if (payload?.answeredAt) {
+                persistCallAnsweredAt(payload.answeredAt);
+                setCallAnsweredAt(payload.answeredAt);
+            }
             callAcceptedRef.current = true;
             setCallEnded(false);
             setCallState(CALL_STATES.CONNECTED);
@@ -158,6 +153,8 @@ export const useCallActions = ({ socket, bag }) => {
         makePeer,
         setCall,
         setCallAccepted,
+        setCallAnsweredAt,
+        setCallDisplayStartedAt,
         setCallEnded,
         setCallId,
         setCallState,
@@ -197,6 +194,11 @@ export const useCallActions = ({ socket, bag }) => {
                     to: callerUserId,
                     mediaStatus: { cam: isCamOn, mic: isMicOn },
                     callId: localStorage.getItem('tempCallId') || null,
+                }, (response) => {
+                    if (response?.answeredAt) {
+                        persistCallAnsweredAt(response.answeredAt);
+                        setCallAnsweredAt(response.answeredAt);
+                    }
                 });
             },
             onStream: (remote) => {

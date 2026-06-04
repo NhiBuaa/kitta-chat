@@ -127,26 +127,6 @@ const registerCallUser = (socket, io) => {
 
             // ── Normal call ───────────────────────────────────────────────────────
             const targetRoom = String(userToCall);
-            let targetSockets = [];
-            try {
-                targetSockets = Array.from(await io.in(targetRoom).allSockets());
-            } catch (err) {
-                console.warn("[CALL_DIAG][server:callUser:allSockets:error]", {
-                    callerUserId: userId,
-                    userToCall: targetRoom,
-                    callId: callRecordId,
-                    error: err.message,
-                });
-            }
-
-            console.log("[CALL_DIAG][server:callUser:beforeEmit]", {
-                callerUserId: userId,
-                callerSocketId: socket.id,
-                userToCall: targetRoom,
-                callId: callRecordId,
-                targetSocketCount: targetSockets.length,
-                targetSockets,
-            });
 
             io.to(targetRoom).emit("callUser", {
                 signal: signalData,
@@ -159,12 +139,6 @@ const registerCallUser = (socket, io) => {
                 callId: callRecordId,
             });
             await storeUserActiveCall(userToCall, callRecordId, io.redisClient);
-            console.log("[CALL_DIAG][server:callUser:afterEmit]", {
-                callerUserId: userId,
-                userToCall: targetRoom,
-                callId: callRecordId,
-                targetSocketCount: targetSockets.length,
-            });
 
             await _startTimeout({ io, callRecordId, userId, userToCall });
         } catch (err) {
