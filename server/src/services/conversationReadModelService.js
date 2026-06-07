@@ -47,7 +47,7 @@ async function getConversationShape(message) {
       kind: "direct",
       legacyConversationId,
       directKey: legacyConversationId,
-      groupId: null,
+
       participantUserIds,
       rolesByUserId: new Map(participantUserIds.map((userId) => [toIdString(userId), "member"])),
     };
@@ -61,7 +61,6 @@ async function getConversationShape(message) {
   return {
     kind: "group",
     legacyConversationId,
-    directKey: null,
     groupId: group._id,
     participantUserIds,
     rolesByUserId: new Map(
@@ -137,8 +136,8 @@ async function ensureConversationForConfirmedMessage(message) {
       $setOnInsert: {
         kind: shape.kind,
         legacyConversationId: shape.legacyConversationId,
-        directKey: shape.directKey,
-        groupId: shape.groupId,
+        ...(shape.directKey ? { directKey: shape.directKey } : {}),
+        ...(shape.groupId ? { groupId: shape.groupId } : {}),
         participantUserIds: shape.participantUserIds,
       },
       $set: {
@@ -164,3 +163,4 @@ async function ensureConversationForConfirmedMessage(message) {
 module.exports = {
   ensureConversationForConfirmedMessage,
 };
+

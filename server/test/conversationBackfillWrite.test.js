@@ -130,6 +130,7 @@ test("write mode creates expected Conversation and ConversationParticipant rows"
 
   assert.equal(report.mode, "write");
   assert.equal(context.conversations.length, 1);
+  assert.equal(Object.hasOwn(context.conversations[0], "groupId"), false);
   assert.equal(context.participants.length, 2);
   assert.equal(report.created.conversations, 1);
   assert.equal(report.created.participants, 2);
@@ -142,6 +143,7 @@ test("second write run is idempotent and skips existing rows", async () => {
   const second = await runConversationBackfillWrite({ models: context.models, write: true });
 
   assert.equal(context.conversations.length, 1);
+  assert.equal(Object.hasOwn(context.conversations[0], "groupId"), false);
   assert.equal(context.participants.length, 2);
   assert.equal(second.created.conversations, 0);
   assert.equal(second.created.participants, 0);
@@ -219,3 +221,4 @@ test("manual runner parses safe default and explicit write flag", () => {
   assert.deepEqual(parseBackfillArgs([]), { write: false });
   assert.deepEqual(parseBackfillArgs(["--write"]), { write: true });
 });
+

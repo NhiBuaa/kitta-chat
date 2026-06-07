@@ -163,6 +163,7 @@ test("ensureConversationForConfirmedMessage creates direct conversation from fir
   assert.equal(conversations[0].kind, "direct");
   assert.equal(conversations[0].legacyConversationId, message.conversationId);
   assert.equal(conversations[0].directKey, message.conversationId);
+  assert.equal(Object.hasOwn(conversations[0], "groupId"), false);
   assert.equal(participants.length, 2);
 });
 
@@ -179,6 +180,7 @@ test("ensureConversationForConfirmedMessage creates group conversation from firs
   assert.equal(conversations.length, 1);
   assert.equal(conversations[0].kind, "group");
   assert.equal(idString(conversations[0].groupId), groupId.toString());
+  assert.equal(Object.hasOwn(conversations[0], "directKey"), false);
   assert.deepEqual(
     participants.map((participant) => idString(participant.userId)).sort(),
     [senderId.toString(), memberId.toString()].sort(),
@@ -278,3 +280,4 @@ test("ensureConversationForConfirmedMessage does not change Message schema", asy
   assert.deepEqual(afterPaths, beforePaths);
   assert.equal(Message.schema.path("conversationObjectId"), undefined);
 });
+

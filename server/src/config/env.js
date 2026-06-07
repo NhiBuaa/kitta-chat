@@ -20,6 +20,17 @@ const requireValue = (env, key, issues) => {
   return String(env[key]).trim();
 };
 
+const parseBooleanFlag = (env, key, fallback, issues) => {
+  if (isBlank(env[key])) return fallback;
+
+  const raw = String(env[key]).trim().toLowerCase();
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+
+  issues.push(`${key} must be either true or false`);
+  return fallback;
+};
+
 const parsePositiveInteger = (env, key, fallback, issues) => {
   const raw = isBlank(env[key]) ? fallback : env[key];
   const parsed = Number(raw);
@@ -62,6 +73,12 @@ const validateServerEnv = (env = process.env) => {
   const frontendUrl = requireValue(env, "URL_FRONTEND", issues);
   const redisUrl = getRedisUrl(env, issues);
   const port = parsePositiveInteger(env, "PORT", 3000, issues);
+  const conversationDualWriteEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_DUAL_WRITE_ENABLED",
+    false,
+    issues,
+  );
 
   throwIfInvalid("server", issues);
 
@@ -71,6 +88,7 @@ const validateServerEnv = (env = process.env) => {
     frontendUrl,
     redisUrl,
     port,
+    conversationDualWriteEnabled,
   };
 };
 
@@ -78,6 +96,20 @@ const workerConcurrencyEnvByName = {
   image: "IMAGE_WORKER_CONCURRENCY",
   notification: "NOTIFICATION_WORKER_CONCURRENCY",
   audit: "AUDIT_WORKER_CONCURRENCY",
+};
+
+const getConversationMigrationConfig = (env = process.env) => {
+  const issues = [];
+  const conversationDualWriteEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_DUAL_WRITE_ENABLED",
+    false,
+    issues,
+  );
+
+  throwIfInvalid("conversation migration", issues);
+
+  return { conversationDualWriteEnabled };
 };
 
 const validateWorkerEnv = ({ workerName, env = process.env } = {}) => {
@@ -114,6 +146,9 @@ const validateWorkerEnv = ({ workerName, env = process.env } = {}) => {
 
 module.exports = {
   ConfigValidationError,
+  getConversationMigrationConfig,
   validateServerEnv,
   validateWorkerEnv,
 };
+
+

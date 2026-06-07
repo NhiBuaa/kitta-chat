@@ -135,8 +135,8 @@ function buildConversationCandidate({ legacyConversationId, kind, directKey = nu
   return {
     kind,
     legacyConversationId,
-    directKey,
-    groupId: group?._id || null,
+    ...(directKey ? { directKey } : {}),
+    ...(group?._id ? { groupId: group._id } : {}),
     participantUserIds: sortedUniqueIds(participantUserIds),
     lastMessageId: latestMessage?._id || null,
     lastMessageAt: latestMessage ? normalizeDate(latestMessage.createdAt) : null,
@@ -310,3 +310,4 @@ module.exports = {
   deriveDirectConversationCandidate,
   runConversationBackfillDryRun,
 };
+

@@ -2,6 +2,8 @@ const Message = require("../models/Message");
 const { cacheClient } = require("../config/redis");
 const buildConversationId = require("./buildConversationId");
 const { updateConversationWriteThrough } = require("../services/conversationCacheService");
+const { getConversationMigrationConfig } = require("../config/env");
+const { ensureConversationForConfirmedMessage } = require("../services/conversationReadModelService");
 
 /**
  * Lưu tin nhắn vào MongoDB và cập nhật Redis cache.
@@ -107,6 +109,14 @@ async function saveMessageInBackground(data) {
             // ZSET Write-Through: cập nhật conversation list cho all participants
             const timestamp = new Date(savedMessage.createdAt).getTime();
             await updateConversationWriteThrough(conversationId, participantIds, timestamp);
+
+            if (!isDuplicate && getConversationMigrationConfig().conversationDualWriteEnabled) {
+                try {
+                    await ensureConversationForConfirmedMessage(savedMessage);
+                } catch (dualWriteError) {
+                    console.error("[saveMessage] Conversation read-model dual-write failed:", dualWriteError);
+                }
+            }
         }
 
         return { doc: savedMessage, isDuplicate };
@@ -132,3 +142,5 @@ async function saveMessageInBackground(data) {
 }
 
 module.exports = saveMessageInBackground;
+
+

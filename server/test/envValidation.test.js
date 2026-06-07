@@ -95,3 +95,51 @@ test("validateWorkerEnv rejects invalid numeric worker settings", () => {
     },
   );
 });
+
+test("validateServerEnv defaults conversation dual-write flag to false", () => {
+  const config = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+  });
+
+  assert.equal(config.conversationDualWriteEnabled, false);
+});
+
+test("validateServerEnv parses conversation dual-write boolean flag", () => {
+  const enabled = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+    CONVERSATION_DUAL_WRITE_ENABLED: "true",
+  });
+  const disabled = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+    CONVERSATION_DUAL_WRITE_ENABLED: "false",
+  });
+
+  assert.equal(enabled.conversationDualWriteEnabled, true);
+  assert.equal(disabled.conversationDualWriteEnabled, false);
+});
+
+test("validateServerEnv rejects invalid conversation dual-write flag", () => {
+  assert.throws(
+    () => validateServerEnv({
+      MONGO_URI: "mongodb://localhost:27017/shot-chat",
+      JWT_SECRET: "test-secret",
+      URL_FRONTEND: "http://localhost:5173",
+      REDIS_URL: "redis://localhost:6379",
+      CONVERSATION_DUAL_WRITE_ENABLED: "yes",
+    }),
+    (error) => {
+      assert.equal(error.name, "ConfigValidationError");
+      assert.match(error.message, /CONVERSATION_DUAL_WRITE_ENABLED/);
+      return true;
+    },
+  );
+});

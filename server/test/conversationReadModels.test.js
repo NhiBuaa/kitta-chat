@@ -31,9 +31,15 @@ test("Conversation approved indexes exist", () => {
 
   assert.equal(legacyIndex[1].unique, true);
   assert.equal(directKeyIndex[1].unique, true);
-  assert.equal(directKeyIndex[1].sparse, true);
+  assert.deepEqual(directKeyIndex[1].partialFilterExpression, {
+    kind: "direct",
+    directKey: { $type: "string" },
+  });
   assert.equal(groupIdIndex[1].unique, true);
-  assert.equal(groupIdIndex[1].sparse, true);
+  assert.deepEqual(groupIdIndex[1].partialFilterExpression, {
+    kind: "group",
+    groupId: { $type: "objectId" },
+  });
   assert.ok(participantIndex);
   assert.ok(kindRecencyIndex);
 });
@@ -112,5 +118,49 @@ test("Conversation read-model imports do not register legacy model changes", () 
   assert.ok(Message.schema.path("conversationId"));
   assert.equal(Message.schema.path("conversationObjectId"), undefined);
   assert.ok(Group.schema.path("members"));
+});
+
+
+function indexOptionsByFields(model, fields) {
+  const index = indexByFields(model, fields);
+  return index && index[1];
+}
+
+test("Conversation unique directKey index only applies to direct conversations with a string directKey", () => {
+  const directKeyIndex = indexOptionsByFields(Conversation, { kind: 1, directKey: 1 });
+
+  assert.equal(directKeyIndex.unique, true);
+  assert.deepEqual(directKeyIndex.partialFilterExpression, {
+    kind: "direct",
+    directKey: { $type: "string" },
+  });
+  assert.equal(directKeyIndex.sparse, undefined);
+});
+
+test("Conversation unique groupId index only applies to group conversations with an ObjectId groupId", () => {
+  const groupIdIndex = indexOptionsByFields(Conversation, { groupId: 1 });
+
+  assert.equal(groupIdIndex.unique, true);
+  assert.deepEqual(groupIdIndex.partialFilterExpression, {
+    kind: "group",
+    groupId: { $type: "objectId" },
+  });
+  assert.equal(groupIdIndex.sparse, undefined);
+});
+
+test("Conversation direct documents omit groupId and group documents omit directKey by default", () => {
+  const direct = new Conversation({
+    kind: "direct",
+    legacyConversationId: "a_b",
+    directKey: "a_b",
+  }).toObject();
+  const group = new Conversation({
+    kind: "group",
+    legacyConversationId: new mongoose.Types.ObjectId().toString(),
+    groupId: new mongoose.Types.ObjectId(),
+  }).toObject();
+
+  assert.equal(Object.hasOwn(direct, "groupId"), false);
+  assert.equal(Object.hasOwn(group, "directKey"), false);
 });
 

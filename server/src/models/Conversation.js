@@ -8,11 +8,11 @@ const conversationSchema = new mongoose.Schema(
       required: true,
     },
     legacyConversationId: { type: String, required: true },
-    directKey: { type: String, default: null },
+    directKey: { type: String, default: undefined },
     groupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Group",
-      default: null,
+      default: undefined,
     },
     participantUserIds: [
       {
@@ -23,7 +23,7 @@ const conversationSchema = new mongoose.Schema(
     lastMessageId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
-      default: null,
+      default: undefined,
     },
     lastMessageAt: { type: Date, default: null },
   },
@@ -31,9 +31,28 @@ const conversationSchema = new mongoose.Schema(
 );
 
 conversationSchema.index({ legacyConversationId: 1 }, { unique: true });
-conversationSchema.index({ kind: 1, directKey: 1 }, { unique: true, sparse: true });
-conversationSchema.index({ groupId: 1 }, { unique: true, sparse: true });
+conversationSchema.index(
+  { kind: 1, directKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      kind: "direct",
+      directKey: { $type: "string" },
+    },
+  },
+);
+conversationSchema.index(
+  { groupId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      kind: "group",
+      groupId: { $type: "objectId" },
+    },
+  },
+);
 conversationSchema.index({ participantUserIds: 1, lastMessageAt: -1 });
 conversationSchema.index({ kind: 1, lastMessageAt: -1 });
 
 module.exports = mongoose.model("Conversation", conversationSchema);
+

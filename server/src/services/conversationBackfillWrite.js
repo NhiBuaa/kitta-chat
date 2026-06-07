@@ -33,8 +33,8 @@ function conversationSet(candidate) {
   return {
     kind: candidate.kind,
     legacyConversationId: candidate.legacyConversationId,
-    directKey: candidate.directKey,
-    groupId: candidate.groupId,
+    ...(candidate.directKey ? { directKey: candidate.directKey } : {}),
+    ...(candidate.groupId ? { groupId: candidate.groupId } : {}),
     participantUserIds: candidate.participantUserIds,
     lastMessageId: candidate.lastMessageId,
     lastMessageAt: candidate.lastMessageAt,
@@ -170,4 +170,5 @@ async function runConversationBackfillWrite({ models = {}, write = false } = {})
 module.exports = {
   runConversationBackfillWrite,
 };
+
 

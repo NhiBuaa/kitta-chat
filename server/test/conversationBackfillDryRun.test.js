@@ -112,6 +112,7 @@ test("dry-run group messages produce group candidate using Group.members", async
   assert.equal(report.conversationsToCreate.length, 1);
   assert.equal(report.conversationsToCreate[0].kind, "group");
   assert.equal(idString(report.conversationsToCreate[0].groupId), groupId.toString());
+  assert.equal(Object.hasOwn(report.conversationsToCreate[0], "directKey"), false);
   assert.deepEqual(
     report.participantsToCreate.map((candidate) => idString(candidate.userId)).sort(),
     [memberA.toString(), memberB.toString()].sort(),
@@ -278,4 +279,5 @@ test("dry-run summary counts are correct", async () => {
     lastMessageCandidates: 1,
   });
 });
+
 
