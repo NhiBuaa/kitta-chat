@@ -95,7 +95,6 @@ nginx/ssl/*.pfx
 *.local.key
 
 /data
-/.agents
 /.codex
 /.claude
 /.codegraph
