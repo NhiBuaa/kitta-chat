@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  getConversationMigrationConfig,
   validateServerEnv,
   validateWorkerEnv,
 } = require("../src/config/env");
@@ -142,4 +143,61 @@ test("validateServerEnv rejects invalid conversation dual-write flag", () => {
       return true;
     },
   );
+});
+
+test("validateServerEnv defaults conversation shadow compare flag to false", () => {
+  const config = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+  });
+
+  assert.equal(config.conversationShadowCompareEnabled, false);
+});
+
+test("validateServerEnv parses conversation shadow compare boolean flag", () => {
+  const enabled = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+    CONVERSATION_SHADOW_COMPARE_ENABLED: "true",
+  });
+  const disabled = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+    CONVERSATION_SHADOW_COMPARE_ENABLED: "false",
+  });
+
+  assert.equal(enabled.conversationShadowCompareEnabled, true);
+  assert.equal(disabled.conversationShadowCompareEnabled, false);
+});
+
+test("validateServerEnv rejects invalid conversation shadow compare flag", () => {
+  assert.throws(
+    () => validateServerEnv({
+      MONGO_URI: "mongodb://localhost:27017/shot-chat",
+      JWT_SECRET: "test-secret",
+      URL_FRONTEND: "http://localhost:5173",
+      REDIS_URL: "redis://localhost:6379",
+      CONVERSATION_SHADOW_COMPARE_ENABLED: "yes",
+    }),
+    (error) => {
+      assert.equal(error.name, "ConfigValidationError");
+      assert.match(error.message, /CONVERSATION_SHADOW_COMPARE_ENABLED/);
+      return true;
+    },
+  );
+});
+test("getConversationMigrationConfig exposes shadow compare flag", () => {
+  const config = getConversationMigrationConfig({
+    CONVERSATION_DUAL_WRITE_ENABLED: "false",
+    CONVERSATION_SHADOW_COMPARE_ENABLED: "true",
+  });
+
+  assert.equal(config.conversationDualWriteEnabled, false);
+  assert.equal(config.conversationShadowCompareEnabled, true);
 });

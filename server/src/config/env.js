@@ -79,6 +79,12 @@ const validateServerEnv = (env = process.env) => {
     false,
     issues,
   );
+  const conversationShadowCompareEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_SHADOW_COMPARE_ENABLED",
+    false,
+    issues,
+  );
 
   throwIfInvalid("server", issues);
 
@@ -89,6 +95,7 @@ const validateServerEnv = (env = process.env) => {
     redisUrl,
     port,
     conversationDualWriteEnabled,
+    conversationShadowCompareEnabled,
   };
 };
 
@@ -106,10 +113,16 @@ const getConversationMigrationConfig = (env = process.env) => {
     false,
     issues,
   );
+  const conversationShadowCompareEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_SHADOW_COMPARE_ENABLED",
+    false,
+    issues,
+  );
 
   throwIfInvalid("conversation migration", issues);
 
-  return { conversationDualWriteEnabled };
+  return { conversationDualWriteEnabled, conversationShadowCompareEnabled };
 };
 
 const validateWorkerEnv = ({ workerName, env = process.env } = {}) => {

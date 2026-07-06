@@ -8,6 +8,8 @@ const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache }
 const { getMultiPresence, getUserPresence, setPresenceWriteThrough } = require("../services/presenceService");
 const { getRecentConversations } = require("../services/conversationCacheService");
 const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
+const { getConversationMigrationConfig } = require("../config/env");
+const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -22,6 +24,25 @@ const emitToUserRoom = (io, userId, eventName, payload) => {
 const isRealtimeOnline = (presence) =>
   presence?.status === "online" || presence?.status === "active";
 
+
+const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
+  const { conversationShadowCompareEnabled } = getConversationMigrationConfig();
+  if (!conversationShadowCompareEnabled) return;
+
+  try {
+    const report = await compareSidebarForUser({ userId, legacyItems, scope });
+    if (report.mismatches.length > 0) {
+      console.warn("Conversation shadow compare mismatch", {
+        scope,
+        userId: toComparableId(userId),
+        mismatchCount: report.mismatches.length,
+        mismatches: report.mismatches,
+      });
+    }
+  } catch (error) {
+    console.error("Conversation shadow compare failed", error);
+  }
+};
 const buildRelationshipFlags = (targetUser, currentUser) => {
   const currentUserId = toComparableId(currentUser?._id || currentUser?.id);
 
@@ -547,6 +568,12 @@ const getSidebarUsers = async (req, res) => {
         hasUnread: false,
         unreadCount: 0,
       };
+    });
+
+    await runSidebarShadowCompare({
+      userId: currentUserId,
+      legacyItems: result,
+      scope: "direct",
     });
 
     res.json({ success: true, users: result });

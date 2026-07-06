@@ -4,8 +4,28 @@ const Message = require("../models/Message");
 const mongoose = require("mongoose");
 const { createSystemMessage } = require("./messageController");
 const getSafeUserName = require("../utils/getSafeUserName");
+const { getConversationMigrationConfig } = require("../config/env");
+const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
 
 const GROUP_USER_FIELDS = "displayName avatar username status activityStatus";
+const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
+  const { conversationShadowCompareEnabled } = getConversationMigrationConfig();
+  if (!conversationShadowCompareEnabled) return;
+
+  try {
+    const report = await compareSidebarForUser({ userId, legacyItems, scope });
+    if (report.mismatches.length > 0) {
+      console.warn("Conversation shadow compare mismatch", {
+        scope,
+        userId: normalizeUserId(userId),
+        mismatchCount: report.mismatches.length,
+        mismatches: report.mismatches,
+      });
+    }
+  } catch (error) {
+    console.error("Conversation shadow compare failed", error);
+  }
+};
 
 const normalizeUserId = (value) => {
   if (!value) return null;
@@ -224,6 +244,12 @@ const getMyGroups = async (req, res) => {
         hasUnread: unreadCount > 0,
         unreadCount,
       };
+    });
+
+    await runSidebarShadowCompare({
+      userId: currentUserId,
+      legacyItems: groupsWithSidebarState,
+      scope: "group",
     });
 
     res.json({ success: true, groups: groupsWithSidebarState });
