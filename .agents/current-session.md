@@ -39,8 +39,8 @@ Các invariant bắt buộc:
 | 9 | Reconciliation/drift report | DONE | Manual/report-only drift checks giữa legacy `Message`/`Group` và read model. |
 | 10 | Sidebar candidate read service | DONE | Read-only service build sidebar candidates từ read model, chưa switch response. |
 | 11 | Sidebar read switch behind flag | DONE | Direct sidebar can switch behind disabled-by-default flag with legacy fallback. |
-| 12 | Search guard / historical visibility | TODO-NEXT | Áp dụng visibility rules cho message search/read history. |
-| 13 | Read receipts / unread reconciliation | TODO | Đồng bộ read state vào `ConversationParticipant`. |
+| 12 | Search guard / historical visibility | DONE | Áp dụng visibility rules cho getMessages và syncMissedMessages. |
+| 13 | Read receipts / unread reconciliation | TODO-NEXT | Đồng bộ read state vào `ConversationParticipant`. |
 | 14 | Group lifecycle integration | TODO | Add/remove member, joinedAt/leftAt, group system events. |
 | 15 | Runtime confidence / gradual rollout | TODO | Bật shadow compare/staging, theo dõi mismatch, rollout từng bước. |
 | 16 | Legacy cleanup planning | TODO | Chỉ lập kế hoạch cleanup sau khi read model ổn định. |
@@ -153,6 +153,14 @@ Các invariant bắt buộc:
 - `Conversation._id` is not exposed in sidebar responses.
 - Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, and search behavior remain unchanged.
 
+### Slice 12 — Search Guard / Historical Visibility
+
+- Applied `conversationVisibilityHelpers` bounds to `getMessages` (conversation history) and `syncMissedMessages` (read-history sync).
+- Both paths perform IDOR-safe bounds checking using existing `ConversationParticipant` state.
+- Fallback to legacy full history query on missing participant or database query error.
+- No `Conversation._id` exposed, and legacy identity contracts remain unchanged.
+- Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, and client response shapes remain unchanged.
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -171,6 +179,7 @@ Các invariant bắt buộc:
 - After Slice 9: targeted reconciliation suite `7/7`, read-model regression `39/39`, full server regression `254/254`.
 - After Slice 10: targeted sidebar candidate suite `4/4`, sidebar/read-model regression `28/28`, full server regression `258/258`.
 - After Slice 11: targeted env/sidebar switch suite `23/23`, full server regression `261/261`.
+- After Slice 12: targeted visibility suite `5/5`, read-model regression `52/52`, full server regression `266/266`.
 
 ## Known risks
 
@@ -184,6 +193,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 12 — Search guard / historical visibility.
+Slice 13 — Read receipts / unread reconciliation.
 
-Apply Conversation Read Model visibility rules to message search/read history without changing legacy identity contracts.
+Synchronize read receipts and unread status into `ConversationParticipant` state.

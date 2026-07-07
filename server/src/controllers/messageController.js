@@ -1,5 +1,7 @@
 const Message = require("../models/Message");
 const Group = require("../models/Group");
+const ConversationParticipant = require("../models/ConversationParticipant");
+const { buildMessageVisibilityFilter } = require("../services/conversationVisibilityHelpers");
 const { sendError } = require("../utils/apiResponse");
 const { dualWriteConfirmedMessage } = require("../services/conversationDualWriteService");
 
@@ -78,7 +80,23 @@ exports.getMessages = async (req, res) => {
       conversationId = [userId1, userId2].sort().join("_");
     }
 
-    const query = { conversationId: conversationId };
+    let visibilityFilter = {};
+    const requestUserId = req.user?.id || userId1;
+    if (requestUserId) {
+      try {
+        const participant = await ConversationParticipant.findOne({
+          legacyConversationId: conversationId,
+          userId: requestUserId,
+        }).lean();
+        if (participant) {
+          visibilityFilter = buildMessageVisibilityFilter(participant);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy visibility filter cho sidebar/messages:", err);
+      }
+    }
+
+    const query = { conversationId: conversationId, ...visibilityFilter };
 
     // Nếu Fe có gửi cursor
     if (cursor) {
@@ -148,15 +166,43 @@ exports.syncMissedMessages = async (req, res) => {
     const userGroups = await Group.find({ members: userId }).select("_id");
     const groupConversationIds = userGroups.map((g) => g._id.toString());
 
-    // 2. Query cho cả Group và 1-1 conversations
-    // Group: conversationId nằm trong danh sách group
-    // 1-1: conversationId chứa userId (format: userId1_userId2)
-    let query = {
-      $or: [
-        { conversationId: { $in: groupConversationIds } },
-        { conversationId: { $regex: userId, $options: "i" } },
-      ],
-    };
+    const userIdString = userId.toString();
+    const participants = await ConversationParticipant.find({ userId: userIdString }).lean();
+    const orClauses = [];
+    const processedConvIds = new Set();
+
+    for (const p of participants) {
+      const convId = p.legacyConversationId;
+      processedConvIds.add(convId);
+
+      const bounds = buildMessageVisibilityFilter(p);
+      if (Object.keys(bounds).length > 0) {
+        orClauses.push({
+          conversationId: convId,
+          ...bounds,
+        });
+      } else {
+        orClauses.push({ conversationId: convId });
+      }
+    }
+
+    // Dành cho group user tham gia nhưng chưa có participant row
+    for (const groupId of groupConversationIds) {
+      if (!processedConvIds.has(groupId)) {
+        orClauses.push({ conversationId: groupId });
+      }
+    }
+
+    // Dành cho direct chats chứa userId nhưng chưa có participant row
+    orClauses.push({
+      conversationId: {
+        $regex: userIdString,
+        $options: "i",
+        $nin: Array.from(processedConvIds),
+      },
+    });
+
+    let query = { $or: orClauses };
 
     // Lấy tin nhắn mới hơn after_id
     if (after_id) {
