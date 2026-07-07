@@ -1,16 +1,16 @@
-# Next Session — Slice 13 Read Receipts / Unread Reconciliation
+# Next Session — Slice 14 Group Lifecycle Integration
 
 ## Slice mục tiêu
 
-Implement Conversation Read Model Migration — Slice 13: synchronize read receipts and unread count status into `ConversationParticipant` state.
+Implement Conversation Read Model Migration — Slice 14: synchronize group membership changes, joinedAt/leftAt boundaries, and group system events into Conversation Read Model.
 
 ## Bối cảnh
 
-Đã hoàn thành Slice 12:
+Đã hoàn thành Slice 13:
 
-- Applied `conversationVisibilityHelpers` bounds to `getMessages` and `syncMissedMessages`.
-- Enforced visibility window boundaries based on soft-delete (`deletedAt`) and group membership status (`leftAt`).
-- Preserved legacy query paths as fallbacks on errors or missing participant rows.
+- Added read-model helper `markConversationAsRead` to update `unreadCount` and timestamps in `ConversationParticipant`.
+- Wired unread sync into direct and group socket `markRead` event handlers.
+- Swallowed read-model errors to prevent legacy path disruption.
 
 Runtime hiện tại:
 
@@ -20,9 +20,9 @@ Runtime hiện tại:
 - RabbitMQ không đổi.
 - Direct sidebar read switch is coded but disabled by default.
 
-## Mục tiêu Slice 13
+## Mục tiêu Slice 14
 
-Update read-model participant state (such as `unreadCount`, `lastReadMessageId`, and `lastReadAt`) during message read status updates (e.g. read receipt events or REST API calls) where supported.
+Synchronize group lifecycle changes (adding/removing members, joinedAt/leftAt boundaries, role updates, and group system events) into the Conversation Read Model.
 
 ## Guardrails bắt buộc
 
@@ -34,12 +34,11 @@ Update read-model participant state (such as `unreadCount`, `lastReadMessageId`,
 
 ## Gợi ý scope
 
-- Identify where message read receipts/unread status changes are processed in controllers or socket handlers.
-- Add targeted tests using public interfaces first.
-- Wire read-model participant state updates safely after confirmed legacy state change.
+- Identify group lifecycle endpoints in `groupController.js` (e.g. create group, add member, remove member, leave group).
+- Add targeted tests using public interfaces.
+- Synchronize participants (`joinedAt`, `leftAt`, `role`) into `ConversationParticipant` after confirmed legacy database updates.
 
 ## Non-goals
 
-- Không switch search.
 - Không cleanup legacy sidebar code.
-- Không integrate group lifecycle membership changes.
+- Không switch sidebar/search reads by default.
