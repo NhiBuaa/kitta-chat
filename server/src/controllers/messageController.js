@@ -1,6 +1,7 @@
 const Message = require("../models/Message");
 const Group = require("../models/Group");
 const { sendError } = require("../utils/apiResponse");
+const { dualWriteConfirmedMessage } = require("../services/conversationDualWriteService");
 
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
@@ -50,6 +51,7 @@ exports.createMessage = async (req, res) => {
 
     // Lưu message
     const savedMessage = await newMessage.save();
+    await dualWriteConfirmedMessage(savedMessage, { logPrefix: "[messageController]" });
 
     // Dùng populate để trả về thông tin file đầy đủ ngay sau khi tạo
     await savedMessage.populate("attachments");
@@ -117,6 +119,7 @@ exports.createSystemMessage = async (groupId, text, options = {}) => {
       readBy: options.readBy || [],
     });
     await systemMessage.save();
+    await dualWriteConfirmedMessage(systemMessage, { logPrefix: "[messageController]" });
     return systemMessage;
   } catch (error) {
     console.error("Lỗi tạo system message:", error);

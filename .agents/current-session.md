@@ -35,8 +35,8 @@ Các invariant bắt buộc:
 | 6 | Guarded dual-write hook for socket message persistence | DONE | Hook trong `saveMessageInBackground`, guarded by `CONVERSATION_DUAL_WRITE_ENABLED`. |
 | 6b | Conversation index/null schema fix | DONE | Fix unique sparse null bug bằng omit null fields + partial indexes. |
 | 7 | Shadow compare scaffolding | DONE | Đã thêm flag disabled-by-default + read-only compare direct/group sidebar, chỉ log mismatch. |
-| 8 | Expand dual-write coverage | TODO NEXT | Xem xét REST message, system message, call-log, group lifecycle paths. |
-| 9 | Reconciliation/drift report | TODO | Manual/report-only drift checks giữa legacy `Message`/`Group` và read model. |
+| 8 | Expand dual-write coverage | DONE | Đã mở rộng guarded dual-write cho REST message, group system message, và call-log insert mới. |
+| 9 | Reconciliation/drift report | TODO NEXT | Manual/report-only drift checks giữa legacy `Message`/`Group` và read model. |
 | 10 | Sidebar candidate read service | TODO | Build read-model sidebar service nhưng chưa switch response. |
 | 11 | Sidebar read switch behind flag | TODO | Switch sidebar response sau flag, fallback an toàn, không đổi API shape. |
 | 12 | Search guard / historical visibility | TODO | Áp dụng visibility rules cho message search/read history. |
@@ -117,6 +117,15 @@ Các invariant bắt buộc:
 - Shadow compare errors are logged/swallowed.
 - Client responses, Socket.IO payloads/rooms, Redis keys, and RabbitMQ behavior remain unchanged.
 
+### Slice 8 — Expand Dual-Write Coverage
+
+- Added shared `dualWriteConfirmedMessage` helper guarded by `CONVERSATION_DUAL_WRITE_ENABLED=false`.
+- REST `createMessage` now dual-writes after confirmed legacy save.
+- `createSystemMessage` now dual-writes group lifecycle system messages after confirmed save.
+- `createCallLogMessage` now dual-writes only when Mongo upsert inserts a new `call_log` message, not when updating an existing call log.
+- Read-model errors are logged/swallowed and legacy responses/events remain unchanged.
+- Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, sidebar/search reads, and client response shapes remain unchanged.
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -131,6 +140,7 @@ Các invariant bắt buộc:
 - After Slice 6: targeted suite `63/63`, full server regression `224/224`.
 - After index/schema fix: targeted env/save/read-model suite `66/66`, full regression `227/227`.
 - After Slice 7: targeted env/shadow/read-model suite `30/30`, full server regression `240/240`.
+- After Slice 8: targeted message/call/read-model suite `44/44`, full server regression `247/247`.
 
 ## Known risks
 
@@ -146,6 +156,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 8 — Expand dual-write coverage.
+Slice 9 — Reconciliation/drift report.
 
 See `.agents/next-session.md` for the next implementation brief.

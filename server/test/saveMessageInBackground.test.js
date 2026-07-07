@@ -7,6 +7,7 @@ const redisConfigPath = require.resolve("../src/config/redis");
 const conversationCacheServicePath = require.resolve("../src/services/conversationCacheService");
 const envConfigPath = require.resolve("../src/config/env");
 const readModelServicePath = require.resolve("../src/services/conversationReadModelService");
+const dualWriteServicePath = require.resolve("../src/services/conversationDualWriteService");
 
 const mockModule = (path, exports) => {
   require.cache[path] = {
@@ -25,6 +26,7 @@ const clearSaveMessageCache = () => {
     conversationCacheServicePath,
     envConfigPath,
     readModelServicePath,
+    dualWriteServicePath,
   ]) {
     delete require.cache[path];
   }

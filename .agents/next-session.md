@@ -1,8 +1,8 @@
-# Next Session — Slice 8 Expand Dual-Write Coverage
+# Next Session — Slice 9 Reconciliation / Drift Report
 
 ## Slice mục tiêu
 
-Plan and implement Conversation Read Model Migration — Slice 8: Expand dual-write coverage only.
+Implement Conversation Read Model Migration — Slice 9: Reconciliation/drift report only.
 
 ## Bối cảnh
 
@@ -16,6 +16,7 @@ Plan and implement Conversation Read Model Migration — Slice 8: Expand dual-wr
 - Slice 6: guarded socket-message dual-write hook.
 - Slice 6b: fixed MongoDB unique sparse/null index bug.
 - Slice 7: disabled-by-default shadow compare for direct/group sidebar.
+- Slice 8: expanded guarded dual-write coverage for REST messages, group system messages, and inserted call-log messages.
 
 Runtime hiện tại vẫn legacy-authoritative:
 
@@ -28,42 +29,40 @@ Runtime hiện tại vẫn legacy-authoritative:
 - `CONVERSATION_DUAL_WRITE_ENABLED=false` mặc định.
 - `CONVERSATION_SHADOW_COMPARE_ENABLED=false` mặc định.
 
-## Mục tiêu Slice 8
+## Mục tiêu Slice 9
 
-Mở rộng dual-write coverage cho các path message persistence còn thiếu, nếu path đó đã confirmed legacy write thành công và có thể gọi `ensureConversationForConfirmedMessage` an toàn.
-
-## Phạm vi cần khảo sát trước khi code
-
-1. REST message paths trong `messageController` / routes liên quan.
-2. System message paths của group lifecycle.
-3. Call-log message creation paths.
-4. Bất kỳ path nào tạo `Message` durable nhưng chưa đi qua `saveMessageInBackground`.
+Thêm reconciliation/drift report thủ công, read-only, để so sánh legacy MongoDB data với Conversation Read Model và báo cáo drift có thể hành động.
 
 ## Guardrails bắt buộc
 
-- Mọi dual-write path vẫn phải guard bằng `CONVERSATION_DUAL_WRITE_ENABLED=false` mặc định.
-- Chỉ gọi read-model service sau confirmed legacy MongoDB message persistence.
-- Duplicate/idempotent retries không được double-increment unread.
-- Read-model errors phải log/swallow để legacy behavior tiếp tục.
-- Không đổi client responses.
-- Không đổi Socket.IO payloads/rooms.
-- Không đổi Redis keys/schema hoặc RabbitMQ behavior.
+- Report-only/read-only, không ghi DB.
+- Không repair data tự động.
+- Không chạy ở startup.
 - Không switch sidebar/search sang read model.
-- Không expose `Conversation._id`.
-- Không chạy backfill/repair tự động.
+- Không đổi API/socket payloads.
+- Không expose `Conversation._id` ra client.
+- Không đổi Redis/RabbitMQ behavior.
+
+## Gợi ý scope
+
+- Manual script/service scan legacy `Message` grouped by `conversationId`.
+- Compare existence of `Conversation` by `legacyConversationId`.
+- Compare participant rows expected from direct IDs or `Group.members`.
+- Compare stable last-message fields and unread counts where semantics are trusted.
+- Output counts and warnings; keep JSON/report shape deterministic for tests.
 
 ## Tests cần có
 
-- Targeted tests cho từng persistence path được mở rộng.
-- Flag off: không gọi read-model service.
-- Flag on: gọi read-model service sau legacy write thành công.
-- Failure in read-model service: legacy response/event vẫn giữ nguyên.
-- Duplicate/idempotent behavior nếu path có retry semantics.
+- Matching legacy/read-model data returns zero drift.
+- Missing conversation is reported.
+- Missing participant is reported.
+- Last-message mismatch is reported.
+- Group participant drift is reported.
+- Script defaults to report-only and performs no writes.
 
 ## Non-goals
 
-- Không implement reconciliation/drift report.
-- Không implement sidebar candidate read service.
+- Không repair/backfill write.
 - Không switch read path.
-- Không sửa historical visibility/search guard.
-- Không tích hợp group lifecycle participant membership ngoài tác động của message-created dual-write.
+- Không add runtime hooks.
+- Không expand dual-write further.

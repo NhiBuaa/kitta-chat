@@ -17,7 +17,9 @@ Legacy sidebar/conversation state hiện được derive từ `Message`, `Group`
 - Sidebar/search vẫn legacy-authoritative.
 - Shadow compare direct/group sidebar có guard `CONVERSATION_SHADOW_COMPARE_ENABLED=false` mặc định.
 - Shadow compare chỉ read-only log/report mismatch, không đổi client response.
-- Next slice là mở rộng dual-write coverage.
+- Guarded dual-write now covers socket message persistence, REST `createMessage`, group `createSystemMessage`, and newly inserted `call_log` messages.
+- Existing call-log updates do not dual-write again, avoiding duplicate unread increments.
+- Next slice là reconciliation/drift report read-only.
 
 ## Done When
 
