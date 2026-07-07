@@ -36,9 +36,9 @@ Các invariant bắt buộc:
 | 6b | Conversation index/null schema fix | DONE | Fix unique sparse null bug bằng omit null fields + partial indexes. |
 | 7 | Shadow compare scaffolding | DONE | Đã thêm flag disabled-by-default + read-only compare direct/group sidebar, chỉ log mismatch. |
 | 8 | Expand dual-write coverage | DONE | Đã mở rộng guarded dual-write cho REST message, group system message, và call-log insert mới. |
-| 9 | Reconciliation/drift report | TODO NEXT | Manual/report-only drift checks giữa legacy `Message`/`Group` và read model. |
-| 10 | Sidebar candidate read service | TODO | Build read-model sidebar service nhưng chưa switch response. |
-| 11 | Sidebar read switch behind flag | TODO | Switch sidebar response sau flag, fallback an toàn, không đổi API shape. |
+| 9 | Reconciliation/drift report | DONE | Manual/report-only drift checks giữa legacy `Message`/`Group` và read model. |
+| 10 | Sidebar candidate read service | DONE | Read-only service build sidebar candidates từ read model, chưa switch response. |
+| 11 | Sidebar read switch behind flag | TODO-NEXT | Switch sidebar response sau flag, fallback an toàn, không đổi API shape. |
 | 12 | Search guard / historical visibility | TODO | Áp dụng visibility rules cho message search/read history. |
 | 13 | Read receipts / unread reconciliation | TODO | Đồng bộ read state vào `ConversationParticipant`. |
 | 14 | Group lifecycle integration | TODO | Add/remove member, joinedAt/leftAt, group system events. |
@@ -135,6 +135,15 @@ Các invariant bắt buộc:
 - Reports missing conversations, missing participants, last-message drift, unread-count drift, and group participant drift.
 - Client responses, Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, sidebar/search reads, and read-model write paths remain unchanged.
 
+### Slice 10 — Sidebar Candidate Read Service
+
+- Added read-only `conversationSidebarCandidateService`.
+- Service returns default sidebar candidates from populated `ConversationParticipant` + `Conversation` rows.
+- Candidate output preserves legacy `conversationId` / `legacyConversationId` and does not expose internal `Conversation._id`.
+- Archived, soft-deleted, left, and no-last-message participant rows are excluded from default sidebar candidates.
+- Ordering is deterministic by pinned time, last-message time, then legacy conversation id.
+- No existing sidebar API response, Socket.IO payload, Redis key, RabbitMQ behavior, or search behavior changed.
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -151,6 +160,7 @@ Các invariant bắt buộc:
 - After Slice 7: targeted env/shadow/read-model suite `30/30`, full server regression `240/240`.
 - After Slice 8: targeted message/call/read-model suite `44/44`, full server regression `247/247`.
 - After Slice 9: targeted reconciliation suite `7/7`, read-model regression `39/39`, full server regression `254/254`.
+- After Slice 10: targeted sidebar candidate suite `4/4`, sidebar/read-model regression `28/28`, full server regression `258/258`.
 
 ## Known risks
 
@@ -164,6 +174,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 10 — Sidebar candidate read service.
+Slice 11 — Sidebar read switch behind flag.
 
-Build a read-model sidebar candidate service without switching client responses. Keep legacy sidebar/search authoritative until a later guarded read-switch slice.
+Switch sidebar response behind an explicit disabled-by-default flag with safe fallback and no API shape change.
