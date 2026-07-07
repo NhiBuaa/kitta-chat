@@ -126,6 +126,15 @@ Các invariant bắt buộc:
 - Read-model errors are logged/swallowed and legacy responses/events remain unchanged.
 - Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, sidebar/search reads, and client response shapes remain unchanged.
 
+### Slice 9 — Reconciliation / Drift Report
+
+- Added read-only `conversationReconciliationReport` service.
+- Added manual `server/scripts/reconcileConversations.js` runner.
+- Runner rejects `--write`; no repair/backfill writes are performed.
+- Report compares legacy `Message.conversationId` groups with `Conversation` and `ConversationParticipant` rows.
+- Reports missing conversations, missing participants, last-message drift, unread-count drift, and group participant drift.
+- Client responses, Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, sidebar/search reads, and read-model write paths remain unchanged.
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -141,11 +150,10 @@ Các invariant bắt buộc:
 - After index/schema fix: targeted env/save/read-model suite `66/66`, full regression `227/227`.
 - After Slice 7: targeted env/shadow/read-model suite `30/30`, full server regression `240/240`.
 - After Slice 8: targeted message/call/read-model suite `44/44`, full server regression `247/247`.
+- After Slice 9: targeted reconciliation suite `7/7`, read-model regression `39/39`, full server regression `254/254`.
 
 ## Known risks
 
-- Dual-write currently covers socket message persistence only.
-- REST message, system message, call-log, and group lifecycle paths are not covered yet.
 - Direct sidebar legacy includes friends without messages; read model naturally only has conversations after message/backfill.
 - Group sidebar legacy uses `Group.members`; read-model participant rows can drift until group lifecycle integration exists.
 - Unread semantics differ by source:
@@ -156,6 +164,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 9 — Reconciliation/drift report.
+Slice 10 — Sidebar candidate read service.
 
-See `.agents/next-session.md` for the next implementation brief.
+Build a read-model sidebar candidate service without switching client responses. Keep legacy sidebar/search authoritative until a later guarded read-switch slice.

@@ -1,22 +1,17 @@
-# Next Session — Slice 9 Reconciliation / Drift Report
+# Next Session — Slice 10 Sidebar Candidate Read Service
 
 ## Slice mục tiêu
 
-Implement Conversation Read Model Migration — Slice 9: Reconciliation/drift report only.
+Implement Conversation Read Model Migration — Slice 10: sidebar candidate read service only.
 
 ## Bối cảnh
 
-Đã hoàn thành:
+Đã hoàn thành Slice 9:
 
-- Slice 1: `Conversation` + `ConversationParticipant` models/indexes.
-- Slice 2: `ensureConversationForConfirmedMessage` service.
-- Slice 3: visibility/access helpers.
-- Slice 4: read-only backfill dry-run.
-- Slice 5: manual backfill write service + runner.
-- Slice 6: guarded socket-message dual-write hook.
-- Slice 6b: fixed MongoDB unique sparse/null index bug.
-- Slice 7: disabled-by-default shadow compare for direct/group sidebar.
-- Slice 8: expanded guarded dual-write coverage for REST messages, group system messages, and inserted call-log messages.
+- Added read-only reconciliation/drift report service.
+- Added manual `server/scripts/reconcileConversations.js` runner.
+- Runner rejects `--write`; no repair/backfill writes are performed.
+- Full server regression after Slice 9: `254/254`.
 
 Runtime hiện tại vẫn legacy-authoritative:
 
@@ -29,40 +24,42 @@ Runtime hiện tại vẫn legacy-authoritative:
 - `CONVERSATION_DUAL_WRITE_ENABLED=false` mặc định.
 - `CONVERSATION_SHADOW_COMPARE_ENABLED=false` mặc định.
 
-## Mục tiêu Slice 9
+## Mục tiêu Slice 10
 
-Thêm reconciliation/drift report thủ công, read-only, để so sánh legacy MongoDB data với Conversation Read Model và báo cáo drift có thể hành động.
+Build read-model sidebar candidate service, but do not switch API responses.
+
+The service should be callable by tests and future shadow/read-switch slices to produce sidebar candidates from `ConversationParticipant` + `Conversation` rows.
 
 ## Guardrails bắt buộc
 
-- Report-only/read-only, không ghi DB.
-- Không repair data tự động.
-- Không chạy ở startup.
-- Không switch sidebar/search sang read model.
-- Không đổi API/socket payloads.
-- Không expose `Conversation._id` ra client.
-- Không đổi Redis/RabbitMQ behavior.
+- Read-only service; no DB writes.
+- Do not change existing sidebar API responses.
+- Do not wire read-model candidates into runtime responses unless only behind existing shadow/compare logging.
+- Do not switch sidebar/search to read model.
+- Do not expose `Conversation._id` to clients.
+- Do not change Socket.IO payloads/rooms.
+- Do not change Redis/RabbitMQ behavior.
 
 ## Gợi ý scope
 
-- Manual script/service scan legacy `Message` grouped by `conversationId`.
-- Compare existence of `Conversation` by `legacyConversationId`.
-- Compare participant rows expected from direct IDs or `Group.members`.
-- Compare stable last-message fields and unread counts where semantics are trusted.
-- Output counts and warnings; keep JSON/report shape deterministic for tests.
+- Add a service that queries visible `ConversationParticipant` rows for a user.
+- Populate or join enough `Conversation` metadata to emit stable candidate fields.
+- Respect existing visibility helper semantics for deleted/archived/default sidebar visibility.
+- Preserve legacy public identifier as `legacyConversationId` / `conversationId`, not internal `_id`.
+- Keep output deterministic for tests.
 
 ## Tests cần có
 
-- Matching legacy/read-model data returns zero drift.
-- Missing conversation is reported.
-- Missing participant is reported.
-- Last-message mismatch is reported.
-- Group participant drift is reported.
-- Script defaults to report-only and performs no writes.
+- Direct candidate includes legacy conversation id, last-message fields, unread count, and kind.
+- Archived/deleted/no-last-message participants are excluded from default sidebar candidates.
+- Group candidate uses legacy group conversation id without exposing internal `Conversation._id`.
+- Ordering is deterministic by pinned state and last-message time if supported by existing model semantics.
+- Service performs read-only model calls and no writes.
 
 ## Non-goals
 
-- Không repair/backfill write.
-- Không switch read path.
-- Không add runtime hooks.
-- Không expand dual-write further.
+- Không switch sidebar response.
+- Không đổi REST API shape.
+- Không đổi Redis cache/sidebar keys.
+- Không repair reconciliation drift.
+- Không integrate group lifecycle membership changes.

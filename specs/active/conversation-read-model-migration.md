@@ -19,7 +19,9 @@ Legacy sidebar/conversation state hiện được derive từ `Message`, `Group`
 - Shadow compare chỉ read-only log/report mismatch, không đổi client response.
 - Guarded dual-write now covers socket message persistence, REST `createMessage`, group `createSystemMessage`, and newly inserted `call_log` messages.
 - Existing call-log updates do not dual-write again, avoiding duplicate unread increments.
-- Next slice là reconciliation/drift report read-only.
+- Manual reconciliation/drift report is read-only and compares legacy `Message` groups with read-model rows.
+- Reconciliation reports missing conversations, missing participants, stable last-message drift, unread-count drift, and group participant drift without repairing data.
+- No next slice is approved after reconciliation yet.
 
 ## Done When
 
@@ -29,3 +31,4 @@ Legacy sidebar/conversation state hiện được derive từ `Message`, `Group`
 - `Message.conversationId` vẫn không đổi.
 - Redis/RabbitMQ behavior không đổi.
 - Sidebar/search chưa switch trước khi shadow compare/reconciliation đủ tin cậy.
+- Reconciliation can report actionable drift without writing DB or changing runtime paths.
