@@ -154,6 +154,27 @@ test("validateServerEnv defaults conversation shadow compare flag to false", () 
   });
 
   assert.equal(config.conversationShadowCompareEnabled, false);
+  assert.equal(config.conversationSidebarReadModelEnabled, false);
+});
+
+test("validateServerEnv parses conversation sidebar read-model boolean flag", () => {
+  const enabled = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+    CONVERSATION_SIDEBAR_READ_MODEL_ENABLED: "true",
+  });
+  const disabled = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+    CONVERSATION_SIDEBAR_READ_MODEL_ENABLED: "false",
+  });
+
+  assert.equal(enabled.conversationSidebarReadModelEnabled, true);
+  assert.equal(disabled.conversationSidebarReadModelEnabled, false);
 });
 
 test("validateServerEnv parses conversation shadow compare boolean flag", () => {
@@ -192,12 +213,14 @@ test("validateServerEnv rejects invalid conversation shadow compare flag", () =>
     },
   );
 });
-test("getConversationMigrationConfig exposes shadow compare flag", () => {
+test("getConversationMigrationConfig exposes migration flags", () => {
   const config = getConversationMigrationConfig({
     CONVERSATION_DUAL_WRITE_ENABLED: "false",
     CONVERSATION_SHADOW_COMPARE_ENABLED: "true",
+    CONVERSATION_SIDEBAR_READ_MODEL_ENABLED: "true",
   });
 
   assert.equal(config.conversationDualWriteEnabled, false);
   assert.equal(config.conversationShadowCompareEnabled, true);
+  assert.equal(config.conversationSidebarReadModelEnabled, true);
 });

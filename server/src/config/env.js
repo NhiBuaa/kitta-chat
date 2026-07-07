@@ -85,6 +85,12 @@ const validateServerEnv = (env = process.env) => {
     false,
     issues,
   );
+  const conversationSidebarReadModelEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_SIDEBAR_READ_MODEL_ENABLED",
+    false,
+    issues,
+  );
 
   throwIfInvalid("server", issues);
 
@@ -96,6 +102,7 @@ const validateServerEnv = (env = process.env) => {
     port,
     conversationDualWriteEnabled,
     conversationShadowCompareEnabled,
+    conversationSidebarReadModelEnabled,
   };
 };
 
@@ -119,10 +126,20 @@ const getConversationMigrationConfig = (env = process.env) => {
     false,
     issues,
   );
+  const conversationSidebarReadModelEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_SIDEBAR_READ_MODEL_ENABLED",
+    false,
+    issues,
+  );
 
   throwIfInvalid("conversation migration", issues);
 
-  return { conversationDualWriteEnabled, conversationShadowCompareEnabled };
+  return {
+    conversationDualWriteEnabled,
+    conversationShadowCompareEnabled,
+    conversationSidebarReadModelEnabled,
+  };
 };
 
 const validateWorkerEnv = ({ workerName, env = process.env } = {}) => {

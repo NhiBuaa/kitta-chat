@@ -8,6 +8,7 @@ const messageModelPath = require.resolve("../src/models/Message");
 const groupModelPath = require.resolve("../src/models/Group");
 const configPath = require.resolve("../src/config/env");
 const shadowServicePath = require.resolve("../src/services/conversationShadowCompareService");
+const sidebarCandidateServicePath = require.resolve("../src/services/conversationSidebarCandidateService");
 const cacheServicePath = require.resolve("../src/services/cacheService");
 const friendCacheServicePath = require.resolve("../src/services/friendCacheService");
 const presenceServicePath = require.resolve("../src/services/presenceService");
@@ -25,6 +26,7 @@ const paths = [
   groupModelPath,
   configPath,
   shadowServicePath,
+  sidebarCandidateServicePath,
   cacheServicePath,
   friendCacheServicePath,
   presenceServicePath,
@@ -71,15 +73,33 @@ const createGroupQuery = (rows) => ({
   },
 });
 
-const installSharedUserControllerMocks = ({ shadowEnabled, shadowCalls, shadowFailure }) => {
+const installSharedUserControllerMocks = ({
+  shadowEnabled,
+  shadowCalls,
+  shadowFailure,
+  sidebarReadModelEnabled = false,
+  sidebarCandidates = [],
+  sidebarCandidateFailure = false,
+  sidebarCandidateCalls = [],
+}) => {
   mockModule(configPath, {
-    getConversationMigrationConfig: () => ({ conversationShadowCompareEnabled: shadowEnabled }),
+    getConversationMigrationConfig: () => ({
+      conversationShadowCompareEnabled: shadowEnabled,
+      conversationSidebarReadModelEnabled: sidebarReadModelEnabled,
+    }),
   });
   mockModule(shadowServicePath, {
     async compareSidebarForUser(payload) {
       shadowCalls.push(payload);
       if (shadowFailure) throw new Error("shadow failed");
       return { mismatches: [] };
+    },
+  });
+  mockModule(sidebarCandidateServicePath, {
+    async getSidebarCandidatesForUser(payload) {
+      sidebarCandidateCalls.push(payload);
+      if (sidebarCandidateFailure) throw new Error("candidate failed");
+      return sidebarCandidates;
     },
   });
   mockModule(cacheServicePath, { invalidateUserProfile() {}, getCachedUserProfile: async () => null });
@@ -102,9 +122,25 @@ const installSharedUserControllerMocks = ({ shadowEnabled, shadowCalls, shadowFa
   mockModule(profileAvatarQueueServicePath, { queueProfileAvatarProcessing: async () => ({}) });
 };
 
-const loadUserController = ({ shadowEnabled, shadowCalls, shadowFailure = false }) => {
+const loadUserController = ({
+  shadowEnabled,
+  shadowCalls,
+  shadowFailure = false,
+  sidebarReadModelEnabled = false,
+  sidebarCandidates = [],
+  sidebarCandidateFailure = false,
+  sidebarCandidateCalls = [],
+}) => {
   clearCache();
-  installSharedUserControllerMocks({ shadowEnabled, shadowCalls, shadowFailure });
+  installSharedUserControllerMocks({
+    shadowEnabled,
+    shadowCalls,
+    shadowFailure,
+    sidebarReadModelEnabled,
+    sidebarCandidates,
+    sidebarCandidateFailure,
+    sidebarCandidateCalls,
+  });
   mockModule(userModelPath, {
     findById() {
       return {
@@ -228,6 +264,59 @@ test("direct sidebar calls shadow compare when flag is on and keeps legacy respo
   assert.equal(shadowCalls.length, 1);
   assert.equal(shadowCalls[0].scope, "direct");
   assert.equal(shadowCalls[0].legacyItems, res.body.users);
+});
+
+test("direct sidebar uses read-model candidates when read switch flag is on", async () => {
+  const shadowCalls = [];
+  const sidebarCandidateCalls = [];
+  const { getSidebarUsers } = loadUserController({
+    shadowEnabled: false,
+    shadowCalls,
+    sidebarReadModelEnabled: true,
+    sidebarCandidateCalls,
+    sidebarCandidates: [{
+      kind: "direct",
+      conversationId: "507f1f77bcf86cd799439011_507f1f77bcf86cd799439012",
+      legacyConversationId: "507f1f77bcf86cd799439011_507f1f77bcf86cd799439012",
+      unreadCount: 1,
+      hasUnread: true,
+      lastMessageId: "507f1f77bcf86cd799439099",
+      lastMessageAt: new Date("2026-06-05T08:00:00.000Z").toISOString(),
+    }],
+  });
+  const res = createResponse();
+
+  await getSidebarUsers({ user: { id: "507f1f77bcf86cd799439011" } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(res.body.users[0].displayName, "Bob");
+  assert.equal(res.body.users[0].lastMessage.messageId, "507f1f77bcf86cd799439099");
+  assert.equal(res.body.users[0].hasUnread, true);
+  assert.equal(res.body.users[0].unreadCount, 1);
+  assert.equal(JSON.stringify(res.body.users).includes("conversationId"), false);
+  assert.equal(sidebarCandidateCalls.length, 1);
+});
+
+test("direct sidebar falls back to legacy response when read-model candidates fail", async () => {
+  const shadowCalls = [];
+  const sidebarCandidateCalls = [];
+  const { getSidebarUsers } = loadUserController({
+    shadowEnabled: false,
+    shadowCalls,
+    sidebarReadModelEnabled: true,
+    sidebarCandidateCalls,
+    sidebarCandidateFailure: true,
+  });
+  const res = createResponse();
+
+  await getSidebarUsers({ user: { id: "507f1f77bcf86cd799439011" } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(res.body.users[0].displayName, "Bob");
+  assert.equal(res.body.users[0].lastMessage.messageId, "507f1f77bcf86cd799439099");
+  assert.equal(sidebarCandidateCalls.length, 1);
 });
 
 test("group sidebar calls shadow compare when flag is on and keeps legacy response", async () => {

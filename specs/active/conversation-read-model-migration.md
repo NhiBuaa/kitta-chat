@@ -22,7 +22,8 @@ Legacy sidebar/conversation state hiện được derive từ `Message`, `Group`
 - Manual reconciliation/drift report is read-only and compares legacy `Message` groups with read-model rows.
 - Reconciliation reports missing conversations, missing participants, stable last-message drift, unread-count drift, and group participant drift without repairing data.
 - Read-model sidebar candidate service can build deterministic candidates from `ConversationParticipant` + `Conversation` rows without switching client responses.
-- Next slice is sidebar read switch behind an explicit disabled-by-default flag.
+- Direct sidebar read switch exists behind `CONVERSATION_SIDEBAR_READ_MODEL_ENABLED=false` by default, preserving response shape and falling back to legacy behavior on read-model errors or unsafe candidate state.
+- Next slice is search guard / historical visibility.
 
 ## Done When
 
@@ -34,3 +35,4 @@ Legacy sidebar/conversation state hiện được derive từ `Message`, `Group`
 - Sidebar/search chưa switch trước khi shadow compare/reconciliation đủ tin cậy.
 - Reconciliation can report actionable drift without writing DB or changing runtime paths.
 - Sidebar candidate service can return read-model candidates without exposing `Conversation._id` or changing existing API responses.
+- Sidebar read switch remains disabled by default and can fall back to the legacy sidebar path.

@@ -10,6 +10,7 @@ const { getRecentConversations } = require("../services/conversationCacheService
 const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
 const { getConversationMigrationConfig } = require("../config/env");
 const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
+const { getSidebarCandidatesForUser } = require("../services/conversationSidebarCandidateService");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
 
@@ -42,6 +43,47 @@ const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
   } catch (error) {
     console.error("Conversation shadow compare failed", error);
   }
+};
+
+const buildReadModelSidebarResult = ({
+  candidates,
+  userMap,
+  lastMsgMap,
+  currentUser,
+  currentUserId,
+  friendsIds,
+}) => {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+  const result = [];
+  for (const candidate of candidates) {
+    if (candidate.kind !== "direct") return null;
+    const legacyConversationId = candidate.conversationId || candidate.legacyConversationId;
+    if (!legacyConversationId || legacyConversationId.includes("[object Object]")) return null;
+
+    const parts = legacyConversationId.includes("_") ? legacyConversationId.split("_") : [legacyConversationId];
+    const targetId = parts.find((part) => part && part !== currentUserId);
+    const userObj = targetId ? userMap.get(targetId) : null;
+    const lastMsg = lastMsgMap.get(legacyConversationId);
+    if (!targetId || !userObj || !lastMsg) return null;
+
+    const relationshipFlags = {
+      isFriend: friendsIds.has(targetId),
+      isSent: includesId(userObj?.friendRequests, currentUserId),
+      isReceived: includesId(currentUser?.friendRequests, targetId),
+    };
+
+    const unreadCount = candidate.unreadCount || 0;
+    result.push({
+      ...userObj,
+      ...relationshipFlags,
+      lastMessage: buildSidebarLastMessage(lastMsg),
+      hasUnread: unreadCount > 0,
+      unreadCount,
+    });
+  }
+
+  return result;
 };
 const buildRelationshipFlags = (targetUser, currentUser) => {
   const currentUserId = toComparableId(currentUser?._id || currentUser?.id);
@@ -570,13 +612,32 @@ const getSidebarUsers = async (req, res) => {
       };
     });
 
+    let responseUsers = result;
+    const { conversationSidebarReadModelEnabled } = getConversationMigrationConfig();
+    if (conversationSidebarReadModelEnabled) {
+      try {
+        const candidates = await getSidebarCandidatesForUser({ userId: currentUserId, limit: 30 });
+        responseUsers = buildReadModelSidebarResult({
+          candidates,
+          userMap,
+          lastMsgMap,
+          currentUser,
+          currentUserId,
+          friendsIds,
+        }) || result;
+      } catch (error) {
+        console.error("Conversation sidebar read-model switch failed; falling back to legacy", error);
+        responseUsers = result;
+      }
+    }
+
     await runSidebarShadowCompare({
       userId: currentUserId,
-      legacyItems: result,
+      legacyItems: responseUsers,
       scope: "direct",
     });
 
-    res.json({ success: true, users: result });
+    res.json({ success: true, users: responseUsers });
   } catch (error) {
     console.error("Get Sidebar Users Error:", error);
     res.status(500).json({ success: false, message: error.message });

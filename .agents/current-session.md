@@ -38,8 +38,8 @@ Các invariant bắt buộc:
 | 8 | Expand dual-write coverage | DONE | Đã mở rộng guarded dual-write cho REST message, group system message, và call-log insert mới. |
 | 9 | Reconciliation/drift report | DONE | Manual/report-only drift checks giữa legacy `Message`/`Group` và read model. |
 | 10 | Sidebar candidate read service | DONE | Read-only service build sidebar candidates từ read model, chưa switch response. |
-| 11 | Sidebar read switch behind flag | TODO-NEXT | Switch sidebar response sau flag, fallback an toàn, không đổi API shape. |
-| 12 | Search guard / historical visibility | TODO | Áp dụng visibility rules cho message search/read history. |
+| 11 | Sidebar read switch behind flag | DONE | Direct sidebar can switch behind disabled-by-default flag with legacy fallback. |
+| 12 | Search guard / historical visibility | TODO-NEXT | Áp dụng visibility rules cho message search/read history. |
 | 13 | Read receipts / unread reconciliation | TODO | Đồng bộ read state vào `ConversationParticipant`. |
 | 14 | Group lifecycle integration | TODO | Add/remove member, joinedAt/leftAt, group system events. |
 | 15 | Runtime confidence / gradual rollout | TODO | Bật shadow compare/staging, theo dõi mismatch, rollout từng bước. |
@@ -144,6 +144,15 @@ Các invariant bắt buộc:
 - Ordering is deterministic by pinned time, last-message time, then legacy conversation id.
 - No existing sidebar API response, Socket.IO payload, Redis key, RabbitMQ behavior, or search behavior changed.
 
+### Slice 11 — Sidebar Read Switch Behind Flag
+
+- Added `CONVERSATION_SIDEBAR_READ_MODEL_ENABLED`, default `false`.
+- Direct sidebar remains legacy-authoritative while the flag is disabled.
+- When enabled, direct sidebar can order/read from read-model candidates while preserving the existing response shape.
+- Read-model candidate errors or unsafe candidate state fall back to the existing legacy sidebar path.
+- `Conversation._id` is not exposed in sidebar responses.
+- Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, and search behavior remain unchanged.
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -161,6 +170,7 @@ Các invariant bắt buộc:
 - After Slice 8: targeted message/call/read-model suite `44/44`, full server regression `247/247`.
 - After Slice 9: targeted reconciliation suite `7/7`, read-model regression `39/39`, full server regression `254/254`.
 - After Slice 10: targeted sidebar candidate suite `4/4`, sidebar/read-model regression `28/28`, full server regression `258/258`.
+- After Slice 11: targeted env/sidebar switch suite `23/23`, full server regression `261/261`.
 
 ## Known risks
 
@@ -174,6 +184,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 11 — Sidebar read switch behind flag.
+Slice 12 — Search guard / historical visibility.
 
-Switch sidebar response behind an explicit disabled-by-default flag with safe fallback and no API shape change.
+Apply Conversation Read Model visibility rules to message search/read history without changing legacy identity contracts.
