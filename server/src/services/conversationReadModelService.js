@@ -160,7 +160,30 @@ async function ensureConversationForConfirmedMessage(message) {
   return conversation;
 }
 
+async function markConversationAsRead({ userId, legacyConversationId, lastReadMessageId, lastReadAt = new Date() } = {}) {
+  if (!userId || !legacyConversationId) return null;
+
+  try {
+    const update = {
+      $set: {
+        "state.unreadCount": 0,
+        ...(lastReadMessageId ? { "state.lastReadMessageId": lastReadMessageId } : {}),
+        "state.lastReadAt": lastReadAt,
+      },
+    };
+
+    return await ConversationParticipant.updateOne(
+      { legacyConversationId, userId },
+      update,
+    );
+  } catch (error) {
+    console.error(`[ReadModel] markConversationAsRead failed for user=${userId} conv=${legacyConversationId}:`, error);
+    return null;
+  }
+}
+
 module.exports = {
   ensureConversationForConfirmedMessage,
+  markConversationAsRead,
 };
 

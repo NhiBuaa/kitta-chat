@@ -40,8 +40,8 @@ Các invariant bắt buộc:
 | 10 | Sidebar candidate read service | DONE | Read-only service build sidebar candidates từ read model, chưa switch response. |
 | 11 | Sidebar read switch behind flag | DONE | Direct sidebar can switch behind disabled-by-default flag with legacy fallback. |
 | 12 | Search guard / historical visibility | DONE | Áp dụng visibility rules cho getMessages và syncMissedMessages. |
-| 13 | Read receipts / unread reconciliation | TODO-NEXT | Đồng bộ read state vào `ConversationParticipant`. |
-| 14 | Group lifecycle integration | TODO | Add/remove member, joinedAt/leftAt, group system events. |
+| 13 | Read receipts / unread reconciliation | DONE | Đồng bộ unreadCount/readState khi nhận markRead socket events. |
+| 14 | Group lifecycle integration | TODO-NEXT | Add/remove member, joinedAt/leftAt, group system events. |
 | 15 | Runtime confidence / gradual rollout | TODO | Bật shadow compare/staging, theo dõi mismatch, rollout từng bước. |
 | 16 | Legacy cleanup planning | TODO | Chỉ lập kế hoạch cleanup sau khi read model ổn định. |
 
@@ -161,6 +161,13 @@ Các invariant bắt buộc:
 - No `Conversation._id` exposed, and legacy identity contracts remain unchanged.
 - Socket.IO payloads/rooms, Redis keys, RabbitMQ behavior, and client response shapes remain unchanged.
 
+### Slice 13 — Read Receipts / Unread Reconciliation
+
+- Added read-model helper `markConversationAsRead` to update `unreadCount`, `lastReadMessageId`, and `lastReadAt` inside `ConversationParticipant` state.
+- Wired unread sync into direct and group `SOCKET_EVENTS.MESSAGE_MARK_READ` socket events after confirmed legacy database persistence.
+- Read-model write errors are caught and logged, allowing legacy read receipts processing to continue.
+- No client response shapes, Socket.IO rooms, Redis keys, or RabbitMQ behavior changed.
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -180,6 +187,7 @@ Các invariant bắt buộc:
 - After Slice 10: targeted sidebar candidate suite `4/4`, sidebar/read-model regression `28/28`, full server regression `258/258`.
 - After Slice 11: targeted env/sidebar switch suite `23/23`, full server regression `261/261`.
 - After Slice 12: targeted visibility suite `5/5`, read-model regression `52/52`, full server regression `266/266`.
+ - After Slice 13: targeted read receipt suite `3/3`, read-model regression `55/55`, full server regression `269/269`.
 
 ## Known risks
 
@@ -193,6 +201,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 13 — Read receipts / unread reconciliation.
+Slice 14 — Group lifecycle integration.
 
-Synchronize read receipts and unread status into `ConversationParticipant` state.
+Synchronize group membership changes, joinedAt/leftAt boundaries, and group system events into Conversation Read Model.
