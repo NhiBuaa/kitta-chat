@@ -187,16 +187,34 @@ const loadUserController = ({
   return require(userControllerPath);
 };
 
-const loadGroupController = ({ shadowEnabled, shadowCalls, shadowFailure = false }) => {
+const loadGroupController = ({
+  shadowEnabled,
+  shadowCalls,
+  shadowFailure = false,
+  sidebarReadModelEnabled = false,
+  sidebarCandidates = [],
+  sidebarCandidateFailure = false,
+  sidebarCandidateCalls = [],
+}) => {
   clearCache();
   mockModule(configPath, {
-    getConversationMigrationConfig: () => ({ conversationShadowCompareEnabled: shadowEnabled }),
+    getConversationMigrationConfig: () => ({
+      conversationShadowCompareEnabled: shadowEnabled,
+      conversationSidebarReadModelEnabled: sidebarReadModelEnabled,
+    }),
   });
   mockModule(shadowServicePath, {
     async compareSidebarForUser(payload) {
       shadowCalls.push(payload);
       if (shadowFailure) throw new Error("shadow failed");
       return { mismatches: [] };
+    },
+  });
+  mockModule(sidebarCandidateServicePath, {
+    async getSidebarCandidatesForUser(payload) {
+      sidebarCandidateCalls.push(payload);
+      if (sidebarCandidateFailure) throw new Error("candidate failed");
+      return sidebarCandidates;
     },
   });
   mockModule(groupModelPath, {
@@ -347,4 +365,55 @@ test("shadow compare failures are swallowed for sidebar responses", async () => 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.success, true);
   assert.equal(shadowCalls.length, 1);
+});
+
+test("group sidebar uses read-model candidates when read switch flag is on", async () => {
+  const shadowCalls = [];
+  const sidebarCandidateCalls = [];
+  const { getMyGroups } = loadGroupController({
+    shadowEnabled: false,
+    shadowCalls,
+    sidebarReadModelEnabled: true,
+    sidebarCandidateCalls,
+    sidebarCandidates: [{
+      kind: "group",
+      conversationId: "507f1f77bcf86cd799439022",
+      legacyConversationId: "507f1f77bcf86cd799439022",
+      unreadCount: 2,
+      hasUnread: true,
+      lastMessageId: "507f1f77bcf86cd799439088",
+      lastMessageAt: new Date("2026-06-05T08:00:00.000Z").toISOString(),
+    }],
+  });
+  const res = createResponse();
+
+  await getMyGroups({ user: { id: "507f1f77bcf86cd799439011" } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(res.body.groups[0].name, "Group");
+  assert.equal(res.body.groups[0].unreadCount, 2);
+  assert.equal(res.body.groups[0].hasUnread, true);
+  assert.equal(sidebarCandidateCalls.length, 1);
+});
+
+test("group sidebar falls back to legacy response when read-model candidates fail", async () => {
+  const shadowCalls = [];
+  const sidebarCandidateCalls = [];
+  const { getMyGroups } = loadGroupController({
+    shadowEnabled: false,
+    shadowCalls,
+    sidebarReadModelEnabled: true,
+    sidebarCandidateCalls,
+    sidebarCandidateFailure: true,
+  });
+  const res = createResponse();
+
+  await getMyGroups({ user: { id: "507f1f77bcf86cd799439011" } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(res.body.groups[0].name, "Group");
+  assert.equal(res.body.groups[0].unreadCount, 1); // fallback returns 1 from mock legacy Message.aggregate
+  assert.equal(sidebarCandidateCalls.length, 1);
 });

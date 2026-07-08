@@ -6,6 +6,7 @@ const { createSystemMessage } = require("./messageController");
 const getSafeUserName = require("../utils/getSafeUserName");
 const { getConversationMigrationConfig } = require("../config/env");
 const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
+const { getSidebarCandidatesForUser } = require("../services/conversationSidebarCandidateService");
 const { logger } = require("../utils/logger");
 const { syncGroupLifecycle } = require("../services/conversationReadModelService");
 
@@ -189,6 +190,37 @@ const createGroup = async (req, res) => {
   }
 };
 
+const buildReadModelGroupSidebarResult = ({
+  candidates,
+  groupMap,
+  lastMessageMap,
+  currentUserId,
+}) => {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+  const result = [];
+  for (const candidate of candidates) {
+    if (candidate.kind !== "group") continue;
+    const legacyConversationId = candidate.conversationId || candidate.legacyConversationId;
+    if (!legacyConversationId) continue;
+
+    const groupObj = groupMap.get(legacyConversationId);
+    if (!groupObj) continue;
+
+    const lastMsg = lastMessageMap.get(legacyConversationId) || null;
+    const unreadCount = candidate.unreadCount || 0;
+
+    result.push({
+      ...groupObj,
+      lastMessage: buildGroupLastMessagePreview(lastMsg, currentUserId),
+      hasUnread: unreadCount > 0,
+      unreadCount,
+    });
+  }
+
+  return result;
+};
+
 // [GET] /api/groups (Lấy danh sách nhóm tôi đã tham gia)
 const getMyGroups = async (req, res) => {
   try {
@@ -249,13 +281,31 @@ const getMyGroups = async (req, res) => {
       };
     });
 
+    let responseGroups = groupsWithSidebarState;
+    const { conversationSidebarReadModelEnabled } = getConversationMigrationConfig();
+    if (conversationSidebarReadModelEnabled) {
+      try {
+        const candidates = await getSidebarCandidatesForUser({ userId: currentUserId, limit: 30 });
+        const groupMap = new Map(groups.map((g) => [normalizeUserId(g), toPlainObject(g)]));
+        responseGroups = buildReadModelGroupSidebarResult({
+          candidates,
+          groupMap,
+          lastMessageMap,
+          currentUserId,
+        }) || groupsWithSidebarState;
+      } catch (error) {
+        console.error("Group sidebar read-model switch failed; falling back to legacy", error);
+        responseGroups = groupsWithSidebarState;
+      }
+    }
+
     await runSidebarShadowCompare({
       userId: currentUserId,
-      legacyItems: groupsWithSidebarState,
+      legacyItems: responseGroups,
       scope: "group",
     });
 
-    res.json({ success: true, groups: groupsWithSidebarState });
+    res.json({ success: true, groups: responseGroups });
   } catch (error) {
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
