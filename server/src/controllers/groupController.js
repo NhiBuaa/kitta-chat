@@ -6,6 +6,7 @@ const { createSystemMessage } = require("./messageController");
 const getSafeUserName = require("../utils/getSafeUserName");
 const { getConversationMigrationConfig } = require("../config/env");
 const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
+const { syncGroupLifecycle } = require("../services/conversationReadModelService");
 
 const GROUP_USER_FIELDS = "displayName avatar username status activityStatus";
 const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
@@ -158,6 +159,7 @@ const createGroup = async (req, res) => {
     });
 
     await newGroup.save();
+    await syncGroupLifecycle(newGroup._id, "create");
 
     const fullGroup = await populateGroup(Group.findById(newGroup._id));
     const admin = await User.findById(adminId).select("displayName username");
@@ -290,6 +292,7 @@ const addMember = async (req, res) => {
 
     group.members.push(memberId);
     await group.save();
+    await syncGroupLifecycle(groupId, "add-member", { memberId });
 
     const updatedGroup = await populateGroup(Group.findById(groupId));
     const [actor, newMember] = await Promise.all([
@@ -362,6 +365,7 @@ const removeMember = async (req, res) => {
 
     group.members = group.members.filter((id) => id.toString() !== memberId);
     await group.save();
+    await syncGroupLifecycle(groupId, "remove-member", { memberId });
 
     const updatedGroup = await populateGroup(Group.findById(groupId));
     const payload = {
@@ -464,6 +468,7 @@ const transferAdmin = async (req, res) => {
 
     group.admin = newAdminId;
     await group.save();
+    await syncGroupLifecycle(groupId, "transfer-admin", { newAdminId });
 
     const [oldAdmin, newAdmin] = await Promise.all([
       User.findById(currentAdminId).select("displayName username"),
@@ -527,6 +532,7 @@ const deleteGroup = async (req, res) => {
     io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
 
     await Group.findByIdAndDelete(groupId);
+    await syncGroupLifecycle(groupId, "delete");
     await Message.deleteMany({ conversationId: groupId });
 
     const payload = { groupId };

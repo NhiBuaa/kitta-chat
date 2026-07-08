@@ -1,44 +1,17 @@
-# Next Session — Slice 14 Group Lifecycle Integration
+# Next Session — Slice 15: Runtime Confidence / Gradual Rollout
 
 ## Slice mục tiêu
-
-Implement Conversation Read Model Migration — Slice 14: synchronize group membership changes, joinedAt/leftAt boundaries, and group system events into Conversation Read Model.
+Kích hoạt thử nghiệm (Staging/Shadow Run) cho Conversation Read Model bằng cách bật tính năng shadow compare, so sánh sự sai lệch giữa kết quả đọc của hệ thống cũ (legacy) và Read Model mới đối với dữ liệu sidebar, từ đó chuẩn bị cho việc chính thức đưa vào sử dụng.
 
 ## Bối cảnh
+- Đã hoàn thành Slice 14: Đồng bộ vòng đời nhóm và trạng thái thành viên vào Conversation Read Model.
+- Các flag `CONVERSATION_SHADOW_COMPARE_ENABLED` và `CONVERSATION_SIDEBAR_READ_MODEL_ENABLED` hiện tại đang đặt mặc định là `false`.
 
-Đã hoàn thành Slice 13:
-
-- Added read-model helper `markConversationAsRead` to update `unreadCount` and timestamps in `ConversationParticipant`.
-- Wired unread sync into direct and group socket `markRead` event handlers.
-- Swallowed read-model errors to prevent legacy path disruption.
-
-Runtime hiện tại:
-
-- `Message.conversationId` vẫn là public/socket/cache bridge.
-- Socket.IO payloads/rooms không đổi.
-- Redis sidebar/cache keys không đổi.
-- RabbitMQ không đổi.
-- Direct sidebar read switch is coded but disabled by default.
-
-## Mục tiêu Slice 14
-
-Synchronize group lifecycle changes (adding/removing members, joinedAt/leftAt boundaries, role updates, and group system events) into the Conversation Read Model.
+## Mục tiêu cụ thể
+- Kích hoạt flag `CONVERSATION_SHADOW_COMPARE_ENABLED=true` trong môi trường staging/kiểm thử để theo dõi log các sự sai lệch (mismatches).
+- Bổ sung công cụ hoặc script lọc log để thống kê các lỗi mismatch phát hiện bởi `conversationShadowCompareService`.
+- Tinh chỉnh các trường hợp sai lệch dữ liệu phổ biến (ví dụ: unread count lệch do cơ chế đếm khác nhau giữa direct/group chat) để chuẩn bị cho Slice 16 (Dọn dẹp mã nguồn cũ).
 
 ## Guardrails bắt buộc
-
-- Do not expose `Conversation._id`.
-- Do not change Socket.IO payloads/rooms.
-- Do not change Redis/RabbitMQ behavior.
-- Keep response shapes stable.
-- Swallow and log read-model errors on write paths.
-
-## Gợi ý scope
-
-- Identify group lifecycle endpoints in `groupController.js` (e.g. create group, add member, remove member, leave group).
-- Add targeted tests using public interfaces.
-- Synchronize participants (`joinedAt`, `leftAt`, `role`) into `ConversationParticipant` after confirmed legacy database updates.
-
-## Non-goals
-
-- Không cleanup legacy sidebar code.
-- Không switch sidebar/search reads by default.
+- Tuyệt đối không thay đổi response thực tế trả về cho client trên môi trường production khi chưa có so sánh an toàn.
+- Lỗi phát sinh trong quá trình so sánh shadow compare phải được log và swallow để không làm gián đoạn API của người dùng.

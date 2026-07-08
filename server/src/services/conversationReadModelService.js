@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+const { getConversationMigrationConfig } = require("../config/env");
 const Conversation = require("../models/Conversation");
 const ConversationParticipant = require("../models/ConversationParticipant");
 const Group = require("../models/Group");
@@ -56,7 +58,7 @@ async function getConversationShape(message) {
   const group = await Group.findById(legacyConversationId);
   if (!group) return null;
 
-  const participantUserIds = uniqueIds(group.members || []);
+  const participantUserIds = uniqueIds(group.members || []).map((id) => new mongoose.Types.ObjectId(toIdString(id)));
   const adminId = group.admin ? toIdString(group.admin) : null;
   return {
     kind: "group",
@@ -182,8 +184,106 @@ async function markConversationAsRead({ userId, legacyConversationId, lastReadMe
   }
 }
 
+
+async function syncGroupLifecycle(groupId, action, data = {}) {
+  const { conversationDualWriteEnabled } = getConversationMigrationConfig();
+  if (!conversationDualWriteEnabled) return;
+
+  try {
+    const legacyConversationId = toIdString(groupId);
+
+    if (action === "delete") {
+      const conv = await Conversation.findOne({ legacyConversationId });
+      if (conv) {
+        await ConversationParticipant.deleteMany({ conversationId: conv._id });
+        await Conversation.deleteOne({ _id: conv._id });
+      }
+      return;
+    }
+
+    const group = await Group.findById(legacyConversationId);
+    if (!group) return;
+
+    let conversation = await Conversation.findOne({ legacyConversationId });
+    const participantUserIds = uniqueIds(group.members || []).map((id) => new mongoose.Types.ObjectId(toIdString(id)));
+
+    if (!conversation) {
+      conversation = await Conversation.create({
+        kind: "group",
+        legacyConversationId,
+        groupId: group._id,
+        participantUserIds,
+        lastMessageId: undefined,
+        lastMessageAt: null,
+      });
+    } else {
+      await Conversation.updateOne(
+        { _id: conversation._id },
+        { $set: { participantUserIds } }
+      );
+    }
+
+    const adminId = group.admin ? toIdString(group.admin) : null;
+    const now = new Date();
+
+    for (const userId of participantUserIds) {
+      const userIdStr = toIdString(userId);
+      const role = adminId && userIdStr === adminId ? "admin" : "member";
+
+      const existingParticipant = await ConversationParticipant.findOne({
+        conversationId: conversation._id,
+        userId,
+      });
+
+      if (!existingParticipant) {
+        await ConversationParticipant.create({
+          conversationId: conversation._id,
+          legacyConversationId,
+          userId,
+          role,
+          joinedAt: now,
+          leftAt: null,
+          state: {
+            unreadCount: 0,
+            lastMessageId: null,
+            lastMessageAt: null,
+          },
+        });
+      } else {
+        const update = {
+          $set: { role, leftAt: null },
+        };
+        if (existingParticipant.leftAt !== null) {
+          update.$set.joinedAt = now;
+        }
+        await ConversationParticipant.updateOne(
+          { conversationId: conversation._id, userId },
+          update
+        );
+      }
+    }
+
+    await ConversationParticipant.updateMany(
+      {
+        conversationId: conversation._id,
+        userId: { $nin: participantUserIds },
+        leftAt: null,
+      },
+      {
+        $set: {
+          leftAt: now,
+          role: null,
+        },
+      }
+    );
+  } catch (error) {
+    console.error(`[ReadModel] syncGroupLifecycle failed for action=${action} groupId=${groupId}:`, error);
+  }
+}
+
 module.exports = {
   ensureConversationForConfirmedMessage,
   markConversationAsRead,
+  syncGroupLifecycle,
 };
 

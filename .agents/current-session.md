@@ -41,8 +41,8 @@ Các invariant bắt buộc:
 | 11 | Sidebar read switch behind flag | DONE | Direct sidebar can switch behind disabled-by-default flag with legacy fallback. |
 | 12 | Search guard / historical visibility | DONE | Áp dụng visibility rules cho getMessages và syncMissedMessages. |
 | 13 | Read receipts / unread reconciliation | DONE | Đồng bộ unreadCount/readState khi nhận markRead socket events. |
-| 14 | Group lifecycle integration | TODO-NEXT | Add/remove member, joinedAt/leftAt, group system events. |
-| 15 | Runtime confidence / gradual rollout | TODO | Bật shadow compare/staging, theo dõi mismatch, rollout từng bước. |
+| 14 | Group lifecycle integration | DONE | Add/remove member, joinedAt/leftAt, group system events. |
+| 15 | Runtime confidence / gradual rollout | TODO-NEXT | Bật shadow compare/staging, theo dõi mismatch, rollout từng bước. |
 | 16 | Legacy cleanup planning | TODO | Chỉ lập kế hoạch cleanup sau khi read model ổn định. |
 
 ## Chi tiết các slice đã hoàn thành
@@ -168,6 +168,13 @@ Các invariant bắt buộc:
 - Read-model write errors are caught and logged, allowing legacy read receipts processing to continue.
 - No client response shapes, Socket.IO rooms, Redis keys, or RabbitMQ behavior changed.
 
+### Slice 14 — Group Lifecycle Integration
+
+- Thiết lập cơ chế tự động đồng bộ hóa vòng đời nhóm (`syncGroupLifecycle`) vào Conversation Read Model sau khi lưu cơ sở dữ liệu legacy.
+- Xử lý đồng bộ cho các hành động: tạo nhóm mới, thêm thành viên, xóa thành viên/rời nhóm, chuyển quyền admin và giải tán nhóm.
+- Tự động chuẩn hóa kiểu dữ liệu thành `mongoose.Types.ObjectId` để ngăn chặn lỗi so sánh kiểu dữ liệu khi thành viên nhóm được populate thành đối tượng.
+- Viết 11 ca kiểm thử đơn vị và tích hợp trong `server/test/groupReadModelSync.test.js` để bảo đảm các luồng đồng bộ hoạt động chính xác và không bị drift.
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -201,6 +208,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 14 — Group lifecycle integration.
+Slice 15 — Runtime Confidence / Gradual Rollout.
 
-Synchronize group membership changes, joinedAt/leftAt boundaries, and group system events into Conversation Read Model.
+Kích hoạt thử nghiệm (Staging/Shadow Run) cho Conversation Read Model bằng cách bật tính năng shadow compare, so sánh sự sai lệch giữa kết quả đọc của hệ thống cũ (legacy) và Read Model mới đối với dữ liệu sidebar, từ đó chuẩn bị cho việc chính thức đưa vào sử dụng.
