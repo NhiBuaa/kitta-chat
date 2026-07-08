@@ -42,8 +42,8 @@ Các invariant bắt buộc:
 | 12 | Search guard / historical visibility | DONE | Áp dụng visibility rules cho getMessages và syncMissedMessages. |
 | 13 | Read receipts / unread reconciliation | DONE | Đồng bộ unreadCount/readState khi nhận markRead socket events. |
 | 14 | Group lifecycle integration | DONE | Add/remove member, joinedAt/leftAt, group system events. |
-| 15 | Runtime confidence / gradual rollout | TODO-NEXT | Bật shadow compare/staging, theo dõi mismatch, rollout từng bước. |
-| 16 | Legacy cleanup planning | TODO | Chỉ lập kế hoạch cleanup sau khi read model ổn định. |
+| 15 | Runtime Confidence / Gradual Rollout | DONE | Bật shadow compare/staging, theo dõi mismatch, tinh chỉnh unreadCount, phân tích log mismatch. |
+| 16 | Legacy cleanup planning | TODO-NEXT | Lập kế hoạch dọn dẹp mã nguồn cũ sau khi read model ổn định. |
 
 ## Chi tiết các slice đã hoàn thành
 
@@ -175,6 +175,13 @@ Các invariant bắt buộc:
 - Tự động chuẩn hóa kiểu dữ liệu thành `mongoose.Types.ObjectId` để ngăn chặn lỗi so sánh kiểu dữ liệu khi thành viên nhóm được populate thành đối tượng.
 - Viết 11 ca kiểm thử đơn vị và tích hợp trong `server/test/groupReadModelSync.test.js` để bảo đảm các luồng đồng bộ hoạt động chính xác và không bị drift.
 
+### Slice 15 — Runtime Confidence / Gradual Rollout
+
+- Kích hoạt flag `CONVERSATION_SHADOW_COMPARE_ENABLED=true` để so sánh sai lệch giữa legacy sidebar và read model.
+- Khắc phục sự sai lệch đếm `unreadCount` cho các tin nhắn được đọc trước (system group messages có `readBy` và direct messages có `isRead: true`).
+- Bổ sung script `analyzeShadowCompareLogs.js` hỗ trợ thống kê log mismatch theo phạm vi (scope), loại lỗi (type), và danh sách người dùng bị ảnh hưởng.
+
+
 ## Manual verification đã có
 
 - Docker Compose full system runs.
@@ -194,7 +201,9 @@ Các invariant bắt buộc:
 - After Slice 10: targeted sidebar candidate suite `4/4`, sidebar/read-model regression `28/28`, full server regression `258/258`.
 - After Slice 11: targeted env/sidebar switch suite `23/23`, full server regression `261/261`.
 - After Slice 12: targeted visibility suite `5/5`, read-model regression `52/52`, full server regression `266/266`.
- - After Slice 13: targeted read receipt suite `3/3`, read-model regression `55/55`, full server regression `269/269`.
+- After Slice 13: targeted read receipt suite `3/3`, read-model regression `55/55`, full server regression `269/269`.
+- After Slice 14: targeted group read-model sync `11/11`, full server regression `280/280`.
+- After Slice 15: targeted unread count normalization and shadow compare integration `80/80` passed.
 
 ## Known risks
 
@@ -208,6 +217,6 @@ Các invariant bắt buộc:
 
 ## Current next slice
 
-Slice 15 — Runtime Confidence / Gradual Rollout.
+Slice 16 — Legacy Cleanup Planning
 
-Kích hoạt thử nghiệm (Staging/Shadow Run) cho Conversation Read Model bằng cách bật tính năng shadow compare, so sánh sự sai lệch giữa kết quả đọc của hệ thống cũ (legacy) và Read Model mới đối với dữ liệu sidebar, từ đó chuẩn bị cho việc chính thức đưa vào sử dụng.
+Lập kế hoạch chi tiết cho việc dọn dẹp mã nguồn cũ (Legacy Cleanup) sau khi hệ thống đã chạy shadow so sánh ổn định và đã hoàn thành chuyển đổi hoàn toàn (Read-switch) sang sử dụng Conversation Read Model.
