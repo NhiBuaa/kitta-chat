@@ -10,6 +10,7 @@ const { getRecentConversations } = require("../services/conversationCacheService
 const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
 const { getConversationMigrationConfig } = require("../config/env");
 const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
+const { logger } = require("../utils/logger");
 const { getSidebarCandidatesForUser } = require("../services/conversationSidebarCandidateService");
 
 const toComparableId = (value) => value?.toString?.() || String(value);
@@ -33,7 +34,7 @@ const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
   try {
     const report = await compareSidebarForUser({ userId, legacyItems, scope });
     if (report.mismatches.length > 0) {
-      console.warn("Conversation shadow compare mismatch", {
+      logger.warn("Conversation shadow compare mismatch", {
         scope,
         userId: toComparableId(userId),
         mismatchCount: report.mismatches.length,
@@ -41,7 +42,7 @@ const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
       });
     }
   } catch (error) {
-    console.error("Conversation shadow compare failed", error);
+    logger.error("Conversation shadow compare failed", { error: error.message });
   }
 };
 

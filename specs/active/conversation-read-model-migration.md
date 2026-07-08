@@ -25,7 +25,9 @@ Legacy sidebar/conversation state hiện được derive từ `Message`, `Group`
 - Direct sidebar read switch exists behind `CONVERSATION_SIDEBAR_READ_MODEL_ENABLED=false` by default, preserving response shape and falling back to legacy behavior on read-model errors or unsafe candidate state.
 - Message visibility rules (deletedAt/leftAt bounds) are applied to `getMessages` and `syncMissedMessages` query paths.
  - Read receipts and unread status updates sync into `ConversationParticipant` state during socket `markRead` event handlers.
- - Next slice is group lifecycle integration.
+ - Group lifecycle integration is implemented, syncing actions like group creation, membership changes, and deletions into the read model.
+ - Shadow compare is enabled in staging via `CONVERSATION_SHADOW_COMPARE_ENABLED=true` with unread count discrepancies refined.
+ - Next slice is legacy cleanup planning.
 
 ## Done When
 
@@ -40,3 +42,6 @@ Legacy sidebar/conversation state hiện được derive từ `Message`, `Group`
 - Sidebar read switch remains disabled by default and can fall back to the legacy sidebar path.
 - Message history and sync paths enforce soft-delete and membership visibility bounds.
  - Read receipts update participant unread count and read timestamps without blocking legacy flow.
+ - Group lifecycle actions sync to read model without data drift.
+ - Shadow compare runs and reports mismatches without disrupting user responses.
+ - Log analysis tool summarizes mismatch occurrences by scope, type, and affected users.

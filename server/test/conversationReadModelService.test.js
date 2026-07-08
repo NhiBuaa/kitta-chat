@@ -281,3 +281,36 @@ test("ensureConversationForConfirmedMessage does not change Message schema", asy
   assert.equal(Message.schema.path("conversationObjectId"), undefined);
 });
 
+test("ensureConversationForConfirmedMessage does not increment unreadCount if recipient is in readBy (group)", async () => {
+  const groupId = objectId("301");
+  const adminId = objectId("a");
+  const memberId = objectId("b");
+  const { service, participants } = createMemoryStore({
+    groups: [{ _id: groupId, admin: adminId, members: [adminId, memberId] }],
+  });
+
+  const msg = groupMessage({ groupId, sender: adminId });
+  msg.readBy = [memberId];
+
+  await service.ensureConversationForConfirmedMessage(msg);
+
+  const admin = participants.find((p) => idString(p.userId) === adminId.toString());
+  const member = participants.find((p) => idString(p.userId) === memberId.toString());
+
+  assert.equal(admin.state.unreadCount, 0);
+  assert.equal(member.state.unreadCount, 0);
+});
+
+test("ensureConversationForConfirmedMessage does not increment unreadCount if isRead is true (direct)", async () => {
+  const { service, participants } = createMemoryStore();
+  const message = directMessage({ isRead: true });
+
+  await service.ensureConversationForConfirmedMessage(message);
+
+  const sender = participants.find((p) => idString(p.userId) === idString(message.sender));
+  const recipient = participants.find((p) => idString(p.userId) === idString(message.receiver));
+
+  assert.equal(sender.state.unreadCount, 0);
+  assert.equal(recipient.state.unreadCount, 0);
+});
+

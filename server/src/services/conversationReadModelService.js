@@ -77,6 +77,8 @@ async function getConversationShape(message) {
 async function ensureParticipant({ conversation, shape, userId, message, messageAt }) {
   const messageId = message._id;
   const isSender = isSameId(userId, message.sender?._id || message.sender);
+  const isReadByMe = Array.isArray(message.readBy) && message.readBy.some((id) => isSameId(id, userId));
+  const hasAlreadyRead = isSender || isReadByMe || (message.isRead === true && !isSender);
   const role = shape.rolesByUserId.get(toIdString(userId)) || null;
 
   const existingParticipant = await ConversationParticipant.findOne({
@@ -92,7 +94,7 @@ async function ensureParticipant({ conversation, shape, userId, message, message
       role,
       joinedAt: messageAt,
       state: {
-        unreadCount: isSender ? 0 : 1,
+        unreadCount: hasAlreadyRead ? 0 : 1,
         lastMessageId: messageId,
         lastMessageAt: messageAt,
       },
@@ -110,7 +112,7 @@ async function ensureParticipant({ conversation, shape, userId, message, message
     },
   };
 
-  if (!isSender) {
+  if (!hasAlreadyRead) {
     update.$inc = { "state.unreadCount": 1 };
   }
 

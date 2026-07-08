@@ -6,6 +6,7 @@ const { createSystemMessage } = require("./messageController");
 const getSafeUserName = require("../utils/getSafeUserName");
 const { getConversationMigrationConfig } = require("../config/env");
 const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
+const { logger } = require("../utils/logger");
 const { syncGroupLifecycle } = require("../services/conversationReadModelService");
 
 const GROUP_USER_FIELDS = "displayName avatar username status activityStatus";
@@ -16,7 +17,7 @@ const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
   try {
     const report = await compareSidebarForUser({ userId, legacyItems, scope });
     if (report.mismatches.length > 0) {
-      console.warn("Conversation shadow compare mismatch", {
+      logger.warn("Conversation shadow compare mismatch", {
         scope,
         userId: normalizeUserId(userId),
         mismatchCount: report.mismatches.length,
@@ -24,7 +25,7 @@ const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
       });
     }
   } catch (error) {
-    console.error("Conversation shadow compare failed", error);
+    logger.error("Conversation shadow compare failed", { error: error.message });
   }
 };
 
