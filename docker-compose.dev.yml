@@ -8,6 +8,7 @@ services:
       replicas: 1
     environment:
       - REDIS_URL=redis://redis:6379
+      - CONVERSATION_DUAL_WRITE_ENABLED=false
     volumes:
       - ./server:/app
       - backend_node_modules:/app/node_modules

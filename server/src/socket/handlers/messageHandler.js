@@ -13,6 +13,7 @@ const {
   emitToConversation,
   emitToUser,
 } = require("../realtimePublisher");
+const { markConversationAsRead } = require("../../services/conversationReadModelService");
 
 const NODE_NAME = process.env.NODE_NAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
@@ -139,6 +140,17 @@ const createRegisterMessageHandlers = ({
         );
 
         emitToConversation(io, groupId, SOCKET_EVENTS.GROUP_MESSAGE_READ, { groupId, readerId });
+
+        // Đồng bộ unread state vào read model
+        try {
+          await markConversationAsRead({
+            userId: readerId,
+            legacyConversationId: groupId,
+          });
+        } catch (readModelErr) {
+          logger.error(`${logPrefix} markRead group read-model error:`, readModelErr);
+        }
+
         logger.log(`${logPrefix} markRead group group=${groupId} reader=${readerId}`);
       } else {
         const { senderId, receiverId } = data;
@@ -152,6 +164,17 @@ const createRegisterMessageHandlers = ({
         );
 
         emitToUser(io, senderId, SOCKET_EVENTS.MESSAGE_READ, { readerId: receiverId });
+
+        // Đồng bộ unread state vào read model
+        try {
+          await markConversationAsRead({
+            userId: receiverId,
+            legacyConversationId: convId,
+          });
+        } catch (readModelErr) {
+          logger.error(`${logPrefix} markRead direct read-model error:`, readModelErr);
+        }
+
         logger.log(`${logPrefix} markRead direct conv=${convId} sender=${senderId} reader=${receiverId}`);
       }
     } catch (err) {

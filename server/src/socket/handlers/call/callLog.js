@@ -1,4 +1,5 @@
 const Message = require("../../../models/Message");
+const { dualWriteConfirmedMessage } = require("../../../services/conversationDualWriteService");
 
 // ─── DB ──────────────────────────────────────────────────────────────────────
 
@@ -35,18 +36,27 @@ const createCallLogMessage = async (callRecord) => {
             },
         };
 
-        const saved = await Message.findOneAndUpdate(
+        const result = await Message.findOneAndUpdate(
             filter,
             update,
             {
                 upsert: true,
                 returnDocument: "after",
                 setDefaultsOnInsert: true,
+                includeResultMetadata: true,
             },
         );
 
+        const saved = result?.value ?? result;
+        const inserted = !Boolean(result?.lastErrorObject?.updatedExisting);
+        const populated = await Message.findById(saved._id).populate(populate);
+
+        if (inserted) {
+            await dualWriteConfirmedMessage(populated, { logPrefix: "[CallLog]" });
+        }
+
         console.log(`[CallLog] Created call_log message ${saved._id} for call ${callRecord._id}`);
-        return await Message.findById(saved._id).populate(populate);
+        return populated;
     } catch (err) {
         if (err?.code === 11000) {
             try {

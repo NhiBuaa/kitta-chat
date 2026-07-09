@@ -4,8 +4,31 @@ const Message = require("../models/Message");
 const mongoose = require("mongoose");
 const { createSystemMessage } = require("./messageController");
 const getSafeUserName = require("../utils/getSafeUserName");
+const { getConversationMigrationConfig } = require("../config/env");
+const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
+const { getSidebarCandidatesForUser } = require("../services/conversationSidebarCandidateService");
+const { logger } = require("../utils/logger");
+const { syncGroupLifecycle } = require("../services/conversationReadModelService");
 
 const GROUP_USER_FIELDS = "displayName avatar username status activityStatus";
+const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
+  const { conversationShadowCompareEnabled } = getConversationMigrationConfig();
+  if (!conversationShadowCompareEnabled) return;
+
+  try {
+    const report = await compareSidebarForUser({ userId, legacyItems, scope });
+    if (report.mismatches.length > 0) {
+      logger.warn("Conversation shadow compare mismatch", {
+        scope,
+        userId: normalizeUserId(userId),
+        mismatchCount: report.mismatches.length,
+        mismatches: report.mismatches,
+      });
+    }
+  } catch (error) {
+    logger.error("Conversation shadow compare failed", { error: error.message });
+  }
+};
 
 const normalizeUserId = (value) => {
   if (!value) return null;
@@ -138,6 +161,7 @@ const createGroup = async (req, res) => {
     });
 
     await newGroup.save();
+    await syncGroupLifecycle(newGroup._id, "create");
 
     const fullGroup = await populateGroup(Group.findById(newGroup._id));
     const admin = await User.findById(adminId).select("displayName username");
@@ -164,6 +188,37 @@ const createGroup = async (req, res) => {
     console.error(error);
     res.status(500).json({ success: false, message: "Lỗi tạo nhóm" });
   }
+};
+
+const buildReadModelGroupSidebarResult = ({
+  candidates,
+  groupMap,
+  lastMessageMap,
+  currentUserId,
+}) => {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+  const result = [];
+  for (const candidate of candidates) {
+    if (candidate.kind !== "group") continue;
+    const legacyConversationId = candidate.conversationId || candidate.legacyConversationId;
+    if (!legacyConversationId) continue;
+
+    const groupObj = groupMap.get(legacyConversationId);
+    if (!groupObj) continue;
+
+    const lastMsg = lastMessageMap.get(legacyConversationId) || null;
+    const unreadCount = candidate.unreadCount || 0;
+
+    result.push({
+      ...groupObj,
+      lastMessage: buildGroupLastMessagePreview(lastMsg, currentUserId),
+      hasUnread: unreadCount > 0,
+      unreadCount,
+    });
+  }
+
+  return result;
 };
 
 // [GET] /api/groups (Lấy danh sách nhóm tôi đã tham gia)
@@ -226,7 +281,31 @@ const getMyGroups = async (req, res) => {
       };
     });
 
-    res.json({ success: true, groups: groupsWithSidebarState });
+    let responseGroups = groupsWithSidebarState;
+    const { conversationSidebarReadModelEnabled } = getConversationMigrationConfig();
+    if (conversationSidebarReadModelEnabled) {
+      try {
+        const candidates = await getSidebarCandidatesForUser({ userId: currentUserId, limit: 30 });
+        const groupMap = new Map(groups.map((g) => [normalizeUserId(g), toPlainObject(g)]));
+        responseGroups = buildReadModelGroupSidebarResult({
+          candidates,
+          groupMap,
+          lastMessageMap,
+          currentUserId,
+        }) || groupsWithSidebarState;
+      } catch (error) {
+        console.error("Group sidebar read-model switch failed; falling back to legacy", error);
+        responseGroups = groupsWithSidebarState;
+      }
+    }
+
+    await runSidebarShadowCompare({
+      userId: currentUserId,
+      legacyItems: responseGroups,
+      scope: "group",
+    });
+
+    res.json({ success: true, groups: responseGroups });
   } catch (error) {
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
@@ -264,6 +343,7 @@ const addMember = async (req, res) => {
 
     group.members.push(memberId);
     await group.save();
+    await syncGroupLifecycle(groupId, "add-member", { memberId });
 
     const updatedGroup = await populateGroup(Group.findById(groupId));
     const [actor, newMember] = await Promise.all([
@@ -336,6 +416,7 @@ const removeMember = async (req, res) => {
 
     group.members = group.members.filter((id) => id.toString() !== memberId);
     await group.save();
+    await syncGroupLifecycle(groupId, "remove-member", { memberId });
 
     const updatedGroup = await populateGroup(Group.findById(groupId));
     const payload = {
@@ -438,6 +519,7 @@ const transferAdmin = async (req, res) => {
 
     group.admin = newAdminId;
     await group.save();
+    await syncGroupLifecycle(groupId, "transfer-admin", { newAdminId });
 
     const [oldAdmin, newAdmin] = await Promise.all([
       User.findById(currentAdminId).select("displayName username"),
@@ -501,6 +583,7 @@ const deleteGroup = async (req, res) => {
     io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
 
     await Group.findByIdAndDelete(groupId);
+    await syncGroupLifecycle(groupId, "delete");
     await Message.deleteMany({ conversationId: groupId });
 
     const payload = { groupId };
