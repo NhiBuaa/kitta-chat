@@ -1,29 +1,28 @@
-# Handoff Document — Conversation Read Model Migration Completed
+# Last Session Handoff — Conversation Information Panel (Slice 0 Completed)
 
-## Bối cảnh và Tóm tắt Session
-Trong phiên làm việc này, chúng ta đã thực hiện thành công Slice 16 (Lập kế hoạch và thực thi dọn dẹp mã nguồn cũ) của mục tiêu di trú dữ liệu cuộc trò chuyện sang Conversation Read Model.
-- Toàn bộ các thay đổi của Slice 16 đã được commit lên branch `conversation-read-model-migration` (commit: `8622a12`).
-- Toàn bộ 246 bài kiểm thử tự động của hệ thống chạy thành công (246/246 tests passed).
+## Tóm tắt Session
+*   **Hoàn thành:** Thực hiện thành công Slice 0 (Infrastructure, ADRs & Skeletons) cho tính năng Conversation Information Panel.
+*   **Chi tiết thay đổi:**
+    *   Tạo ADR-004 (Tối ưu hóa Shared Links trên Message Model) và ADR-005 (Two-stage Loading & 10 Architecture Invariants).
+    *   Cập nhật `docs/decisions.md` và `CONTEXT.md` Glossary.
+    *   Bổ sung Feature Flags `CONVERSATION_PANEL_ENABLED`, `CONVERSATION_PANEL_RESOURCES_ENABLED` và rate limit `CONVERSATION_PANEL_RATE_LIMIT` (mặc định 30).
+    *   Tạo controller và router skeletons cho metadata & resources endpoints, đăng ký trong Express `app.js`.
+    *   Tích hợp rate limiter theo cặp (user, conversation) và xác thực scopes retry (trả về `400 Bad Request` nếu không hợp lệ).
+*   **Trạng thái kiểm thử:**
+    *   Bộ 6 integration test cases tại `server/test/conversationPanel.integration.test.js` chạy thành công 100%.
+    *   Toàn bộ test suite hồi quy backend (`255/255` tests) chạy xanh hoàn toàn.
 
-## Các thay đổi chính đã được thực hiện và lưu giữ:
-1. **Chuyển đổi hoàn toàn direct/group sidebar sang Read Model:** 
-   - Đọc danh sách candidates qua `getSidebarCandidatesForUser`.
-   - Loại bỏ các aggregate query phức tạp trên database tin nhắn.
-   - Ghép bạn bè chưa nhắn tin vào cuối sidebar của Direct Chat để giữ nguyên UI/UX.
-2. **Dọn dẹp mã nguồn di trú cũ:**
-   - Xóa bỏ `conversationCacheService.js` (Redis ZSET cache) và các logic ghi/xóa cache liên quan.
-   - Xóa bỏ dịch vụ shadow compare, dry-run, reconciliation và 5 tệp kiểm thử tương ứng.
-3. **Cập nhật và hoàn thiện bộ kiểm thử:**
-   - Chỉnh sửa mock trong 7 tệp kiểm thử (`acceptFriendPresence.test.js`, `friendCacheService.test.js`, `httpCoreFlows.test.js`, `profileApiQueueSemantics.test.js`, `removeFriendController.test.js`, `saveMessageInBackground.test.js`, `groupController.test.js`) để tương thích hoàn toàn với cơ chế mới.
+## Trạng thái các tệp tin thay đổi (git status)
+*   **Modified:** `.agents/CONTEXT.md`, `.agents/current-session.md`, `.agents/next-session.md`, `docs/decisions.md`, `server/src/app.js`, `server/src/config/env.js`, `server/test/envValidation.test.js`
+*   **Untracked:** `.scratch/conversation-information-panel.md`, `docs/adr/004-...`, `docs/adr/005-...`, `server/src/controllers/conversationPanelController.js`, `server/src/routes/conversationPanel.js`, `server/test/conversationPanel.integration.test.js`, `specs/active/conversation-information-panel.md`
 
-## Trạng thái kỹ thuật hiện tại
-- **Mã nguồn:** Sạch sẽ, không còn code so sánh hay logic ZSET cache cũ.
-- **Git:** Đã commit lên branch `conversation-read-model-migration`.
-- **Tài liệu:** Đã cập nhật `.agents/current-session.md` (Slice 16 DONE) và `.agents/next-session.md`.
-
-## Định hướng phiên tiếp theo (Next Session Target)
-- Phiên tiếp theo sẽ sẵn sàng nhận yêu cầu tính năng mới (New Feature) hoặc định hướng phát triển tiếp theo từ Developer do toàn bộ 16 lát cắt của Migration đã hoàn tất thành công.
-
-## Suggested Skills cho phiên sau
-- `new-feature` nếu Developer yêu cầu phát triển tính năng mới.
-- `ask-matt` hoặc `codebase-design` để định hướng cấu trúc khi bắt đầu dự án mới.
+## Kế hoạch Phiên kế tiếp (Next Session)
+*   **Slice mục tiêu:** Slice 1 — Permission Service & UI Panel Base Layout.
+*   **Bối cảnh:** Slice 0 đã hoàn thành, test xanh. Chuẩn bị bắt đầu Slice 1 để xử lý logic check quyền và dựng giao diện.
+*   **Nhiệm vụ cụ thể:**
+    1.  Backend: Triển khai pure `PermissionService.getPermissions(userId, conversationId)`.
+    2.  Frontend: Dựng khung layout trượt của panel ở phía bên phải, hỗ trợ animation đóng/mở mượt mà.
+    3.  Tests: Viết unit/integration tests cho `PermissionService` (chat group và direct).
+*   **Guardrails:**
+    *   `PermissionService` chỉ đọc dữ liệu, không ghi.
+    *   Giữ nguyên API contract đã thống nhất.

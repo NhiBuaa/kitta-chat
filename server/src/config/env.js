@@ -91,6 +91,24 @@ const validateServerEnv = (env = process.env) => {
     false,
     issues,
   );
+  const conversationPanelEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_PANEL_ENABLED",
+    false,
+    issues,
+  );
+  const conversationPanelResourcesEnabled = parseBooleanFlag(
+    env,
+    "CONVERSATION_PANEL_RESOURCES_ENABLED",
+    false,
+    issues,
+  );
+  const conversationPanelRateLimit = parsePositiveInteger(
+    env,
+    "CONVERSATION_PANEL_RATE_LIMIT",
+    30,
+    issues,
+  );
 
   throwIfInvalid("server", issues);
 
@@ -103,6 +121,9 @@ const validateServerEnv = (env = process.env) => {
     conversationDualWriteEnabled,
     conversationShadowCompareEnabled,
     conversationSidebarReadModelEnabled,
+    conversationPanelEnabled,
+    conversationPanelResourcesEnabled,
+    conversationPanelRateLimit,
   };
 };
 

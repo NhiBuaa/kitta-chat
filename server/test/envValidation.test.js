@@ -224,3 +224,65 @@ test("getConversationMigrationConfig exposes migration flags", () => {
   assert.equal(config.conversationShadowCompareEnabled, true);
   assert.equal(config.conversationSidebarReadModelEnabled, true);
 });
+
+test("validateServerEnv defaults conversation panel flags and rate limit", () => {
+  const config = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+  });
+
+  assert.equal(config.conversationPanelEnabled, false);
+  assert.equal(config.conversationPanelResourcesEnabled, false);
+  assert.equal(config.conversationPanelRateLimit, 30);
+});
+
+test("validateServerEnv parses conversation panel flags and rate limit", () => {
+  const config = validateServerEnv({
+    MONGO_URI: "mongodb://localhost:27017/shot-chat",
+    JWT_SECRET: "test-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://localhost:6379",
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+    CONVERSATION_PANEL_RATE_LIMIT: "60",
+  });
+
+  assert.equal(config.conversationPanelEnabled, true);
+  assert.equal(config.conversationPanelResourcesEnabled, true);
+  assert.equal(config.conversationPanelRateLimit, 60);
+});
+
+test("validateServerEnv rejects invalid conversation panel settings", () => {
+  assert.throws(
+    () => validateServerEnv({
+      MONGO_URI: "mongodb://localhost:27017/shot-chat",
+      JWT_SECRET: "test-secret",
+      URL_FRONTEND: "http://localhost:5173",
+      REDIS_URL: "redis://localhost:6379",
+      CONVERSATION_PANEL_ENABLED: "yes",
+    }),
+    (error) => {
+      assert.equal(error.name, "ConfigValidationError");
+      assert.match(error.message, /CONVERSATION_PANEL_ENABLED/);
+      return true;
+    },
+  );
+
+  assert.throws(
+    () => validateServerEnv({
+      MONGO_URI: "mongodb://localhost:27017/shot-chat",
+      JWT_SECRET: "test-secret",
+      URL_FRONTEND: "http://localhost:5173",
+      REDIS_URL: "redis://localhost:6379",
+      CONVERSATION_PANEL_RATE_LIMIT: "-5",
+    }),
+    (error) => {
+      assert.equal(error.name, "ConfigValidationError");
+      assert.match(error.message, /CONVERSATION_PANEL_RATE_LIMIT/);
+      return true;
+    },
+  );
+});
+

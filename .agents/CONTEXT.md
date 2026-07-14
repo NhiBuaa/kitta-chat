@@ -53,3 +53,15 @@ _Avoid_: changing API responses, switching reads, or repairing data during shado
 **Backfill**:
 A manual migration operation that derives or writes read-model rows from existing legacy MongoDB data.
 _Avoid_: automatic startup backfills or destructive index/data migrations without explicit approval.
+
+**Conversation Panel**:
+Một bảng điều khiển hiển thị thông tin tổng quan, tùy chỉnh preference, thành viên và các tài nguyên (media, file, link) đã chia sẻ trong một cuộc trò chuyện.
+_Avoid_: tích hợp business logic trực tiếp vào Panel Service; chỉ sử dụng Panel Service làm Orchestrator.
+
+**Two-Stage Loading**:
+Cơ chế tải bất đồng bộ 2 giai đoạn: Giai đoạn 1 tải nhanh Metadata (Header, preferences, permissions) để hiển thị ngay lập tức; Giai đoạn 2 tải song song các tài nguyên nặng (Resources, membership preview) để hiển thị sau.
+
+**Link Normalization**:
+Quy trình tiền xử lý URL bằng URL parser của Node.js nhằm trích xuất chính xác hostname dưới dạng viết thường (lowercase) và loại bỏ các ký tự thừa để tránh trùng lặp liên kết chia sẻ.
+_Avoid_: sử dụng các thuật toán Regex phức tạp để trích xuất hostname lúc truy vấn database.
+

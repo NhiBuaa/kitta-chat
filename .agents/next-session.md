@@ -1,12 +1,25 @@
-# Next Session — Sẵn sàng cho nhiệm vụ mới
+# Next Session — Slice 1: Permission Service & UI Panel Base Layout
 
-Mục tiêu lớn **Conversation Read Model Migration** đã được triển khai và hoàn thành dọn dẹp sạch sẽ (Slice 1 - 16).
+Mục tiêu tiếp theo là triển khai **Slice 1** để xây dựng cơ sở hạ tầng đánh giá quyền và dựng khung giao diện ban đầu cho Conversation Panel.
 
-## Trạng thái hiện tại
-- Toàn bộ 16 Slice đã ở trạng thái **DONE**.
-- Workspace sạch sẽ, bộ test suite xanh hoàn toàn với **246/246 tests passed**.
-- Trình đọc direct/group sidebar đã chuyển đổi hoàn toàn sang Conversation Read Model.
-- Các dịch vụ migration hỗ trợ (shadow compare, reconciliation, backfill) và cache ZSET Redis cũ đã được loại bỏ thành công.
+## Slice Mục tiêu
+**Slice 1 — Permission Service & UI Panel Base Layout**
 
-## Bước tiếp theo
-- Chờ Developer bàn giao yêu cầu tính năng mới (New Feature) hoặc định hướng tiếp theo cho dự án KittaChat.
+## Bối cảnh
+*   Slice 0 đã hoàn tất: hạ tầng skeletons, ADRs và rate limits đã sẵn sàng.
+*   Hiện tại chưa có module đánh giá quyền cụ thể (`PermissionService`) để bảo vệ các endpoints của panel, và Frontend chưa có layout cấu trúc của panel.
+
+## Mục tiêu cụ thể
+1.  **Backend: Triển khai `PermissionService`:**
+    *   Tạo `server/src/services/permissionService.js`.
+    *   Hàm `getPermissions(userId, conversationId)` trả về đối tượng Permission DTO gồm các flags: `canRead`, `canWrite`, `canLeave`, `canArchive`, `canDelete`, `canMute`, `canPin`.
+    *   Đảm bảo đây là pure service (chỉ đọc dữ liệu, không thay đổi trạng thái).
+2.  **Frontend: Thiết lập UI Panel Base Layout:**
+    *   Dựng layout khung panel trượt (slide-over panel) bên phải chat box.
+    *   Áp dụng các micro-animations cho hiệu ứng đóng/mở panel mượt mà.
+3.  **Viết tests:**
+    *   Viết unit/integration tests cho `PermissionService` (test riêng các trường hợp chat group và chat direct).
+
+## Guardrails bắt buộc
+*   `PermissionService` không được ghi dữ liệu vào database (chỉ được thực hiện read-only).
+*   Không được thay đổi các endpoint routes và contract API đã thống nhất.

@@ -1,4 +1,4 @@
-﻿# Technical Decisions Log
+# Technical Decisions Log
 
 This file is an append-only log of important technical decisions in this project.
 
@@ -176,3 +176,29 @@ Rules:
 - Sidebar read switch should wait until mismatch causes are understood and reconciled.
 
 **References**: `.agents/current-session.md`, `.agents/next-session.md`.
+
+## 2026-07-14 — Message Shared Links Optimization (ADR-004)
+
+**Decision**: Lưu trữ links dạng `{ url, hostname }` được tiền xử lý và chuẩn hóa hostname về chữ thường bằng Node.js `new URL()` parser khi tạo tin nhắn, kết hợp index `{ conversationId: 1, hasLink: 1, _id: -1 }`.
+
+**Why**: Để tránh việc quét Regex rất chậm trên trường `text` của collection `Message` khi tải panel và đảm bảo query Shared Links đạt tốc độ $O(1)$ database round-trips.
+
+**Consequences**:
+* Tốc độ truy vấn Shared Links tối ưu tối đa.
+* URL không hợp lệ được bỏ qua một cách lặng lẽ và không làm gián đoạn luồng lưu tin nhắn.
+
+**References**: `docs/adr/004-message-shared-links-optimization.md`, `specs/active/conversation-information-panel.md`.
+
+## 2026-07-14 — Conversation Panel Two-Stage Loading & Architecture Invariants (ADR-005)
+
+**Decision**: Triển khai Conversation Panel bằng API Two-Stage Loading bất đồng bộ (Metadata trước, Resources sau) và bảo chứng 10 quy tắc Architecture Invariants.
+
+**Why**: Để tối ưu độ trễ cảm nhận của người dùng (perceived latency) và giữ cho hệ thống dễ bảo trì, có khả năng scale cao khi mở rộng các domain dịch vụ nghiệp vụ.
+
+**Consequences**:
+* Tải metadata cực kỳ nhanh và hỗ trợ ETag loại trừ Presence.
+* Resources tải song song qua `Promise.allSettled()` với timeout 2 giây và JSON Error Contract riêng biệt cho từng loader.
+* Đảm bảo tính cô lập của các loaders, không chia sẻ mutable state, và Action Domain chỉ làm Orchestrator.
+
+**References**: `docs/adr/005-conversation-panel-two-stage-loading.md`, `specs/active/conversation-information-panel.md`.
+
