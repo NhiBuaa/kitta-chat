@@ -1,7 +1,6 @@
 const Message = require("../models/Message");
 const { cacheClient } = require("../config/redis");
 const buildConversationId = require("./buildConversationId");
-const { updateConversationWriteThrough } = require("../services/conversationCacheService");
 const { dualWriteConfirmedMessage } = require("../services/conversationDualWriteService");
 
 /**
@@ -105,9 +104,7 @@ async function saveMessageInBackground(data) {
                 await multi.exec();
             }
 
-            // ZSET Write-Through: cập nhật conversation list cho all participants
-            const timestamp = new Date(savedMessage.createdAt).getTime();
-            await updateConversationWriteThrough(conversationId, participantIds, timestamp);
+            // ZSET Write-Through: đã gỡ bỏ trong cleanup
 
             if (!isDuplicate) {
                 await dualWriteConfirmedMessage(savedMessage, { logPrefix: "[saveMessage]" });

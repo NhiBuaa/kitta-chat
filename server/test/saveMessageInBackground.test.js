@@ -4,7 +4,6 @@ const test = require("node:test");
 const saveMessagePath = require.resolve("../src/utils/saveMessageInBackground");
 const messageModelPath = require.resolve("../src/models/Message");
 const redisConfigPath = require.resolve("../src/config/redis");
-const conversationCacheServicePath = require.resolve("../src/services/conversationCacheService");
 const envConfigPath = require.resolve("../src/config/env");
 const readModelServicePath = require.resolve("../src/services/conversationReadModelService");
 const dualWriteServicePath = require.resolve("../src/services/conversationDualWriteService");
@@ -23,7 +22,6 @@ const clearSaveMessageCache = () => {
     saveMessagePath,
     messageModelPath,
     redisConfigPath,
-    conversationCacheServicePath,
     envConfigPath,
     readModelServicePath,
     dualWriteServicePath,
@@ -74,11 +72,7 @@ const loadSaveMessage = ({
       },
     },
   });
-  mockModule(conversationCacheServicePath, {
-    async updateConversationWriteThrough(conversationId, participantIds, timestamp) {
-      calls.push(["updateConversationWriteThrough", conversationId, participantIds, timestamp]);
-    },
-  });
+
   mockModule(envConfigPath, {
     getConversationMigrationConfig() {
       return { conversationDualWriteEnabled: dualWriteEnabled };
@@ -130,11 +124,7 @@ test("saveMessageInBackground marks idempotency retry as duplicate and returns e
   assert.equal(result.isDuplicate, true);
   assert.equal(calls[0][0], "findOneAndUpdate");
   assert.equal(calls[0][3].includeResultMetadata, true);
-  assert.deepEqual(calls[1].slice(0, 3), [
-    "updateConversationWriteThrough",
-    "user-1_user-2",
-    ["user-1", "user-2"],
-  ]);
+
 });
 
 test("saveMessageInBackground marks first idempotent save as non-duplicate", async () => {
@@ -225,7 +215,6 @@ test("dual-write failure is swallowed and original result still returns", async 
 
   assert.equal(result.doc, insertedDoc);
   assert.equal(result.isDuplicate, false);
-  assert.equal(calls.some((call) => call[0] === "updateConversationWriteThrough"), true);
 });
 
 test("Redis cache and recency still update when dual-write disabled", async () => {
@@ -241,7 +230,6 @@ test("Redis cache and recency still update when dual-write disabled", async () =
   await saveMessage({ sender: { _id: "user-1" }, receiverId: "user-2", idempotencyKey: "idem-cache-disabled" });
 
   assert.equal(calls.some((call) => call[0] === "redis.lPush"), true);
-  assert.equal(calls.some((call) => call[0] === "updateConversationWriteThrough"), true);
 });
 
 test("Redis cache and recency still update when dual-write succeeds", async () => {
@@ -258,7 +246,6 @@ test("Redis cache and recency still update when dual-write succeeds", async () =
 
   assert.equal(calls.some((call) => call[0] === "ensureConversationForConfirmedMessage"), true);
   assert.equal(calls.some((call) => call[0] === "redis.lPush"), true);
-  assert.equal(calls.some((call) => call[0] === "updateConversationWriteThrough"), true);
 });
 
 test("Redis cache and recency still update when dual-write fails", async () => {
@@ -276,5 +263,4 @@ test("Redis cache and recency still update when dual-write fails", async () => {
 
   assert.equal(calls.some((call) => call[0] === "ensureConversationForConfirmedMessage"), true);
   assert.equal(calls.some((call) => call[0] === "redis.lPush"), true);
-  assert.equal(calls.some((call) => call[0] === "updateConversationWriteThrough"), true);
 });

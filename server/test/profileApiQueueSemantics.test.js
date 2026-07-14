@@ -8,7 +8,6 @@ const profileAvatarQueueServicePath = require.resolve("../src/services/profileAv
 const cacheServicePath = require.resolve("../src/services/cacheService");
 const friendCacheServicePath = require.resolve("../src/services/friendCacheService");
 const presenceServicePath = require.resolve("../src/services/presenceService");
-const conversationCacheServicePath = require.resolve("../src/services/conversationCacheService");
 const presenceHandlerPath = require.resolve("../src/socket/handlers/presenceHandler");
 
 const mockModule = (path, exports) => {
@@ -29,7 +28,6 @@ const clearControllerCache = () => {
     cacheServicePath,
     friendCacheServicePath,
     presenceServicePath,
-    conversationCacheServicePath,
     presenceHandlerPath,
   ]) {
     delete require.cache[path];
@@ -83,9 +81,6 @@ const loadUserController = ({ avatarQueueResult }) => {
   mockModule(presenceServicePath, {
     getMultiPresence: async () => ({}),
     setPresenceWriteThrough: async () => {},
-  });
-  mockModule(conversationCacheServicePath, {
-    getRecentConversations: async () => [],
   });
   mockModule(presenceHandlerPath, {
     broadcastUserStatus: async () => {},

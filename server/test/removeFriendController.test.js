@@ -7,7 +7,6 @@ const messagePath = require.resolve("../src/models/Message");
 const friendCachePath = require.resolve("../src/services/friendCacheService");
 const cacheServicePath = require.resolve("../src/services/cacheService");
 const presenceServicePath = require.resolve("../src/services/presenceService");
-const conversationCachePath = require.resolve("../src/services/conversationCacheService");
 const presenceHandlerPath = require.resolve("../src/socket/handlers/presenceHandler");
 const profileAvatarQueuePath = require.resolve("../src/services/profileAvatarQueueService");
 const callHistoryPath = require.resolve("../src/models/CallHistory");
@@ -33,7 +32,6 @@ const clearModules = () => {
     friendCachePath,
     cacheServicePath,
     presenceServicePath,
-    conversationCachePath,
     presenceHandlerPath,
     profileAvatarQueuePath,
     callHistoryPath,
@@ -115,9 +113,6 @@ const loadController = ({
     getMultiPresence: async () => ({}),
     getUserPresence: async () => null,
     setPresenceWriteThrough: async () => {},
-  });
-  mockModule(conversationCachePath, {
-    getRecentConversations: async () => [],
   });
   mockModule(presenceHandlerPath, {
     broadcastUserStatus: () => {},

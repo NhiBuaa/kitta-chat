@@ -5,30 +5,12 @@ const mongoose = require("mongoose");
 const { createSystemMessage } = require("./messageController");
 const getSafeUserName = require("../utils/getSafeUserName");
 const { getConversationMigrationConfig } = require("../config/env");
-const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
 const { getSidebarCandidatesForUser } = require("../services/conversationSidebarCandidateService");
 const { logger } = require("../utils/logger");
 const { syncGroupLifecycle } = require("../services/conversationReadModelService");
 
 const GROUP_USER_FIELDS = "displayName avatar username status activityStatus";
-const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
-  const { conversationShadowCompareEnabled } = getConversationMigrationConfig();
-  if (!conversationShadowCompareEnabled) return;
 
-  try {
-    const report = await compareSidebarForUser({ userId, legacyItems, scope });
-    if (report.mismatches.length > 0) {
-      logger.warn("Conversation shadow compare mismatch", {
-        scope,
-        userId: normalizeUserId(userId),
-        mismatchCount: report.mismatches.length,
-        mismatches: report.mismatches,
-      });
-    }
-  } catch (error) {
-    logger.error("Conversation shadow compare failed", { error: error.message });
-  }
-};
 
 const normalizeUserId = (value) => {
   if (!value) return null;
@@ -190,123 +172,62 @@ const createGroup = async (req, res) => {
   }
 };
 
-const buildReadModelGroupSidebarResult = ({
-  candidates,
-  groupMap,
-  lastMessageMap,
-  currentUserId,
-}) => {
-  if (!Array.isArray(candidates) || candidates.length === 0) return null;
 
-  const result = [];
-  for (const candidate of candidates) {
-    if (candidate.kind !== "group") continue;
-    const legacyConversationId = candidate.conversationId || candidate.legacyConversationId;
-    if (!legacyConversationId) continue;
-
-    const groupObj = groupMap.get(legacyConversationId);
-    if (!groupObj) continue;
-
-    const lastMsg = lastMessageMap.get(legacyConversationId) || null;
-    const unreadCount = candidate.unreadCount || 0;
-
-    result.push({
-      ...groupObj,
-      lastMessage: buildGroupLastMessagePreview(lastMsg, currentUserId),
-      hasUnread: unreadCount > 0,
-      unreadCount,
-    });
-  }
-
-  return result;
-};
 
 // [GET] /api/groups (Lấy danh sách nhóm tôi đã tham gia)
 const getMyGroups = async (req, res) => {
   try {
     const currentUserId = req.user.id;
-    const currentUserObjectId = new mongoose.Types.ObjectId(currentUserId);
-    const groups = await populateGroup(
-      Group.find({ members: currentUserId }),
-    ).sort({
-      updatedAt: -1,
-    });
 
-    const groupIds = groups.map((group) => normalizeUserId(group)).filter(Boolean);
+    // 1. Lấy candidates từ Conversation Read Model (tối đa 30)
+    const candidates = await getSidebarCandidatesForUser({ userId: currentUserId, limit: 30 });
+    const groupCandidates = (candidates || []).filter((c) => c.kind === "group");
+
+    // Lấy danh sách groupId của các candidates
+    const groupIds = groupCandidates.map((c) => c.conversationId).filter(Boolean);
 
     if (groupIds.length === 0) {
       return res.json({ success: true, groups: [] });
     }
 
-    const [lastMessages, unreadCounts] = await Promise.all([
-      Message.aggregate([
-        { $match: { conversationId: { $in: groupIds } } },
-        { $sort: { createdAt: -1 } },
-        {
-          $group: {
-            _id: "$conversationId",
-            lastMsg: { $first: "$$ROOT" },
-          },
-        },
-      ]),
-      Message.aggregate([
-        {
-          $match: {
-            conversationId: { $in: groupIds },
-            sender: { $ne: currentUserObjectId },
-            readBy: { $ne: currentUserObjectId },
-          },
-        },
-        { $group: { _id: "$conversationId", count: { $sum: 1 } } },
-      ]),
-    ]);
-
-    const lastMessageMap = new Map(
-      lastMessages.map((item) => [item._id, item.lastMsg]),
+    // 2. Query thông tin Groups
+    const groups = await populateGroup(
+      Group.find({ _id: { $in: groupIds } })
     );
-    const unreadMap = new Map(
-      unreadCounts.map((item) => [item._id, item.count]),
-    );
+    const groupMap = new Map(groups.map((g) => [normalizeUserId(g), toPlainObject(g)]));
 
-    const groupsWithSidebarState = groups.map((group) => {
-      const groupId = normalizeUserId(group);
-      const lastMsg = lastMessageMap.get(groupId) || null;
-      const unreadCount = unreadMap.get(groupId) || 0;
+    // Gom các lastMessageId từ candidates để query Message
+    const lastMessageIds = groupCandidates
+      .map((c) => c.lastMessageId)
+      .filter(Boolean);
 
-      return {
-        ...toPlainObject(group),
-        lastMessage: buildGroupLastMessagePreview(lastMsg, currentUserId),
-        hasUnread: unreadCount > 0,
-        unreadCount,
-      };
-    });
+    const messages = lastMessageIds.length > 0
+      ? await Message.find({ _id: { $in: lastMessageIds } }).lean()
+      : [];
 
-    let responseGroups = groupsWithSidebarState;
-    const { conversationSidebarReadModelEnabled } = getConversationMigrationConfig();
-    if (conversationSidebarReadModelEnabled) {
-      try {
-        const candidates = await getSidebarCandidatesForUser({ userId: currentUserId, limit: 30 });
-        const groupMap = new Map(groups.map((g) => [normalizeUserId(g), toPlainObject(g)]));
-        responseGroups = buildReadModelGroupSidebarResult({
-          candidates,
-          groupMap,
-          lastMessageMap,
-          currentUserId,
-        }) || groupsWithSidebarState;
-      } catch (error) {
-        console.error("Group sidebar read-model switch failed; falling back to legacy", error);
-        responseGroups = groupsWithSidebarState;
+    const lastMsgMap = new Map(messages.map((m) => [m._id.toString(), m]));
+
+    // 3. Build response
+    const responseGroups = [];
+    for (const candidate of groupCandidates) {
+      const groupId = candidate.conversationId;
+      if (groupMap.has(groupId)) {
+        const groupObj = groupMap.get(groupId);
+        const lastMsg = candidate.lastMessageId ? lastMsgMap.get(candidate.lastMessageId.toString()) : null;
+        const unreadCount = candidate.unreadCount || 0;
+
+        responseGroups.push({
+          ...groupObj,
+          lastMessage: lastMsg ? buildGroupLastMessagePreview(lastMsg, currentUserId) : null,
+          hasUnread: unreadCount > 0,
+          unreadCount,
+        });
       }
     }
 
-    await runSidebarShadowCompare({
-      userId: currentUserId,
-      legacyItems: responseGroups,
-      scope: "group",
-    });
-
     res.json({ success: true, groups: responseGroups });
   } catch (error) {
+    console.error("Get My Groups Error:", error);
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };

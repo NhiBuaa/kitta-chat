@@ -5,7 +5,6 @@ const friendCacheServicePath = require.resolve("../src/services/friendCacheServi
 const redisConfigPath = require.resolve("../src/config/redis");
 const userModelPath = require.resolve("../src/models/User");
 const messageModelPath = require.resolve("../src/models/Message");
-const conversationCacheServicePath = require.resolve("../src/services/conversationCacheService");
 
 const mockModule = (path, exports) => {
   require.cache[path] = {
@@ -22,7 +21,6 @@ const clearFriendCacheServiceCache = () => {
     redisConfigPath,
     userModelPath,
     messageModelPath,
-    conversationCacheServicePath,
   ]) {
     delete require.cache[path];
   }
@@ -53,14 +51,7 @@ const loadFriendCacheService = ({ messageCount = 0, redisFails = false } = {}) =
       return messageCount;
     },
   });
-  mockModule(conversationCacheServicePath, {
-    async updateConversationWriteThrough(conversationId, participantIds, timestamp) {
-      calls.push(["updateConversationWriteThrough", conversationId, participantIds, timestamp]);
-    },
-    async updateConversationRemove(conversationId, participantIds) {
-      calls.push(["updateConversationRemove", conversationId, participantIds]);
-    },
-  });
+
 
   const service = require(friendCacheServicePath);
   return { service, calls };
@@ -77,7 +68,6 @@ test("removeFriendWriteThrough removes friendship cache and conversation entry w
     ["sRem", "cache:friends:user-a", "user-b"],
     ["sRem", "cache:friends:user-b", "user-a"],
     ["countDocuments", { conversationId: "user-a_user-b" }],
-    ["updateConversationRemove", "user-a_user-b", ["user-a", "user-b"]],
   ]);
 });
 

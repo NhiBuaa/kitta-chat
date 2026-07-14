@@ -6,10 +6,8 @@ const { queueProfileAvatarProcessing } = require("../services/profileAvatarQueue
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
 const { addFriendWriteThrough, removeFriendWriteThrough, getFriendIdsFromCache } = require("../services/friendCacheService");
 const { getMultiPresence, getUserPresence, setPresenceWriteThrough } = require("../services/presenceService");
-const { getRecentConversations } = require("../services/conversationCacheService");
 const { broadcastUserStatus } = require("../socket/handlers/presenceHandler");
 const { getConversationMigrationConfig } = require("../config/env");
-const { compareSidebarForUser } = require("../services/conversationShadowCompareService");
 const { logger } = require("../utils/logger");
 const { getSidebarCandidatesForUser } = require("../services/conversationSidebarCandidateService");
 
@@ -27,65 +25,7 @@ const isRealtimeOnline = (presence) =>
   presence?.status === "online" || presence?.status === "active";
 
 
-const runSidebarShadowCompare = async ({ userId, legacyItems, scope }) => {
-  const { conversationShadowCompareEnabled } = getConversationMigrationConfig();
-  if (!conversationShadowCompareEnabled) return;
 
-  try {
-    const report = await compareSidebarForUser({ userId, legacyItems, scope });
-    if (report.mismatches.length > 0) {
-      logger.warn("Conversation shadow compare mismatch", {
-        scope,
-        userId: toComparableId(userId),
-        mismatchCount: report.mismatches.length,
-        mismatches: report.mismatches,
-      });
-    }
-  } catch (error) {
-    logger.error("Conversation shadow compare failed", { error: error.message });
-  }
-};
-
-const buildReadModelSidebarResult = ({
-  candidates,
-  userMap,
-  lastMsgMap,
-  currentUser,
-  currentUserId,
-  friendsIds,
-}) => {
-  if (!Array.isArray(candidates) || candidates.length === 0) return null;
-
-  const result = [];
-  for (const candidate of candidates) {
-    if (candidate.kind !== "direct") return null;
-    const legacyConversationId = candidate.conversationId || candidate.legacyConversationId;
-    if (!legacyConversationId || legacyConversationId.includes("[object Object]")) return null;
-
-    const parts = legacyConversationId.includes("_") ? legacyConversationId.split("_") : [legacyConversationId];
-    const targetId = parts.find((part) => part && part !== currentUserId);
-    const userObj = targetId ? userMap.get(targetId) : null;
-    const lastMsg = lastMsgMap.get(legacyConversationId);
-    if (!targetId || !userObj || !lastMsg) return null;
-
-    const relationshipFlags = {
-      isFriend: friendsIds.has(targetId),
-      isSent: includesId(userObj?.friendRequests, currentUserId),
-      isReceived: includesId(currentUser?.friendRequests, targetId),
-    };
-
-    const unreadCount = candidate.unreadCount || 0;
-    result.push({
-      ...userObj,
-      ...relationshipFlags,
-      lastMessage: buildSidebarLastMessage(lastMsg),
-      hasUnread: unreadCount > 0,
-      unreadCount,
-    });
-  }
-
-  return result;
-};
 const buildRelationshipFlags = (targetUser, currentUser) => {
   const currentUserId = toComparableId(currentUser?._id || currentUser?.id);
 
@@ -484,160 +424,110 @@ const accceptFriendRequest = async (req, res) => {
 const getSidebarUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
-    const currentUserObjectId = new mongoose.Types.ObjectId(currentUserId);
 
-    // 
-    // Lấy conversation IDs từ Redis ZSET
-    const conversationIds = await getRecentConversations(currentUserId, 30);
+    // 1. Lấy candidates từ Conversation Read Model (tối đa 30)
+    const candidates = await getSidebarCandidatesForUser({ userId: currentUserId, limit: 30 });
+    const directCandidates = (candidates || []).filter((c) => c.kind === "direct");
 
-    // Lấy friend IDs từ Redis SET (Write-Through cache)
+    // 2. Lấy danh sách bạn bè của người dùng hiện tại
     const [currentUser, friendIds] = await Promise.all([
       User.findById(currentUserId).select("friends friendRequests"),
       getFriendIdsFromCache(currentUserId),
     ]);
     const friendsIds = new Set(friendIds);
 
-    // Users đã có trong ZSET
-    // Friends chưa nhắn tin (vẫn phải hiển thị)
-    const targetUserIds = new Set(friendIds);
-
-    for (const convId of conversationIds) {
-      const parts = convId.includes("_") ? convId.split("_") : [convId];
-      for (const part of parts) {
-        if (part && part !== currentUserId) {
-          targetUserIds.add(part);
+    // Xác định tập các user id của bạn bè trong candidate
+    const candidateTargetUserIds = new Set();
+    for (const candidate of directCandidates) {
+      const legacyConversationId = candidate.conversationId || candidate.legacyConversationId;
+      if (legacyConversationId) {
+        const parts = legacyConversationId.includes("_") ? legacyConversationId.split("_") : [legacyConversationId];
+        const targetId = parts.find((part) => part && part !== currentUserId);
+        if (targetId) {
+          candidateTargetUserIds.add(targetId);
         }
       }
     }
 
-    const targetIds = Array.from(targetUserIds);
+    // Bạn bè chưa nhắn tin -> xếp sau (lastMessage = null)
+    const noMessageFriendIds = friendIds.filter((friendId) => !candidateTargetUserIds.has(friendId));
 
-    // Tranh crash khi khong co target nao
-    if (targetIds.length === 0) {
-      return res.json({ success: true, users: [] });
-    }
+    // Gom toàn bộ User ID cần fetch thông tin
+    const allTargetUserIds = Array.from(new Set([
+      ...Array.from(candidateTargetUserIds),
+      ...noMessageFriendIds
+    ]));
 
-    const allConversationIds = [
-      ...new Set([...conversationIds, ...targetIds]),
-    ];
+    // Fetch thông tin người dùng
+    const users = allTargetUserIds.length > 0 
+      ? await User.find({ _id: { $in: allTargetUserIds } }).select(
+          "displayName avatar status activityStatus friends friendRequests",
+        )
+      : [];
 
-    // Batch lấy User info + Last Message bằng $in
-    // Thay N query findOne -> chỉ 1 query $in
-    const [users, allLastMessages] = await Promise.all([
-      User.find({ _id: { $in: targetIds } }).select(
-        "displayName avatar status activityStatus friends friendRequests",
-      ),
-      Message.aggregate([
-        { $match: { conversationId: { $in: allConversationIds } } },
-        { $sort: { createdAt: -1 } },
-        { $group: {
-            _id: "$conversationId",
-            lastMsg: { $first: "$$ROOT" },
-        }},
-      ]),
-    ]);
-
-    // Đánh index last message theo conversationId
-    const lastMsgMap = new Map(
-      allLastMessages.map((item) => [item._id, item.lastMsg])
-    );
-
-    // Batch lấy unread count cho tất cả conversations
-    const unreadCounts = await Message.aggregate([
-      {
-        $match: {
-          receiver: currentUserObjectId,
-          isRead: false,
-          conversationId: { $in: allConversationIds },
-        },
-      },
-      { $group: { _id: "$conversationId", count: { $sum: 1 } } },
-    ]);
-    const unreadMap = new Map(unreadCounts.map((item) => [item._id, item.count]));
-
-    // Build response - ưu tiên thứ tự từ ZSET (tin nhắn mới nhất)
-    // Friends chưa nhắn tin -> xếp sau cùng, vẫn hiển thị
     const userMap = new Map(users.map((u) => [u._id.toString(), u.toObject()]));
 
-    // Đã có conversation -> xếp theo ZSET order
-    const hasConversationSet = new Set(conversationIds);
-    const conversationEntries = conversationIds
-      .map((convId) => {
-        const parts = convId.includes("_") ? convId.split("_") : [convId];
-        const targetId = parts.find((p) => p && p !== currentUserId) || convId;
-        return { convId, targetId };
-      })
-      .filter(({ targetId }) => userMap.has(targetId));
+    // Gom các lastMessageId từ direct candidates để fetch Message
+    const lastMessageIds = directCandidates
+      .map((c) => c.lastMessageId)
+      .filter(Boolean);
 
-    // Friends chưa nhắn tin -> xếp sau (lastMessage = null)
-    const noMessageEntries = friendIds
-      .filter((friendId) => {
-        const hasConv = Array.from(hasConversationSet).some((convId) =>
-          convId.includes(friendId)
-        );
-        return !hasConv && userMap.has(friendId);
-      })
-      .map((friendId) => ({ convId: null, targetId: friendId }));
+    const messages = lastMessageIds.length > 0
+      ? await Message.find({ _id: { $in: lastMessageIds } }).lean()
+      : [];
 
-    const allEntries = [...conversationEntries, ...noMessageEntries];
+    const lastMsgMap = new Map(messages.map((m) => [m._id.toString(), m]));
 
-    // Tính relationship flags
-    const getRelationshipFlags = (targetId, targetUser) => ({
-      isFriend: friendsIds.has(targetId),
-      isSent: includesId(targetUser?.friendRequests, currentUserId),
-      isReceived: includesId(currentUser?.friendRequests, targetId),
-    });
+    // 3. Build response
+    // Nhóm 1: Có cuộc hội thoại (candidates)
+    const conversationEntries = [];
+    for (const candidate of directCandidates) {
+      const legacyConversationId = candidate.conversationId || candidate.legacyConversationId;
+      const parts = legacyConversationId.includes("_") ? legacyConversationId.split("_") : [legacyConversationId];
+      const targetId = parts.find((part) => part && part !== currentUserId);
+      if (targetId && userMap.has(targetId)) {
+        const userObj = userMap.get(targetId);
+        const lastMsg = candidate.lastMessageId ? lastMsgMap.get(candidate.lastMessageId.toString()) : null;
+        const unreadCount = candidate.unreadCount || 0;
 
-    const result = allEntries.map(({ convId, targetId }) => {
-      const userObj = userMap.get(targetId);
-      const lastMsg = convId ? lastMsgMap.get(convId) : null;
-      const unreadCount = convId ? (unreadMap.get(convId) || 0) : 0;
+        const relationshipFlags = {
+          isFriend: friendsIds.has(targetId),
+          isSent: includesId(userObj?.friendRequests, currentUserId),
+          isReceived: includesId(currentUser?.friendRequests, targetId),
+        };
 
-      if (lastMsg) {
-
-        return {
+        conversationEntries.push({
           ...userObj,
-          ...getRelationshipFlags(targetId, userObj),
-          lastMessage: buildSidebarLastMessage(lastMsg),
+          ...relationshipFlags,
+          lastMessage: lastMsg ? buildSidebarLastMessage(lastMsg) : null,
           hasUnread: unreadCount > 0,
           unreadCount,
-        };
-      }
-
-      return {
-        ...userObj,
-        ...getRelationshipFlags(targetId, userObj),
-        lastMessage: null,
-        hasUnread: false,
-        unreadCount: 0,
-      };
-    });
-
-    let responseUsers = result;
-    const { conversationSidebarReadModelEnabled } = getConversationMigrationConfig();
-    if (conversationSidebarReadModelEnabled) {
-      try {
-        const candidates = await getSidebarCandidatesForUser({ userId: currentUserId, limit: 30 });
-        responseUsers = buildReadModelSidebarResult({
-          candidates,
-          userMap,
-          lastMsgMap,
-          currentUser,
-          currentUserId,
-          friendsIds,
-        }) || result;
-      } catch (error) {
-        console.error("Conversation sidebar read-model switch failed; falling back to legacy", error);
-        responseUsers = result;
+        });
       }
     }
 
-    await runSidebarShadowCompare({
-      userId: currentUserId,
-      legacyItems: responseUsers,
-      scope: "direct",
-    });
+    // Nhóm 2: Bạn bè chưa nhắn tin -> xếp sau (lastMessage = null)
+    const noMessageEntries = [];
+    for (const friendId of noMessageFriendIds) {
+      if (userMap.has(friendId)) {
+        const userObj = userMap.get(friendId);
+        const relationshipFlags = {
+          isFriend: friendsIds.has(friendId),
+          isSent: includesId(userObj?.friendRequests, currentUserId),
+          isReceived: includesId(currentUser?.friendRequests, friendId),
+        };
 
+        noMessageEntries.push({
+          ...userObj,
+          ...relationshipFlags,
+          lastMessage: null,
+          hasUnread: false,
+          unreadCount: 0,
+        });
+      }
+    }
+
+    const responseUsers = [...conversationEntries, ...noMessageEntries];
     res.json({ success: true, users: responseUsers });
   } catch (error) {
     console.error("Get Sidebar Users Error:", error);

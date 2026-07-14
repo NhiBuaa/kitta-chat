@@ -43,7 +43,7 @@ Các invariant bắt buộc:
 | 13 | Read receipts / unread reconciliation | DONE | Đồng bộ unreadCount/readState khi nhận markRead socket events. |
 | 14 | Group lifecycle integration | DONE | Add/remove member, joinedAt/leftAt, group system events. |
 | 15 | Runtime Confidence / Gradual Rollout | DONE | Bật shadow compare/staging, theo dõi mismatch, tinh chỉnh unreadCount, phân tích log mismatch. |
-| 16 | Legacy cleanup planning | TODO-NEXT | Lập kế hoạch dọn dẹp mã nguồn cũ sau khi read model ổn định. |
+| 16 | Legacy Cleanup & Execution | DONE | Đã lập kế hoạch và thực thi dọn dẹp mã nguồn legacy, chuyển đổi đọc sang Read Model hoàn toàn. |
 
 ## Chi tiết các slice đã hoàn thành
 

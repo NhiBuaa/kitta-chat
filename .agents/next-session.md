@@ -1,16 +1,12 @@
-# Next Session — Slice 16: Legacy Cleanup Planning
+# Next Session — Sẵn sàng cho nhiệm vụ mới
 
-## Slice mục tiêu
-Lập kế hoạch chi tiết cho việc dọn dẹp mã nguồn cũ (Legacy Cleanup) sau khi hệ thống đã chạy shadow so sánh ổn định và đã hoàn thành chuyển đổi hoàn toàn (Read-switch) sang sử dụng Conversation Read Model.
+Mục tiêu lớn **Conversation Read Model Migration** đã được triển khai và hoàn thành dọn dẹp sạch sẽ (Slice 1 - 16).
 
-## Bối cảnh
-- Slice 15 đã kích hoạt shadow compare và bộ phân tích log sai lệch dữ liệu.
-- Kế hoạch dọn dẹp (Cleanup) sẽ chỉ ra các đoạn mã nguồn dư thừa cần loại bỏ khi Read Model được promotion làm nguồn dữ liệu chính thức.
+## Trạng thái hiện tại
+- Toàn bộ 16 Slice đã ở trạng thái **DONE**.
+- Workspace sạch sẽ, bộ test suite xanh hoàn toàn với **246/246 tests passed**.
+- Trình đọc direct/group sidebar đã chuyển đổi hoàn toàn sang Conversation Read Model.
+- Các dịch vụ migration hỗ trợ (shadow compare, reconciliation, backfill) và cache ZSET Redis cũ đã được loại bỏ thành công.
 
-## Mục tiêu cụ thể
-- Xác định toàn bộ mã nguồn cũ cần xóa (ví dụ: các hàm aggregation phức tạp trên `Message`/`Group` để tính toán sidebar và unreadCount động).
-- Xác định các trường dữ liệu/chỉ mục cũ trên MongoDB có thể được gỡ bỏ (hoặc lên phương án migration hạ cấp nếu cần).
-- Phác thảo tài liệu roadmap chuyển giao chính thức (Promotion Checklist) từ legacy sang read model.
-
-## Guardrails bắt buộc
-- Tuyệt đối không xóa bất kỳ code runtime hoặc cơ sở dữ liệu legacy nào trong slice lập kế hoạch này. Đây là bước khảo sát và ghi nhận tài liệu (planning-only).
+## Bước tiếp theo
+- Chờ Developer bàn giao yêu cầu tính năng mới (New Feature) hoặc định hướng tiếp theo cho dự án KittaChat.

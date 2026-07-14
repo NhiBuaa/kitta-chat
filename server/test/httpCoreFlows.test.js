@@ -22,7 +22,6 @@ const passwordResetNotificationServicePath = require.resolve(
 const cacheServicePath = require.resolve("../src/services/cacheService");
 const friendCacheServicePath = require.resolve("../src/services/friendCacheService");
 const presenceServicePath = require.resolve("../src/services/presenceService");
-const conversationCacheServicePath = require.resolve("../src/services/conversationCacheService");
 const presenceHandlerPath = require.resolve("../src/socket/handlers/presenceHandler");
 
 const pathsToClear = [
@@ -43,7 +42,6 @@ const pathsToClear = [
   cacheServicePath,
   friendCacheServicePath,
   presenceServicePath,
-  conversationCacheServicePath,
   presenceHandlerPath,
 ];
 
@@ -195,9 +193,7 @@ const createTestServer = async ({ authRateLimits } = {}) => {
     getUserPresence: async () => null,
     setPresenceWriteThrough: async () => {},
   });
-  mockModule(conversationCacheServicePath, {
-    getRecentConversations: async () => [],
-  });
+
   mockModule(presenceHandlerPath, {
     broadcastUserStatus: async () => {},
   });

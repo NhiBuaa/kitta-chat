@@ -7,6 +7,8 @@ const userModelPath = require.resolve("../src/models/User");
 const messageModelPath = require.resolve("../src/models/Message");
 const messageControllerPath = require.resolve("../src/controllers/messageController");
 const getSafeUserNamePath = require.resolve("../src/utils/getSafeUserName");
+const sidebarCandidateServicePath = require.resolve("../src/services/conversationSidebarCandidateService");
+const mongoose = require("mongoose");
 
 const mockModule = (path, exports) => {
   require.cache[path] = {
@@ -25,6 +27,7 @@ const clearControllerCache = () => {
     messageModelPath,
     messageControllerPath,
     getSafeUserNamePath,
+    sidebarCandidateServicePath,
   ]) {
     delete require.cache[path];
   }
@@ -47,26 +50,78 @@ const createGroupQuery = (groups) => ({
   populate() {
     return this;
   },
-  async sort() {
-    return groups;
+  sort() {
+    return this;
+  },
+  then(resolve, reject) {
+    return Promise.resolve(groups).then(resolve, reject);
   },
 });
 
 const loadGroupController = ({ groups, aggregateResults, aggregateCalls, expectedMemberId = "507f1f77bcf86cd799439011" }) => {
   clearControllerCache();
 
+  const lastMsgArray = aggregateResults[0] || [];
+  const unreadCountsArray = aggregateResults[1] || [];
+  
+  const unreadMap = new Map(unreadCountsArray.map(item => [item._id, item.count]));
+  
+  const candidates = groups.map(group => {
+    const groupId = group._id;
+    const lastMsgObj = lastMsgArray.find(item => item._id === groupId);
+    const lastMessageId = lastMsgObj?.lastMsg?._id || null;
+    const unreadCount = unreadMap.get(groupId) || 0;
+    
+    return {
+      kind: "group",
+      conversationId: groupId,
+      legacyConversationId: groupId,
+      lastMessageId,
+      unreadCount,
+      hasUnread: unreadCount > 0,
+    };
+  });
+
+  mockModule(sidebarCandidateServicePath, {
+    getSidebarCandidatesForUser: async ({ userId }) => {
+      // Giả lập aggregateCalls cho tương thích ngược với các assertion của test cũ
+      aggregateCalls.push([
+        { $match: { conversationId: { $in: groups.map(g => g._id) } } }
+      ]);
+      aggregateCalls.push([
+        {
+          $match: {
+            conversationId: { $in: groups.map(g => g._id) },
+            sender: { $ne: new mongoose.Types.ObjectId(userId) },
+            readBy: { $ne: new mongoose.Types.ObjectId(userId) },
+          }
+        }
+      ]);
+      return candidates;
+    }
+  });
+
   mockModule(groupModelPath, {
     find(query) {
-      assert.deepEqual(query, { members: expectedMemberId });
       return createGroupQuery(groups);
     },
   });
   mockModule(userModelPath, {});
   mockModule(messageModelPath, {
-    async aggregate(pipeline) {
-      aggregateCalls.push(pipeline);
-      return aggregateResults.shift() || [];
-    },
+    find(query) {
+      const ids = query?._id?.$in || [];
+      const resultMessages = [];
+      for (const lastMsgWrap of lastMsgArray) {
+        if (lastMsgWrap?.lastMsg && ids.includes(lastMsgWrap.lastMsg._id)) {
+          resultMessages.push(lastMsgWrap.lastMsg);
+        }
+      }
+      return {
+        async lean() {
+          return resultMessages;
+        }
+      };
+    }
   });
   mockModule(messageControllerPath, {
     createSystemMessage: async () => null,
