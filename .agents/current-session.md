@@ -20,7 +20,7 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 | Slice | Tên | Trạng thái | Ghi chú |
 |---|---|---|---|
 | 0 | Infrastructure, ADRs & Skeletons | **DONE** | Tạo ADR-004, ADR-005, config Feature Flags, base route/controller skeleton, rate limiting và test tích hợp skeleton. |
-| 1 | Permission Service & UI Panel Layout | **IN PROGRESS** | Viết pure PermissionService (backend), dựng layout panel thô (frontend) và viết unit/integration tests cho Permission Service. |
+| 1 | Permission Service & UI Panel Layout | **DONE** | Viết pure PermissionService (backend), dựng layout panel thô (frontend), viết unit/integration tests và tích hợp kiểm tra quyền truy cập. |
 | 2 | Overview & Preference Domain | PENDING | Triển khai Metadata API (Giai đoạn 1) hoàn chỉnh, hỗ trợ ETag loại trừ Presence và preferences update. |
 | 3 | Shared Media Domain | PENDING | Triển khai Media loader (Giai đoạn 2), trả về thumbnail URL/metadata, phân trang cursor. |
 | 4 | Shared Files & Links Domain | PENDING | Triển khai File loader & Link parser/normalization, lưu trữ link khi persist tin nhắn. |
@@ -29,4 +29,4 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 | 7 | Realtime Sync & Client State | PENDING | Đồng bộ hóa realtime qua Socket.IO (Presence, update group info, membership change) và tối ưu client store. |
 
 ## Trạng thái kiểm thử gần nhất
-*   Sau Slice 0: Bộ test tích hợp riêng `6/6` passed, full server regression `255/255` passed.
+*   Sau Slice 1: Bộ test tích hợp panel `7/7` passed, unit test permission `5/5` passed, full server regression `261/261` passed.

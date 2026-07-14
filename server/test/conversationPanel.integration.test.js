@@ -12,10 +12,13 @@ const generateToken = (userId) => {
   return jwt.sign({ id: userId, username: "testuser" }, JWT_SECRET);
 };
 
+const permissionServicePath = require.resolve("../src/services/permissionService");
+
 const clearModuleCache = () => {
   delete require.cache[require.resolve("../src/app")];
   delete require.cache[require.resolve("../src/routes/conversationPanel")];
   delete require.cache[require.resolve("../src/controllers/conversationPanelController")];
+  delete require.cache[permissionServicePath];
 };
 
 const createTestServer = async (envOverrides = {}) => {
@@ -28,6 +31,39 @@ const createTestServer = async (envOverrides = {}) => {
 
   // Clear cache để load module với env mới
   clearModuleCache();
+
+  // Mock PermissionService
+  const permissionServiceMock = {
+    getPermissions: async (userId, conversationId) => {
+      if (conversationId === "forbidden-conv") {
+        return {
+          canRead: false,
+          canWrite: false,
+          canLeave: false,
+          canArchive: false,
+          canDelete: false,
+          canMute: false,
+          canPin: false,
+        };
+      }
+      return {
+        canRead: true,
+        canWrite: true,
+        canLeave: true,
+        canArchive: true,
+        canDelete: true,
+        canMute: true,
+        canPin: true,
+      };
+    }
+  };
+  require.cache[permissionServicePath] = {
+    id: permissionServicePath,
+    filename: permissionServicePath,
+    loaded: true,
+    exports: permissionServiceMock,
+  };
+
   const { createApp } = require("../src/app");
 
   const app = createApp({
@@ -225,6 +261,23 @@ test("Resources API rate limits requests based on CONVERSATION_PANEL_RATE_LIMIT 
     const resDifferentUser = await server.get("/api/conversations/conv-123/panel/resources", token2);
     assert.equal(resDifferentUser.response.status, 200);
 
+  } finally {
+    await server.close();
+  }
+});
+
+test("Metadata API returns 403 Forbidden when user has no canRead permission", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const { response, body } = await server.get("/api/conversations/forbidden-conv/panel/metadata", token);
+
+    assert.equal(response.status, 403);
+    assert.equal(body.success, false);
+    assert.equal(body.error.code, "FORBIDDEN");
   } finally {
     await server.close();
   }

@@ -1,25 +1,25 @@
-# Next Session — Slice 1: Permission Service & UI Panel Base Layout
+# Next Session — Slice 2: Overview & Preference Domain
 
-Mục tiêu tiếp theo là triển khai **Slice 1** để xây dựng cơ sở hạ tầng đánh giá quyền và dựng khung giao diện ban đầu cho Conversation Panel.
+Mục tiêu tiếp theo là triển khai **Slice 2** để triển khai hoàn chỉnh Metadata API (Giai đoạn 1) của Conversation Panel, bao gồm tích hợp thông tin Overview và Preferences thực tế, hỗ trợ HTTP ETag loại trừ Presence, và cập nhật preferences (ghim, tắt thông báo, tên tùy chỉnh) từ phía Client.
 
 ## Slice Mục tiêu
-**Slice 1 — Permission Service & UI Panel Base Layout**
+**Slice 2 — Overview & Preference Domain**
 
 ## Bối cảnh
-*   Slice 0 đã hoàn tất: hạ tầng skeletons, ADRs và rate limits đã sẵn sàng.
-*   Hiện tại chưa có module đánh giá quyền cụ thể (`PermissionService`) để bảo vệ các endpoints của panel, và Frontend chưa có layout cấu trúc của panel.
+*   Slice 1 đã hoàn tất: cơ sở hạ tầng phân quyền `PermissionService` và layout trượt `ConversationPanel` ở Frontend đã sẵn sàng.
+*   Hiện tại các thông tin Overview và Preferences của panel vẫn đang là dữ liệu giả (mock data).
 
 ## Mục tiêu cụ thể
-1.  **Backend: Triển khai `PermissionService`:**
-    *   Tạo `server/src/services/permissionService.js`.
-    *   Hàm `getPermissions(userId, conversationId)` trả về đối tượng Permission DTO gồm các flags: `canRead`, `canWrite`, `canLeave`, `canArchive`, `canDelete`, `canMute`, `canPin`.
-    *   Đảm bảo đây là pure service (chỉ đọc dữ liệu, không thay đổi trạng thái).
-2.  **Frontend: Thiết lập UI Panel Base Layout:**
-    *   Dựng layout khung panel trượt (slide-over panel) bên phải chat box.
-    *   Áp dụng các micro-animations cho hiệu ứng đóng/mở panel mượt mà.
+1.  **Backend: Triển khai Overview & Preference logic:**
+    *   Xây dựng `OverviewService` cung cấp thông tin động (avatar, tên, trạng thái hoạt động online/offline từ `PresenceService` hoặc số thành viên thực tế của Group).
+    *   Tích hợp `PreferenceService` để đọc trạng thái cá nhân (`pinnedAt`, `mutedUntil`, `customTitle`) từ `ConversationParticipant`.
+    *   Triển khai ETag/Last-Modified caching cho Metadata API (loại trừ trường `isOnline` của Presence).
+2.  **Frontend: Hiển thị Overview & Preference thực tế:**
+    *   Hiển thị thông tin tên, avatar thật của cuộc hội thoại trong Conversation Panel.
+    *   Hỗ trợ chuyển đổi trạng thái ghim (`isPinned`) và tắt thông báo (`isMuted`) trực tiếp từ UI Panel thông qua API.
 3.  **Viết tests:**
-    *   Viết unit/integration tests cho `PermissionService` (test riêng các trường hợp chat group và chat direct).
+    *   Viết unit/integration tests cho các service/endpoints của Overview và Preference.
 
 ## Guardrails bắt buộc
-*   `PermissionService` không được ghi dữ liệu vào database (chỉ được thực hiện read-only).
-*   Không được thay đổi các endpoint routes và contract API đã thống nhất.
+*   Trạng thái online/offline của Presence Service hoàn toàn loại trừ khỏi phép tính ETag của Metadata endpoint.
+*   `PermissionService` phải được gọi để kiểm tra trước khi nạp metadata.

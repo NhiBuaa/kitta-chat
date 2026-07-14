@@ -1,5 +1,6 @@
 const { getConversationMigrationConfig, validateServerEnv } = require("../config/env");
 const { sendError } = require("../utils/apiResponse");
+const permissionService = require("../services/permissionService");
 
 // Helper lấy config realtime tránh cache khi boot
 const getPanelConfig = () => {
@@ -30,8 +31,21 @@ exports.getMetadata = async (req, res) => {
       });
     }
 
+    const userId = req.user?.id || req.user?._id;
+    const conversationId = req.params.id;
+
     // Set API Version header
     res.setHeader("X-Panel-Version", "1");
+
+    // Đánh giá quyền truy cập
+    const permissions = await permissionService.getPermissions(userId, conversationId);
+    if (!permissions.canRead) {
+      return sendError(res, {
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Bạn không có quyền truy cập cuộc hội thoại này",
+      });
+    }
 
     // ETag mock cho skeleton
     res.setHeader("ETag", '"mock-etag-v1"');
@@ -50,15 +64,7 @@ exports.getMetadata = async (req, res) => {
         isMuted: false,
         mutedUntil: null
       },
-      permissions: {
-        canRead: true,
-        canWrite: true,
-        canLeave: true,
-        canArchive: true,
-        canDelete: true,
-        canMute: true,
-        canPin: true
-      }
+      permissions
     });
   } catch (err) {
     console.error("Lỗi getMetadata skeleton:", err);
@@ -85,7 +91,20 @@ exports.getResources = async (req, res) => {
       });
     }
 
+    const userId = req.user?.id || req.user?._id;
+    const conversationId = req.params.id;
+
     res.setHeader("X-Panel-Version", "1");
+
+    // Đánh giá quyền truy cập
+    const permissions = await permissionService.getPermissions(userId, conversationId);
+    if (!permissions.canRead) {
+      return sendError(res, {
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Bạn không có quyền truy cập cuộc hội thoại này",
+      });
+    }
 
     const scopesQuery = req.query.scopes;
     if (scopesQuery) {

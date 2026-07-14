@@ -9,6 +9,7 @@ import { useAuth } from "@/services/auth/useAuth.js";
 // Components
 import Sidebar from "@/components/layout/Sidebar.jsx";
 import ChatWindow from "@/features/chat/components/ChatWindow.jsx";
+import ConversationPanel from "@/features/chat/components/ConversationPanel.jsx";
 import UserProfileSidebar from "@/features/profile/components/UserProfileSidebar.jsx";
 import CreateGroupModal from "@/features/groups/components/CreateGroupModal.jsx";
 import FriendRequestModal from "@/features/friends/components/FriendRequestModal.jsx";
@@ -42,6 +43,8 @@ const Home = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeChat, setActiveChat] = useState(null);
+  const [showConversationPanel, setShowConversationPanel] = useState(false);
+  const isPanelEnabled = import.meta.env.VITE_CONVERSATION_PANEL_ENABLED === "true";
 
   // Sidebar / list state
   const [users, setUsers] = useState([]);
@@ -90,6 +93,10 @@ const Home = () => {
   const activeChatKey = activeChatId
     ? `${activeChatIsGroup ? "group" : "user"}:${activeChatId}`
     : null;
+
+  const conversationId = activeChatIsGroup
+    ? activeChatId
+    : (activeChat?.conversationId || (currentUser?._id && activeChatId ? [currentUser._id.toString(), activeChatId.toString()].sort().join("_") : activeChatId));
 
   // Utility fns
   const getAvatarUrl = useCallback((avatarPath) => {
@@ -525,6 +532,9 @@ const Home = () => {
               isChatBootstrapping={isChatBootstrapping}
               setHasNewUnread={setHasNewUnread}
               hasNewUnread={hasNewUnread}
+              showConversationPanel={showConversationPanel}
+              setShowConversationPanel={setShowConversationPanel}
+              isPanelEnabled={isPanelEnabled}
             />
             <ChatInput
               showEmoji={showEmoji}
@@ -547,6 +557,19 @@ const Home = () => {
           />
         )}
       </div>
+
+      {/* CONVERSATION_PANEL */}
+      {isPanelEnabled && activeChat && currentChatUser && (
+        <ConversationPanel
+          isOpen={showConversationPanel}
+          onClose={() => setShowConversationPanel(false)}
+          activeChat={activeChat}
+          currentChatUser={currentChatUser}
+          currentUser={currentUser}
+          getAvatarUrl={getAvatarUrl}
+          conversationId={conversationId}
+        />
+      )}
 
       {/* MODALS */}
       {showProfile && (

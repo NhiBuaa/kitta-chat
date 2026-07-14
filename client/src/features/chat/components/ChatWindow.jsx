@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FaPaperPlane,
   FaArrowLeft,
@@ -61,6 +61,9 @@ const ChatWindow = ({
   isChatBootstrapping = false,
   setHasNewUnread,
   hasNewUnread,
+  showConversationPanel,
+  setShowConversationPanel,
+  isPanelEnabled,
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -218,12 +221,14 @@ const ChatWindow = ({
           </button>
           <button
             type="button"
-            onClick={handleOpenUserProfileModal}
-            disabled={isGroupChat}
-            className={`flex items-center text-left rounded-lg transition-colors ${
-              isGroupChat ? "cursor-default" : "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-200"
-            }`}
-            title={isGroupChat ? undefined : "Xem hồ sơ"}
+            onClick={
+              isPanelEnabled 
+                ? () => setShowConversationPanel(!showConversationPanel)
+                : handleOpenUserProfileModal
+            }
+            disabled={!isPanelEnabled && isGroupChat}
+            className="flex items-center text-left rounded-lg transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-200"
+            title={isPanelEnabled ? "Chi tiết cuộc trò chuyện" : (isGroupChat ? undefined : "Xem hồ sơ")}
           >
             <img
               src={getAvatarUrl(currentChatUser.avatar)}
@@ -270,14 +275,28 @@ const ChatWindow = ({
             <FaVideo />
           </button>
 
-          {activeChat?.members && (
+          {isPanelEnabled ? (
             <button
-              onClick={() => setShowGroupMembers(true)}
-              className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-              title="Quản lý thành viên"
+              onClick={() => setShowConversationPanel(!showConversationPanel)}
+              className={`p-2 rounded-full transition-colors ${
+                showConversationPanel 
+                  ? "bg-green-100 text-green-600" 
+                  : "hover:bg-gray-100 text-gray-500 hover:text-gray-800"
+              }`}
+              title="Chi tiết cuộc trò chuyện"
             >
               <FaInfoCircle />
             </button>
+          ) : (
+            activeChat?.members && (
+              <button
+                onClick={() => setShowGroupMembers(true)}
+                className="hover:bg-gray-100 p-2 rounded-full transition-colors text-gray-500 hover:text-gray-800"
+                title="Quản lý thành viên"
+              >
+                <FaInfoCircle />
+              </button>
+            )
           )}
 
         </div>
