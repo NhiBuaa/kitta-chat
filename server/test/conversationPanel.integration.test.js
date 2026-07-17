@@ -142,6 +142,12 @@ const createTestServer = async (envOverrides = {}) => {
   let mockMediaResult = { items: [], hasMore: false, nextCursor: null };
   let mockFilesResult = { items: [], hasMore: false, nextCursor: null };
   let mockLinksResult = { items: [], hasMore: false, nextCursor: null };
+  let mockMembershipResult = {
+    commonGroups: [],
+    membersPreview: [],
+    hasMoreMembers: false,
+    nextMemberCursor: null
+  };
   const resourceServiceMock = {
     loadMedia: async (conversationId, limit, cursor, userId) => {
       if (conversationId === "error-media-conv") {
@@ -173,6 +179,21 @@ const createTestServer = async (envOverrides = {}) => {
       }
       return mockLinksResult;
     },
+    loadMembership: async (conversationId, limit, cursor, userId) => {
+      if (conversationId === "error-membership-conv") {
+        throw new Error("DB Error");
+      }
+      if (conversationId === "timeout-membership-conv") {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        return {
+          commonGroups: [],
+          membersPreview: [],
+          hasMoreMembers: false,
+          nextMemberCursor: null
+        };
+      }
+      return mockMembershipResult;
+    },
     setMockMedia(data) {
       mockMediaResult = data;
     },
@@ -181,6 +202,9 @@ const createTestServer = async (envOverrides = {}) => {
     },
     setMockLinks(data) {
       mockLinksResult = data;
+    },
+    setMockMembership(data) {
+      mockMembershipResult = data;
     }
   };
   require.cache[resourceServicePath] = {
@@ -655,6 +679,60 @@ test("Resources API - handles error and timeout in files and links loaders", asy
     const resTimeoutLinks = await server.get("/api/conversations/timeout-links-conv/panel/resources?scopes=links", token);
     assert.equal(resTimeoutLinks.response.status, 200);
     assert.equal(resTimeoutLinks.body.resourcesPreview.links.status, "error");
+  } finally {
+    await server.close();
+  }
+});
+
+test("Resources API - supports membership scope query parameter", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const mockMembership = {
+      commonGroups: [],
+      membersPreview: [
+        { _id: "u1", displayName: "User One", avatar: "avatar1", role: "admin", isOnline: true }
+      ],
+      hasMoreMembers: false,
+      nextMemberCursor: null
+    };
+    server.resourceMock.setMockMembership(mockMembership);
+
+    const { response, body } = await server.get("/api/conversations/conv-123/panel/resources?scopes=membership", token);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.version, 1);
+    assert.equal(body.membership.status, "success");
+    assert.deepEqual(body.membership.membersPreview, mockMembership.membersPreview);
+    assert.equal(body.resourcesPreview, undefined);
+  } finally {
+    await server.close();
+  }
+});
+
+test("Resources API - handles error and timeout in membership loader", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+
+    // Lỗi loader membership
+    const resError = await server.get("/api/conversations/error-membership-conv/panel/resources?scopes=membership", token);
+    assert.equal(resError.response.status, 200);
+    assert.equal(resError.body.membership.status, "error");
+    assert.deepEqual(resError.body.membership.membersPreview, []);
+
+    // Timeout loader membership
+    const resTimeout = await server.get("/api/conversations/timeout-membership-conv/panel/resources?scopes=membership", token);
+    assert.equal(resTimeout.response.status, 200);
+    assert.equal(resTimeout.body.membership.status, "error");
   } finally {
     await server.close();
   }

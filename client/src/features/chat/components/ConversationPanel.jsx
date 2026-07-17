@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   FaTimes, 
   FaBell, 
@@ -13,7 +13,9 @@ import {
   FaFileAlt,
   FaLink,
   FaDownload,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaUsers,
+  FaCrown
 } from "react-icons/fa";
 import { FaThumbtackSlash } from "react-icons/fa6";
 import { getPanelMetadata, getPanelResources, updatePanelPreference } from "@/services/api/conversationPanelApi.js";
@@ -61,6 +63,16 @@ const ConversationPanel = ({
   // State quản lý Shared Links (Slice 4)
   const [linksState, setLinksState] = useState({
     items: [],
+    loading: false,
+    error: null,
+    hasMore: false,
+    nextCursor: null
+  });
+
+  // State quản lý Membership (Slice 5)
+  const [membershipState, setMembershipState] = useState({
+    commonGroups: [],
+    membersPreview: [],
     loading: false,
     error: null,
     hasMore: false,
@@ -163,12 +175,57 @@ const ConversationPanel = ({
     }
   };
 
+  // Hàm tải Membership
+  const fetchMembership = async () => {
+    if (!conversationId) return;
+    setMembershipState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      const response = await getPanelResources(conversationId, "membership");
+      if (response.data && response.data.membership) {
+        const memData = response.data.membership;
+        if (memData.status === "error") {
+          setMembershipState({
+            commonGroups: [],
+            membersPreview: [],
+            loading: false,
+            error: "ERROR",
+            hasMore: false,
+            nextCursor: null
+          });
+        } else {
+          setMembershipState({
+            commonGroups: memData.commonGroups || [],
+            membersPreview: memData.membersPreview || [],
+            loading: false,
+            error: null,
+            hasMore: !!memData.hasMoreMembers,
+            nextCursor: memData.nextMemberCursor || null
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi lấy membership panel:", err);
+      setMembershipState(prev => ({ ...prev, loading: false, error: "ERROR" }));
+    }
+  };
+
+  // Theo dõi cuộc hội thoại đã được nạp tài nguyên để tránh nạp lại khi metadata thay đổi (preferences update)
+  const loadedConvIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      loadedConvIdRef.current = null;
+    }
+  }, [isOpen, conversationId]);
+
   // Tải resources bất đồng bộ sau khi metadata được load
   useEffect(() => {
-    if (conversationId && isOpen && metadata) {
+    if (conversationId && isOpen && metadata && loadedConvIdRef.current !== conversationId) {
+      loadedConvIdRef.current = conversationId;
       fetchMedia();
       fetchFiles();
       fetchLinks();
+      fetchMembership();
     }
   }, [conversationId, isOpen, metadata]);
 
@@ -575,6 +632,124 @@ const ConversationPanel = ({
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+
+              {/* Membership Section (Slice 5) */}
+              <div className="space-y-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between px-2">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    {metadata.overview?.kind === "group" ? "Thành viên nhóm" : "Nhóm chung"}
+                  </h4>
+                  {metadata.overview?.kind === "group" ? (
+                    membershipState.membersPreview.length > 0 && (
+                      <button 
+                        onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                        className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
+                      >
+                        Xem tất cả
+                      </button>
+                    )
+                  ) : (
+                    membershipState.commonGroups.length > 0 && (
+                      <button 
+                        onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                        className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
+                      >
+                        Xem tất cả
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {membershipState.loading ? (
+                  <div className="space-y-2 px-2 animate-pulse">
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="flex items-center space-x-3 py-2">
+                        <div className="bg-gray-200 h-8 w-8 rounded-full"></div>
+                        <div className="flex-1 space-y-1">
+                          <div className="bg-gray-200 h-3 w-1/2 rounded"></div>
+                          <div className="bg-gray-200 h-2.5 w-1/4 rounded"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : membershipState.error ? (
+                  <div className="flex flex-col items-center justify-center p-4 bg-red-50 rounded-lg border border-red-100 space-y-2 mx-2">
+                    <span className="text-xs text-red-500 font-medium">Không thể tải thông tin thành viên</span>
+                    <button
+                      onClick={fetchMembership}
+                      className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold hover:bg-red-200 transition-colors"
+                    >
+                      <FaSync className="text-[10px]" />
+                      <span>Thử lại</span>
+                    </button>
+                  </div>
+                ) : metadata.overview?.kind === "group" ? (
+                  membershipState.membersPreview.length === 0 ? (
+                    <div className="text-center text-xs text-gray-400 py-4 italic">
+                      Chưa có thông tin thành viên
+                    </div>
+                  ) : (
+                    <div className="space-y-2 px-2">
+                      {membershipState.membersPreview.slice(0, 5).map((member) => (
+                        <div 
+                          key={member._id} 
+                          className="flex items-center space-x-3 p-1 rounded-lg transition-colors"
+                        >
+                          <div className="relative">
+                            <img
+                              src={getAvatarUrl(member.avatar)}
+                              className="w-8 h-8 rounded-full object-cover border border-gray-250"
+                              alt={member.displayName}
+                            />
+                            {member.isOnline && (
+                              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white"></div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 flex items-center justify-between">
+                            <span className="text-xs font-semibold text-gray-700 truncate mr-2">
+                              {member.displayName}
+                            </span>
+                            {member.role === "admin" && (
+                              <span className="bg-blue-50 text-blue-600 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  membershipState.commonGroups.length === 0 ? (
+                    <div className="text-center text-xs text-gray-400 py-4 italic">
+                      Không có nhóm chung nào
+                    </div>
+                  ) : (
+                    <div className="space-y-2 px-2">
+                      {membershipState.commonGroups.slice(0, 5).map((grp) => (
+                        <div 
+                          key={grp._id} 
+                          className="flex items-center space-x-3 p-1.5 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
+                        >
+                          <img
+                            src={getAvatarUrl(grp.avatar)}
+                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                            alt={grp.name}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-gray-700 truncate">
+                              {grp.name}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {grp.memberCount} thành viên
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
 

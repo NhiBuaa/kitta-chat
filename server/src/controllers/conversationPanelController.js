@@ -275,6 +275,19 @@ exports.getResources = async (req, res) => {
       );
     }
 
+    if (requestedScopes.includes("membership")) {
+      promises.membership = runLoaderWithTimeout(
+        resourceService.loadMembership(conversationId, limit, cursor, userId),
+        2000,
+        {
+          commonGroups: [],
+          membersPreview: [],
+          hasMoreMembers: false,
+          nextMemberCursor: null
+        }
+      );
+    }
+
     // Chạy song song các loaders
     const results = {};
     const activeKeys = Object.keys(promises);
@@ -312,15 +325,8 @@ exports.getResources = async (req, res) => {
       responsePayload.resourcesPreview = resourcesPreview;
     }
 
-    // Mock membership
-    if (requestedScopes.includes("membership")) {
-      responsePayload.membership = {
-        status: "success",
-        commonGroups: [],
-        membersPreview: [],
-        hasMoreMembers: false,
-        nextMemberCursor: null
-      };
+    if (results.membership) {
+      responsePayload.membership = results.membership;
     } else if (!scopesQuery) {
       responsePayload.membership = {
         status: "success",

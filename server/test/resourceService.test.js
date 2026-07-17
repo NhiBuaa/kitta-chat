@@ -7,6 +7,9 @@ const messagePath = require.resolve("../src/models/Message");
 const filePath = require.resolve("../src/models/File");
 const participantPath = require.resolve("../src/models/ConversationParticipant");
 const visibilityHelpersPath = require.resolve("../src/services/conversationVisibilityHelpers");
+const groupPath = require.resolve("../src/models/Group");
+const presencePath = require.resolve("../src/services/presenceService");
+const redisPath = require.resolve("../src/config/redis");
 
 const mockModule = (path, exports) => {
   require.cache[path] = { id: path, filename: path, loaded: true, exports };
@@ -15,6 +18,11 @@ const mockModule = (path, exports) => {
 let mockMessages = [];
 let mockFiles = [];
 let mockParticipants = [];
+let mockUsers = [];
+let mockGroups = [];
+let mockPresence = {};
+let mockCache = {};
+let cacheIsOpen = false;
 let lastFindQuery = null;
 
 const MessageMock = {
@@ -79,12 +87,118 @@ const FileMock = {
 };
 
 const ParticipantMock = {
-  findOne: async (query) => {
-    return mockParticipants.find(p => 
-      p.legacyConversationId === query.legacyConversationId &&
-      p.userId.toString() === query.userId.toString()
-    ) || null;
+  findOne(query) {
+    const found = mockParticipants.find(p => {
+      const convMatch = p.legacyConversationId === query.legacyConversationId;
+      const userMatch = query.userId ? (p.userId.toString() === query.userId.toString()) : true;
+      const leftMatch = query.leftAt === null ? (p.leftAt === null) : true;
+      return convMatch && userMatch && leftMatch;
+    }) || null;
+    return {
+      lean() {
+        return {
+          then(resolve) { resolve(found); }
+        };
+      },
+      then(resolve) { resolve(found); }
+    };
+  },
+  find(query) {
+    let result = [...mockParticipants];
+    if (query.legacyConversationId) {
+      result = result.filter(p => p.legacyConversationId === query.legacyConversationId);
+    }
+    if (query.leftAt === null) {
+      result = result.filter(p => p.leftAt === null);
+    }
+    if (query._id && query._id.$lt) {
+      const ltId = query._id.$lt.toString();
+      result = result.filter(p => p._id.toString() < ltId);
+    }
+
+    return {
+      sort(sortDoc) {
+        result.sort((a, b) => b._id.toString().localeCompare(a._id.toString()));
+        return {
+          limit(lim) {
+            let limited = result.slice(0, lim);
+            return {
+              populate(path, selectFields) {
+                if (path === "userId") {
+                  limited = limited.map(p => {
+                    const user = mockUsers.find(u => u._id.toString() === p.userId.toString());
+                    return {
+                      ...p,
+                      userId: user || p.userId
+                    };
+                  });
+                }
+                return {
+                  lean: async () => limited
+                };
+              },
+              lean: async () => limited
+            };
+          }
+        };
+      }
+    };
   }
+};
+
+const GroupMock = {
+  find(query) {
+    let result = [...mockGroups];
+    if (query.members && query.members.$all) {
+      const allIds = query.members.$all.map(id => id.toString());
+      result = result.filter(g => 
+        allIds.every(id => g.members.map(m => m.toString()).includes(id))
+      );
+    }
+    if (query._id && query._id.$lt) {
+      const ltId = query._id.$lt.toString();
+      result = result.filter(g => g._id.toString() < ltId);
+    }
+    
+    return {
+      select(fields) {
+        return {
+          sort(sortDoc) {
+            result.sort((a, b) => b._id.toString().localeCompare(a._id.toString()));
+            return {
+              limit(lim) {
+                result = result.slice(0, lim);
+                return {
+                  lean: async () => result
+                };
+              },
+              lean: async () => result
+            };
+          }
+        };
+      }
+    };
+  }
+};
+
+const presenceServiceMock = {
+  getMultiPresence: async (userIds) => {
+    const res = {};
+    for (const id of userIds) {
+      res[id] = { status: mockPresence[id] || "offline", lastSeen: Date.now() };
+    }
+    return res;
+  }
+};
+
+const cacheClientMock = {
+  get isOpen() { return cacheIsOpen; },
+  get: async (key) => mockCache[key] || null,
+  set: async (key, val, options) => { mockCache[key] = val; }
+};
+
+const redisMock = {
+  cacheClient: cacheClientMock
 };
 
 const visibilityHelpersMock = {
@@ -106,11 +220,17 @@ delete require.cache[messagePath];
 delete require.cache[filePath];
 delete require.cache[participantPath];
 delete require.cache[visibilityHelpersPath];
+delete require.cache[groupPath];
+delete require.cache[presencePath];
+delete require.cache[redisPath];
 
 mockModule(messagePath, MessageMock);
 mockModule(filePath, FileMock);
 mockModule(participantPath, ParticipantMock);
 mockModule(visibilityHelpersPath, visibilityHelpersMock);
+mockModule(groupPath, GroupMock);
+mockModule(presencePath, presenceServiceMock);
+mockModule(redisPath, redisMock);
 
 // Import service
 const resourceService = require("../src/services/resourceService");
@@ -340,6 +460,105 @@ test("loadLinks - tải đúng danh sách liên kết và phân trang cursor-bas
   assert.equal(res2.items.length, 1);
   assert.equal(res2.items[0].url, "https://google.com/search");
   assert.equal(res2.items[0].messageId, msgIds[0].toString());
+  assert.equal(res2.hasMore, false);
+});
+
+test("loadGroupMembers - tải đúng danh sách thành viên nhóm và phân trang cursor-based", async () => {
+  const conversationId = "group-123";
+  const user1 = new mongoose.Types.ObjectId("60a7f1a100000000000000a1");
+  const user2 = new mongoose.Types.ObjectId("60a7f1a100000000000000a2");
+  const user3 = new mongoose.Types.ObjectId("60a7f1a100000000000000a3");
+
+  mockUsers = [
+    { _id: user1, displayName: "User One", avatar: "avatar1" },
+    { _id: user2, displayName: "User Two", avatar: "avatar2" },
+    { _id: user3, displayName: "User Three", avatar: "avatar3" }
+  ];
+
+  mockParticipants = [
+    { _id: new mongoose.Types.ObjectId("60a7f1a100000000000000b1"), legacyConversationId: conversationId, userId: user1, role: "admin", leftAt: null },
+    { _id: new mongoose.Types.ObjectId("60a7f1a100000000000000b2"), legacyConversationId: conversationId, userId: user2, role: "member", leftAt: null },
+    { _id: new mongoose.Types.ObjectId("60a7f1a100000000000000b3"), legacyConversationId: conversationId, userId: user3, role: "member", leftAt: null }
+  ];
+
+  mockPresence = {
+    [user1.toString()]: "active",
+    [user2.toString()]: "offline",
+    [user3.toString()]: "active"
+  };
+
+  const res1 = await resourceService.loadGroupMembers(conversationId, 2, null, user1.toString());
+  assert.equal(res1.items.length, 2);
+  assert.equal(res1.items[0]._id, user3.toString());
+  assert.equal(res1.items[0].isOnline, true);
+  assert.equal(res1.items[1]._id, user2.toString());
+  assert.equal(res1.items[1].isOnline, false);
+  assert.equal(res1.hasMoreMembers, true);
+  assert.ok(res1.nextMemberCursor);
+
+  const res2 = await resourceService.loadGroupMembers(conversationId, 2, res1.nextMemberCursor, user1.toString());
+  assert.equal(res2.items.length, 1);
+  assert.equal(res2.items[0]._id, user1.toString());
+  assert.equal(res2.items[0].role, "admin");
+  assert.equal(res2.hasMoreMembers, false);
+});
+
+test("loadGroupMembers - trả về danh sách trống khi người yêu cầu không phải thành viên nhóm", async () => {
+  const conversationId = "group-123";
+  const user1 = new mongoose.Types.ObjectId("60a7f1a100000000000000a1");
+  const stranger = new mongoose.Types.ObjectId("60a7f1a100000000000000a9");
+
+  mockUsers = [
+    { _id: user1, displayName: "User One", avatar: "avatar1" }
+  ];
+
+  mockParticipants = [
+    { _id: new mongoose.Types.ObjectId("60a7f1a100000000000000b1"), legacyConversationId: conversationId, userId: user1, role: "admin", leftAt: null }
+  ];
+
+  const res = await resourceService.loadGroupMembers(conversationId, 10, null, stranger.toString());
+  assert.deepEqual(res.items, []);
+  assert.equal(res.hasMoreMembers, false);
+});
+
+test("loadCommonGroups - tải danh sách nhóm chung có cache và phân trang", async () => {
+  const userA = "60a7f1a100000000000000a1";
+  const userB = "60a7f1a100000000000000a2";
+  const conversationId = `${userA}_${userB}`;
+
+  const g1Id = new mongoose.Types.ObjectId("60a7f1a100000000000000c1");
+  const g2Id = new mongoose.Types.ObjectId("60a7f1a100000000000000c2");
+
+  mockGroups = [
+    { _id: g1Id, name: "Group One", avatar: "av1", members: [userA, userB, "userC"] },
+    { _id: g2Id, name: "Group Two", avatar: "av2", members: [userA, userB] }
+  ];
+
+  mockCache = {};
+  cacheIsOpen = true;
+
+  const res1 = await resourceService.loadCommonGroups(conversationId, 1, null, userA);
+  assert.equal(res1.items.length, 1);
+  assert.equal(res1.items[0]._id, g2Id.toString());
+  assert.equal(res1.items[0].memberCount, 2);
+  assert.equal(res1.hasMore, true);
+  assert.equal(res1.nextCursor, g2Id.toString());
+
+  const sortedIds = [userA, userB].sort();
+  const cacheKey = `commonGroups:${sortedIds[0]}:${sortedIds[1]}`;
+  assert.ok(mockCache[cacheKey]);
+
+  const cachedData = JSON.parse(mockCache[cacheKey]);
+  cachedData.items[0].name = "Cached Group Name";
+  mockCache[cacheKey] = JSON.stringify(cachedData);
+
+  const resCached = await resourceService.loadCommonGroups(conversationId, 1, null, userA);
+  assert.equal(resCached.items[0].name, "Cached Group Name");
+
+  const res2 = await resourceService.loadCommonGroups(conversationId, 1, res1.nextCursor, userA);
+  assert.equal(res2.items.length, 1);
+  assert.equal(res2.items[0]._id, g1Id.toString());
+  assert.equal(res2.items[0].name, "Group One");
   assert.equal(res2.hasMore, false);
 });
 

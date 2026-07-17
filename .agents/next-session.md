@@ -1,40 +1,35 @@
-# Next Session — Slice 5: Conversation Membership Domain
+# Next Session — Slice 6: Conversation Action Domain
 
-Mục tiêu tiếp theo là triển khai **Slice 5** nhằm hoàn thiện phần tải thành viên nhóm (đối với Group Chat) và nhóm chung (đối với 1-1 Chat) trong bảng thông tin Conversation Panel (Giai đoạn 2 - Resources API), hỗ trợ tải bất đồng bộ song song, phân trang cursor-based, và hiển thị giao diện preview trên Frontend kèm Retry độc lập.
+Mục tiêu tiếp theo là triển khai **Slice 6** nhằm thực thi các thao tác tương tác ghi (write actions) của cuộc hội thoại từ bảng điều khiển Conversation Panel (bao gồm rời nhóm, xóa lịch sử chat, ghim và tắt thông báo) bảo đảm phân quyền chặt chẽ bởi `PermissionService` và cập nhật dữ liệu nhất quán.
 
 ## Slice Mục tiêu
-**Slice 5 — Conversation Membership Domain**
+**Slice 6 — Conversation Action Domain**
 
 ## Bối cảnh
-* Slice 4 đã hoàn tất thành công: 
-  * Cả hai loader `loadFiles` và `loadLinks` đã hoạt động tốt, hỗ trợ visibility filter và phân trang cursor-based giảm dần theo `Message._id`.
-  * Pre-save hook và luồng lưu trữ tin nhắn ngầm (idempotent `saveMessageInBackground` dùng `findOneAndUpdate`) được tích hợp trích xuất link và chuẩn hóa hostname chính xác.
-  * Phía Frontend đã hiển thị danh sách tài liệu (kèm định dạng dung lượng động B, KB, MB, GB) và danh sách liên kết có khả năng click được.
-* Hiện tại, mục `membership` của Resources API (`GET /api/conversations/:id/panel/resources`) vẫn đang trả về mock rỗng.
+* Slice 5 đã hoàn tất xuất sắc:
+  - Triển khai đầy đủ loaders thành viên nhóm và nhóm chung, tối ưu hoá với Redis cache và cursor-based pagination.
+  - Giao diện `ConversationPanel.jsx` hiển thị trực quan các thành viên/nhóm chung kèm skeleton loading và retry riêng biệt.
+  - Khắc phục triệt để lỗi rate limit `429 (Too Many Requests)` khi bật/tắt preferences liên tục bằng `useRef` (`loadedConvIdRef`).
+  - Toàn bộ bộ test (290 tests backend và 121 tests frontend) chạy xanh 100%.
 
 ## Mục tiêu cụ thể
-1. **Backend: Triển khai Group Members Loader (cho Group Chat):**
-   * Phát triển hàm `loadGroupMembers(conversationId, limit, cursor, userId)` trong `ResourceService`.
-   * Tải danh sách thành viên tham gia nhóm hiện tại.
-   * Áp dụng visibility filter (chỉ cho phép các thành viên hiện tại đọc).
-   * Sắp xếp và phân trang cursor-based dựa trên `ConversationParticipant._id` bảo đảm đồng nhất semantic với các loader khác.
-   * Trả về thông tin thành viên tối thiểu (tên hiển thị, avatar, vai trò admin/member, isOnline).
-2. **Backend: Triển khai Common Groups Loader (cho 1-1 Chat):**
-   * Phát triển hàm `loadCommonGroups(conversationId, limit, cursor, userId)` trong `ResourceService`.
-   * Tìm và tải danh sách các cuộc trò chuyện nhóm (group chats) mà cả `userId` và người đối thoại (chat partner) đều cùng tham gia làm thành viên.
-   * Hỗ trợ phân trang cursor-based hoặc preview giới hạn 6 nhóm chung.
-3. **Backend: Tích hợp vào Orchestration Controller:**
-   * Tích hợp các loaders này vào controller `getResources` trong [conversationPanelController.js](file:///d:/Developer/Projects/shotter/shot-chat/server/src/controllers/conversationPanelController.js) thay thế phần mock.
-   * Áp dụng timeout 2 giây độc lập cho loader `membership`.
-4. **Frontend: Hiển thị Membership Section:**
-   * Tải bất đồng bộ thông tin thành viên qua `?scopes=membership`.
-   * Giao diện Group Chat: Hiển thị preview 3-5 thành viên (tên, avatar, online status, badge Admin). Bổ sung nút "Xem tất cả thành viên" để mở rộng modal chi tiết.
-   * Giao diện 1-1 Chat: Hiển thị preview các nhóm chung (tên nhóm, avatar nhóm, số lượng thành viên). Bổ sung nút "Xem tất cả nhóm chung".
-   * Thiết lập Loading Skeleton, Error State, và nút **Retry độc lập** riêng biệt cho mục Membership.
+1. **Backend: Triển khai luồng Rời nhóm (Leave Group):**
+   - Viết API/Service xử lý cho phép user rời khỏi nhóm trò chuyện.
+   - Cập nhật trường `leftAt` trong `ConversationParticipant` và đồng bộ hóa qua Read Model.
+   - Phát đi socket event báo cho các thành viên khác trong nhóm để cập nhật danh sách trực tuyến.
+2. **Backend: Triển khai luồng Xóa lịch sử trò chuyện (Delete Chat History - Soft Delete):**
+   - Viết API/Service cho phép user xóa lịch sử hội thoại (soft delete) cho riêng họ.
+   - Cập nhật `state.deletedAt` bằng thời điểm hiện tại trong bản ghi `ConversationParticipant` của user đó.
+   - Bảo đảm các truy vấn tin nhắn sau này của user này sẽ áp dụng filter `createdAt > state.deletedAt`.
+3. **Backend & Frontend: Đồng bộ hóa Ghim (Pin) & Mute:**
+   - Hoàn thiện và tích hợp triệt để API `PATCH /panel/preference` với state trên Frontend.
+   - Đồng bộ hóa ngay lập tức trạng thái ghim/tắt thông báo trên sidebar/danh sách chat mà không cần reload tài nguyên nhờ cơ chế chặn re-render vừa tối ưu ở Slice 5.
+4. **Kiểm tra quyền truy cập (Permission Check):**
+   - Bảo đảm các thao tác ghi đều được bảo vệ nghiêm ngặt bằng Permission DTO (`canLeave`, `canDelete`).
 5. **Viết tests:**
-   * Unit tests cho `loadGroupMembers` và `loadCommonGroups` trong `resourceService.test.js`.
-   * Integration tests tương ứng trong `conversationPanel.integration.test.js`.
+   - Viết unit tests độc lập cho các action services mới.
+   - Viết integration tests bảo vệ các API endpoints thực thi actions.
 
 ## Guardrails bắt buộc
-* **Timeout độc lập 2s:** Loader membership chạy bất đồng bộ song song với media/files/links và có timeout 2 giây riêng.
-* **Cursor bất biến:** Giữ nguyên quy tắc cursor phân trang membership không bị thay đổi bởi tin nhắn realtime mới trên giao diện.
+- **Soft Delete cô lập:** Hành động xóa lịch sử trò chuyện của một user không được ảnh hưởng đến tin nhắn hiển thị của người khác (dữ liệu tin nhắn trong MongoDB vẫn giữ nguyên).
+- **Socket Realtime:** Việc rời nhóm phải kích hoạt socket event tương ứng tới các thành viên còn lại ngay lập tức để cập nhật UI danh sách thành viên của họ.

@@ -3,6 +3,7 @@ const { getConversationMigrationConfig } = require("../config/env");
 const Conversation = require("../models/Conversation");
 const ConversationParticipant = require("../models/ConversationParticipant");
 const Group = require("../models/Group");
+const { cacheClient } = require("../config/redis");
 
 const toIdString = (value) => value?._id?.toString?.() || value?.toString?.() || String(value);
 
@@ -18,6 +19,22 @@ const uniqueIds = (values) => {
 };
 
 const isSameId = (left, right) => toIdString(left) === toIdString(right);
+
+async function invalidateCommonGroupsCache(userId) {
+  if (!cacheClient || !cacheClient.isOpen) return;
+  try {
+    const uStr = toIdString(userId);
+    const keys1 = await cacheClient.keys(`commonGroups:${uStr}:*`);
+    const keys2 = await cacheClient.keys(`commonGroups:*:${uStr}`);
+    const allKeys = [...new Set([...keys1, ...keys2])];
+    if (allKeys.length > 0) {
+      await cacheClient.del(allKeys);
+      console.log(`[ReadModel] Invalidated ${allKeys.length} commonGroups cache keys for user ${uStr}`);
+    }
+  } catch (err) {
+    console.warn("[ReadModel] Failed to invalidate commonGroups cache:", err.message);
+  }
+}
 
 const isGroupMessage = (message) => {
   if (message.isGroup === true || message.isGroup === "true") return true;
@@ -197,6 +214,11 @@ async function syncGroupLifecycle(groupId, action, data = {}) {
     if (action === "delete") {
       const conv = await Conversation.findOne({ legacyConversationId });
       if (conv) {
+        if (Array.isArray(conv.participantUserIds)) {
+          for (const memberId of conv.participantUserIds) {
+            await invalidateCommonGroupsCache(memberId);
+          }
+        }
         await ConversationParticipant.deleteMany({ conversationId: conv._id });
         await Conversation.deleteOne({ _id: conv._id });
       }
@@ -278,6 +300,17 @@ async function syncGroupLifecycle(groupId, action, data = {}) {
         },
       }
     );
+
+    // Invalidate cache for membership mutation events
+    if (action === "create") {
+      for (const mId of participantUserIds) {
+        await invalidateCommonGroupsCache(mId);
+      }
+    } else if (action === "add-member" || action === "remove-member") {
+      if (data && data.memberId) {
+        await invalidateCommonGroupsCache(data.memberId);
+      }
+    }
   } catch (error) {
     console.error(`[ReadModel] syncGroupLifecycle failed for action=${action} groupId=${groupId}:`, error);
   }

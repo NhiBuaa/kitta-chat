@@ -24,9 +24,9 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 | 2 | Overview & Preference Domain | **DONE** | Triển khai Metadata API (Giai đoạn 1) hoàn chỉnh, hỗ trợ ETag loại trừ Presence và preferences update. |
 | 3 | Shared Media Domain | **DONE** | Triển khai Media loader (Giai đoạn 2), trả về thumbnail URL/metadata, phân trang cursor, sửa lỗi joinedAt group chat và UI Group members modal button. |
 | 4 | Shared Files & Links Domain | **DONE** | Triển khai File loader & Link parser/normalization, lưu trữ link khi persist tin nhắn. |
-| 5 | Conversation Membership Domain | **TODO-NEXT** | Tải thành viên/nhóm chung, tối ưu hóa truy vấn cache Redis. |
-| 6 | Conversation Action Domain | PENDING | Viết orchestrator xử lý các write actions: rời nhóm, ghim, tắt thông báo, xóa lịch sử trò chuyện. |
+| 5 | Conversation Membership Domain | **DONE** | Tải thành viên/nhóm chung, tối ưu hóa cache Redis, và sửa lỗi preferences rate limit. |
+| 6 | Conversation Action Domain | **TODO-NEXT** | Viết orchestrator xử lý các write actions: rời nhóm, ghim, tắt thông báo, xóa lịch sử trò chuyện. |
 | 7 | Realtime Sync & Client State | PENDING | Đồng bộ hóa realtime qua Socket.IO (Presence, update group info, membership change) và tối ưu client store. |
 
 ## Trạng thái kiểm thử gần nhất
-*   Sau Slice 4: Bộ test tích hợp panel `15/15` passed, unit test visibility `14/14` passed, unit test media/files/links `7/7` passed, unit test saveMessage `10/10` passed, full server regression `285/285` passed.
+*   Sau Slice 5: Bộ test tích hợp panel `17/17` passed, unit test visibility `14/14` passed, unit test media/files/links/membership `10/10` passed, unit test saveMessage `10/10` passed, full server regression `290/290` passed, frontend tests `121/121` passed.
