@@ -30,6 +30,9 @@ const resourcesRateLimiter = createRateLimiter({
 // Route Metadata (Giai đoạn 1)
 router.get("/:id/panel/metadata", verifyToken, panelController.getMetadata);
 
+// Route Cập nhật Preference
+router.patch("/:id/panel/preference", verifyToken, panelController.updatePreference);
+
 // Route Resources (Giai đoạn 2)
 router.get("/:id/panel/resources", verifyToken, resourcesRateLimiter, panelController.getResources);
 

@@ -9,7 +9,8 @@ import {
   FaLock, 
   FaShieldAlt 
 } from "react-icons/fa";
-import { getPanelMetadata } from "@/services/api/conversationPanelApi.js";
+import { FaThumbtackSlash } from "react-icons/fa6";
+import { getPanelMetadata, updatePanelPreference } from "@/services/api/conversationPanelApi.js";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 
@@ -64,6 +65,40 @@ const ConversationPanel = ({
       isMounted = false;
     };
   }, [conversationId, isOpen]);
+
+  const handlePreferenceChange = async (key, value) => {
+    if (!conversationId || !metadata) return;
+
+    const previousPrefs = metadata.preference;
+    
+    // Optimistic UI Update
+    setMetadata(prev => ({
+      ...prev,
+      preference: {
+        ...prev.preference,
+        [key]: value
+      }
+    }));
+
+    try {
+      const response = await updatePanelPreference(conversationId, { [key]: value });
+      if (response.data && response.data.preference) {
+        setMetadata(prev => ({
+          ...prev,
+          preference: response.data.preference
+        }));
+        toast.success("Đã cập nhật cài đặt");
+      }
+    } catch (err) {
+      console.error("Lỗi cập nhật cài đặt:", err);
+      toast.error("Không thể lưu cài đặt");
+      // Rollback
+      setMetadata(prev => ({
+        ...prev,
+        preference: previousPrefs
+      }));
+    }
+  };
 
   // Nếu không mở, chỉ trả về khung rỗng w-0 để tạo transition trượt mượt mà
   return (
@@ -120,62 +155,64 @@ const ConversationPanel = ({
               <div className="flex flex-col items-center text-center space-y-3">
                 <div className="relative">
                   <img
-                    src={getAvatarUrl(currentChatUser?.avatar || activeChat?.avatar || metadata.overview?.avatar)}
+                    src={getAvatarUrl(metadata.overview?.avatar || activeChat?.avatar || currentChatUser?.avatar)}
                     className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 shadow-md"
                     alt="avatar"
                   />
-                  {(metadata.overview?.isOnline !== undefined ? metadata.overview?.isOnline : currentChatUser?.isOnline) && (
+                  {metadata.overview?.kind === "direct" && (metadata.overview?.isOnline ?? currentChatUser?.isOnline) && (
                     <div className="absolute bottom-0 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                   )}
                 </div>
                 <div>
                   <h3 className="font-bold text-lg text-gray-800">
-                    {activeChat?.members ? activeChat.name : getUserDisplayName(currentChatUser)}
+                    {metadata.overview?.name || activeChat?.name || getUserDisplayName(currentChatUser)}
                   </h3>
                   <span className="text-xs text-gray-500">
-                    {activeChat?.members 
-                      ? `${activeChat.members.length || 0} thành viên`
-                      : (currentChatUser?.isOnline ? "Đang hoạt động" : "Ngoại tuyến")
+                    {metadata.overview?.kind === "group"
+                      ? `${metadata.overview?.memberCount || 0} thành viên`
+                      : ((metadata.overview?.isOnline ?? currentChatUser?.isOnline) ? "Đang hoạt động" : "Ngoại tuyến")
                     }
                   </span>
                 </div>
               </div>
 
-              {/* Preferences Section (Placeholder UI - Slice 2) */}
-              <div className="space-y-3 pt-4 border-t border-gray-100">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cài đặt</h4>
+              {/* Preferences Section */}
+              <div className="space-y-1 pt-4 border-t border-gray-100">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Cài đặt</h4>
                 
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-default select-none">
-                  <div className="flex items-center space-x-3">
+                <button
+                  disabled={!metadata.permissions?.canPin}
+                  onClick={() => handlePreferenceChange("isPinned", !metadata.preference?.isPinned)}
+                  className={`w-full flex items-center space-x-3 p-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                    metadata.permissions?.canPin 
+                      ? "hover:bg-gray-50 text-gray-700 cursor-pointer" 
+                      : "text-gray-400 cursor-not-allowed opacity-60"
+                  }`}
+                >
+                  {metadata.preference?.isPinned ? (
+                    <FaThumbtackSlash className="text-green-500" />
+                  ) : (
                     <FaThumbtack className="text-gray-400" />
-                    <span className="text-sm font-medium text-gray-700">Ghim hội thoại</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={metadata.preference?.isPinned || false}
-                    disabled={!metadata.permissions?.canPin}
-                    readOnly
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-default"
-                  />
-                </div>
+                  )}
+                  <span>{metadata.preference?.isPinned ? "Bỏ ghim hội thoại" : "Ghim hội thoại"}</span>
+                </button>
 
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-default select-none">
-                  <div className="flex items-center space-x-3">
-                    {metadata.preference?.isMuted ? (
-                      <FaBellSlash className="text-red-400" />
-                    ) : (
-                      <FaBell className="text-gray-400" />
-                    )}
-                    <span className="text-sm font-medium text-gray-700">Tắt thông báo</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={metadata.preference?.isMuted || false}
-                    disabled={!metadata.permissions?.canMute}
-                    readOnly
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-default"
-                  />
-                </div>
+                <button
+                  disabled={!metadata.permissions?.canMute}
+                  onClick={() => handlePreferenceChange("isMuted", !metadata.preference?.isMuted)}
+                  className={`w-full flex items-center space-x-3 p-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                    metadata.permissions?.canMute 
+                      ? "hover:bg-gray-50 text-gray-700 cursor-pointer" 
+                      : "text-gray-400 cursor-not-allowed opacity-60"
+                  }`}
+                >
+                  {metadata.preference?.isMuted ? (
+                    <FaBellSlash className="text-red-400" />
+                  ) : (
+                    <FaBell className="text-gray-400" />
+                  )}
+                  <span>{metadata.preference?.isMuted ? "Bật thông báo" : "Tắt thông báo"}</span>
+                </button>
               </div>
 
               {/* Permissions Warnings */}

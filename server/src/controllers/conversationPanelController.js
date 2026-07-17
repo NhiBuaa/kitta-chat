@@ -1,6 +1,9 @@
 const { getConversationMigrationConfig, validateServerEnv } = require("../config/env");
 const { sendError } = require("../utils/apiResponse");
 const permissionService = require("../services/permissionService");
+const overviewService = require("../services/overviewService");
+const preferenceService = require("../services/preferenceService");
+const crypto = require("crypto");
 
 // Helper lấy config realtime tránh cache khi boot
 const getPanelConfig = () => {
@@ -47,27 +50,104 @@ exports.getMetadata = async (req, res) => {
       });
     }
 
-    // ETag mock cho skeleton
-    res.setHeader("ETag", '"mock-etag-v1"');
+    // Lấy dữ liệu Overview và Preference thực tế
+    const overview = await overviewService.getOverview(userId, conversationId);
+    const preference = await preferenceService.getPreferences(userId, conversationId);
+
+    // Tính toán ETag dựa trên thông tin tĩnh và preference, loại trừ isOnline của Presence
+    const etagInput = `${conversationId}-${overview.kind}-${overview.name}-${overview.avatar}-${overview.memberCount}-${preference.isPinned}-${preference.isMuted}-${preference.mutedUntil ? new Date(preference.mutedUntil).getTime() : ""}-${preference.customTitle || ""}`;
+    const hash = crypto.createHash("sha1").update(etagInput).digest("base64");
+    const etag = `W/"${hash}"`;
+
+    res.setHeader("ETag", etag);
+
+    // Kiểm tra ETag cache
+    if (req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
 
     return res.status(200).json({
       version: 1,
-      overview: {
-        kind: "direct",
-        name: "Mock Conversation",
-        avatar: "",
-        isOnline: false,
-        memberCount: 2
-      },
-      preference: {
-        isPinned: false,
-        isMuted: false,
-        mutedUntil: null
-      },
+      overview,
+      preference,
       permissions
     });
   } catch (err) {
-    console.error("Lỗi getMetadata skeleton:", err);
+    console.error("Lỗi getMetadata:", err);
+    
+    // Nếu là lỗi không tìm thấy cuộc hội thoại
+    if (err.status === 404) {
+      return sendError(res, {
+        status: 404,
+        code: err.code || "NOT_FOUND",
+        message: err.message,
+      });
+    }
+
+    return sendError(res, {
+      status: 500,
+      code: "SERVER_ERROR",
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * PATCH /api/conversations/:id/panel/preference
+ * Cập nhật tùy chỉnh cá nhân (ghim, tắt thông báo, custom title)
+ */
+exports.updatePreference = async (req, res) => {
+  try {
+    const config = getPanelConfig();
+    if (!config.conversationPanelEnabled) {
+      return sendError(res, {
+        status: 404,
+        code: "PANEL_DISABLED",
+        message: "Conversation panel is disabled",
+      });
+    }
+
+    const userId = req.user?.id || req.user?._id;
+    const conversationId = req.params.id;
+    const updates = req.body;
+
+    res.setHeader("X-Panel-Version", "1");
+
+    // Đánh giá quyền truy cập
+    const permissions = await permissionService.getPermissions(userId, conversationId);
+    if (!permissions.canRead) {
+      return sendError(res, {
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Bạn không có quyền truy cập cuộc hội thoại này",
+      });
+    }
+
+    // Kiểm tra quyền sửa đổi cấu hình tương ứng
+    if (updates.isPinned !== undefined && !permissions.canPin) {
+      return sendError(res, {
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Bạn không có quyền ghim cuộc hội thoại này",
+      });
+    }
+
+    if ((updates.isMuted !== undefined || updates.mutedUntil !== undefined) && !permissions.canMute) {
+      return sendError(res, {
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Bạn không có quyền tắt thông báo cuộc hội thoại này",
+      });
+    }
+
+    const newPreferences = await preferenceService.updatePreferences(userId, conversationId, updates);
+
+    return res.status(200).json({
+      version: 1,
+      preference: newPreferences,
+    });
+  } catch (err) {
+    console.error("Lỗi updatePreference:", err);
     return sendError(res, {
       status: 500,
       code: "SERVER_ERROR",
@@ -180,3 +260,4 @@ exports.getResources = async (req, res) => {
     });
   }
 };
+

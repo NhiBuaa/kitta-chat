@@ -13,3 +13,8 @@ export const getPanelResources = (conversationId, scopes = "") => {
     __skipAuthRefresh: true,
   });
 }
+
+export const updatePanelPreference = (conversationId, preferenceData) =>
+  axiosClient.patch(`${API_URL}/${conversationId}/panel/preference`, preferenceData, {
+    __skipAuthRefresh: true,
+  });

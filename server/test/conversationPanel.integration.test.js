@@ -13,12 +13,16 @@ const generateToken = (userId) => {
 };
 
 const permissionServicePath = require.resolve("../src/services/permissionService");
+const overviewServicePath = require.resolve("../src/services/overviewService");
+const preferenceServicePath = require.resolve("../src/services/preferenceService");
 
 const clearModuleCache = () => {
   delete require.cache[require.resolve("../src/app")];
   delete require.cache[require.resolve("../src/routes/conversationPanel")];
   delete require.cache[require.resolve("../src/controllers/conversationPanelController")];
   delete require.cache[permissionServicePath];
+  delete require.cache[overviewServicePath];
+  delete require.cache[preferenceServicePath];
 };
 
 const createTestServer = async (envOverrides = {}) => {
@@ -46,6 +50,17 @@ const createTestServer = async (envOverrides = {}) => {
           canPin: false,
         };
       }
+      if (conversationId === "no-pin-mute-conv") {
+        return {
+          canRead: true,
+          canWrite: true,
+          canLeave: true,
+          canArchive: true,
+          canDelete: true,
+          canMute: false,
+          canPin: false,
+        };
+      }
       return {
         canRead: true,
         canWrite: true,
@@ -62,6 +77,63 @@ const createTestServer = async (envOverrides = {}) => {
     filename: permissionServicePath,
     loaded: true,
     exports: permissionServiceMock,
+  };
+
+  // Mock OverviewService
+  let mockOnlineStatus = true;
+  const overviewServiceMock = {
+    getOverview: async (userId, conversationId) => {
+      return {
+        kind: conversationId.includes("_") ? "direct" : "group",
+        name: "Test Conversation Name",
+        avatar: "avatar-url",
+        isOnline: conversationId.includes("_") ? mockOnlineStatus : false,
+        memberCount: conversationId.includes("_") ? 2 : 10,
+      };
+    },
+    setMockOnlineStatus(status) {
+      mockOnlineStatus = status;
+    }
+  };
+  require.cache[overviewServicePath] = {
+    id: overviewServicePath,
+    filename: overviewServicePath,
+    loaded: true,
+    exports: overviewServiceMock,
+  };
+
+  // Mock PreferenceService
+  let mockPreferences = {
+    isPinned: false,
+    isMuted: false,
+    mutedUntil: null,
+    customTitle: null,
+  };
+  const preferenceServiceMock = {
+    getPreferences: async (userId, conversationId) => {
+      return mockPreferences;
+    },
+    updatePreferences: async (userId, conversationId, updates) => {
+      mockPreferences = {
+        ...mockPreferences,
+        ...updates,
+      };
+      return mockPreferences;
+    },
+    resetPreferences() {
+      mockPreferences = {
+        isPinned: false,
+        isMuted: false,
+        mutedUntil: null,
+        customTitle: null,
+      };
+    }
+  };
+  require.cache[preferenceServicePath] = {
+    id: preferenceServicePath,
+    filename: preferenceServicePath,
+    loaded: true,
+    exports: preferenceServiceMock,
   };
 
   const { createApp } = require("../src/app");
@@ -81,6 +153,8 @@ const createTestServer = async (envOverrides = {}) => {
 
   return {
     baseUrl,
+    overviewMock: overviewServiceMock,
+    preferenceMock: preferenceServiceMock,
     async get(path, token, headers = {}) {
       const finalHeaders = { ...headers };
       if (token) {
@@ -88,6 +162,27 @@ const createTestServer = async (envOverrides = {}) => {
       }
       const response = await fetch(`${this.baseUrl}${path}`, {
         headers: finalHeaders,
+      });
+      let body = null;
+      try {
+        body = await response.json();
+      } catch (err) {
+        // Response rỗng hoặc không phải JSON
+      }
+      return { response, body };
+    },
+    async patch(path, data, token, headers = {}) {
+      const finalHeaders = {
+        "Content-Type": "application/json",
+        ...headers,
+      };
+      if (token) {
+        finalHeaders["Authorization"] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        method: "PATCH",
+        headers: finalHeaders,
+        body: JSON.stringify(data),
       });
       let body = null;
       try {
@@ -282,3 +377,112 @@ test("Metadata API returns 403 Forbidden when user has no canRead permission", a
     await server.close();
   }
 });
+
+test("Metadata API returns real Overview and Preference mock data from services", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const { response, body } = await server.get("/api/conversations/user-1_user-2/panel/metadata", token);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.overview.name, "Test Conversation Name");
+    assert.equal(body.overview.avatar, "avatar-url");
+    assert.equal(body.overview.isOnline, true);
+    assert.equal(body.overview.memberCount, 2);
+    assert.equal(body.preference.isPinned, false);
+    assert.equal(body.preference.isMuted, false);
+  } finally {
+    await server.close();
+  }
+});
+
+test("Metadata API ETag caching: returns 304 Not Modified when ETag matches, and ignores Presence status in ETag calculation", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const res1 = await server.get("/api/conversations/user-1_user-2/panel/metadata", token);
+    const etag = res1.response.headers.get("ETag");
+    assert.ok(etag);
+
+    // Gửi lại với If-None-Match
+    const res2 = await server.get("/api/conversations/user-1_user-2/panel/metadata", token, {
+      "If-None-Match": etag,
+    });
+    assert.equal(res2.response.status, 304);
+
+    // Thay đổi trạng thái online của user (isOnline: true -> false)
+    server.overviewMock.setMockOnlineStatus(false);
+
+    // Gửi lại, ETag vẫn phải khớp và trả về 304 vì Presence không tham gia tính toán ETag
+    const res3 = await server.get("/api/conversations/user-1_user-2/panel/metadata", token, {
+      "If-None-Match": etag,
+    });
+    assert.equal(res3.response.status, 304);
+  } finally {
+    await server.close();
+  }
+});
+
+test("PATCH /panel/preference updates preferences successfully", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    
+    // Ban đầu
+    const initialRes = await server.get("/api/conversations/conv-123/panel/metadata", token);
+    assert.equal(initialRes.body.preference.isPinned, false);
+
+    // Cập nhật ghim
+    const patchRes = await server.patch("/api/conversations/conv-123/panel/preference", {
+      isPinned: true,
+      customTitle: "My Custom Chat Name",
+    }, token);
+
+    assert.equal(patchRes.response.status, 200);
+    assert.equal(patchRes.body.preference.isPinned, true);
+    assert.equal(patchRes.body.preference.customTitle, "My Custom Chat Name");
+
+    // Lấy lại qua Metadata API xem đã được update chưa
+    const updatedRes = await server.get("/api/conversations/conv-123/panel/metadata", token);
+    assert.equal(updatedRes.body.preference.isPinned, true);
+    assert.equal(updatedRes.body.preference.customTitle, "My Custom Chat Name");
+  } finally {
+    await server.close();
+  }
+});
+
+test("PATCH /panel/preference returns 403 Forbidden when user has no permissions to write (pin/mute)", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    
+    // Case 1: Không có quyền read
+    const patchRes = await server.patch("/api/conversations/forbidden-conv/panel/preference", {
+      isPinned: true,
+    }, token);
+    assert.equal(patchRes.response.status, 403);
+    assert.equal(patchRes.body.error.code, "FORBIDDEN");
+
+    // Case 2: Có quyền read nhưng không có quyền pin/mute
+    const patchRes2 = await server.patch("/api/conversations/no-pin-mute-conv/panel/preference", {
+      isPinned: true,
+    }, token);
+    assert.equal(patchRes2.response.status, 403);
+    assert.equal(patchRes2.body.error.code, "FORBIDDEN");
+  } finally {
+    await server.close();
+  }
+});
+
