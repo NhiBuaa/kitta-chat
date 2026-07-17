@@ -36,4 +36,10 @@ router.patch("/:id/panel/preference", verifyToken, panelController.updatePrefere
 // Route Resources (Giai đoạn 2)
 router.get("/:id/panel/resources", verifyToken, resourcesRateLimiter, panelController.getResources);
 
+// Route Rời nhóm (Slice 6)
+router.post("/:id/panel/leave", verifyToken, panelController.leaveGroup);
+
+// Route Xóa lịch sử trò chuyện (Slice 6)
+router.post("/:id/panel/delete", verifyToken, panelController.deleteHistory);
+
 module.exports = router;

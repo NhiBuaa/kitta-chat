@@ -458,6 +458,93 @@ const Home = () => {
 
   const handleUpdateSuccess = (updatedUser) => setCurrentUser(updatedUser);
 
+  // Sort functions for instant UI update
+  const sortSidebarUsers = (userList) => {
+    return [...userList].sort((a, b) => {
+      const aPinned = a.isPinned ? 1 : 0;
+      const bPinned = b.isPinned ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+
+      const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+      const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      if (aTime !== bTime) return bTime - aTime;
+
+      return (a.displayName || "").localeCompare(b.displayName || "");
+    });
+  };
+
+  const sortSidebarGroups = (groupList) => {
+    return [...groupList].sort((a, b) => {
+      const aPinned = a.isPinned ? 1 : 0;
+      const bPinned = b.isPinned ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+
+      const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+      const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      if (aTime !== bTime) return bTime - aTime;
+
+      return (a.name || "").localeCompare(b.name || "");
+    });
+  };
+
+  const handlePreferenceChange = useCallback((convId, updatedPrefs) => {
+    setGroups((prev) => {
+      const next = prev.map((g) => {
+        if (g._id === convId) {
+          return { ...g, ...updatedPrefs };
+        }
+        return g;
+      });
+      return sortSidebarGroups(next);
+    });
+
+    setUsers((prev) => {
+      const next = prev.map((u) => {
+        const matches = u._id === convId || (convId.includes("_") && convId.includes(u._id));
+        if (matches) {
+          return { ...u, ...updatedPrefs };
+        }
+        return u;
+      });
+      return sortSidebarUsers(next);
+    });
+  }, []);
+
+  const handleLeaveGroup = useCallback((groupId) => {
+    setGroups((prev) => prev.filter((g) => g._id !== groupId));
+    if (activeChatRef.current?._id === groupId) {
+      setActiveChat(null);
+      setShowConversationPanel(false);
+    }
+  }, []);
+
+  const handleDeleteHistory = useCallback((convId) => {
+    setMessages([]);
+    setActiveChat(null);
+    setShowConversationPanel(false);
+
+    const refreshSidebarData = async () => {
+      try {
+        const [sidebarRes, groupsRes] = await Promise.all([
+          getSidebarUsers(),
+          getGroups(),
+        ]);
+        if (sidebarRes.data.success) {
+          const list = sidebarRes.data.users || sidebarRes.data.friends || [];
+          setUsers(
+            sortSidebarUsers(list.map((u) => ({ ...u, unreadCount: u.unreadCount || 0 })))
+          );
+        }
+        if (groupsRes.data.success) {
+          setGroups(sortSidebarGroups(groupsRes.data.groups));
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải lại sidebar sau khi xóa lịch sử:", err);
+      }
+    };
+    refreshSidebarData();
+  }, [setMessages, setActiveChat]);
+
   // Render
   if (isLoading)
     return (
@@ -568,6 +655,10 @@ const Home = () => {
           currentUser={currentUser}
           getAvatarUrl={getAvatarUrl}
           conversationId={conversationId}
+          onPreferenceChange={handlePreferenceChange}
+          onLeaveGroup={handleLeaveGroup}
+          onDeleteHistory={handleDeleteHistory}
+          onManageMembers={() => setShowGroupMembers(true)}
         />
       )}
 

@@ -44,7 +44,7 @@ const isGroupMessage = (message) => {
 
 const isParticipantVisibleForMessage = (participant, messageAt) => {
   if (participant.leftAt && new Date(participant.leftAt) < messageAt) return false;
-  if (participant.state?.deletedAt && new Date(participant.state.deletedAt) < messageAt) {
+  if (participant.state?.deletedAt && new Date(participant.state.deletedAt) >= messageAt) {
     return false;
   }
   return true;

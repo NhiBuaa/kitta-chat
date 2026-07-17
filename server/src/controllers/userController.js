@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const ConversationParticipant = require("../models/ConversationParticipant");
 const Message = require("../models/Message");
 const mongoose = require("mongoose");
 const getSafeUserName = require("../utils/getSafeUserName");
@@ -105,13 +106,33 @@ const getUserById = async (req, res) => {
         .json({ success: false, message: "Người dùng không tồn tại" });
     }
 
-    const relationshipFlags = buildRelationshipFlags(targetUser, currentUser);
+    const conversationId = [currentUserId, targetUserId].sort().join("_");
+    const participant = await ConversationParticipant.findOne({
+      legacyConversationId: conversationId,
+      userId: currentUserId,
+    }).lean();
+
+    let participantPrefs = {};
+    if (participant) {
+      const now = new Date();
+      const isMuted = !!(
+        participant.state?.mutedUntil &&
+        new Date(participant.state.mutedUntil) > now
+      );
+      participantPrefs = {
+        isPinned: !!participant.state?.pinnedAt,
+        pinnedAt: participant.state?.pinnedAt,
+        isMuted,
+        mutedUntil: participant.state?.mutedUntil,
+      };
+    }
 
     res.json({
       success: true,
       user: {
         ...targetUser,
         ...relationshipFlags,
+        ...participantPrefs,
       },
     });
   } catch (error) {
@@ -449,8 +470,35 @@ const getSidebarUsers = async (req, res) => {
       }
     }
 
+    // Lọc các bạn bè có cuộc hội thoại direct đang bị xóa (soft delete) và chưa có tin nhắn mới
+    const allParticipants = await ConversationParticipant.find({ userId: currentUserId })
+      .populate("conversationId")
+      .lean();
+
+    const deletedDirectTargetIds = new Set();
+    for (const p of allParticipants) {
+      const conv = p.conversationId;
+      if (conv && conv.kind === "direct" && p.state?.deletedAt) {
+        const lastMsgAt = p.state.lastMessageAt ? new Date(p.state.lastMessageAt).getTime() : 0;
+        const deletedAt = new Date(p.state.deletedAt).getTime();
+        if (lastMsgAt <= deletedAt) {
+          const legacyId = conv.legacyConversationId || p.legacyConversationId;
+          if (legacyId) {
+            const parts = legacyId.split("_");
+            const targetId = parts.find((id) => id !== currentUserId);
+            if (targetId) {
+              deletedDirectTargetIds.add(targetId);
+            }
+          }
+        }
+      }
+    }
+
     // Bạn bè chưa nhắn tin -> xếp sau (lastMessage = null)
-    const noMessageFriendIds = friendIds.filter((friendId) => !candidateTargetUserIds.has(friendId));
+    // Loại bỏ những bạn bè có cuộc hội thoại đang bị xóa
+    const noMessageFriendIds = friendIds.filter(
+      (friendId) => !candidateTargetUserIds.has(friendId) && !deletedDirectTargetIds.has(friendId)
+    );
 
     // Gom toàn bộ User ID cần fetch thông tin
     const allTargetUserIds = Array.from(new Set([
@@ -496,12 +544,22 @@ const getSidebarUsers = async (req, res) => {
           isReceived: includesId(currentUser?.friendRequests, targetId),
         };
 
+        const now = new Date();
+        const isMuted = !!(
+          candidate.mutedUntil &&
+          new Date(candidate.mutedUntil) > now
+        );
+
         conversationEntries.push({
           ...userObj,
           ...relationshipFlags,
           lastMessage: lastMsg ? buildSidebarLastMessage(lastMsg) : null,
           hasUnread: unreadCount > 0,
           unreadCount,
+          isPinned: !!candidate.pinnedAt,
+          pinnedAt: candidate.pinnedAt,
+          isMuted,
+          mutedUntil: candidate.mutedUntil,
         });
       }
     }
@@ -523,6 +581,10 @@ const getSidebarUsers = async (req, res) => {
           lastMessage: null,
           hasUnread: false,
           unreadCount: 0,
+          isPinned: false,
+          pinnedAt: null,
+          isMuted: false,
+          mutedUntil: null,
         });
       }
     }

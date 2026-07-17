@@ -98,6 +98,7 @@ test("sidebar candidate service returns direct read-model candidates without int
     unreadCount: 2,
     hasUnread: true,
     pinnedAt: null,
+    mutedUntil: null,
   }]);
   assert.equal(Object.hasOwn(candidates[0], "_id"), false);
   assert.equal(Object.hasOwn(candidates[0], "internalConversationId"), false);

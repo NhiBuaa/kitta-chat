@@ -4,9 +4,7 @@ const API_URL_MESSAGES = import.meta.env.VITE_API_URL_MESSAGES || '/api/messages
 
 export const getMessages = ({ activeChat, currentUser, cursor, signal }) => {
   const isGroup = Boolean(activeChat.members)
-  const url = isGroup
-    ? `${API_URL_MESSAGES}/none/${activeChat._id}`
-    : `${API_URL_MESSAGES}/${currentUser._id}/${activeChat._id}`
+  const url = `${API_URL_MESSAGES}/${currentUser._id}/${activeChat._id}`
 
   return axiosClient.get(url, {
     params: {

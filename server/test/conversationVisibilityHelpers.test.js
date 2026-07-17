@@ -103,6 +103,8 @@ test("applySoftDeleteState nulls participant last message fields and resets unre
       "state.lastMessageId": null,
       "state.lastMessageAt": null,
       "state.unreadCount": 0,
+      "state.pinnedAt": null,
+      "state.mutedUntil": null,
     },
   });
 });

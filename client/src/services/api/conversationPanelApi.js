@@ -18,3 +18,13 @@ export const updatePanelPreference = (conversationId, preferenceData) =>
   axiosClient.patch(`${API_URL}/${conversationId}/panel/preference`, preferenceData, {
     __skipAuthRefresh: true,
   });
+
+export const leaveGroupPanel = (conversationId) =>
+  axiosClient.post(`${API_URL}/${conversationId}/panel/leave`, {}, {
+    __skipAuthRefresh: true,
+  });
+
+export const deleteChatPanel = (conversationId) =>
+  axiosClient.post(`${API_URL}/${conversationId}/panel/delete`, {}, {
+    __skipAuthRefresh: true,
+  });

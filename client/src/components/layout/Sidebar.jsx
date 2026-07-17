@@ -1,5 +1,5 @@
 import React from "react";
-import { FaUserPlus, FaBell, FaSearch, FaUsers, FaCheck, FaHistory } from "react-icons/fa";
+import { FaUserPlus, FaBell, FaSearch, FaUsers, FaCheck, FaHistory, FaThumbtack, FaBellSlash } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 import CallHistoryBadge from '@/features/calls/components/CallHistoryBadge.jsx';
 
@@ -144,17 +144,21 @@ const Sidebar = ({
                 />
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className={`text-sm truncate pr-2 ${hasUnread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
-                      {group.name}
+                    <h3 className={`text-sm truncate pr-2 flex items-center gap-1.5 ${hasUnread ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
+                      <span>{group.name}</span>
+                      {group.isMuted && <FaBellSlash className="text-gray-400 text-[10px] shrink-0" />}
                     </h3>
-                    {group.lastMessage && (
-                      <span className={`text-[10px] flex-shrink-0 ${hasUnread ? "text-blue-600 font-bold" : "text-gray-400"}`}>
-                        {new Date(group.lastMessage.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    )}
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      {group.isPinned && <FaThumbtack className="text-green-600 text-[10px] shrink-0 transform rotate-45" />}
+                      {group.lastMessage && (
+                        <span className={`text-[10px] ${hasUnread ? "text-blue-600 font-bold" : "text-gray-400"}`}>
+                          {new Date(group.lastMessage.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="text-xs truncate text-gray-500">
                     {group.lastMessage
@@ -217,28 +221,32 @@ const Sidebar = ({
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <div className="flex items-center justify-between gap-2">
                     <h3
-                      className={`text-sm truncate pr-2 ${hasUnread
+                      className={`text-sm truncate pr-2 flex items-center gap-1.5 ${hasUnread
                         ? "font-bold text-gray-900"
                         : "font-semibold text-gray-800"
                         }`}
                     >
-                      {user.displayName}
+                      <span>{user.displayName}</span>
+                      {user.isMuted && <FaBellSlash className="text-gray-400 text-[10px] shrink-0" />}
                     </h3>
-                    {user.lastMessage && (
-                      <span
-                        className={`text-[10px] flex-shrink-0 ${hasUnread
-                          ? "text-blue-600 font-bold"
-                          : "text-gray-400"
-                          }`}
-                      >
-                        {new Date(
-                          user.lastMessage.createdAt,
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    )}
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      {user.isPinned && <FaThumbtack className="text-green-600 text-[10px] shrink-0 transform rotate-45" />}
+                      {user.lastMessage && (
+                        <span
+                          className={`text-[10px] ${hasUnread
+                            ? "text-blue-600 font-bold"
+                            : "text-gray-400"
+                            }`}
+                        >
+                          {new Date(
+                            user.lastMessage.createdAt,
+                          ).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-between items-center h-5">
                     <p className="text-xs truncate text-gray-500 w-full">

@@ -18,9 +18,10 @@ import {
   FaCrown
 } from "react-icons/fa";
 import { FaThumbtackSlash } from "react-icons/fa6";
-import { getPanelMetadata, getPanelResources, updatePanelPreference } from "@/services/api/conversationPanelApi.js";
+import { getPanelMetadata, getPanelResources, updatePanelPreference, leaveGroupPanel, deleteChatPanel } from "@/services/api/conversationPanelApi.js";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
   const k = 1024;
@@ -37,10 +38,16 @@ const ConversationPanel = ({
   currentUser,
   getAvatarUrl,
   conversationId,
+  onLeaveGroup,
+  onDeleteHistory,
+  onPreferenceChange,
+  onManageMembers,
 }) => {
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // State quản lý Shared Media (Slice 3)
   const [mediaState, setMediaState] = useState({
@@ -289,6 +296,7 @@ const ConversationPanel = ({
           ...prev,
           preference: response.data.preference
         }));
+        onPreferenceChange?.(conversationId, response.data.preference);
         toast.success("Đã cập nhật cài đặt");
       }
     } catch (err) {
@@ -299,6 +307,27 @@ const ConversationPanel = ({
         ...prev,
         preference: previousPrefs
       }));
+    }
+  };
+
+  const handleDeleteHistoryClick = () => {
+    setConfirmDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await deleteChatPanel(conversationId);
+      if (res.data?.success) {
+        toast.success("Xóa lịch sử thành công");
+        onDeleteHistory?.(conversationId);
+      }
+    } catch (err) {
+      console.error("Lỗi khi xóa lịch sử:", err);
+      toast.error(err.response?.data?.message || "Không thể xóa lịch sử trò chuyện");
+    } finally {
+      setIsDeleting(false);
+      setConfirmDeleteOpen(false);
     }
   };
 
@@ -642,14 +671,12 @@ const ConversationPanel = ({
                     {metadata.overview?.kind === "group" ? "Thành viên nhóm" : "Nhóm chung"}
                   </h4>
                   {metadata.overview?.kind === "group" ? (
-                    membershipState.membersPreview.length > 0 && (
-                      <button 
-                        onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
-                        className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
-                      >
-                        Xem tất cả
-                      </button>
-                    )
+                    <button 
+                      onClick={onManageMembers}
+                      className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
+                    >
+                      Quản lý
+                    </button>
                   ) : (
                     membershipState.commonGroups.length > 0 && (
                       <button 
@@ -757,15 +784,12 @@ const ConversationPanel = ({
               <div className="space-y-2 pt-4 border-t border-gray-100">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Hành động</h4>
                 
-                {metadata.permissions?.canLeave && (
-                  <button className="w-full flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
-                    <FaSignOutAlt />
-                    <span>Rời nhóm</span>
-                  </button>
-                )}
 
                 {metadata.permissions?.canDelete && (
-                  <button className="w-full flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                  <button 
+                    onClick={handleDeleteHistoryClick}
+                    className="w-full flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                  >
                     <FaTrash />
                     <span>Xóa lịch sử trò chuyện</span>
                   </button>
@@ -778,6 +802,20 @@ const ConversationPanel = ({
             </div>
           )}
         </div>
+      {confirmDeleteOpen && (
+        <ConfirmationModal
+          isOpen={confirmDeleteOpen}
+          title="Xóa lịch sử trò chuyện"
+          message="Bạn có chắc chắn muốn xóa toàn bộ lịch sử trò chuyện của cuộc hội thoại này? Tin nhắn sẽ chỉ biến mất đối với bạn."
+          type="danger"
+          confirmText="Xóa lịch sử"
+          cancelText="Hủy"
+          isDangerous={true}
+          isLoading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDeleteOpen(false)}
+        />
+      )}
       </div>
     </div>
   );

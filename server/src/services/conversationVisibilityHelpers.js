@@ -67,6 +67,8 @@ function applySoftDeleteState(participant, deletedAt) {
       "state.lastMessageId": null,
       "state.lastMessageAt": null,
       "state.unreadCount": 0,
+      "state.pinnedAt": null,
+      "state.mutedUntil": null,
     },
   };
 }

@@ -1,5 +1,6 @@
 const Group = require("../models/Group");
 const User = require("../models/User");
+const ConversationParticipant = require("../models/ConversationParticipant");
 const Message = require("../models/Message");
 const mongoose = require("mongoose");
 const { createSystemMessage } = require("./messageController");
@@ -216,11 +217,21 @@ const getMyGroups = async (req, res) => {
         const lastMsg = candidate.lastMessageId ? lastMsgMap.get(candidate.lastMessageId.toString()) : null;
         const unreadCount = candidate.unreadCount || 0;
 
+        const now = new Date();
+        const isMuted = !!(
+          candidate.mutedUntil &&
+          new Date(candidate.mutedUntil) > now
+        );
+
         responseGroups.push({
           ...groupObj,
           lastMessage: lastMsg ? buildGroupLastMessagePreview(lastMsg, currentUserId) : null,
           hasUnread: unreadCount > 0,
           unreadCount,
+          isPinned: !!candidate.pinnedAt,
+          pinnedAt: candidate.pinnedAt,
+          isMuted,
+          mutedUntil: candidate.mutedUntil,
         });
       }
     }
@@ -529,7 +540,33 @@ const getGroupById = async (req, res) => {
         .json({ success: false, message: "Không tìm thấy group" });
     }
 
-    res.status(200).json(group);
+    const currentUserId = req.user?.id;
+    let participantPrefs = {};
+    if (currentUserId) {
+      const participant = await ConversationParticipant.findOne({
+        legacyConversationId: groupId,
+        userId: currentUserId,
+      }).lean();
+      if (participant) {
+        const now = new Date();
+        const isMuted = !!(
+          participant.state?.mutedUntil &&
+          new Date(participant.state.mutedUntil) > now
+        );
+        participantPrefs = {
+          isPinned: !!participant.state?.pinnedAt,
+          pinnedAt: participant.state?.pinnedAt,
+          isMuted,
+          mutedUntil: participant.state?.mutedUntil,
+        };
+      }
+    }
+
+    const groupPlain = typeof group.toObject === "function" ? group.toObject() : group;
+    res.status(200).json({
+      ...groupPlain,
+      ...participantPrefs,
+    });
   } catch (err) {
     console.log("Error getGroupById groupController: ", err);
     res.status(500).json({ success: false, message: "Lỗi Server" });

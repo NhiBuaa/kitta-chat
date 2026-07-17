@@ -5,6 +5,14 @@ const overviewService = require("../services/overviewService");
 const preferenceService = require("../services/preferenceService");
 const crypto = require("crypto");
 
+const Group = require("../models/Group");
+const User = require("../models/User");
+const ConversationParticipant = require("../models/ConversationParticipant");
+const { syncGroupLifecycle } = require("../services/conversationReadModelService");
+const { applySoftDeleteState } = require("../services/conversationVisibilityHelpers");
+const getSafeUserName = require("../utils/getSafeUserName");
+const { createSystemMessage } = require("./messageController");
+
 // Helper lấy config realtime tránh cache khi boot
 const getPanelConfig = () => {
   try {
@@ -340,6 +348,180 @@ exports.getResources = async (req, res) => {
     return res.status(200).json(responsePayload);
   } catch (err) {
     console.error("Lỗi getResources:", err);
+    return sendError(res, {
+      status: 500,
+      code: "SERVER_ERROR",
+      message: err.message,
+    });
+  }
+};
+
+const GROUP_USER_FIELDS = "displayName avatar username status activityStatus";
+
+const buildGroupSystemMessagePayload = (groupId, systemMessage) => ({
+  _id: systemMessage._id,
+  conversationId: groupId,
+  senderId: null,
+  sender: null,
+  receiverId: groupId,
+  receiver: groupId,
+  text: systemMessage.text,
+  type: "system",
+  createdAt: systemMessage.createdAt,
+  isGroup: true,
+});
+
+/**
+ * POST /api/conversations/:id/panel/leave
+ * Rời khỏi nhóm trò chuyện (Slice 6)
+ */
+exports.leaveGroup = async (req, res) => {
+  try {
+    const config = getPanelConfig();
+    if (!config.conversationPanelEnabled) {
+      return sendError(res, {
+        status: 404,
+        code: "PANEL_DISABLED",
+        message: "Conversation panel is disabled",
+      });
+    }
+
+    const userId = req.user?.id || req.user?._id;
+    const groupId = req.params.id;
+    const io = req.app.get("socketio");
+
+    // Đánh giá quyền truy cập bằng Permission DTO
+    const permissions = await permissionService.getPermissions(userId, groupId);
+    if (!permissions.canLeave) {
+      return sendError(res, {
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Bạn không có quyền rời khỏi cuộc trò chuyện này",
+      });
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return sendError(res, {
+        status: 404,
+        code: "NOT_FOUND",
+        message: "Nhóm không tồn tại",
+      });
+    }
+
+    // Ràng buộc: Trưởng nhóm không thể rời khi nhóm còn thành viên khác
+    if (group.admin && group.admin.toString() === userId.toString() && group.members.length > 1) {
+      return sendError(res, {
+        status: 400,
+        code: "ADMIN_TRANSFER_REQUIRED",
+        message: "Vui lòng chuyển quyền trưởng nhóm trước khi rời nhóm",
+      });
+    }
+
+    const previousMemberIds = group.members.map((id) => id.toString());
+
+    // Cập nhật members
+    group.members = group.members.filter((id) => id.toString() !== userId.toString());
+    await group.save();
+
+    // Đồng bộ hóa với Conversation Read Model
+    await syncGroupLifecycle(groupId, "remove-member", { memberId: userId });
+
+    // Tạo tin nhắn hệ thống
+    const user = await User.findById(userId).select("displayName username");
+    const systemMessage = await createSystemMessage(
+      groupId,
+      `${getSafeUserName(user)} đã rời nhóm`
+    );
+
+    if (io) {
+      // Gửi tin nhắn hệ thống đến room nhóm
+      io.to(groupId).emit("getMessage", buildGroupSystemMessagePayload(groupId, systemMessage));
+
+      // Lấy thông tin nhóm cập nhật để gửi event groupMemberUpdated
+      const updatedGroup = await Group.findById(groupId)
+        .populate("members", GROUP_USER_FIELDS)
+        .populate("admin", GROUP_USER_FIELDS);
+
+      const payload = {
+        groupId,
+        updatedGroup,
+        removedMemberId: userId.toString(),
+        isVoluntaryLeave: true,
+      };
+
+      // Emit tới tất cả thành viên trước đó để cập nhật danh sách
+      Array.from(new Set(previousMemberIds)).forEach((mId) => {
+        io.to(mId).emit("groupMemberUpdated", payload);
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Rời nhóm thành công",
+    });
+  } catch (err) {
+    console.error("Lỗi leaveGroup:", err);
+    return sendError(res, {
+      status: 500,
+      code: "SERVER_ERROR",
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * POST /api/conversations/:id/panel/delete
+ * Xóa lịch sử trò chuyện (soft delete) cho user hiện tại (Slice 6)
+ */
+exports.deleteHistory = async (req, res) => {
+  try {
+    const config = getPanelConfig();
+    if (!config.conversationPanelEnabled) {
+      return sendError(res, {
+        status: 404,
+        code: "PANEL_DISABLED",
+        message: "Conversation panel is disabled",
+      });
+    }
+
+    const userId = req.user?.id || req.user?._id;
+    const conversationId = req.params.id;
+
+    // Đánh giá quyền truy cập
+    const permissions = await permissionService.getPermissions(userId, conversationId);
+    if (!permissions.canDelete) {
+      return sendError(res, {
+        status: 403,
+        code: "FORBIDDEN",
+        message: "Bạn không có quyền xóa lịch sử cuộc trò chuyện này",
+      });
+    }
+
+    // Tìm ConversationParticipant để cập nhật
+    const participant = await ConversationParticipant.findOne({
+      legacyConversationId: conversationId,
+      userId: userId,
+    });
+
+    if (!participant) {
+      return sendError(res, {
+        status: 404,
+        code: "PARTICIPANT_NOT_FOUND",
+        message: "Không tìm thấy thông tin thành viên hội thoại của bạn",
+      });
+    }
+
+    const now = new Date();
+    const update = applySoftDeleteState(participant, now);
+    await ConversationParticipant.updateOne({ _id: participant._id }, update);
+
+    return res.status(200).json({
+      success: true,
+      message: "Xóa lịch sử trò chuyện thành công",
+    });
+  } catch (err) {
+    console.error("Lỗi deleteHistory:", err);
     return sendError(res, {
       status: 500,
       code: "SERVER_ERROR",

@@ -28,6 +28,7 @@ function buildSidebarCandidate(participant) {
     unreadCount,
     hasUnread: unreadCount > 0,
     pinnedAt: normalizeDate(state.pinnedAt),
+    mutedUntil: normalizeDate(state.mutedUntil),
   };
 }
 
@@ -54,7 +55,12 @@ async function getSidebarCandidatesForUser({ userId, limit = 30, models = {} } =
 
   return (participants || [])
     .filter((participant) => !participant.leftAt)
-    .filter((participant) => !participant.state?.deletedAt)
+    .filter((participant) => {
+      const deletedAt = participant.state?.deletedAt;
+      if (!deletedAt) return true;
+      const lastMessageAt = participant.state?.lastMessageAt;
+      return lastMessageAt && new Date(lastMessageAt) > new Date(deletedAt);
+    })
     .filter(isSidebarVisible)
     .map(buildSidebarCandidate)
     .sort(compareCandidateOrder)

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { audioManager } from "@/utils/AudioManager.js";
+import { axiosClient } from "@/services/api/axiosClient.js";
 import {
     appendIncomingChatMessage,
     getMessageId,
@@ -30,6 +31,7 @@ export const useMessageSocket = ({
     setSearchResult,
 }) => {
     const processedMessageIdsRef = useRef(new Set());
+    const fetchingIdsRef = useRef(new Set());
 
     useEffect(() => {
         if (!socket) return;
@@ -111,6 +113,38 @@ export const useMessageSocket = ({
                     return { ...g, lastMessage: { ...g.lastMessage, readBy: [...readBy, readerId] } };
                 })
             );
+        };
+
+        const fetchNewGroup = async (groupId, messageData) => {
+            try {
+                const res = await axiosClient.get(`/api/groups/${groupId}`);
+                if (res.data && res.data._id) {
+                    const group = res.data;
+                    let previewContent = messageData.text;
+                    if (!previewContent && messageData.image) previewContent = "[Hình ảnh]";
+
+                    setGroups((prev) => {
+                        if (prev.some((g) => g._id === group._id)) return prev;
+                        return [
+                            {
+                                ...group,
+                                lastMessage: {
+                                    content: previewContent,
+                                    senderId: messageData.senderId,
+                                    createdAt: messageData.createdAt || new Date().toISOString(),
+                                    isRead: false,
+                                    sender: messageData.sender,
+                                },
+                                hasUnread: true,
+                                unreadCount: 1,
+                            },
+                            ...prev,
+                        ];
+                    });
+                }
+            } catch (error) {
+                console.error("[useMessageSocket] fetchNewGroup error:", error);
+            }
         };
 
         // getMessage (tin nhắn mới)
@@ -221,14 +255,27 @@ export const useMessageSocket = ({
             };
 
             if (data.isGroup) {
-                setGroups((prevGroups) =>
-                    updateListWithMessagePreview(prevGroups, previewUpdate) || prevGroups
-                );
+                setGroups((prevGroups) => {
+                    const newList = updateListWithMessagePreview(prevGroups, previewUpdate);
+                    if (newList) return newList;
+                    if (!fetchingIdsRef.current.has(targetId)) {
+                        fetchingIdsRef.current.add(targetId);
+                        fetchNewGroup(targetId, data).finally(() => {
+                            fetchingIdsRef.current.delete(targetId);
+                        });
+                    }
+                    return prevGroups;
+                });
             } else {
                 setUsers((prevUsers) => {
                     const newList = updateListWithMessagePreview(prevUsers, previewUpdate);
                     if (newList) return newList;
-                    fetchNewConversation(`/api/users/${targetId}`, data);
+                    if (!fetchingIdsRef.current.has(targetId)) {
+                        fetchingIdsRef.current.add(targetId);
+                        fetchNewConversation(`/api/users/${targetId}`, data).finally(() => {
+                            fetchingIdsRef.current.delete(targetId);
+                        });
+                    }
                     return prevUsers;
                 });
 

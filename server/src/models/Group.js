@@ -7,7 +7,7 @@ const groupSchema = new mongoose.Schema({
     avatar: { type: String, default: "" },
 }, { timestamps: true });
 
-const Group = mongoose.model('Group', groupSchema);
+const Group = mongoose.models.Group || mongoose.model('Group', groupSchema);
 
 module.exports = Group;
 

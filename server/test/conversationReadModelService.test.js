@@ -242,8 +242,10 @@ test("ensureConversationForConfirmedMessage respects deleted participant visibil
     directMessage({ _id: objectId("212"), createdAt: new Date("2026-06-05T09:00:00.000Z") }),
   );
 
-  assert.equal(recipient.state.unreadCount, 1);
-  assert.equal(idString(recipient.state.lastMessageId), idString(message._id));
+  // Với logic mới: Tin nhắn mới sau thời điểm xóa (09:00 > 08:30)
+  // phải được cập nhật vào state của participant.
+  assert.equal(recipient.state.unreadCount, 2);
+  assert.equal(idString(recipient.state.lastMessageId), idString(objectId("212")));
 });
 
 test("ensureConversationForConfirmedMessage reuses existing participant rows", async () => {

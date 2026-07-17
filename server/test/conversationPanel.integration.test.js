@@ -16,6 +16,11 @@ const permissionServicePath = require.resolve("../src/services/permissionService
 const overviewServicePath = require.resolve("../src/services/overviewService");
 const preferenceServicePath = require.resolve("../src/services/preferenceService");
 const resourceServicePath = require.resolve("../src/services/resourceService");
+const groupModelPath = require.resolve("../src/models/Group");
+const participantModelPath = require.resolve("../src/models/ConversationParticipant");
+const userModelPath = require.resolve("../src/models/User");
+const messageControllerPath = require.resolve("../src/controllers/messageController");
+const readModelServicePath = require.resolve("../src/services/conversationReadModelService");
 
 const clearModuleCache = () => {
   delete require.cache[require.resolve("../src/app")];
@@ -25,6 +30,11 @@ const clearModuleCache = () => {
   delete require.cache[overviewServicePath];
   delete require.cache[preferenceServicePath];
   delete require.cache[resourceServicePath];
+  delete require.cache[groupModelPath];
+  delete require.cache[participantModelPath];
+  delete require.cache[userModelPath];
+  delete require.cache[messageControllerPath];
+  delete require.cache[readModelServicePath];
 };
 
 const createTestServer = async (envOverrides = {}) => {
@@ -214,6 +224,135 @@ const createTestServer = async (envOverrides = {}) => {
     exports: resourceServiceMock,
   };
 
+  // Mock Group Model
+  let mockGroup = {
+    _id: "group-123",
+    admin: "user-1",
+    members: ["user-1", "user-2", "user-3"],
+    name: "Test Group",
+    avatar: "group-avatar",
+    save: async function() { return this; },
+  };
+  const realGroupModel = require("../src/models/Group");
+  const groupModelMock = Object.create(realGroupModel);
+  groupModelMock.findById = async (id) => {
+    if (id === "nonexistent-group") return null;
+    return mockGroup;
+  };
+  groupModelMock.setMockGroup = (data) => {
+    mockGroup = { ...mockGroup, ...data };
+  };
+  require.cache[groupModelPath] = {
+    id: groupModelPath,
+    filename: groupModelPath,
+    loaded: true,
+    exports: groupModelMock,
+  };
+
+  // Mock ConversationParticipant Model
+  let mockParticipant = {
+    _id: "participant-123",
+    conversationId: "conv-123",
+    legacyConversationId: "conv-123",
+    userId: "user-1",
+    state: {
+      deletedAt: null,
+      lastMessageId: "m1",
+      lastMessageAt: new Date(),
+      unreadCount: 5,
+    },
+  };
+  const realParticipantModel = require("../src/models/ConversationParticipant");
+  const participantModelMock = Object.create(realParticipantModel);
+  participantModelMock.findOne = async (query) => {
+    if (query.userId === "nonexistent-user") return null;
+    return mockParticipant;
+  };
+  participantModelMock.updateOne = async (query, update) => {
+    if (update.$set) {
+      mockParticipant.state = {
+        ...mockParticipant.state,
+        ...update.$set,
+      };
+    }
+    return { matchedCount: 1, modifiedCount: 1 };
+  };
+  participantModelMock.setMockParticipant = (data) => {
+    mockParticipant = { ...mockParticipant, ...data };
+  };
+  require.cache[participantModelPath] = {
+    id: participantModelPath,
+    filename: participantModelPath,
+    loaded: true,
+    exports: participantModelMock,
+  };
+
+  // Mock User Model
+  let mockUser = {
+    _id: "user-1",
+    displayName: "User One",
+    username: "userone",
+  };
+  const realUserModel = require("../src/models/User");
+  const userModelMock = Object.create(realUserModel);
+  userModelMock.findById = (id) => {
+    const result = {
+      _id: id,
+      displayName: mockUser.displayName,
+      username: mockUser.username,
+    };
+    return {
+      select: function(fields) {
+        return this;
+      },
+      then: function(resolve) {
+        resolve(result);
+      }
+    };
+  };
+  require.cache[userModelPath] = {
+    id: userModelPath,
+    filename: userModelPath,
+    loaded: true,
+    exports: userModelMock,
+  };
+
+  // Mock messageController
+  const realMessageController = require("../src/controllers/messageController");
+  const messageControllerMock = {
+    ...realMessageController,
+    createSystemMessage: async (groupId, text, options = {}) => {
+      return {
+        _id: "system-message-123",
+        conversationId: groupId,
+        text,
+        type: "system",
+        createdAt: new Date(),
+      };
+    }
+  };
+  require.cache[messageControllerPath] = {
+    id: messageControllerPath,
+    filename: messageControllerPath,
+    loaded: true,
+    exports: messageControllerMock,
+  };
+
+  // Mock conversationReadModelService
+  const realReadModelService = require("../src/services/conversationReadModelService");
+  const readModelServiceMock = {
+    ...realReadModelService,
+    syncGroupLifecycle: async (groupId, action, data) => {
+      return;
+    }
+  };
+  require.cache[readModelServicePath] = {
+    id: readModelServicePath,
+    filename: readModelServicePath,
+    loaded: true,
+    exports: readModelServiceMock,
+  };
+
   const { createApp } = require("../src/app");
 
   const app = createApp({
@@ -234,6 +373,8 @@ const createTestServer = async (envOverrides = {}) => {
     overviewMock: overviewServiceMock,
     preferenceMock: preferenceServiceMock,
     resourceMock: resourceServiceMock,
+    groupMock: groupModelMock,
+    participantMock: participantModelMock,
     async get(path, token, headers = {}) {
       const finalHeaders = { ...headers };
       if (token) {
@@ -260,6 +401,27 @@ const createTestServer = async (envOverrides = {}) => {
       }
       const response = await fetch(`${this.baseUrl}${path}`, {
         method: "PATCH",
+        headers: finalHeaders,
+        body: JSON.stringify(data),
+      });
+      let body = null;
+      try {
+        body = await response.json();
+      } catch (err) {
+        // Response rỗng hoặc không phải JSON
+      }
+      return { response, body };
+    },
+    async post(path, data, token, headers = {}) {
+      const finalHeaders = {
+        "Content-Type": "application/json",
+        ...headers,
+      };
+      if (token) {
+        finalHeaders["Authorization"] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        method: "POST",
         headers: finalHeaders,
         body: JSON.stringify(data),
       });
@@ -733,6 +895,56 @@ test("Resources API - handles error and timeout in membership loader", async () 
     const resTimeout = await server.get("/api/conversations/timeout-membership-conv/panel/resources?scopes=membership", token);
     assert.equal(resTimeout.response.status, 200);
     assert.equal(resTimeout.body.membership.status, "error");
+  } finally {
+    await server.close();
+  }
+});
+
+test("Action API - POST /panel/leave successfully leaves group", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    server.groupMock.setMockGroup({ admin: "user-2" });
+    const { response, body } = await server.post("/api/conversations/group-123/panel/leave", {}, token);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.message, "Rời nhóm thành công");
+  } finally {
+    await server.close();
+  }
+});
+
+test("Action API - POST /panel/leave returns 403 when canLeave is false", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const { response } = await server.post("/api/conversations/forbidden-conv/panel/leave", {}, token);
+
+    assert.equal(response.status, 403);
+  } finally {
+    await server.close();
+  }
+});
+
+test("Action API - POST /panel/delete successfully soft-deletes history", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const { response, body } = await server.post("/api/conversations/conv-123/panel/delete", {}, token);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.message, "Xóa lịch sử trò chuyện thành công");
   } finally {
     await server.close();
   }

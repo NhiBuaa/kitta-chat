@@ -313,17 +313,6 @@ const ChatWindow = ({
             <FaVideo />
           </button>
 
-          {/* Quản lý thành viên (chỉ hiển thị cho group chat) */}
-          {activeChat?.members && (
-            <button
-              onClick={() => setShowGroupMembers(true)}
-              className="hover:bg-gray-100 p-2 rounded-full transition-colors text-gray-500 hover:text-gray-800"
-              title="Quản lý thành viên"
-            >
-              <FaUsers />
-            </button>
-          )}
-
           {/* Chi tiết cuộc trò chuyện */}
           {isPanelEnabled && (
             <button

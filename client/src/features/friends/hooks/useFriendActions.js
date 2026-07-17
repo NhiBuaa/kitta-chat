@@ -26,20 +26,23 @@ export const useFriendActions = ({ API_URL, setUsers, setActiveChat, setSentRequ
                 let previewContent = messageData.text;
                 if (!previewContent && messageData.image) previewContent = "[Hình ảnh]";
 
-                setUsers((prev) => [
-                    {
-                        ...newItem,
-                        lastMessage: {
-                            content: previewContent,
-                            senderId: messageData.senderId,
-                            createdAt: messageData.createdAt || new Date().toISOString(),
-                            isRead: false,
+                setUsers((prev) => {
+                    if (prev.some((u) => u._id === newItem._id)) return prev;
+                    return [
+                        {
+                            ...newItem,
+                            lastMessage: {
+                                content: previewContent,
+                                senderId: messageData.senderId,
+                                createdAt: messageData.createdAt || new Date().toISOString(),
+                                isRead: false,
+                            },
+                            hasUnread: true,
+                            unreadCount: 1,
                         },
-                        hasUnread: true,
-                        unreadCount: 1,
-                    },
-                    ...prev,
-                ]);
+                        ...prev,
+                    ];
+                });
             }
         } catch (error) {
             console.error("[useFriendActions] fetchNewConversation error:", error);

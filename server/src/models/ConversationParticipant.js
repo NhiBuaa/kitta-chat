@@ -72,7 +72,7 @@ conversationParticipantSchema.index({ userId: 1, "state.unreadCount": -1 });
 conversationParticipantSchema.index({ legacyConversationId: 1, userId: 1 });
 conversationParticipantSchema.index({ conversationId: 1, leftAt: 1 });
 
-module.exports = mongoose.model(
+module.exports = mongoose.models.ConversationParticipant || mongoose.model(
   "ConversationParticipant",
   conversationParticipantSchema,
 );

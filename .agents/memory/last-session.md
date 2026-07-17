@@ -1,25 +1,16 @@
-# Handoff Summary — Slice 5 Complete & Preferences Bug Fix
+# Session Handoff Summary - 2026-07-17
 
-## 1. What was completed in this session
-- **Conversation Membership Domain (Slice 5):**
-  - Group members loader with real-time presence.
-  - Common groups loader with Redis cache-aside (TTL 5 mins).
-  - Cache invalidation integrated into `syncGroupLifecycle` in `ConversationReadModelService`.
-  - Membership integrated parallelly with timeout (2s) into `getResources`.
-  - React UI rendered for both group members and common groups with skeleton loading and independent retry.
-  - 10 unit tests in `resourceService.test.js` and 17 integration tests in `conversationPanel.integration.test.js` passed. Full server regression test is 290/290 green.
-- **Bug Fix & Refactoring (Preferences Spam):**
-  - Identified classic React re-render bug where `metadata` dependency triggered resource re-loading, causing `429 Too Many Requests`.
-  - Added React `useRef` `loadedConvIdRef` inside `ConversationPanel.jsx` to prevent resource reloading when updating preferences.
-  - Renamed variable to `loadedConvIdRef` to follow refactoring playbooks and clean readability.
-  - Client test suite is 121/121 green.
+## Những gì đã làm
+Trong session này, chúng ta đã giải quyết triệt để 4 lỗi quan trọng phát sinh từ việc Tối ưu hóa UI Sidebar, Xóa lịch sử và Đồng bộ hóa Realtime:
+1. **Thoát màn hình chat trống:** Cập nhật `handleDeleteHistory` để gọi `setActiveChat(null)` giúp đóng giao diện chat ngay lập tức khi xóa lịch sử.
+2. **Reload/F5 không mất sidebar:** Thay đổi bộ lọc candidates ở Backend (`getSidebarCandidatesForUser`) để giữ lại các cuộc hội thoại đã bị soft-delete nếu có tin nhắn mới gửi đến sau thời điểm xóa (`lastMessageAt > deletedAt`).
+3. **Chống trùng lặp realtime sidebar (React Strict Mode):** Bổ sung cơ chế `fetchingIdsRef` trong `useMessageSocket.js` để tránh gọi API trùng lặp, đồng thời thêm kiểm tra `prev.some` trong `fetchNewConversation` để đảm bảo không bị nhân đôi (trùng lặp) user hiển thị trên sidebar.
+4. **Hiển thị icon Ghim/Mute realtime:** Đính kèm trực tiếp preference cá nhân của người dùng hiện tại khi gọi API lấy chi tiết nhóm (`getGroupById`) và chi tiết user (`getUserById`).
+5. **Reset Ghim/Mute khi xóa lịch sử:** Cập nhật helper `applySoftDeleteState` tự động đưa `pinnedAt` và `mutedUntil` về `null` để tránh lỗi logic nhận tin nhắn mới nhưng vẫn bị tắt thông báo.
 
-## 2. Status of roadmap
-- **Slice 5:** **DONE**.
-- **Slice 6:** **TODO-NEXT** (Conversation Action Domain - Leave group, Soft delete history, Pin/Mute integration).
+## Trạng thái hệ thống
+- Toàn bộ suite test backend (293 tests) đều chạy thành công 100% xanh.
+- Không có tiến trình ngầm nào cần dừng hoạt động.
 
-## 3. Next Steps & Instructions for next session
-- Read `.agents/next-session.md` to start **Slice 6**.
-- Implement leave group API & socket notifications.
-- Implement soft-delete chat history using `state.deletedAt` filter.
-- Build Action UI components in the Conversation Panel.
+## Kế hoạch phiên tiếp theo
+- Tiếp tục thực hiện nốt các mục tiêu của **Slice 7 - Realtime Sync & Client State** (Metadata rename/avatar sync, membership sync realtime).
