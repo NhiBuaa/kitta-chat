@@ -187,8 +187,9 @@ exports.getResources = async (req, res) => {
     }
 
     const scopesQuery = req.query.scopes;
+    let requestedScopes = ["media", "files", "links", "membership"];
     if (scopesQuery) {
-      const requestedScopes = scopesQuery.split(",").map(s => s.trim());
+      requestedScopes = scopesQuery.split(",").map(s => s.trim());
       const validScopes = ["media", "files", "links", "membership"];
       for (const scope of requestedScopes) {
         if (!validScopes.includes(scope)) {
@@ -220,39 +221,104 @@ exports.getResources = async (req, res) => {
       });
     }
 
-    // Mock response khi resources enabled
-    return res.status(200).json({
+    const resourceService = require("../services/resourceService");
+
+    const limit = 6;
+    const cursor = req.query.cursor || null;
+
+    // Helper timeout loader 2s
+    const runLoaderWithTimeout = async (loaderPromise, timeoutMs = 2000, fallback) => {
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("Timeout"));
+        }, timeoutMs);
+      });
+
+      try {
+        const result = await Promise.race([loaderPromise, timeoutPromise]);
+        clearTimeout(timeoutId);
+        return { status: "success", ...result };
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error(`Loader error/timeout:`, error);
+        return {
+          status: "error",
+          ...fallback
+        };
+      }
+    };
+
+    const promises = {};
+
+    if (requestedScopes.includes("media")) {
+      promises.media = runLoaderWithTimeout(
+        resourceService.loadMedia(conversationId, limit, cursor, userId),
+        2000,
+        { items: [], hasMore: false, nextCursor: null }
+      );
+    }
+
+    // Chạy song song các loaders
+    const results = {};
+    const activeKeys = Object.keys(promises);
+    const settledResults = await Promise.all(activeKeys.map(k => promises[k]));
+    activeKeys.forEach((key, idx) => {
+      results[key] = settledResults[idx];
+    });
+
+    // Build response
+    const responsePayload = {
       version: 1,
-      resourcesPreview: {
-        media: {
-          status: "success",
-          items: [],
-          hasMore: false,
-          nextCursor: null
-        },
-        files: {
-          status: "success",
-          items: [],
-          hasMore: false,
-          nextCursor: null
-        },
-        links: {
-          status: "success",
-          items: [],
-          hasMore: false,
-          nextCursor: null
-        }
-      },
-      membership: {
+    };
+
+    const resourcesPreview = {};
+
+    if (results.media) {
+      resourcesPreview.media = results.media;
+    } else if (!scopesQuery) {
+      resourcesPreview.media = { status: "success", items: [], hasMore: false, nextCursor: null };
+    }
+
+    // Mock files và links
+    if (requestedScopes.includes("files")) {
+      resourcesPreview.files = { status: "success", items: [], hasMore: false, nextCursor: null };
+    } else if (!scopesQuery) {
+      resourcesPreview.files = { status: "success", items: [], hasMore: false, nextCursor: null };
+    }
+
+    if (requestedScopes.includes("links")) {
+      resourcesPreview.links = { status: "success", items: [], hasMore: false, nextCursor: null };
+    } else if (!scopesQuery) {
+      resourcesPreview.links = { status: "success", items: [], hasMore: false, nextCursor: null };
+    }
+
+    if (Object.keys(resourcesPreview).length > 0 || !scopesQuery) {
+      responsePayload.resourcesPreview = resourcesPreview;
+    }
+
+    // Mock membership
+    if (requestedScopes.includes("membership")) {
+      responsePayload.membership = {
         status: "success",
         commonGroups: [],
         membersPreview: [],
         hasMoreMembers: false,
         nextMemberCursor: null
-      }
-    });
+      };
+    } else if (!scopesQuery) {
+      responsePayload.membership = {
+        status: "success",
+        commonGroups: [],
+        membersPreview: [],
+        hasMoreMembers: false,
+        nextMemberCursor: null
+      };
+    }
+
+    return res.status(200).json(responsePayload);
   } catch (err) {
-    console.error("Lỗi getResources skeleton:", err);
+    console.error("Lỗi getResources:", err);
     return sendError(res, {
       status: 500,
       code: "SERVER_ERROR",

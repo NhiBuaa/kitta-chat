@@ -27,9 +27,21 @@ function buildMessageVisibilityFilter(participant) {
   const state = getState(participant);
   const deletedAt = toDate(state.deletedAt);
   const leftAt = toDate(participant?.leftAt);
+  const joinedAt = toDate(participant?.joinedAt);
 
   if (deletedAt) createdAt.$gt = deletedAt;
   if (leftAt) createdAt.$lte = leftAt;
+
+  // Lọc theo joinedAt cho group chat (role khác null/undefined)
+  const isGroup = participant?.role && participant.role !== null;
+  if (isGroup && joinedAt) {
+    if (deletedAt) {
+      const maxDate = deletedAt > joinedAt ? deletedAt : joinedAt;
+      createdAt.$gt = maxDate;
+    } else {
+      createdAt.$gte = joinedAt;
+    }
+  }
 
   return Object.keys(createdAt).length > 0 ? { createdAt } : {};
 }

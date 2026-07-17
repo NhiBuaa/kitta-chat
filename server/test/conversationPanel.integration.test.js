@@ -15,6 +15,7 @@ const generateToken = (userId) => {
 const permissionServicePath = require.resolve("../src/services/permissionService");
 const overviewServicePath = require.resolve("../src/services/overviewService");
 const preferenceServicePath = require.resolve("../src/services/preferenceService");
+const resourceServicePath = require.resolve("../src/services/resourceService");
 
 const clearModuleCache = () => {
   delete require.cache[require.resolve("../src/app")];
@@ -23,6 +24,7 @@ const clearModuleCache = () => {
   delete require.cache[permissionServicePath];
   delete require.cache[overviewServicePath];
   delete require.cache[preferenceServicePath];
+  delete require.cache[resourceServicePath];
 };
 
 const createTestServer = async (envOverrides = {}) => {
@@ -136,6 +138,30 @@ const createTestServer = async (envOverrides = {}) => {
     exports: preferenceServiceMock,
   };
 
+  // Mock ResourceService
+  let mockMediaResult = { items: [], hasMore: false, nextCursor: null };
+  const resourceServiceMock = {
+    loadMedia: async (conversationId, limit, cursor, visibilityFilter) => {
+      if (conversationId === "error-media-conv") {
+        throw new Error("DB Error");
+      }
+      if (conversationId === "timeout-media-conv") {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        return { items: [], hasMore: false, nextCursor: null };
+      }
+      return mockMediaResult;
+    },
+    setMockMedia(data) {
+      mockMediaResult = data;
+    }
+  };
+  require.cache[resourceServicePath] = {
+    id: resourceServicePath,
+    filename: resourceServicePath,
+    loaded: true,
+    exports: resourceServiceMock,
+  };
+
   const { createApp } = require("../src/app");
 
   const app = createApp({
@@ -155,6 +181,7 @@ const createTestServer = async (envOverrides = {}) => {
     baseUrl,
     overviewMock: overviewServiceMock,
     preferenceMock: preferenceServiceMock,
+    resourceMock: resourceServiceMock,
     async get(path, token, headers = {}) {
       const finalHeaders = { ...headers };
       if (token) {
@@ -485,4 +512,62 @@ test("PATCH /panel/preference returns 403 Forbidden when user has no permissions
     await server.close();
   }
 });
+
+test("Resources API - returns media items correctly when requested", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const mockMedia = {
+      items: [
+        { _id: "f1", messageId: "m1", originalName: "pic.png", mimeType: "image/png", size: 100, url: "http://url" }
+      ],
+      hasMore: false,
+      nextCursor: null
+    };
+    server.resourceMock.setMockMedia(mockMedia);
+
+    const { response, body } = await server.get("/api/conversations/conv-123/panel/resources?scopes=media", token);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.version, 1);
+    assert.equal(body.resourcesPreview.media.status, "success");
+    assert.deepEqual(body.resourcesPreview.media.items, mockMedia.items);
+    assert.equal(body.resourcesPreview.media.hasMore, false);
+    // Các scope khác không được yêu cầu sẽ không chạy
+    assert.equal(body.resourcesPreview.files, undefined);
+    assert.equal(body.resourcesPreview.links, undefined);
+  } finally {
+    await server.close();
+  }
+});
+
+test("Resources API - handles error and timeout in loaders and returns 200 with status error", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+
+    // Case 1: Lỗi ném ra từ loader
+    const resError = await server.get("/api/conversations/error-media-conv/panel/resources?scopes=media", token);
+    assert.equal(resError.response.status, 200);
+    assert.equal(resError.body.resourcesPreview.media.status, "error");
+    assert.deepEqual(resError.body.resourcesPreview.media.items, []);
+
+    // Case 2: Loader bị timeout
+    const resTimeout = await server.get("/api/conversations/timeout-media-conv/panel/resources?scopes=media", token);
+    assert.equal(resTimeout.response.status, 200);
+    assert.equal(resTimeout.body.resourcesPreview.media.status, "error");
+    assert.deepEqual(resTimeout.body.resourcesPreview.media.items, []);
+  } finally {
+    await server.close();
+  }
+});
+
 

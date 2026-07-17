@@ -1,19 +1,30 @@
-# Session Handoff - 2026-07-17
+# Last Session Handoff — Slice 3: Shared Media Domain Completed
 
-## Durable Progress
-*   **Triển khai thành công Slice 2: Overview & Preference Domain**:
-    *   Xây dựng `OverviewService` lấy dữ liệu avatar, tên, trạng thái online/offline (truy xuất trực tiếp từ PresenceService/Redis, hỗ trợ fallback offline an toàn) và số lượng thành viên nhóm thực tế.
-    *   Xây dựng `PreferenceService` đọc và ghi dữ liệu cá nhân (`isPinned`, `isMuted`, `mutedUntil`, `customTitle`) trong `ConversationParticipant`.
-    *   Tối ưu hóa API Metadata (Express Controller): tích hợp logic ETag caching loại trừ trường `isOnline` của Presence (Architectural Invariant 1).
-    *   Xây dựng endpoint `PATCH /api/conversations/:id/panel/preference` hỗ trợ cập nhật cấu hình cá nhân, tích hợp chặt chẽ với phân quyền từ `PermissionService` (Architectural Invariant 2).
-    *   Tái cấu trúc UI Frontend (`ConversationPanel.jsx`): gỡ bỏ hoàn toàn thẻ input checkbox, chuyển thành các nút bấm tương tác trực tiếp, thay đổi icon/text động (`FaThumbtack` màu xám <-> `FaThumbtackSlash` màu xanh lá, `FaBell` màu xám <-> `FaBellSlash` màu đỏ). Điều này giúp giao diện không bị méo vỡ trên màn hình chia đôi hẹp.
-    *   Định nghĩa hằng số `DEFAULT_MUTED_UNTIL = new Date("9999-12-31T23:59:59Z")` ở đầu file `preferenceService.js` để tránh nợ kỹ thuật (theo kết quả Code Review).
-*   **Kiểm thử tự động:**
-    *   Bổ sung 4 unit tests trong `overviewService.test.js` (xanh).
-    *   Bổ sung 3 unit tests trong `preferenceService.test.js` (xanh).
-    *   Bổ sung 4 integration tests trong `conversationPanel.integration.test.js` (xanh).
-    *   Chạy kiểm thử hồi quy toàn backend: **272/272 tests passed** (100% xanh lá).
+## 1. Trạng Thái Hiện Tại (Current State)
+* **Slice 3 (Shared Media Domain)** đã hoàn thành 100% (cả Backend và Frontend) và toàn bộ các bài test đều chạy xanh.
+* Môi trường dev local hoạt động trơn tru sau khi sửa lỗi biến môi trường và xung đột UI.
+* **Tổng số test suite**: 
+  - Backend: **281/281 passed** (bao gồm 5 unit tests mới của `resourceService` và 2 tests mới của `conversationVisibilityHelpers`).
+  - Frontend: **121/121 passed** và compile build thành công.
 
-## Current State & Next Steps
-*   **Workspace status:** Git sạch sẽ (`nothing to commit, working tree clean`), các thay đổi của Slice 2 đã được commit thành công với message: `feat(panel): implement Slice 2 Overview & Preference Domain, ETag caching and refactor UI`.
-*   **Next Steps:** Phiên sau sẽ triển khai **Slice 3 — Shared Media Domain** (triển khai API Resources tải bất đồng bộ song song ở Giai đoạn 2 và vẽ lưới hình ảnh preview ở Frontend Panel).
+## 2. Công Việc Đã Hoàn Thành (Work Accomplished)
+* **Backend Resource Service**:
+  - Triển khai hàm `loadMedia` thực hiện gom attachments (ảnh/video) từ tin nhắn, query `$in` tối ưu tránh N+1 và hỗ trợ phân trang cursor-based (`Message._id`).
+  - Tích hợp timeout 2s qua `Promise.race` và xử lý error contract (trả về 200 OK kèm `status: "error"` khi loader lỗi/timeout).
+  - **Sửa bug Visibility Filter**: Cập nhật `buildMessageVisibilityFilter` lọc tin nhắn theo `joinedAt` cho group chat. Khi B rời nhóm rồi quay lại, B chỉ có quyền đọc tin nhắn kể từ mốc `joinedAt` (ngày quay lại nhóm gần nhất), không đọc được tin nhắn gửi trong lúc vắng mặt.
+  - **Sửa cấu hình môi trường**: Bật cờ `CONVERSATION_PANEL_RESOURCES_ENABLED=true` trong `.env` để kích hoạt API nạp tài nguyên trên dev local.
+* **Frontend Conversation Panel**:
+  - Bổ sung `mediaState` và hàm `fetchMedia()` nạp media bất đồng bộ từ endpoint `/panel/resources?scopes=media`.
+  - Hiển thị lưới hình ảnh 3 cột (grid preview), loading skeleton, error banner và nút **Thử lại (Retry)** độc lập cho vùng Media.
+  - **Sửa lỗi UX group chat**: Hiển thị song song icon `FaUsers` (mở modal thành viên nhóm chứa nút Rời nhóm) và `FaInfoCircle` (mở panel) trên Header chat nhóm để giải phóng lối vào modal thành viên bị chiếm dụng.
+
+## 3. Các Ràng Buộc & Quyết Định Kỹ Thuật (Guardrails & Decisions)
+* **ETag loại trừ Presence**: Vẫn giữ nguyên cơ chế tính toán ETag không phụ thuộc vào trạng thái online/offline của Presence Service để tránh reload panel vô ích.
+* **Retry Scope**: Retry nạp media chỉ gọi đúng scope `media` qua `?scopes=media` để tránh gọi lại Metadata API hoặc các loader khác.
+* **Timeout & Error Contract**: Lỗi loader không được làm sập endpoint mà được bọc gọn gàng trả về `status: "error"` để frontend hiển thị nút Retry độc lập.
+
+## 4. Kế Hoạch Cho Phiên Kế Tiếp (Next Steps - Slice 4)
+* **Slice 4: Shared Files & Links Domain**:
+  1. Backend: Phát triển `loadFiles` tải tài liệu đính kèm (không phải ảnh/video) gần nhất, phân trang cursor.
+  2. Backend: Phát triển `loadLinks` trích xuất và chuẩn hóa URL (URL Normalization - lowercase hostname, bỏ query thừa) từ tin nhắn.
+  3. Frontend: Hiển thị danh sách File (tên, dung lượng, nút tải) và Link (tiêu đề, preview, domain) có skeleton loader và Retry độc lập.

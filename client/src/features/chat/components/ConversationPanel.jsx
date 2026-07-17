@@ -7,10 +7,12 @@ import {
   FaTrash, 
   FaSignOutAlt, 
   FaLock, 
-  FaShieldAlt 
+  FaShieldAlt,
+  FaPlay,
+  FaSync
 } from "react-icons/fa";
 import { FaThumbtackSlash } from "react-icons/fa6";
-import { getPanelMetadata, updatePanelPreference } from "@/services/api/conversationPanelApi.js";
+import { getPanelMetadata, getPanelResources, updatePanelPreference } from "@/services/api/conversationPanelApi.js";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 
@@ -26,6 +28,54 @@ const ConversationPanel = ({
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // State quản lý Shared Media (Slice 3)
+  const [mediaState, setMediaState] = useState({
+    items: [],
+    loading: false,
+    error: null,
+    hasMore: false,
+    nextCursor: null
+  });
+
+  // Hàm tải Shared Media
+  const fetchMedia = async () => {
+    if (!conversationId) return;
+    setMediaState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      const response = await getPanelResources(conversationId, "media");
+      if (response.data && response.data.resourcesPreview?.media) {
+        const mediaData = response.data.resourcesPreview.media;
+        if (mediaData.status === "error") {
+          setMediaState({
+            items: [],
+            loading: false,
+            error: "ERROR",
+            hasMore: false,
+            nextCursor: null
+          });
+        } else {
+          setMediaState({
+            items: mediaData.items || [],
+            loading: false,
+            error: null,
+            hasMore: !!mediaData.hasMore,
+            nextCursor: mediaData.nextCursor || null
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi lấy media panel:", err);
+      setMediaState(prev => ({ ...prev, loading: false, error: "ERROR" }));
+    }
+  };
+
+  // Tải media bất đồng bộ sau khi metadata được load
+  useEffect(() => {
+    if (conversationId && isOpen && metadata) {
+      fetchMedia();
+    }
+  }, [conversationId, isOpen, metadata]);
 
   useEffect(() => {
     if (!conversationId || !isOpen) {
@@ -222,6 +272,65 @@ const ConversationPanel = ({
                   <span>Bạn hiện không có quyền gửi tin nhắn trong cuộc hội thoại này (Chỉ đọc).</span>
                 </div>
               )}
+
+              {/* Shared Media Section (Slice 3) */}
+              <div className="space-y-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between px-2">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ảnh / Video</h4>
+                  {mediaState.items.length > 0 && (
+                    <button 
+                      onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                      className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
+                    >
+                      Xem tất cả
+                    </button>
+                  )}
+                </div>
+
+                {mediaState.loading ? (
+                  <div className="grid grid-cols-3 gap-2 px-2 animate-pulse">
+                    {Array.from({ length: 6 }).map((_, idx) => (
+                      <div key={idx} className="bg-gray-200 h-20 w-full rounded-lg"></div>
+                    ))}
+                  </div>
+                ) : mediaState.error ? (
+                  <div className="flex flex-col items-center justify-center p-4 bg-red-50 rounded-lg border border-red-100 space-y-2 mx-2">
+                    <span className="text-xs text-red-500 font-medium">Không thể tải ảnh / video</span>
+                    <button
+                      onClick={fetchMedia}
+                      className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold hover:bg-red-200 transition-colors"
+                    >
+                      <FaSync className="text-[10px]" />
+                      <span>Thử lại</span>
+                    </button>
+                  </div>
+                ) : mediaState.items.length === 0 ? (
+                  <div className="text-center text-xs text-gray-400 py-4 italic">
+                    Chưa có ảnh hoặc video nào được chia sẻ
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 px-2">
+                    {mediaState.items.map((item) => (
+                      <div 
+                        key={item._id} 
+                        className="relative group aspect-square bg-gray-150 rounded-lg overflow-hidden cursor-pointer border border-gray-100 shadow-sm"
+                        onClick={() => window.open(item.url, "_blank")}
+                      >
+                        <img
+                          src={item.url}
+                          alt={item.originalName}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        {item.mimeType.startsWith("video/") && (
+                          <div className="absolute inset-0 bg-black bg-opacity-25 flex items-center justify-center">
+                            <FaPlay className="text-white text-xs opacity-80 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Actions Section */}
               <div className="space-y-2 pt-4 border-t border-gray-100">

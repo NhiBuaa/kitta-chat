@@ -67,6 +67,33 @@ test("buildMessageVisibilityFilter combines deletedAt and leftAt bounds", () => 
   );
 });
 
+test("buildMessageVisibilityFilter adds lower bound at joinedAt for group chats", () => {
+  const joinedAt = date("2026-06-05T10:00:00.000Z");
+
+  assert.deepEqual(
+    buildMessageVisibilityFilter(participant({ role: "member", joinedAt })),
+    { createdAt: { $gte: joinedAt } }
+  );
+});
+
+test("buildMessageVisibilityFilter takes max of deletedAt and joinedAt for group chats", () => {
+  const joinedAt = date("2026-06-05T10:00:00.000Z");
+  const deletedAt = date("2026-06-05T09:00:00.000Z");
+
+  // joinedAt > deletedAt -> lấy joinedAt ($gt vì có deletedAt trước đó)
+  assert.deepEqual(
+    buildMessageVisibilityFilter(participant({ role: "member", joinedAt, state: { deletedAt } })),
+    { createdAt: { $gt: joinedAt } }
+  );
+
+  const newDeletedAt = date("2026-06-05T11:00:00.000Z");
+  // deletedAt > joinedAt -> lấy deletedAt
+  assert.deepEqual(
+    buildMessageVisibilityFilter(participant({ role: "member", joinedAt, state: { deletedAt: newDeletedAt } })),
+    { createdAt: { $gt: newDeletedAt } }
+  );
+});
+
 test("applySoftDeleteState nulls participant last message fields and resets unread", () => {
   const deletedAt = date("2026-06-05T12:00:00.000Z");
 

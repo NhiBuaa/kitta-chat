@@ -10,6 +10,7 @@ import {
   FaPaperclip,
   FaArrowDown,
   FaExclamationTriangle,
+  FaUsers,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import UserStatus from "@/features/profile/components/UserStatus.jsx";
@@ -275,7 +276,19 @@ const ChatWindow = ({
             <FaVideo />
           </button>
 
-          {isPanelEnabled ? (
+          {/* Quản lý thành viên (chỉ hiển thị cho group chat) */}
+          {activeChat?.members && (
+            <button
+              onClick={() => setShowGroupMembers(true)}
+              className="hover:bg-gray-100 p-2 rounded-full transition-colors text-gray-500 hover:text-gray-800"
+              title="Quản lý thành viên"
+            >
+              <FaUsers />
+            </button>
+          )}
+
+          {/* Chi tiết cuộc trò chuyện */}
+          {isPanelEnabled && (
             <button
               onClick={() => setShowConversationPanel(!showConversationPanel)}
               className={`p-2 rounded-full transition-colors ${
@@ -287,16 +300,6 @@ const ChatWindow = ({
             >
               <FaInfoCircle />
             </button>
-          ) : (
-            activeChat?.members && (
-              <button
-                onClick={() => setShowGroupMembers(true)}
-                className="hover:bg-gray-100 p-2 rounded-full transition-colors text-gray-500 hover:text-gray-800"
-                title="Quản lý thành viên"
-              >
-                <FaInfoCircle />
-              </button>
-            )
           )}
 
         </div>
