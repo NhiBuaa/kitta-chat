@@ -259,6 +259,22 @@ exports.getResources = async (req, res) => {
       );
     }
 
+    if (requestedScopes.includes("files")) {
+      promises.files = runLoaderWithTimeout(
+        resourceService.loadFiles(conversationId, limit, cursor, userId),
+        2000,
+        { items: [], hasMore: false, nextCursor: null }
+      );
+    }
+
+    if (requestedScopes.includes("links")) {
+      promises.links = runLoaderWithTimeout(
+        resourceService.loadLinks(conversationId, limit, cursor, userId),
+        2000,
+        { items: [], hasMore: false, nextCursor: null }
+      );
+    }
+
     // Chạy song song các loaders
     const results = {};
     const activeKeys = Object.keys(promises);
@@ -280,15 +296,14 @@ exports.getResources = async (req, res) => {
       resourcesPreview.media = { status: "success", items: [], hasMore: false, nextCursor: null };
     }
 
-    // Mock files và links
-    if (requestedScopes.includes("files")) {
-      resourcesPreview.files = { status: "success", items: [], hasMore: false, nextCursor: null };
+    if (results.files) {
+      resourcesPreview.files = results.files;
     } else if (!scopesQuery) {
       resourcesPreview.files = { status: "success", items: [], hasMore: false, nextCursor: null };
     }
 
-    if (requestedScopes.includes("links")) {
-      resourcesPreview.links = { status: "success", items: [], hasMore: false, nextCursor: null };
+    if (results.links) {
+      resourcesPreview.links = results.links;
     } else if (!scopesQuery) {
       resourcesPreview.links = { status: "success", items: [], hasMore: false, nextCursor: null };
     }

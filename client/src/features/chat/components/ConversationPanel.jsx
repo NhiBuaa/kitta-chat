@@ -9,12 +9,23 @@ import {
   FaLock, 
   FaShieldAlt,
   FaPlay,
-  FaSync
+  FaSync,
+  FaFileAlt,
+  FaLink,
+  FaDownload,
+  FaExternalLinkAlt
 } from "react-icons/fa";
 import { FaThumbtackSlash } from "react-icons/fa6";
 import { getPanelMetadata, getPanelResources, updatePanelPreference } from "@/services/api/conversationPanelApi.js";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+const formatFileSize = (bytes) => {
+  if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+};
 
 const ConversationPanel = ({
   isOpen,
@@ -31,6 +42,24 @@ const ConversationPanel = ({
 
   // State quản lý Shared Media (Slice 3)
   const [mediaState, setMediaState] = useState({
+    items: [],
+    loading: false,
+    error: null,
+    hasMore: false,
+    nextCursor: null
+  });
+
+  // State quản lý Shared Files (Slice 4)
+  const [filesState, setFilesState] = useState({
+    items: [],
+    loading: false,
+    error: null,
+    hasMore: false,
+    nextCursor: null
+  });
+
+  // State quản lý Shared Links (Slice 4)
+  const [linksState, setLinksState] = useState({
     items: [],
     loading: false,
     error: null,
@@ -70,10 +99,76 @@ const ConversationPanel = ({
     }
   };
 
-  // Tải media bất đồng bộ sau khi metadata được load
+  // Hàm tải Shared Files
+  const fetchFiles = async () => {
+    if (!conversationId) return;
+    setFilesState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      const response = await getPanelResources(conversationId, "files");
+      if (response.data && response.data.resourcesPreview?.files) {
+        const filesData = response.data.resourcesPreview.files;
+        if (filesData.status === "error") {
+          setFilesState({
+            items: [],
+            loading: false,
+            error: "ERROR",
+            hasMore: false,
+            nextCursor: null
+          });
+        } else {
+          setFilesState({
+            items: filesData.items || [],
+            loading: false,
+            error: null,
+            hasMore: !!filesData.hasMore,
+            nextCursor: filesData.nextCursor || null
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi lấy files panel:", err);
+      setFilesState(prev => ({ ...prev, loading: false, error: "ERROR" }));
+    }
+  };
+
+  // Hàm tải Shared Links
+  const fetchLinks = async () => {
+    if (!conversationId) return;
+    setLinksState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      const response = await getPanelResources(conversationId, "links");
+      if (response.data && response.data.resourcesPreview?.links) {
+        const linksData = response.data.resourcesPreview.links;
+        if (linksData.status === "error") {
+          setLinksState({
+            items: [],
+            loading: false,
+            error: "ERROR",
+            hasMore: false,
+            nextCursor: null
+          });
+        } else {
+          setLinksState({
+            items: linksData.items || [],
+            loading: false,
+            error: null,
+            hasMore: !!linksData.hasMore,
+            nextCursor: linksData.nextCursor || null
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi lấy links panel:", err);
+      setLinksState(prev => ({ ...prev, loading: false, error: "ERROR" }));
+    }
+  };
+
+  // Tải resources bất đồng bộ sau khi metadata được load
   useEffect(() => {
     if (conversationId && isOpen && metadata) {
       fetchMedia();
+      fetchFiles();
+      fetchLinks();
     }
   }, [conversationId, isOpen, metadata]);
 
@@ -326,6 +421,157 @@ const ConversationPanel = ({
                             <FaPlay className="text-white text-xs opacity-80 group-hover:opacity-100 transition-opacity" />
                           </div>
                         )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Shared Files Section (Slice 4) */}
+              <div className="space-y-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between px-2">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tài liệu</h4>
+                  {filesState.items.length > 0 && (
+                    <button 
+                      onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                      className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
+                    >
+                      Xem tất cả
+                    </button>
+                  )}
+                </div>
+
+                {filesState.loading ? (
+                  <div className="space-y-2 px-2 animate-pulse">
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="flex items-center space-x-3 py-2">
+                        <div className="bg-gray-200 h-8 w-8 rounded"></div>
+                        <div className="flex-1 space-y-1">
+                          <div className="bg-gray-200 h-3 w-3/4 rounded"></div>
+                          <div className="bg-gray-200 h-2.5 w-1/4 rounded"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filesState.error ? (
+                  <div className="flex flex-col items-center justify-center p-4 bg-red-50 rounded-lg border border-red-100 space-y-2 mx-2">
+                    <span className="text-xs text-red-500 font-medium">Không thể tải tài liệu</span>
+                    <button
+                      onClick={fetchFiles}
+                      className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold hover:bg-red-200 transition-colors"
+                    >
+                      <FaSync className="text-[10px]" />
+                      <span>Thử lại</span>
+                    </button>
+                  </div>
+                ) : filesState.items.length === 0 ? (
+                  <div className="text-center text-xs text-gray-400 py-4 italic">
+                    Chưa có tài liệu nào được chia sẻ
+                  </div>
+                ) : (
+                  <div className="space-y-2 px-2">
+                    {filesState.items.map((item) => (
+                      <div 
+                        key={item._id} 
+                        className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <FaFileAlt className="text-gray-400 shrink-0" size={18} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-gray-700 truncate" title={item.originalName}>
+                              {item.originalName}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {formatFileSize(item.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <a 
+                          href={item.url} 
+                          download={item.originalName} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
+                          title="Tải về"
+                        >
+                          <FaDownload size={12} />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Shared Links Section (Slice 4) */}
+              <div className="space-y-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between px-2">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Liên kết</h4>
+                  {linksState.items.length > 0 && (
+                    <button 
+                      onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                      className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
+                    >
+                      Xem tất cả
+                    </button>
+                  )}
+                </div>
+
+                {linksState.loading ? (
+                  <div className="space-y-2 px-2 animate-pulse">
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="flex items-center space-x-3 py-2">
+                        <div className="bg-gray-200 h-8 w-8 rounded-full"></div>
+                        <div className="flex-1 space-y-1">
+                          <div className="bg-gray-200 h-3 w-5/6 rounded"></div>
+                          <div className="bg-gray-200 h-2.5 w-1/3 rounded"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : linksState.error ? (
+                  <div className="flex flex-col items-center justify-center p-4 bg-red-50 rounded-lg border border-red-100 space-y-2 mx-2">
+                    <span className="text-xs text-red-500 font-medium">Không thể tải liên kết</span>
+                    <button
+                      onClick={fetchLinks}
+                      className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold hover:bg-red-200 transition-colors"
+                    >
+                      <FaSync className="text-[10px]" />
+                      <span>Thử lại</span>
+                    </button>
+                  </div>
+                ) : linksState.items.length === 0 ? (
+                  <div className="text-center text-xs text-gray-400 py-4 italic">
+                    Chưa có liên kết nào được chia sẻ
+                  </div>
+                ) : (
+                  <div className="space-y-2 px-2">
+                    {linksState.items.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <div className="bg-blue-50 p-2 rounded-lg text-blue-500 shrink-0">
+                            <FaLink size={14} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-gray-700 truncate" title={item.url}>
+                              {item.url}
+                            </p>
+                            <p className="text-[10px] text-gray-400 uppercase">
+                              {item.hostname}
+                            </p>
+                          </div>
+                        </div>
+                        <a 
+                          href={item.url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
+                          title="Mở liên kết"
+                        >
+                          <FaExternalLinkAlt size={12} />
+                        </a>
                       </div>
                     ))}
                   </div>

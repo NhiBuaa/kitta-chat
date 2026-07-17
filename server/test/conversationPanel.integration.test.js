@@ -140,8 +140,10 @@ const createTestServer = async (envOverrides = {}) => {
 
   // Mock ResourceService
   let mockMediaResult = { items: [], hasMore: false, nextCursor: null };
+  let mockFilesResult = { items: [], hasMore: false, nextCursor: null };
+  let mockLinksResult = { items: [], hasMore: false, nextCursor: null };
   const resourceServiceMock = {
-    loadMedia: async (conversationId, limit, cursor, visibilityFilter) => {
+    loadMedia: async (conversationId, limit, cursor, userId) => {
       if (conversationId === "error-media-conv") {
         throw new Error("DB Error");
       }
@@ -151,8 +153,34 @@ const createTestServer = async (envOverrides = {}) => {
       }
       return mockMediaResult;
     },
+    loadFiles: async (conversationId, limit, cursor, userId) => {
+      if (conversationId === "error-files-conv") {
+        throw new Error("DB Error");
+      }
+      if (conversationId === "timeout-files-conv") {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        return { items: [], hasMore: false, nextCursor: null };
+      }
+      return mockFilesResult;
+    },
+    loadLinks: async (conversationId, limit, cursor, userId) => {
+      if (conversationId === "error-links-conv") {
+        throw new Error("DB Error");
+      }
+      if (conversationId === "timeout-links-conv") {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        return { items: [], hasMore: false, nextCursor: null };
+      }
+      return mockLinksResult;
+    },
     setMockMedia(data) {
       mockMediaResult = data;
+    },
+    setMockFiles(data) {
+      mockFilesResult = data;
+    },
+    setMockLinks(data) {
+      mockLinksResult = data;
     }
   };
   require.cache[resourceServicePath] = {
@@ -565,6 +593,68 @@ test("Resources API - handles error and timeout in loaders and returns 200 with 
     assert.equal(resTimeout.response.status, 200);
     assert.equal(resTimeout.body.resourcesPreview.media.status, "error");
     assert.deepEqual(resTimeout.body.resourcesPreview.media.items, []);
+  } finally {
+    await server.close();
+  }
+});
+
+test("Resources API - returns files and links correctly when requested", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+    const mockFiles = {
+      items: [
+        { _id: "f2", messageId: "m2", originalName: "doc.pdf", mimeType: "application/pdf", size: 500, url: "http://url-doc" }
+      ],
+      hasMore: false,
+      nextCursor: null
+    };
+    const mockLinks = {
+      items: [
+        { url: "https://google.com", hostname: "google.com", messageId: "m3" }
+      ],
+      hasMore: false,
+      nextCursor: null
+    };
+    server.resourceMock.setMockFiles(mockFiles);
+    server.resourceMock.setMockLinks(mockLinks);
+
+    const { response, body } = await server.get("/api/conversations/conv-123/panel/resources?scopes=files,links", token);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.version, 1);
+    assert.equal(body.resourcesPreview.files.status, "success");
+    assert.deepEqual(body.resourcesPreview.files.items, mockFiles.items);
+    assert.equal(body.resourcesPreview.links.status, "success");
+    assert.deepEqual(body.resourcesPreview.links.items, mockLinks.items);
+    assert.equal(body.resourcesPreview.media, undefined);
+  } finally {
+    await server.close();
+  }
+});
+
+test("Resources API - handles error and timeout in files and links loaders", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+
+    // Lỗi loader files
+    const resErrorFiles = await server.get("/api/conversations/error-files-conv/panel/resources?scopes=files", token);
+    assert.equal(resErrorFiles.response.status, 200);
+    assert.equal(resErrorFiles.body.resourcesPreview.files.status, "error");
+
+    // Timeout loader links
+    const resTimeoutLinks = await server.get("/api/conversations/timeout-links-conv/panel/resources?scopes=links", token);
+    assert.equal(resTimeoutLinks.response.status, 200);
+    assert.equal(resTimeoutLinks.body.resourcesPreview.links.status, "error");
   } finally {
     await server.close();
   }

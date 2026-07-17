@@ -37,6 +37,43 @@ import {
 } from "@/features/friends/actions/removeFriendModalState.js";
 
 
+const renderMessageTextWithLinks = (text, isMe) => {
+  if (!text) return "";
+  const trimmed = text.trim();
+  const splitRegex = /(https?:\/\/[^\s]+)/gi;
+  const parts = trimmed.split(splitRegex);
+  
+  if (parts.length <= 1) {
+    return trimmed;
+  }
+  
+  return parts.map((part, index) => {
+    // Dùng regex riêng không có flag 'g' để tránh bug lastIndex stateful
+    if (/^https?:\/\/[^\s]+$/i.test(part)) {
+      // NOTE: Regex loại bỏ dấu câu cuối URL có thể cắt sai dấu ')' hợp lệ
+      // trong URL Wikipedia. Đây là edge case hiếm, chấp nhận tech debt.
+      const cleanUrl = part.replace(/[.,;:!?)]+$/, "");
+      const punctuation = part.slice(cleanUrl.length);
+      return (
+        <span key={index}>
+          <a
+            href={cleanUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`underline hover:opacity-80 break-all ${
+              isMe ? "text-blue-200 font-medium" : "text-blue-600 font-medium"
+            }`}
+          >
+            {cleanUrl}
+          </a>
+          {punctuation}
+        </span>
+      );
+    }
+    return part;
+  });
+};
+
 const ChatWindow = ({
   activeChat,
   setActiveChat,
@@ -512,7 +549,7 @@ const ChatWindow = ({
                     {/* Text tin nhắn */}
                     {message.text && (
                       <div className="break-words overflow-hidden whitespace-pre-wrap leading-relaxed">
-                        {message.text.replace(/^\s+/, "").replace(/\s+$/, "")}
+                        {renderMessageTextWithLinks(message.text, isMe)}
                       </div>
                     )}
 

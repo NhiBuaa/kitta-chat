@@ -1,30 +1,30 @@
-# Last Session Handoff — Slice 3: Shared Media Domain Completed
+# Last Session Handoff — Slice 4: Shared Files & Links Domain Completed
 
 ## 1. Trạng Thái Hiện Tại (Current State)
-* **Slice 3 (Shared Media Domain)** đã hoàn thành 100% (cả Backend và Frontend) và toàn bộ các bài test đều chạy xanh.
-* Môi trường dev local hoạt động trơn tru sau khi sửa lỗi biến môi trường và xung đột UI.
-* **Tổng số test suite**: 
-  - Backend: **281/281 passed** (bao gồm 5 unit tests mới của `resourceService` và 2 tests mới của `conversationVisibilityHelpers`).
-  - Frontend: **121/121 passed** và compile build thành công.
+* **Slice 4 (Shared Files & Links Domain)** đã hoàn thành 100% (cả Backend và Frontend), sửa các lỗi pre-save hook/findOneAndUpdate bypass, và hoàn thành refactoring làm đẹp hiển thị (size tệp tin, click links).
+* **Tổng số test suite**:
+  - Backend: **285/285 passed** (100% xanh, bao gồm unit tests của `resourceService` cho files/links và `saveMessageInBackground` mock tests).
+  - Frontend: Hoạt động mượt mà không lỗi.
 
 ## 2. Công Việc Đã Hoàn Thành (Work Accomplished)
-* **Backend Resource Service**:
-  - Triển khai hàm `loadMedia` thực hiện gom attachments (ảnh/video) từ tin nhắn, query `$in` tối ưu tránh N+1 và hỗ trợ phân trang cursor-based (`Message._id`).
-  - Tích hợp timeout 2s qua `Promise.race` và xử lý error contract (trả về 200 OK kèm `status: "error"` khi loader lỗi/timeout).
-  - **Sửa bug Visibility Filter**: Cập nhật `buildMessageVisibilityFilter` lọc tin nhắn theo `joinedAt` cho group chat. Khi B rời nhóm rồi quay lại, B chỉ có quyền đọc tin nhắn kể từ mốc `joinedAt` (ngày quay lại nhóm gần nhất), không đọc được tin nhắn gửi trong lúc vắng mặt.
-  - **Sửa cấu hình môi trường**: Bật cờ `CONVERSATION_PANEL_RESOURCES_ENABLED=true` trong `.env` để kích hoạt API nạp tài nguyên trên dev local.
-* **Frontend Conversation Panel**:
-  - Bổ sung `mediaState` và hàm `fetchMedia()` nạp media bất đồng bộ từ endpoint `/panel/resources?scopes=media`.
-  - Hiển thị lưới hình ảnh 3 cột (grid preview), loading skeleton, error banner và nút **Thử lại (Retry)** độc lập cho vùng Media.
-  - **Sửa lỗi UX group chat**: Hiển thị song song icon `FaUsers` (mở modal thành viên nhóm chứa nút Rời nhóm) và `FaInfoCircle` (mở panel) trên Header chat nhóm để giải phóng lối vào modal thành viên bị chiếm dụng.
+* **Backend Models & Services**:
+  - Phát triển hàm tĩnh `extractAndNormalizeLinks(text)` trên model `Message` để trích xuất URL và chuẩn hóa hostname (chuyển sang lowercase, loại bỏ `www.`).
+  - Thiết lập pre-save hook gọi hàm tĩnh trên để tự động gán trường `hasLink` và `links` khi lưu tin nhắn qua `.save()`.
+  - Tích hợp logic trên vào `saveMessageInBackground.js` trước khi gọi `findOneAndUpdate` để đảm bảo tin nhắn realtime gửi qua Socket.IO vẫn được trích xuất link chính xác (tránh bypass của pre-save hook).
+  - Phát triển hàm `loadFiles` và `loadLinks` trong `ResourceService` với đầy đủ visibility filter, cursor-based pagination giảm dần, giới hạn 6 items.
+  - Tích hợp các loader vào endpoint `/panel/resources` thông qua `Promise.all` và kiểm soát timeout 2 giây độc lập.
+* **Frontend UI (Conversation Panel & Chat Window)**:
+  - Tích hợp nạp bất đồng bộ `files` và `links` song song, hỗ trợ skeleton loaders, trạng thái lỗi và nút **Retry độc lập** cho từng phần.
+  - Tái cấu trúc (Refactoring): Thêm helper `formatFileSize(bytes)` hiển thị linh hoạt dung lượng file (`B`, `KB`, `MB`, `GB`,...) thay vì cố định `KB`.
+  - Tái cấu trúc (Refactoring): Tích hợp helper `renderMessageTextWithLinks(text, isMe)` vào bong bóng tin nhắn chính của [ChatWindow.jsx](file:///d:/Developer/Projects/shotter/shot-chat/client/src/features/chat/components/ChatWindow.jsx) để chuyển đổi tự động URL thô thành thẻ `<a>` có thể click mở tab mới an toàn, có màu sắc tối ưu theo role (isMe).
 
 ## 3. Các Ràng Buộc & Quyết Định Kỹ Thuật (Guardrails & Decisions)
-* **ETag loại trừ Presence**: Vẫn giữ nguyên cơ chế tính toán ETag không phụ thuộc vào trạng thái online/offline của Presence Service để tránh reload panel vô ích.
-* **Retry Scope**: Retry nạp media chỉ gọi đúng scope `media` qua `?scopes=media` để tránh gọi lại Metadata API hoặc các loader khác.
-* **Timeout & Error Contract**: Lỗi loader không được làm sập endpoint mà được bọc gọn gàng trả về `status: "error"` để frontend hiển thị nút Retry độc lập.
+* **Pre-save Hook & Update query bypass**: Nhận thức rõ `findOneAndUpdate` không chạy pre-save hook. Đã giải quyết triệt để ở tầng ứng dụng trước khi lưu DB.
+* **Defensive tests setup**: Kiểm tra an toàn `typeof Message.extractAndNormalizeLinks === "function"` để bảo vệ test suite khi model `Message` bị mock trống ở một số file unit tests.
+* **Retry Scope**: Retry files hay links chỉ gọi lại đúng scope tương ứng qua query string để tối ưu hóa hiệu năng và tuân thủ ADR-005.
 
-## 4. Kế Hoạch Cho Phiên Kế Tiếp (Next Steps - Slice 4)
-* **Slice 4: Shared Files & Links Domain**:
-  1. Backend: Phát triển `loadFiles` tải tài liệu đính kèm (không phải ảnh/video) gần nhất, phân trang cursor.
-  2. Backend: Phát triển `loadLinks` trích xuất và chuẩn hóa URL (URL Normalization - lowercase hostname, bỏ query thừa) từ tin nhắn.
-  3. Frontend: Hiển thị danh sách File (tên, dung lượng, nút tải) và Link (tiêu đề, preview, domain) có skeleton loader và Retry độc lập.
+## 4. Kế Hoạch Cho Phiên Kế Tiếp (Next Steps - Slice 5)
+* **Slice 5: Conversation Membership Domain**:
+  1. Backend: Triển khai loader tải thành viên cho Group Chat (`loadGroupMembers`) kèm phân trang cursor-based trên `ConversationParticipant._id`.
+  2. Backend: Triển khai loader tải nhóm chung cho 1-1 Chat (`loadCommonGroups`) giữa 2 người tham gia.
+  3. Frontend: Vẽ preview 3-5 thành viên (Group chat) hoặc nhóm chung (1-1 chat), có nút "Xem tất cả" mở rộng chi tiết, hỗ trợ loading skeleton và Retry độc lập.

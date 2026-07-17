@@ -1,4 +1,4 @@
-﻿# Known Issues
+# Known Issues
 
 Memory là nơi lưu lại bài học và vấn đề đã biết để không lặp lại sai lầm.
 
@@ -298,3 +298,39 @@ ConfigValidationError: server configuration is invalid: CONVERSATION_DUAL_WRITE_
 - `.agents/current-session.md`
 - `.agents/next-session.md`
 - `docs/handoff/NEXT_SESSION_BOOTSTRAP.md`
+
+## Tech Debt
+
+### resourceService loaders share duplicated batch-scan pattern
+
+**Friction**: `loadMedia`, `loadFiles`, `loadLinks` trong `server/src/services/resourceService.js` có cấu trúc gần giống nhau: cùng mô hình `while (!stopGom)` batch-scan, cùng visibility filter setup via `ConversationParticipant`, cùng cursor pagination logic. Chỉ khác điều kiện query và cách xử lý kết quả bên trong vòng lặp.
+
+**Evidence**: 3 hàm, mỗi hàm ~65 dòng, ~80% cấu trúc giống nhau. Nếu sửa logic pagination hoặc visibility filter, phải sửa ở cả 3 nơi.
+
+**Desired Outcome**: Extract generic `batchScanMessages(query, transformFn, options)` factory hoặc tương tự, để mỗi loader chỉ cần khai báo query filter và transform logic riêng.
+
+**Risk nếu không fix**: Divergence khi sửa 1 chỗ quên sửa chỗ khác. Rủi ro tăng nếu có thêm loaders (ví dụ: voice messages, polls).
+
+**When to fix**: Sau khi tất cả resource loaders đã ổn định và không còn thay đổi schema/query lớn.
+
+**Related files**:
+
+- `server/src/services/resourceService.js`
+- `server/test/resourceService.test.js`
+
+### URL parentheses edge case in link parser
+
+**Friction**: Regex `match.replace(/[.,;:!?)]+$/, "")` trong `extractAndNormalizeLinks` (Message.js) và `renderMessageTextWithLinks` (ChatWindow.jsx) loại bỏ dấu `)` ở cuối URL, nhưng `)` có thể là phần hợp lệ của URL (ví dụ: Wikipedia links).
+
+**Evidence**: URL `https://en.wikipedia.org/wiki/JavaScript_(programming_language)` sẽ bị cắt mất `)` cuối → link hỏng 404.
+
+**Desired Outcome**: Sử dụng thuật toán đếm matched parentheses thay vì regex đơn giản, hoặc chỉ loại bỏ `)` khi số `)` vượt quá số `(`.
+
+**Risk nếu không fix**: Edge case hiếm trong chat thông thường. Chỉ ảnh hưởng Wikipedia-style URLs.
+
+**When to fix**: Khi có user report hoặc khi refactor link parser lớn hơn.
+
+**Related files**:
+
+- `server/src/models/Message.js` (extractAndNormalizeLinks)
+- `client/src/features/chat/components/ChatWindow.jsx` (renderMessageTextWithLinks)

@@ -111,6 +111,201 @@ async function loadMedia(conversationId, limit = 6, cursor = null, userId = null
   };
 }
 
+/**
+ * Tải files (tài liệu) đã chia sẻ trong cuộc trò chuyện
+ * @param {string} conversationId - Legacy conversation ID
+ * @param {number} limit - Số lượng tối đa cần lấy
+ * @param {string} [cursor] - Message._id cursor để phân trang
+ * @param {string} [userId] - ID người dùng đang yêu cầu để lọc quyền xem (visibility)
+ * @returns {Promise<Object>} { items, hasMore, nextCursor }
+ */
+async function loadFiles(conversationId, limit = 6, cursor = null, userId = null) {
+  const items = [];
+  let currentCursor = cursor;
+  let hasMore = false;
+  let nextCursor = null;
+  const batchSize = 50;
+
+  let visibilityFilter = {};
+  if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+    const participant = await ConversationParticipant.findOne({
+      legacyConversationId: conversationId,
+      userId: userId
+    });
+    if (participant) {
+      visibilityFilter = buildMessageVisibilityFilter(participant);
+    }
+  }
+
+  let stopGom = false;
+
+  while (!stopGom) {
+    const query = {
+      conversationId,
+      attachments: { $exists: true, $ne: [] },
+      ...visibilityFilter
+    };
+
+    if (currentCursor) {
+      query._id = { $lt: new mongoose.Types.ObjectId(currentCursor) };
+    }
+
+    const batchMessages = await Message.find(query)
+      .sort({ _id: -1 })
+      .limit(batchSize)
+      .select("attachments _id")
+      .lean();
+
+    if (batchMessages.length === 0) {
+      break;
+    }
+
+    const fileIds = batchMessages.flatMap(m => m.attachments || []);
+    if (fileIds.length > 0) {
+      const files = await File.find({
+        _id: { $in: fileIds }
+      }).lean();
+
+      // Lọc các file không phải image/video
+      const fileMap = new Map(
+        files
+          .filter(f => !/^(image|video)\//i.test(f.mimeType))
+          .map(f => [f._id.toString(), f])
+      );
+
+      for (const msg of batchMessages) {
+        const msgFiles = [];
+        for (const attId of msg.attachments || []) {
+          const file = fileMap.get(attId.toString());
+          if (file) {
+            msgFiles.push({
+              _id: file._id.toString(),
+              messageId: msg._id.toString(),
+              originalName: file.originalName,
+              mimeType: file.mimeType,
+              size: file.size,
+              url: file.url
+            });
+          }
+        }
+
+        if (msgFiles.length > 0) {
+          items.push(...msgFiles);
+          if (items.length >= limit) {
+            nextCursor = msg._id.toString();
+            hasMore = true;
+            stopGom = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (stopGom) {
+      break;
+    }
+
+    currentCursor = batchMessages[batchMessages.length - 1]._id.toString();
+
+    if (batchMessages.length < batchSize) {
+      break;
+    }
+  }
+
+  return {
+    items: items.slice(0, limit),
+    hasMore,
+    nextCursor
+  };
+}
+
+/**
+ * Tải links (liên kết) đã chia sẻ trong cuộc trò chuyện
+ * @param {string} conversationId - Legacy conversation ID
+ * @param {number} limit - Số lượng tối đa cần lấy
+ * @param {string} [cursor] - Message._id cursor để phân trang
+ * @param {string} [userId] - ID người dùng đang yêu cầu để lọc quyền xem (visibility)
+ * @returns {Promise<Object>} { items, hasMore, nextCursor }
+ */
+async function loadLinks(conversationId, limit = 6, cursor = null, userId = null) {
+  const items = [];
+  let currentCursor = cursor;
+  let hasMore = false;
+  let nextCursor = null;
+  const batchSize = 50;
+
+  let visibilityFilter = {};
+  if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+    const participant = await ConversationParticipant.findOne({
+      legacyConversationId: conversationId,
+      userId: userId
+    });
+    if (participant) {
+      visibilityFilter = buildMessageVisibilityFilter(participant);
+    }
+  }
+
+  let stopGom = false;
+
+  while (!stopGom) {
+    const query = {
+      conversationId,
+      hasLink: true,
+      ...visibilityFilter
+    };
+
+    if (currentCursor) {
+      query._id = { $lt: new mongoose.Types.ObjectId(currentCursor) };
+    }
+
+    const batchMessages = await Message.find(query)
+      .sort({ _id: -1 })
+      .limit(batchSize)
+      .select("links _id")
+      .lean();
+
+    if (batchMessages.length === 0) {
+      break;
+    }
+
+    for (const msg of batchMessages) {
+      const msgLinks = (msg.links || []).map(l => ({
+        url: l.url,
+        hostname: l.hostname,
+        messageId: msg._id.toString()
+      }));
+
+      if (msgLinks.length > 0) {
+        items.push(...msgLinks);
+        if (items.length >= limit) {
+          nextCursor = msg._id.toString();
+          hasMore = true;
+          stopGom = true;
+          break;
+        }
+      }
+    }
+
+    if (stopGom) {
+      break;
+    }
+
+    currentCursor = batchMessages[batchMessages.length - 1]._id.toString();
+
+    if (batchMessages.length < batchSize) {
+      break;
+    }
+  }
+
+  return {
+    items: items.slice(0, limit),
+    hasMore,
+    nextCursor
+  };
+}
+
 module.exports = {
-  loadMedia
+  loadMedia,
+  loadFiles,
+  loadLinks
 };

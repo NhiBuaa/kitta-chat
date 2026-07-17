@@ -36,6 +36,10 @@ async function saveMessageInBackground(data) {
             return { doc, isDuplicate: false };
         }
 
+        const { hasLink, links } = typeof Message.extractAndNormalizeLinks === "function"
+            ? Message.extractAndNormalizeLinks(data.content || data.text || "")
+            : { hasLink: false, links: [] };
+
         const messageToSave = {
             conversationId,
             sender: senderId,
@@ -46,6 +50,8 @@ async function saveMessageInBackground(data) {
             isRead: false,
             createdAt: data.createdAt || new Date(),
             idempotencyKey: data.idempotencyKey || null,
+            hasLink,
+            links
         };
 
         let savedMessage;
