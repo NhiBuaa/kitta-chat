@@ -21,8 +21,8 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 |---|---|---|---|
 | 0 | Infrastructure, ADRs & Skeletons | **DONE** | Tạo ADR-004, ADR-005, config Feature Flags, base route/controller skeleton, rate limiting và test tích hợp skeleton. |
 | 1 | Permission Service & UI Panel Layout | **DONE** | Viết pure PermissionService (backend), dựng layout panel thô (frontend), viết unit/integration tests và tích hợp kiểm tra quyền truy cập. |
-| 2 | Overview & Preference Domain | PENDING | Triển khai Metadata API (Giai đoạn 1) hoàn chỉnh, hỗ trợ ETag loại trừ Presence và preferences update. |
-| 3 | Shared Media Domain | PENDING | Triển khai Media loader (Giai đoạn 2), trả về thumbnail URL/metadata, phân trang cursor. |
+| 2 | Overview & Preference Domain | **DONE** | Triển khai Metadata API (Giai đoạn 1) hoàn chỉnh, hỗ trợ ETag loại trừ Presence và preferences update. |
+| 3 | Shared Media Domain | **TODO-NEXT** | Triển khai Media loader (Giai đoạn 2), trả về thumbnail URL/metadata, phân trang cursor. |
 | 4 | Shared Files & Links Domain | PENDING | Triển khai File loader & Link parser/normalization, lưu trữ link khi persist tin nhắn. |
 | 5 | Conversation Membership Domain | PENDING | Tải thành viên/nhóm chung, tối ưu hóa truy vấn cache Redis. |
 | 6 | Conversation Action Domain | PENDING | Viết orchestrator xử lý các write actions: rời nhóm, ghim, tắt thông báo, xóa lịch sử trò chuyện. |

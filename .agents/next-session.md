@@ -1,25 +1,31 @@
-# Next Session — Slice 2: Overview & Preference Domain
+# Next Session — Slice 3: Shared Media Domain
 
-Mục tiêu tiếp theo là triển khai **Slice 2** để triển khai hoàn chỉnh Metadata API (Giai đoạn 1) của Conversation Panel, bao gồm tích hợp thông tin Overview và Preferences thực tế, hỗ trợ HTTP ETag loại trừ Presence, và cập nhật preferences (ghim, tắt thông báo, tên tùy chỉnh) từ phía Client.
+Mục tiêu tiếp theo là triển khai **Slice 3** nhằm hoàn thành phần tải ảnh/video đã chia sẻ (Shared Media) trong cuộc trò chuyện cho Conversation Panel (Giai đoạn 2 - Resources API), tích hợp phân trang cursor-based và hiển thị giao diện preview trên Frontend.
 
 ## Slice Mục tiêu
-**Slice 2 — Overview & Preference Domain**
+**Slice 3 — Shared Media Domain**
 
 ## Bối cảnh
-*   Slice 1 đã hoàn tất: cơ sở hạ tầng phân quyền `PermissionService` và layout trượt `ConversationPanel` ở Frontend đã sẵn sàng.
-*   Hiện tại các thông tin Overview và Preferences của panel vẫn đang là dữ liệu giả (mock data).
+*   Slice 2 đã hoàn tất: Metadata API cung cấp Overview và Preference thực tế, hỗ trợ ETag cache loại trừ Presence. Frontend đã gỡ bỏ checkbox và thay thế bằng các button tương tác Ghim/Mute trực tiếp.
+*   Hiện tại Resources API (`GET /api/conversations/:id/panel/resources`) vẫn đang trả về danh sách trống cho phần media.
 
 ## Mục tiêu cụ thể
-1.  **Backend: Triển khai Overview & Preference logic:**
-    *   Xây dựng `OverviewService` cung cấp thông tin động (avatar, tên, trạng thái hoạt động online/offline từ `PresenceService` hoặc số thành viên thực tế của Group).
-    *   Tích hợp `PreferenceService` để đọc trạng thái cá nhân (`pinnedAt`, `mutedUntil`, `customTitle`) từ `ConversationParticipant`.
-    *   Triển khai ETag/Last-Modified caching cho Metadata API (loại trừ trường `isOnline` của Presence).
-2.  **Frontend: Hiển thị Overview & Preference thực tế:**
-    *   Hiển thị thông tin tên, avatar thật của cuộc hội thoại trong Conversation Panel.
-    *   Hỗ trợ chuyển đổi trạng thái ghim (`isPinned`) và tắt thông báo (`isMuted`) trực tiếp từ UI Panel thông qua API.
+1.  **Backend: Triển khai Media Loader:**
+    *   Phát triển hàm `loadMedia(conversationId, limit, cursor, visibilityFilter)` trong `ResourceService`.
+    *   Tải tối đa 6 media (ảnh/video) gần nhất từ các tin nhắn có tài nguyên đính kèm.
+    *   Sắp xếp theo thứ tự chuẩn: `newest Message._id first` (giảm dần).
+    *   Phân trang sử dụng cursor `Message._id`.
+    *   Áp dụng visibility filter dựa trên thời gian tham gia/rời nhóm (`leftAt`, `deletedAt`) để lọc tài nguyên được phép xem.
+    *   Chỉ trả về thông tin tối thiểu (thumbnail URL, original URL, mimeType, size) - Tuyệt đối không trả về binary/base64.
+2.  **Frontend: Hiển thị Shared Media:**
+    *   Tải bất đồng bộ danh sách media thông qua API `/panel/resources?scopes=media` (hoặc load toàn bộ).
+    *   Hiển thị lưới hình ảnh (grid preview) 6 ảnh/video gần nhất trên UI Panel.
+    *   Hỗ trợ nút "Xem tất cả" chuyển hướng đến giao diện xem chi tiết.
 3.  **Viết tests:**
-    *   Viết unit/integration tests cho các service/endpoints của Overview và Preference.
+    *   Bổ sung unit tests cho `loadMedia`.
+    *   Bổ sung integration tests cho API resources với scope `media`.
 
 ## Guardrails bắt buộc
-*   Trạng thái online/offline của Presence Service hoàn toàn loại trừ khỏi phép tính ETag của Metadata endpoint.
-*   `PermissionService` phải được gọi để kiểm tra trước khi nạp metadata.
+*   **Timeout 2s:** Loader phải có timeout ứng dụng 2 giây. Nếu lỗi hoặc timeout, trả về trạng thái `"status": "error"`, không làm sập toàn bộ API (API vẫn trả về 200).
+*   **Không chia sẻ mutable state:** Không chia sẻ trạng thái có thể thay đổi giữa các loader tài nguyên.
+*   **Quyền truy cập:** Sử dụng `PermissionService` để đánh giá quyền đọc trước khi tải tài nguyên.
