@@ -1,29 +1,28 @@
-# Next Session — Slice 7: Realtime Sync & Client State (Continuation)
-
-Mục tiêu tiếp theo là hoàn tất các phần còn lại của **Slice 7** nhằm đồng bộ hóa realtime trạng thái hội thoại qua Socket.IO và tối ưu hóa bộ lưu trữ state ở phía client.
+# Next Session — Slice 9: View All Media Modal Integration & Lightbox
 
 ## Slice Mục tiêu
-**Slice 7 — Realtime Sync & Client State**
+**Slice 9: View All Media Modal Integration & Lightbox**
 
 ## Bối cảnh
-* Trong session này, chúng ta đã sửa các lỗi quan trọng liên quan đến Xóa lịch sử và Đồng bộ Sidebar:
-  - Sửa lỗi không thoát màn hình chat sau khi xóa lịch sử (thêm `setActiveChat(null)`).
-  - Sửa lỗi group chat biến mất khi refresh/F5 trang sau khi nhận tin nhắn mới (sửa bộ lọc `deletedAt` trong candidate service ở Backend).
-  - Khắc phục lỗi trùng lặp/nhân đôi user trên sidebar khi nhận tin nhắn realtime do React Strict Mode (áp dụng cơ chế `fetchingIdsRef` và kiểm tra trùng lặp `prev.some` ở client).
-  - Tự động gộp cấu hình cá nhân Ghim/Mute khi gọi API chi tiết user/group để các icon Ghim/Mute hiển thị realtime ngay lập tức.
-  - Reset cài đặt Ghim/Mute về mặc định khi xóa lịch sử trò chuyện.
-  - Bảo đảm bộ test 293 tests tiếp tục xanh 100%.
+- Chúng ta đã hoàn thiện khung hạ tầng dùng chung (`ViewAllModalShell`), API client phân trang (`getPanelResources`), hook generic phân trang `useInfiniteScroll` và hook realtime `useExplorerFreshness`.
+- Ở slice này, chúng ta cần triển khai chi tiết giao diện Xem tất cả Media, liên kết lưới ảnh và xem ảnh to.
 
 ## Mục tiêu cụ thể
-1. **Hoàn thiện Realtime Sync (Socket.IO):**
-   - Xử lý các sự kiện thay đổi metadata nhóm realtime: đổi tên nhóm (`renameGroup`), cập nhật avatar nhóm.
-   - Đồng bộ hóa realtime danh sách thành viên hiển thị trên panel khi có thành viên rời nhóm hoặc được thêm/xóa khỏi nhóm.
-2. **Tối ưu hóa Client State:**
-   - Đảm bảo tính nhất quán dữ liệu giữa các view: Sidebar, Chat Window, Conversation Panel.
-   - Tối ưu hiệu năng render của Sidebar khi Presence Service phát các sự kiện cập nhật trạng thái liên tục.
-3. **Regression Tests:**
-   - Chạy lại suite test backend/frontend để đảm bảo không phát sinh lỗi mới.
+1. **Triển khai `MediaExplorer.jsx`:**
+   - Fetch tài nguyên media dạng snapshot qua `getPanelResources(conversationId, "media", cursor)`.
+   - Hiển thị danh sách ảnh dạng Grid 3 cột. Các ô có tỉ lệ `aspect-square bg-gray-100` cố định để chống CLS, hiển thị skeleton khi đang fetch trang mới.
+   - Tích hợp hook `useInfiniteScroll` để tự động tải thêm trang kế tiếp khi người dùng cuộn đến cuối.
+   - Tích hợp hook `useExplorerFreshness` để hiển thị banner thông báo *"Có tài nguyên mới. Bấm để làm mới"*. Click vào banner sẽ reset danh sách và tải lại từ đầu (reset cursor).
+   - Quản lý state `selectedMedia` và kích hoạt `MediaLightbox` khi click vào một ảnh.
+2. **Triển khai `MediaLightbox.jsx`:**
+   - Overlay nền đen (`fixed inset-0 z-50 bg-black/95 flex items-center justify-center`).
+   - Có class CSS hoạt động `.media-lightbox-active`.
+   - Có nút đóng (X) và hỗ trợ nhấn phím `Escape` để đóng chính nó (đồng thời gọi `e.stopPropagation()` để không làm đóng modal chính của Modal Shell).
+3. **Tích hợp vào `ConversationPanel.jsx`:**
+   - Khai báo state `activeModal` dạng `{ type: "media" }` (hoặc các type khác sau này) để quản lý mở modal.
+   - Ráp `<ViewAllModalShell size="wide" title="Tất cả Media" isOpen={activeModal?.type === "media"} onClose={() => setActiveModal(null)}>` và chứa `<MediaExplorer>` bên trong.
 
 ## Guardrails bắt buộc
-- **Socket.IO Room isolation:** Chỉ phát sự kiện tới các socket thuộc room của cuộc hội thoại đó hoặc của từng user cụ thể.
-- **Tránh race condition:** Bảo đảm thứ tự xử lý sự kiện socket và update local state ở client diễn ra chính xác.
+- **CLS Prevention:** Mọi thumbnail ảnh trong grid bắt buộc phải nằm trong container có chiều rộng/cao ổn định (dùng Tailwind class `aspect-square bg-gray-100`).
+- **Memory Leak prevention:** Hủy đăng ký lắng nghe bàn phím ESC của Lightbox khi component unmount.
+- **ESC Priority Rule:** Nhấn ESC khi Lightbox đang mở chỉ được đóng Lightbox, không được đóng modal lớn phía sau.

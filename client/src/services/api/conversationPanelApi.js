@@ -1,4 +1,4 @@
-import { axiosClient } from '@/services/api/axiosClient.js'
+import { axiosClient } from './axiosClient.js'
 
 const API_URL = '/api/conversations'
 
@@ -7,8 +7,11 @@ export const getPanelMetadata = (conversationId) =>
     __skipAuthRefresh: true,
   })
 
-export const getPanelResources = (conversationId, scopes = "") => {
-  const query = scopes ? `?scopes=${scopes}` : "";
+export const getPanelResources = (conversationId, scopes = "", cursor = null) => {
+  const params = new URLSearchParams();
+  if (scopes) params.append("scopes", scopes);
+  if (cursor) params.append("cursor", cursor);
+  const query = params.toString() ? `?${params.toString()}` : "";
   return axiosClient.get(`${API_URL}/${conversationId}/panel/resources${query}`, {
     __skipAuthRefresh: true,
   });

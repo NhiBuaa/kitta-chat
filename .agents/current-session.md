@@ -26,7 +26,11 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 | 4 | Shared Files & Links Domain | **DONE** | Triển khai File loader & Link parser/normalization, lưu trữ link khi persist tin nhắn. |
 | 5 | Conversation Membership Domain | **DONE** | Tải thành viên/nhóm chung, tối ưu hóa cache Redis, và sửa lỗi preferences rate limit. |
 | 6 | Conversation Action Domain | **DONE** | Viết orchestrator xử lý các write actions: rời nhóm, ghim, tắt thông báo, xóa lịch sử trò chuyện. Sửa lỗi thoát màn hình chat và reset preference khi xóa lịch sử. |
-| 7 | Realtime Sync & Client State | **IN_PROGRESS** | Đồng bộ hóa realtime qua Socket.IO. Sửa lỗi ẩn hiện/reload sidebar, gộp preferences realtime và chống double-fetching. |
+| 7 | Realtime Sync & Client State | **DONE** | Đồng bộ hóa realtime qua Socket.IO. Sửa lỗi ẩn hiện/reload sidebar, gộp preferences realtime và chống double-fetching. |
+| 8 | View All Core API, Generic Hooks & Shell Framework | **DONE** | Cập nhật API client `getPanelResources` hỗ trợ `cursor`, tạo hook generic `useInfiniteScroll`, hook `useExplorerFreshness` + utilities so khớp, và component `ViewAllModalShell` (Centered Modal + `size` prop + ESC handling). |
+| 9 | View All Media Modal Integration & Lightbox | **TODO** | Triển khai component `MediaExplorer.jsx` và `MediaLightbox.jsx`. Tích hợp Infinite Scroll, Lightbox và Freshness Banner. |
+| 10 | View All Files & Links Modals Integration | **TODO** | Triển khai `FilesExplorer.jsx` và `LinksExplorer.jsx`, tích hợp Infinite Scroll và Freshness Banner. |
+| 11 | View All Common Groups Modal Integration & Quality Gate | **TODO** | Triển khai `CommonGroupsExplorer.jsx` (click điều hướng active chat) và rà soát chất lượng thông qua `/code-check`. |
 
 ## Trạng thái kiểm thử gần nhất
-*   Sau Slice 6 & Fixes: Bộ test tích hợp panel `20/20` passed, unit test visibility `14/14` passed, unit test media/files/links/membership `10/10` passed, unit test saveMessage `10/10` passed, full server regression `293/293` passed, frontend tests `121/121` passed.
+*   Sau Slice 8 (View All Core API, Generic Hooks & Shell Framework): Bộ test client regression `137/137` passed (100% xanh).

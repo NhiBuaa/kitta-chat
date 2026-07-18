@@ -65,3 +65,16 @@ Cơ chế tải bất đồng bộ 2 giai đoạn: Giai đoạn 1 tải nhanh Me
 Quy trình tiền xử lý URL bằng URL parser của Node.js nhằm trích xuất chính xác hostname dưới dạng viết thường (lowercase) và loại bỏ các ký tự thừa để tránh trùng lặp liên kết chia sẻ.
 _Avoid_: sử dụng các thuật toán Regex phức tạp để trích xuất hostname lúc truy vấn database.
 
+**View All Modals**:
+Các giao diện modal overlay hiển thị đầy đủ danh sách phân trang (phát triển mở rộng từ Panel) cho Shared Media, Files, Links và Common Groups.
+
+**Explorer**:
+Component nghiệp vụ độc lập chịu trách nhiệm fetch dữ liệu, quản lý cursor pagination riêng, xử lý empty/error states và hiển thị UI đặc thù cho từng loại tài nguyên.
+
+**Freshness Notification**:
+Banner thông báo độ tươi mới xuất hiện khi có tài nguyên mới khả dụng qua socket. Cho phép người dùng click để tải lại trang đầu (làm mới snapshot tĩnh của Explorer).
+
+**ESC Blocker**:
+Cơ chế điều phối sự kiện bàn phím phím Escape. Nếu bộ xem ảnh to (MediaLightbox) đang mở, nhấn ESC chỉ đóng Lightbox, không đóng Modal Shell.
+
+

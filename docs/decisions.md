@@ -202,3 +202,29 @@ Rules:
 
 **References**: `docs/adr/005-conversation-panel-two-stage-loading.md`, `specs/active/conversation-information-panel.md`.
 
+## 2026-07-18 — View All Modals Client Architecture (ADR-006)
+
+**Decision**: Triển khai tính năng Xem tất cả bằng kiến trúc phân tách hạ tầng, nghiệp vụ và tách biệt Realtime concern:
+- **ViewAllModalShell:** Component hạ tầng dùng chung chịu trách nhiệm về Portal, Backdrop, đóng mở bằng phím `Escape`, click backdrop, focus trap, animation và scroll container. Nó cung cấp `scrollRef` của Scroll Container. Giao diện được thiết kế dạng **Centered Modal** (hộp thoại căn giữa) và hỗ trợ prop `size` (`"normal" | "wide" | "fullscreen"`) để giới hạn chiều rộng linh hoạt theo loại tài nguyên (ví dụ: Media dùng `wide`, File/Link dùng `normal`). Trên mobile, modal tự động co dãn chiếm toàn màn hình (fullscreen).
+- **4 Explorer Component độc lập:** `MediaExplorer`, `FilesExplorer`, `LinksExplorer`, `CommonGroupsExplorer`. Mỗi Explorer chịu trách nhiệm fetch dữ liệu, quản lý cursor pagination riêng, xử lý empty/error states và hiển thị UI đặc thù.
+- **Tách biệt MediaLightbox:** Thiết kế component `MediaLightbox` riêng biệt. `MediaExplorer` quản lý state `{ selectedMedia }` (kiểu đối tượng hỗ trợ mở rộng) và truyền xuống `MediaLightbox` để hiển thị ảnh to, overlay, backdrop, close button, và lắng nghe phím `Escape`.
+- **Quy tắc phím Escape (ESC Blocker):** Khi `MediaLightbox` đang mở, bấm phím `Escape` chỉ đóng Lightbox, không đóng `ViewAllModalShell` (thực hiện bằng cách kiểm tra sự hiện diện của lớp hoạt động như `media-lightbox-active` trong DOM trước khi kích hoạt hàm đóng của Shell).
+- **Cơ chế Đồng bộ & Realtime:** Sử dụng phương thức **Snapshot + Freshness Notification**. Dữ liệu trong Explorer là snapshot tĩnh. Khi có tài nguyên mới qua socket, hiển thị banner thông báo. Click banner sẽ làm mới (reset cursor, refetch và tạo snapshot mới).
+- **Trừu tượng hóa Socket & So khớp:** Tách biệt hoàn toàn phần realtime ra khỏi các Explorer bằng Custom Hook `useExplorerFreshness`. Đồng thời, cô lập logic so khớp tin nhắn thành các utility function thuần khiết (pure functions):
+  - `belongsToConversation(message, conversationId, currentUserId)`
+  - `matchesMedia(message)`
+  - `matchesFile(message)`
+  - `matchesLink(message)`
+- **Custom Hook Phân Trang Dùng Chung (useInfiniteScroll):** Thiết kế custom hook generic `useInfiniteScroll({ enabled, hasMore, isFetching, onLoadMore, rootRef })` để quản lý IntersectionObserver, sử dụng `rootRef.current` là scroll container của Shell, tích hợp cơ chế đồng bộ `isFetchingRef` làm khóa cứng (lock) để triệt tiêu hoàn toàn rủi ro duplicate fetch.
+
+**Why**: Tuân thủ nguyên tắc Single Responsibility Principle (SRP), Separation of Concerns và bảo toàn tính bất biến của con trỏ (Cursor Invariant). Thiết kế Centered Modal với tham số `size` giúp tối ưu hóa không gian hiển thị cho các Explorer khác nhau (như Media cần màn ngang rộng để xếp lưới grid) đồng thời tạo ra một Shell generic có tính tái sử dụng cao.
+
+**Consequences**:
+* Giữ cho `ViewAllModalShell` thuần túy về mặt giao diện/hạ tầng, hoàn toàn độc lập với nghiệp vụ.
+* Mỗi Explorer tự kiểm soát hoàn toàn state hiển thị của mình và không trực tiếp gọi socket.
+* Tránh rò rỉ bộ nhớ, duplicate event listeners, duplicate key hay duplicate fetch.
+* Cho phép viết test đơn vị cực kỳ dễ dàng cho các hàm utility so khớp.
+
+**References**: `specs/active/view-all-modals.md`, `client/src/services/api/conversationPanelApi.js`.
+
+
