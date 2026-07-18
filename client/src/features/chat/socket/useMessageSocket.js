@@ -10,6 +10,7 @@ import {
     resolveMessageAttachments,
     updateListWithMessagePreview,
     upsertCallLogMessage,
+    checkIfConversationMuted,
 } from "@/features/chat/socket/messageSocketState.js";
 
 /**
@@ -29,9 +30,16 @@ export const useMessageSocket = ({
     scrollChatToBottom,
     fetchNewConversation,
     setSearchResult,
+    users,
+    groups,
 }) => {
     const processedMessageIdsRef = useRef(new Set());
     const fetchingIdsRef = useRef(new Set());
+    const usersRef = useRef(users);
+    const groupsRef = useRef(groups);
+
+    usersRef.current = users;
+    groupsRef.current = groups;
 
     useEffect(() => {
         if (!socket) return;
@@ -289,7 +297,14 @@ export const useMessageSocket = ({
                 processedMessageIdsRef.current.add(incomingMessageId);
             }
 
-            if (!suppressNotification && isUnread && data.type !== "system" && data.type !== "call_log") {
+            const isMuted = checkIfConversationMuted(data, {
+                users: usersRef.current || [],
+                groups: groupsRef.current || [],
+                receiverId,
+                targetId
+            });
+
+            if (!suppressNotification && isUnread && !isMuted && data.type !== "system" && data.type !== "call_log") {
                 try {
                     audioManager.playMessageNotification();
                     const senderName = data.sender?.displayName || "Ai đó";

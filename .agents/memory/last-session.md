@@ -1,16 +1,25 @@
 # Session Handoff Summary - 2026-07-17
 
 ## Những gì đã làm
-Trong session này, chúng ta đã giải quyết triệt để 4 lỗi quan trọng phát sinh từ việc Tối ưu hóa UI Sidebar, Xóa lịch sử và Đồng bộ hóa Realtime:
-1. **Thoát màn hình chat trống:** Cập nhật `handleDeleteHistory` để gọi `setActiveChat(null)` giúp đóng giao diện chat ngay lập tức khi xóa lịch sử.
-2. **Reload/F5 không mất sidebar:** Thay đổi bộ lọc candidates ở Backend (`getSidebarCandidatesForUser`) để giữ lại các cuộc hội thoại đã bị soft-delete nếu có tin nhắn mới gửi đến sau thời điểm xóa (`lastMessageAt > deletedAt`).
-3. **Chống trùng lặp realtime sidebar (React Strict Mode):** Bổ sung cơ chế `fetchingIdsRef` trong `useMessageSocket.js` để tránh gọi API trùng lặp, đồng thời thêm kiểm tra `prev.some` trong `fetchNewConversation` để đảm bảo không bị nhân đôi (trùng lặp) user hiển thị trên sidebar.
-4. **Hiển thị icon Ghim/Mute realtime:** Đính kèm trực tiếp preference cá nhân của người dùng hiện tại khi gọi API lấy chi tiết nhóm (`getGroupById`) và chi tiết user (`getUserById`).
-5. **Reset Ghim/Mute khi xóa lịch sử:** Cập nhật helper `applySoftDeleteState` tự động đưa `pinnedAt` và `mutedUntil` về `null` để tránh lỗi logic nhận tin nhắn mới nhưng vẫn bị tắt thông báo.
+Trong session này, chúng ta đã hoàn thành xuất sắc **Slice 7 — Realtime Sync & Client State** và tích hợp thêm tính năng Đổi tên nhóm (Group Rename):
+1. **API Client đổi tên nhóm:** Đã tạo và export hàm `renameGroup` kết nối tới API `/api/groups/:groupId/rename`.
+2. **Giao diện Chỉnh sửa Tên nhóm:** Tích hợp giao diện chỉnh sửa inline trực tiếp trong Conversation Panel, hiển thị nút bút chì cho tất cả thành viên trong nhóm.
+3. **Đồng bộ hóa Realtime (Socket.IO):**
+   - Sự kiện `groupRenamed`: Cập nhật tên/ảnh đại diện nhóm realtime trên Panel, Header, và Sidebar.
+   - Sự kiện `groupMemberUpdated`: Xử lý dọn dẹp và cập nhật realtime danh sách thành viên/số lượng thành viên trên Panel khi có người rời nhóm hoặc bị xóa.
+   - Sự kiện `groupUpserted` (member-added): Tải lại realtime danh sách và metadata từ DB để cập nhật chính xác role và presence.
+4. **Tối ưu hóa Presence & Trạng thái hoạt động:**
+   - Cập nhật chấm xanh hoạt động realtime trên Panel cho bạn bè (chat 1-1) và tất cả thành viên (chat nhóm).
+   - Tối ưu hiệu năng render Sidebar bằng cách gom cụm (batch updates) sự kiện `USER_ONLINE` trong 200ms bằng `setTimeout` và `useRef` tại `SocketProvider.jsx`.
+5. **Sửa lỗi biên dịch:** Khắc phục lỗi thiếu dấu đóng ngoặc nhọn ở cleanup function của useEffect lấy metadata.
+6. **Sửa lỗi Responsive:** Định vị panel dạng Drawer (`fixed z-40`) trên màn hình nhỏ và giới hạn `max-w-full` để panel không bị cắt rìa phải khi thu nhỏ trình duyệt.
+7. **Chống Spam click & Stack Toast:** Sử dụng `isUpdatingPrefRef` để chặn spam click và `toast.dismiss()` để dọn dẹp hàng đợi thông báo.
+8. **Sửa lỗi Nhận thông báo từ chat đã Muted:** Đồng bộ danh sách `users`/`groups` vào `useMessageSocket` qua React Refs để kiểm tra trạng thái tắt thông báo realtime và tắt âm thanh + toast khi nhận tin nhắn mới.
 
 ## Trạng thái hệ thống
-- Toàn bộ suite test backend (293 tests) đều chạy thành công 100% xanh.
-- Không có tiến trình ngầm nào cần dừng hoạt động.
+- Toàn bộ suite test Backend (`293/293` passed) và Frontend (`121/121` passed) tiếp tục xanh 100%.
+- Không có tiến trình ngầm nào chạy dở.
 
 ## Kế hoạch phiên tiếp theo
-- Tiếp tục thực hiện nốt các mục tiêu của **Slice 7 - Realtime Sync & Client State** (Metadata rename/avatar sync, membership sync realtime).
+- Bàn giao mã nguồn, review và gộp nhánh (merge branch).
+- Xác định lộ trình / tính năng mới cho session kế tiếp.

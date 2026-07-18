@@ -18,3 +18,7 @@ export const transferGroupAdmin = (groupId, newAdminId) =>
 
 export const deleteGroup = (groupId) =>
   axiosClient.delete(`${API_URL_GROUPS}/${groupId}`)
+
+export const renameGroup = (groupId, newName) =>
+  axiosClient.put(`${API_URL_GROUPS}/${groupId}/rename`, { newName })
+

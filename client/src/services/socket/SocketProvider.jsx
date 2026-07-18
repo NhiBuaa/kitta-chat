@@ -32,6 +32,8 @@ export const SocketProvider = ({ children }) => {
     const saveLastIdTimer = useRef(null);
     // Heartbeat interval ref
     const heartbeatInterval = useRef(null);
+    const presenceUpdateTimeoutRef = useRef(null);
+    const pendingPresenceUpdatesRef = useRef([]);
 
     if (!userId && socket !== null) {
         setSocket(null);
@@ -204,15 +206,33 @@ export const SocketProvider = ({ children }) => {
 
         // ---- User status ----
         newSocket.on(SOCKET_EVENTS.USER_ONLINE, ({ userId: changedUserId, status }) => {
-            setOnlineUsers((prev) => {
-                const existing = prev.find((u) => u.userId === changedUserId);
-                if (status === "online") {
-                    return existing
-                        ? prev
-                        : [...prev, { userId: changedUserId }];
-                }
-                return prev.filter((u) => u.userId !== changedUserId);
-            });
+            pendingPresenceUpdatesRef.current = pendingPresenceUpdatesRef.current.filter(
+                (u) => u.userId !== changedUserId
+            );
+            pendingPresenceUpdatesRef.current.push({ userId: changedUserId, status });
+
+            if (!presenceUpdateTimeoutRef.current) {
+                presenceUpdateTimeoutRef.current = setTimeout(() => {
+                    setOnlineUsers((prev) => {
+                        let newOnlineUsers = [...prev];
+                        pendingPresenceUpdatesRef.current.forEach(({ userId, status }) => {
+                            const index = newOnlineUsers.findIndex((u) => u.userId === userId);
+                            if (status === "online") {
+                                if (index === -1) {
+                                    newOnlineUsers.push({ userId });
+                                }
+                            } else {
+                                if (index !== -1) {
+                                    newOnlineUsers.splice(index, 1);
+                                }
+                            }
+                        });
+                        pendingPresenceUpdatesRef.current = [];
+                        presenceUpdateTimeoutRef.current = null;
+                        return newOnlineUsers;
+                    });
+                }, 200);
+            }
         });
 
         // ---- Lưu last_message_id khi nhận message ----
@@ -276,6 +296,11 @@ export const SocketProvider = ({ children }) => {
                 clearInterval(heartbeatInterval.current);
                 heartbeatInterval.current = null;
                 console.log("[Socket] Heartbeat stopped");
+            }
+
+            if (presenceUpdateTimeoutRef.current) {
+                clearTimeout(presenceUpdateTimeoutRef.current);
+                presenceUpdateTimeoutRef.current = null;
             }
 
             // Clear debounce timer khi logout/unmount

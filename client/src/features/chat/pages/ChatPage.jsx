@@ -284,6 +284,7 @@ const Home = () => {
     socket, currentUser, activeChatRef,
     setMessages, setUsers, setGroups, setHasNewUnread,
     scrollRef, scrollChatToBottom, fetchNewConversation, setSearchResult,
+    users, groups,
   });
 
   // Initial data fetch

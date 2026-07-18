@@ -143,3 +143,13 @@ export const updateListWithMessagePreview = (
 
     return updatedList;
 };
+
+export const checkIfConversationMuted = (data, { users = [], groups = [], receiverId, targetId }) => {
+    if (data?.isGroup) {
+        const group = groups.find(g => String(g._id) === String(receiverId));
+        return group ? !!(group.isMuted || (group.mutedUntil && new Date(group.mutedUntil) > new Date())) : false;
+    } else {
+        const user = users.find(u => String(u._id) === String(targetId));
+        return user ? !!(user.isMuted || (user.mutedUntil && new Date(user.mutedUntil) > new Date())) : false;
+    }
+};

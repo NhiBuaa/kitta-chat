@@ -6,6 +6,7 @@ import {
     normalizeRecoveredMessage,
     updateListWithMessagePreview,
     upsertCallLogMessage,
+    checkIfConversationMuted,
 } from "./messageSocketState.js";
 
 const baseFriendList = () => [
@@ -349,3 +350,52 @@ test("sidebar item hydrated with callHistoryId does not increment for same recov
 
     assert.equal(updated[0].unreadCount, 1);
 });
+
+test("checkIfConversationMuted direct chat cases", () => {
+    const users = [
+        { _id: "user-unmuted", isMuted: false, mutedUntil: null },
+        { _id: "user-muted-flag", isMuted: true, mutedUntil: null },
+        { _id: "user-muted-future", isMuted: false, mutedUntil: new Date(Date.now() + 3600000).toISOString() },
+        { _id: "user-muted-past", isMuted: false, mutedUntil: new Date(Date.now() - 3600000).toISOString() }
+    ];
+
+    // Case 1: Unmuted
+    assert.equal(checkIfConversationMuted({ isGroup: false }, { users, targetId: "user-unmuted" }), false);
+
+    // Case 2: Muted via flag
+    assert.equal(checkIfConversationMuted({ isGroup: false }, { users, targetId: "user-muted-flag" }), true);
+
+    // Case 3: Muted via future date
+    assert.equal(checkIfConversationMuted({ isGroup: false }, { users, targetId: "user-muted-future" }), true);
+
+    // Case 4: Unmuted via past date
+    assert.equal(checkIfConversationMuted({ isGroup: false }, { users, targetId: "user-muted-past" }), false);
+
+    // Case 5: Brand new user not in list
+    assert.equal(checkIfConversationMuted({ isGroup: false }, { users, targetId: "user-new" }), false);
+});
+
+test("checkIfConversationMuted group chat cases", () => {
+    const groups = [
+        { _id: "group-unmuted", isMuted: false, mutedUntil: null },
+        { _id: "group-muted-flag", isMuted: true, mutedUntil: null },
+        { _id: "group-muted-future", isMuted: false, mutedUntil: new Date(Date.now() + 3600000).toISOString() },
+        { _id: "group-muted-past", isMuted: false, mutedUntil: new Date(Date.now() - 3600000).toISOString() }
+    ];
+
+    // Case 1: Unmuted
+    assert.equal(checkIfConversationMuted({ isGroup: true }, { groups, receiverId: "group-unmuted" }), false);
+
+    // Case 2: Muted via flag
+    assert.equal(checkIfConversationMuted({ isGroup: true }, { groups, receiverId: "group-muted-flag" }), true);
+
+    // Case 3: Muted via future date
+    assert.equal(checkIfConversationMuted({ isGroup: true }, { groups, receiverId: "group-muted-future" }), true);
+
+    // Case 4: Unmuted via past date
+    assert.equal(checkIfConversationMuted({ isGroup: true }, { groups, receiverId: "group-muted-past" }), false);
+
+    // Case 5: Brand new group not in list
+    assert.equal(checkIfConversationMuted({ isGroup: true }, { groups, receiverId: "group-new" }), false);
+});
+

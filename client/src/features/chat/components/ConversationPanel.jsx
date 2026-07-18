@@ -15,10 +15,14 @@ import {
   FaDownload,
   FaExternalLinkAlt,
   FaUsers,
-  FaCrown
+  FaCrown,
+  FaEdit,
+  FaCheck
 } from "react-icons/fa";
 import { FaThumbtackSlash } from "react-icons/fa6";
 import { getPanelMetadata, getPanelResources, updatePanelPreference, leaveGroupPanel, deleteChatPanel } from "@/services/api/conversationPanelApi.js";
+import { renameGroup } from "@/services/api/groupApi.js";
+import { useSocket } from "@/services/socket/SocketContext.js";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
@@ -48,6 +52,13 @@ const ConversationPanel = ({
   const [error, setError] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { socket, onlineUsers } = useSocket();
+
+  // State quản lý đổi tên nhóm
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const isUpdatingPrefRef = useRef(false);
 
   // State quản lý Shared Media (Slice 3)
   const [mediaState, setMediaState] = useState({
@@ -275,9 +286,84 @@ const ConversationPanel = ({
     };
   }, [conversationId, isOpen]);
 
+  useEffect(() => {
+    if (!socket || !isOpen || !conversationId) return;
+
+    const handleSocketGroupRenamed = ({ groupId, newName, newAvatar }) => {
+      if (String(groupId) === String(conversationId)) {
+        setMetadata(prev => {
+          if (!prev || prev.overview?.kind !== "group") return prev;
+          return {
+            ...prev,
+            overview: {
+              ...prev.overview,
+              name: newName,
+              avatar: newAvatar
+            }
+          };
+        });
+      }
+    };
+
+    const handleSocketGroupMemberUpdated = ({ groupId, updatedGroup, removedMemberId, isVoluntaryLeave }) => {
+      if (String(groupId) === String(conversationId)) {
+        // Cập nhật members preview: loại bỏ thành viên rời/bị xóa
+        setMembershipState(prev => ({
+          ...prev,
+          membersPreview: prev.membersPreview.filter(m => m._id !== removedMemberId)
+        }));
+        
+        // Cập nhật member count trong metadata
+        setMetadata(prev => {
+          if (!prev || prev.overview?.kind !== "group") return prev;
+          return {
+            ...prev,
+            overview: {
+              ...prev.overview,
+              memberCount: Math.max(0, (prev.overview.memberCount || 0) - 1)
+            }
+          };
+        });
+      }
+    };
+
+    const handleSocketGroupUpserted = (payload) => {
+      const groupId = payload?.group?._id || payload?.groupId;
+      if (String(groupId) === String(conversationId) && payload?.action === "member-added") {
+        // Khi có thành viên mới được thêm, gọi lại fetchMembership và fetchMetadata để cập nhật dữ liệu chính xác nhất
+        fetchMembership();
+        
+        // Gọi lại fetchMetadata nhưng không set loading để tránh nhấp nháy UI
+        const reloadMetadata = async () => {
+          try {
+            const response = await getPanelMetadata(conversationId);
+            if (response.data) {
+              setMetadata(response.data);
+            }
+          } catch (err) {
+            console.error("Lỗi reload metadata panel realtime:", err);
+          }
+        };
+        reloadMetadata();
+      }
+    };
+
+    socket.on("groupRenamed", handleSocketGroupRenamed);
+    socket.on("groupMemberUpdated", handleSocketGroupMemberUpdated);
+    socket.on("groupUpserted", handleSocketGroupUpserted);
+
+    return () => {
+      socket.off("groupRenamed", handleSocketGroupRenamed);
+      socket.off("groupMemberUpdated", handleSocketGroupMemberUpdated);
+      socket.off("groupUpserted", handleSocketGroupUpserted);
+    };
+  }, [socket, isOpen, conversationId]);
+
   const handlePreferenceChange = async (key, value) => {
     if (!conversationId || !metadata) return;
+    if (isUpdatingPrefRef.current) return;
 
+    isUpdatingPrefRef.current = true;
     const previousPrefs = metadata.preference;
     
     // Optimistic UI Update
@@ -297,16 +383,20 @@ const ConversationPanel = ({
           preference: response.data.preference
         }));
         onPreferenceChange?.(conversationId, response.data.preference);
+        toast.dismiss();
         toast.success("Đã cập nhật cài đặt");
       }
     } catch (err) {
       console.error("Lỗi cập nhật cài đặt:", err);
+      toast.dismiss();
       toast.error("Không thể lưu cài đặt");
       // Rollback
       setMetadata(prev => ({
         ...prev,
         preference: previousPrefs
       }));
+    } finally {
+      isUpdatingPrefRef.current = false;
     }
   };
 
@@ -319,11 +409,13 @@ const ConversationPanel = ({
     try {
       const res = await deleteChatPanel(conversationId);
       if (res.data?.success) {
+        toast.dismiss();
         toast.success("Xóa lịch sử thành công");
         onDeleteHistory?.(conversationId);
       }
     } catch (err) {
       console.error("Lỗi khi xóa lịch sử:", err);
+      toast.dismiss();
       toast.error(err.response?.data?.message || "Không thể xóa lịch sử trò chuyện");
     } finally {
       setIsDeleting(false);
@@ -331,14 +423,70 @@ const ConversationPanel = ({
     }
   };
 
+  const handleRenameGroupSubmit = async () => {
+    if (!editNameValue.trim()) {
+      toast.dismiss();
+      toast.error("Tên nhóm không được để trống");
+      return;
+    }
+    if (editNameValue.trim() === metadata?.overview?.name) {
+      setIsEditingName(false);
+      return;
+    }
+    setIsRenaming(true);
+    try {
+      const response = await renameGroup(conversationId, editNameValue.trim());
+      if (response.data?.success) {
+        toast.dismiss();
+        toast.success("Đổi tên nhóm thành công");
+        setMetadata(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            overview: {
+              ...prev.overview,
+              name: editNameValue.trim(),
+              avatar: response.data.group?.avatar || prev.overview.avatar
+            }
+          };
+        });
+        setIsEditingName(false);
+      }
+    } catch (err) {
+      console.error("Lỗi đổi tên nhóm:", err);
+      toast.dismiss();
+      toast.error(err.response?.data?.message || "Không thể đổi tên nhóm");
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
+  const canRename = metadata?.overview?.kind === "group";
+
+  const getPartnerUserId = () => {
+    if (!conversationId || !currentUser) return null;
+    const parts = conversationId.split("_");
+    return parts.find(id => id !== currentUser._id) || parts[0];
+  };
+
+  const isPartnerOnline = metadata?.overview?.kind === "direct" && getPartnerUserId()
+    ? onlineUsers.some(u => String(u.userId) === String(getPartnerUserId()))
+    : false;
+
+  const checkMemberIsOnline = (member) => {
+    return onlineUsers.some(u => String(u.userId) === String(member._id));
+  };
+
   // Nếu không mở, chỉ trả về khung rỗng w-0 để tạo transition trượt mượt mà
   return (
     <div
-      className={`h-full bg-white border-l border-gray-200 transition-all duration-300 ease-in-out overflow-hidden flex flex-col relative ${
-        isOpen ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"
-      }`}
+      className={`h-full bg-white border-l border-gray-200 transition-all duration-300 ease-in-out overflow-hidden flex flex-col z-40 ${
+        isOpen
+          ? "w-80 max-w-full opacity-100 translate-x-0"
+          : "w-0 opacity-0 pointer-events-none translate-x-full lg:translate-x-0"
+      } fixed lg:relative inset-y-0 right-0 lg:inset-auto shadow-2xl lg:shadow-none`}
     >
-      <div className="w-80 h-full flex flex-col bg-white">
+      <div className="w-80 max-w-full h-full flex flex-col bg-white">
         {/* Header */}
         <div className="h-16 border-b border-gray-200 flex items-center justify-between px-4 shadow-sm shrink-0">
           <span className="font-bold text-gray-700">Chi tiết cuộc trò chuyện</span>
@@ -390,18 +538,65 @@ const ConversationPanel = ({
                     className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 shadow-md"
                     alt="avatar"
                   />
-                  {metadata.overview?.kind === "direct" && (metadata.overview?.isOnline ?? currentChatUser?.isOnline) && (
+                  {metadata.overview?.kind === "direct" && isPartnerOnline && (
                     <div className="absolute bottom-0 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                   )}
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-gray-800">
-                    {metadata.overview?.name || activeChat?.name || getUserDisplayName(currentChatUser)}
-                  </h3>
-                  <span className="text-xs text-gray-500">
+                <div className="w-full flex flex-col items-center">
+                  {isEditingName && canRename ? (
+                    <div className="flex items-center space-x-2 mt-1 px-4 w-full justify-center">
+                      <input
+                        type="text"
+                        disabled={isRenaming}
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-medium text-gray-800 bg-white"
+                        value={editNameValue}
+                        onChange={(e) => setEditNameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRenameGroupSubmit();
+                          if (e.key === "Escape") setIsEditingName(false);
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        disabled={isRenaming}
+                        onClick={handleRenameGroupSubmit}
+                        className="p-1.5 bg-green-500 hover:bg-green-600 text-white rounded transition shrink-0 cursor-pointer"
+                        title="Lưu"
+                      >
+                        <FaCheck size={10} className={isRenaming ? "animate-pulse" : ""} />
+                      </button>
+                      <button
+                        disabled={isRenaming}
+                        onClick={() => setIsEditingName(false)}
+                        className="p-1.5 bg-gray-200 hover:bg-gray-350 text-gray-600 rounded transition shrink-0 cursor-pointer"
+                        title="Hủy"
+                      >
+                        <FaTimes size={10} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center space-x-1.5 group max-w-full px-4">
+                      <h3 className="font-bold text-lg text-gray-800 truncate" title={metadata.overview?.name || activeChat?.name || getUserDisplayName(currentChatUser)}>
+                        {metadata.overview?.name || activeChat?.name || getUserDisplayName(currentChatUser)}
+                      </h3>
+                      {canRename && (
+                        <button
+                          onClick={() => {
+                            setEditNameValue(metadata.overview?.name || activeChat?.name || "");
+                            setIsEditingName(true);
+                          }}
+                          className="text-gray-400 hover:text-blue-500 p-1 rounded-full hover:bg-gray-50 transition cursor-pointer shrink-0"
+                          title="Sửa tên nhóm"
+                        >
+                          <FaEdit size={14} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <span className="text-xs text-gray-500 mt-1">
                     {metadata.overview?.kind === "group"
                       ? `${metadata.overview?.memberCount || 0} thành viên`
-                      : ((metadata.overview?.isOnline ?? currentChatUser?.isOnline) ? "Đang hoạt động" : "Ngoại tuyến")
+                      : (isPartnerOnline ? "Đang hoạt động" : "Ngoại tuyến")
                     }
                   </span>
                 </div>
@@ -730,7 +925,7 @@ const ConversationPanel = ({
                               className="w-8 h-8 rounded-full object-cover border border-gray-250"
                               alt={member.displayName}
                             />
-                            {member.isOnline && (
+                            {checkMemberIsOnline(member) && (
                               <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white"></div>
                             )}
                           </div>

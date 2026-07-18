@@ -382,10 +382,10 @@ const renameGroup = async (req, res) => {
         .json({ success: false, message: "Nhóm không tồn tại" });
     }
 
-    if (group.admin.toString() !== adminId) {
+    if (!group.members.some((id) => id.toString() === adminId)) {
       return res.status(403).json({
         success: false,
-        message: "Chỉ admin mới có thể đổi tên nhóm",
+        message: "Chỉ thành viên nhóm mới có thể đổi tên nhóm",
       });
     }
 
