@@ -316,3 +316,34 @@ test("ensureConversationForConfirmedMessage does not increment unreadCount if is
   assert.equal(recipient.state.unreadCount, 0);
 });
 
+test("ensureConversationForConfirmedMessage dual-writes group system messages (with null sender) correctly", async () => {
+  const groupId = objectId("301");
+  const adminId = objectId("a");
+  const memberId = objectId("b");
+  const { service, conversations, participants } = createMemoryStore({
+    groups: [{ _id: groupId, admin: adminId, members: [adminId, memberId] }],
+  });
+
+  // Tạo system message với sender là null và isGroup là true
+  const systemMsg = {
+    _id: objectId("203"),
+    conversationId: groupId.toString(),
+    type: "system",
+    sender: null,
+    receiver: groupId,
+    isGroup: true,
+    createdAt: new Date("2026-06-05T09:30:00.000Z"),
+  };
+
+  const result = await service.ensureConversationForConfirmedMessage(systemMsg);
+
+  assert.ok(result);
+  assert.equal(conversations.length, 1);
+  assert.equal(conversations[0].lastMessageId.toString(), systemMsg._id.toString());
+  
+  assert.equal(participants.length, 2);
+  const adminPart = participants.find((p) => idString(p.userId) === adminId.toString());
+  assert.ok(adminPart);
+  assert.equal(adminPart.state.lastMessageId.toString(), systemMsg._id.toString());
+});
+

@@ -144,7 +144,7 @@ async function ensureParticipant({ conversation, shape, userId, message, message
 
 async function ensureConversationForConfirmedMessage(message) {
   if (!message || message.isDuplicate) return null;
-  if (!message._id || !message.conversationId || !message.sender) return null;
+  if (!message._id || !message.conversationId || (!message.sender && message.type !== "system")) return null;
 
   const shape = await getConversationShape(message);
   if (!shape) return null;

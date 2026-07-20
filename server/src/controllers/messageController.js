@@ -127,11 +127,13 @@ exports.getMessages = async (req, res) => {
 
 exports.createSystemMessage = async (groupId, text, options = {}) => {
   try {
+    const isGroup = groupId && !groupId.includes("_");
     const systemMessage = new Message({
       conversationId: groupId,
       type: "system",
       sender: null,
-      receiver: null,
+      receiver: isGroup ? groupId : null,
+      isGroup: isGroup,
       text: text,
       attachments: [],
       readBy: options.readBy || [],

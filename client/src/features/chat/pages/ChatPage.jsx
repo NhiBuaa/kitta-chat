@@ -660,6 +660,18 @@ const Home = () => {
           onLeaveGroup={handleLeaveGroup}
           onDeleteHistory={handleDeleteHistory}
           onManageMembers={() => setShowGroupMembers(true)}
+          onNavigateToChat={(targetGroupId) => {
+            const groupObj = groups.find((g) => g._id === targetGroupId);
+            if (groupObj) {
+              handleSelectUser(groupObj);
+            } else {
+              handleSelectUser({
+                _id: targetGroupId,
+                members: [{ _id: currentUser?._id }],
+              });
+            }
+            setShowConversationPanel(false);
+          }}
         />
       )}
 

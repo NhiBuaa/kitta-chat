@@ -30,6 +30,7 @@ import ViewAllModalShell from "./ViewAllModalShell.jsx";
 import MediaExplorer from "./MediaExplorer.jsx";
 import FilesExplorer from "./FilesExplorer.jsx";
 import LinksExplorer from "./LinksExplorer.jsx";
+import CommonGroupsExplorer from "./CommonGroupsExplorer.jsx";
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
   const k = 1024;
@@ -50,6 +51,7 @@ const ConversationPanel = ({
   onDeleteHistory,
   onPreferenceChange,
   onManageMembers,
+  onNavigateToChat,
 }) => {
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -67,6 +69,11 @@ const ConversationPanel = ({
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
   const filesScrollRef = useRef(null);
   const linksScrollRef = useRef(null);
+
+  // State và Ref cho View All Common Groups Modal (Slice 11)
+  const [isCommonGroupsModalOpen, setIsCommonGroupsModalOpen] = useState(false);
+  const commonGroupsScrollRef = useRef(null);
+
 
   // State quản lý đổi tên nhóm
   const [isEditingName, setIsEditingName] = useState(false);
@@ -889,7 +896,7 @@ const ConversationPanel = ({
                   ) : (
                     membershipState.commonGroups.length > 0 && (
                       <button 
-                        onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                        onClick={() => setIsCommonGroupsModalOpen(true)}
                         className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
                       >
                         Xem tất cả
@@ -1073,6 +1080,29 @@ const ConversationPanel = ({
             scrollRef={linksScrollRef}
             socket={socket}
             currentUserId={currentUser?._id}
+          />
+        </ViewAllModalShell>
+      )}
+
+      {isCommonGroupsModalOpen && (
+        <ViewAllModalShell
+          isOpen={isCommonGroupsModalOpen}
+          onClose={() => setIsCommonGroupsModalOpen(false)}
+          title="Nhóm chung"
+          size="normal"
+          scrollRef={commonGroupsScrollRef}
+        >
+          <CommonGroupsExplorer
+            conversationId={conversationId}
+            scrollRef={commonGroupsScrollRef}
+            socket={socket}
+            currentUserId={currentUser?._id}
+            onNavigateToChat={(targetGroupId) => {
+              setIsCommonGroupsModalOpen(false);
+              if (onNavigateToChat) {
+                onNavigateToChat(targetGroupId);
+              }
+            }}
           />
         </ViewAllModalShell>
       )}
