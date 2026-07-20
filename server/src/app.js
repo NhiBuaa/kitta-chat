@@ -8,6 +8,7 @@ const callHistoryRoutes = require("./routes/callHistory");
 const groupRoutes = require("./routes/group");
 const fileRoutes = require("./routes/file");
 const conversationPanelRoutes = require("./routes/conversationPanel");
+const sidebarRoutes = require("./routes/sidebar");
 const { connectionManager: defaultRabbitConnectionManager } = require("./queues/rabbitmq");
 const { createRequestLoggingMiddleware } = require("./middlewares/requestLogging");
 const {
@@ -75,6 +76,7 @@ const createApp = ({
   app.use("/api/groups", groupRoutes);
   app.use("/api/files", fileRoutes);
   app.use("/api/conversations", conversationPanelRoutes);
+  app.use("/api/sidebar", sidebarRoutes);
 
   app.use((req, res, next) => {
     return sendError(res, {

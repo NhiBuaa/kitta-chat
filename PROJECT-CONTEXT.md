@@ -272,6 +272,11 @@ Principles:
 * RabbitMQ correlation propagation (`requestId` -> `correlationId`), retry, DLQ, and poison-message tests (`server/test/rabbitmqInfrastructure.test.js`).
 * Safe to claim: request/correlation IDs, RabbitMQ retry/DLQ, health endpoints, multi-replica scaling docs. Do NOT claim full production observability or complete CI/CD yet.
 
+### Unified Sidebar Domain Glossary
+
+* **Unified Sidebar Conversation (Cuộc hội thoại Sidebar gộp chung):** Đại diện cho một phần tử hội thoại phẳng duy nhất trong sidebar hiển thị cả direct chat và group chat của user, được sắp xếp động theo `lastMessageAt` và `isPinned`.
+* **Sidebar Filter Chip (Bộ lọc nhanh sidebar):** Nút chọn trạng thái lọc danh sách hội thoại tại client ("Tất cả", "Cá nhân", "Nhóm") để gửi truy vấn theo loại (`kind`) tương ứng lên backend, đồng thời kết hợp logic AND với từ khóa tìm kiếm.
+
 ### When Modifying Code (Mandatory Rules)
 
 * Use `rg` to search for files/events/functions.

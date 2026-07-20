@@ -1,25 +1,35 @@
-# Next Session — Slice 11: View All Common Groups Modal Integration & Quality Gate
+# Next Session — Slice 2: Client Unified Sidebar Layout & Filter Chips Integration
 
 ## Slice Mục tiêu
-**Slice 11: View All Common Groups Modal Integration & Quality Gate**
+**Slice 2: Client Unified Sidebar Layout & Filter Chips Integration**
 
 ## Bối cảnh
-- Slice 10 (Tích hợp và xem tất cả Shared Files và Links) đã hoàn thành xuất sắc.
-- Đã sửa đổi Freshness Banner của cả 3 Explorer (Media, Files, Links) sang dạng `sticky` trôi nổi cố định tại `top-0` để luôn hiển thị rõ ràng cho người dùng ở mọi vị trí cuộn trang.
-- Đã nâng kích thước của Freshness Banner lên `py-3 px-6 text-sm font-bold shadow-lg` để tăng khả năng tương tác và dễ click chuột.
-- Bộ test client regression `155/155` passed và server `293/293` passed (100% xanh).
+- Slice 1 (Backend Unified Sidebar API với Cursor Pagination & Batch Queries) đã hoàn thành xuất sắc, được verify qua 4 test cases tích hợp backend.
+- Toàn bộ regression test suite của Backend chạy thành công 100% (`298/298` passed).
+- Sẵn sàng tích hợp giao diện và bộ lọc Filter Chips ở Client.
 
 ## Mục tiêu cụ thể
-1. **Triển khai component `CommonGroupsExplorer.jsx`:**
-   - Sử dụng hook `useInfiniteScroll` để tự động tải thêm nhóm trò chuyện chung khi cuộn xuống.
-   - Định dạng hiển thị: Danh sách các nhóm chat chung của hai người dùng, bao gồm ảnh đại diện nhóm (avatar), tên nhóm, số lượng thành viên, và nút chuyển hướng.
-   - Khi click vào một nhóm trong danh sách, tự động điều hướng người dùng (chuyển đổi active chat) trực tiếp tới nhóm chat đó và đóng Modal Shell.
-2. **Tích hợp vào `ConversationPanel.jsx`:**
-   - Thêm sự kiện click mở Modal cho nút "Xem tất cả" trong phần Nhóm chung (Common Groups) của panel.
-   - Quản lý state mở/đóng Modal qua Portal bằng component `<ViewAllModalShell isOpen={...} title="Nhóm chung" size="normal">`.
-3. **Rà soát chất lượng toàn diện (Quality Gate):**
-   - Chạy skill `/code-check` để rà soát bảo mật và chất lượng code của toàn bộ các Explorer và Panel Service trước khi merge code.
+1. **Thay thế UI Sidebar phân mảng thành danh sách phẳng gộp chung:**
+   - Thay thế việc render danh sách tách biệt Users và Groups trong `Sidebar.jsx` thành một danh sách phẳng duy nhất `conversations` hiển thị kết quả từ API gộp.
+   - Hiển thị avt, displayName, và lastMessage format:
+     - Group chat: `"{lastMessage.senderName}: {lastMessage.content}"`. Nếu không có message, hiển thị fallback `"{target.memberCount} thành viên"`.
+     - Direct chat: `"{lastMessage.content}"`. Nếu không có message, hiển thị fallback status text hoặc `"Bắt đầu trò chuyện"`.
+2. **Thiết lập Filter Chips UI:**
+   - Tạo 3 chips lọc dạng viên thuốc (Filter Chips) nằm dưới thanh tìm kiếm: "Tất cả", "Cá nhân", "Nhóm".
+   - Khi click chọn chip, client sẽ update filter state, reset cursor về `null`, và gọi API fetch tương ứng (`kind = direct | group` hoặc empty).
+   - Lưu trữ preference chip đang chọn vào `localStorage` (`kitta_sidebar_filter`).
+3. **Logic lọc kết hợp AND:**
+   - Việc search trong ô tìm kiếm sẽ lọc local trên tập kết quả của Filter Chip đang active.
+4. **Empty States chuyên biệt:**
+   - Hiển thị layout Empty State chuyên biệt cho từng tab lọc nếu danh sách rỗng.
+   - Thêm nút CTA "Tạo nhóm mới" ở Empty State của tab "Nhóm".
+5. **Đăng ký unit test (Client Seam):**
+   - Viết tệp test `client/src/components/layout/Sidebar.test.js` để verify:
+     - Chuyển tab reset cursor và load lại trang đầu.
+     - `localStorage` persistence.
+     - Logic lọc search kết hợp AND.
+     - Render rules cho Empty States và nút CTA tạo nhóm.
 
 ## Guardrails bắt buộc
-- **Active Chat Redirection Safety:** Chuyển đổi chat cần giải phóng và cleanup các hook/socket event của cuộc trò chuyện cũ để tránh rò rỉ bộ nhớ hoặc gọi API sai ngữ cảnh.
-- **UI consistency:** Modal nhóm chung được cấu hình ở dạng `size="normal"`.
+- **Independent State Partitioning:** Cấm dùng chung cursor state giữa các tab lọc. Mỗi tab lọc phải có cursor và state data riêng biệt, reset cursor khi switch tab.
+- **AND Logic Enforcement:** Không reset filter chip về "Tất cả" khi user gõ search. Kết quả search bắt buộc phải AND với filter chip hiện tại.
