@@ -1,33 +1,29 @@
-# Handoff Document — End of Slice 9 Session (Updated)
+# Session Handoff — Slice 10 Complete
 
-Tài liệu bàn giao tổng hợp thông tin phiên làm việc phát triển tính năng Xem tất cả Shared Media và Lightbox phóng to ảnh/video (Slice 9).
+## Tổng quan phiên làm việc
+- **Lát cắt mục tiêu:** Slice 10: View All Files & Links Modals Integration.
+- **Trạng thái:** HOÀN THÀNH 100% (Xanh hoàn toàn).
+- **Mã nguồn đã thay đổi:**
+  - Tạo mới: `FilesExplorer.jsx`, `FilesExplorer.test.js`, `LinksExplorer.jsx`, `LinksExplorer.test.js`.
+  - Thay đổi: `ConversationPanel.jsx`, `MediaExplorer.jsx`, `MediaExplorer.test.js`, `package.json`.
 
-## 📌 Tổng quan phiên làm việc (Session Summary)
-Trong phiên làm việc này, tôi đã phối hợp với Developer để triển khai thành công **Slice 9: View All Media Modal Integration & Lightbox** cho bảng thông tin cuộc trò chuyện (Conversation Panel).
-- **Mục tiêu đạt được:** 
-  - Triển khai thành công `MediaExplorer.jsx` tải vô hạn lưới hình ảnh/video, tích hợp AbortController chống stale response, và lọc trùng lặp ID (Cursor Deduplication).
-  - Triển khai thành công `MediaLightbox.jsx` phóng to tệp tin với cơ chế chặn nổi bọt phím Escape (`e.stopPropagation()` tại giai đoạn Capture) để bảo đảm không đóng nhầm Modal Shell phía sau.
-  - Tích hợp nút "Xem tất cả" và `ViewAllModalShell` Portal vào `ConversationPanel.jsx`.
-- **Cải tiến UX (Floating Freshness Banner):**
-  - Đã khắc phục thành công vấn đề banner làm mới bị khuất khi cuộn xuống cuối bằng cách nâng cấp Banner sang trạng thái nổi tuyệt đối **`absolute top-[72px] left-1/2 -translate-x-1/2 z-20`** đè lên scroll container. Banner sẽ luôn nổi cố định ngay dưới Header của modal card và hiển thị rõ ràng từ bất kỳ vị trí cuộn nào.
-- **Code Review:** Đã hoàn thành adversarial code review thông qua playbook `code-review` và skill `code-check`, đưa ra Verdict **APPROVE** (Chi tiết tại [code_review_report.md](file:///C:/Users/Nhi/.gemini/antigravity/brain/24cf5bfa-7715-4d03-be31-42f2bb3a1770/code_review_report.md)).
-- **Trạng thái kiểm thử:** Toàn bộ test suite chạy xanh sạch 100% (Client: 146 tests passed; Server: 293 tests passed).
+## Chi tiết triển khai & Cải tiến
+1. **Explorer cho Documents & Links:**
+   - Triển khai thành công `FilesExplorer.jsx` và `LinksExplorer.jsx` kế thừa cấu trúc từ `MediaExplorer.jsx`.
+   - Phân trang vô hạn qua hook generic `useInfiniteScroll` dựa trên `scrollRef` được truyền xuống từ Modal Shell.
+   - Hủy bỏ các request cũ qua `AbortController` khi unmount hoặc thay đổi active conversation để tránh rò rỉ hoặc race condition (Stale Response Protection).
+   - Lọc trùng lặp phần tử theo `_id` hoặc `url` trước khi hiển thị (Cursor Deduplication).
+2. **Nâng cấp Freshness Banner dạng Sticky:**
+   - Phát hiện và khắc phục lỗi banner bị cuộn bay mất khi cuộn danh sách (do root container bị khống chế `h-full`).
+   - Loại bỏ class `h-full` tại root div của cả 3 Explorer, giúp chiều cao root div co giãn tự nhiên theo danh sách nội dung để `position: sticky` hoạt động chính xác ở tất cả mọi lúc người dùng ở bất kỳ vị trí cuộn nào.
+   - Banner được bao bọc bởi wrapper `sticky top-0 left-0 w-full flex justify-center pointer-events-none z-20 h-0 overflow-visible` giúp trôi nổi cố định đè lên trên danh sách một cách đồng bộ.
+   - Tăng kích thước banner từ `p-2.5 text-xs` lên `py-3 px-6 text-sm font-bold shadow-lg` để to hơn, rõ ràng và dễ click chuột.
 
----
+## Trạng thái kiểm thử
+- **Client suite:** 155/155 tests passed (100% xanh).
+- **Server suite:** 293/293 tests passed (100% xanh).
 
-## 🔗 Các tài liệu liên quan (Related Artifacts)
-- **Kế hoạch hành động chi tiết:** [task.md](file:///C:/Users/Nhi/.gemini/antigravity/brain/24cf5bfa-7715-4d03-be31-42f2bb3a1770/task.md)
-- **Tóm tắt thay đổi & Giải pháp kỹ thuật:** [walkthrough.md](file:///C:/Users/Nhi/.gemini/antigravity/brain/24cf5bfa-7715-4d03-be31-42f2bb3a1770/walkthrough.md)
-- **Báo cáo Code Review:** [code_review_report.md](file:///C:/Users/Nhi/.gemini/antigravity/brain/24cf5bfa-7715-4d03-be31-42f2bb3a1770/code_review_report.md)
-- **Lộ trình kỹ thuật tổng thể:** [current-session.md](file:///d:/Developer/Projects/shotter/shot-chat/.agents/current-session.md)
-- **Chỉ dẫn cho phiên làm việc tiếp theo:** [next-session.md](file:///d:/Developer/Projects/shotter/shot-chat/.agents/next-session.md)
-
----
-
-## 🛠️ Đề xuất cho phiên kế tiếp (Next Session Focus)
-Phiên làm việc tiếp theo sẽ bắt đầu triển khai **Slice 10: View All Files & Links Modals Integration** để tích hợp Explorer cho Tài liệu (Files) và Liên kết (Links) sử dụng các hạ tầng Modal Shell và infinite scroll có sẵn.
-
-### Suggested Skills
-Agent tiếp theo nên sử dụng các skill sau để tiếp tục công việc:
-1.  **`tdd`**: Áp dụng chu trình RED -> GREEN -> REFACTOR lát cắt dọc cho việc phát triển các Explorer của Files và Links.
-2.  **`code-check`**: Sử dụng khi hoàn thành để quét rà soát bảo mật và edge cases trước khi đóng gói tính năng.
+## Nhiệm vụ của phiên kế tiếp (Slice 11)
+- Triển khai component `CommonGroupsExplorer.jsx` hiển thị nhóm chat chung của hai người dùng và tích hợp modal (`size="normal"`).
+- Click vào nhóm chung sẽ kích hoạt điều hướng (chuyển đổi active chat) trực tiếp tới nhóm trò chuyện đó và đóng modal.
+- Rà soát bảo mật và chất lượng code toàn diện thông qua `/code-check` để đóng PR.

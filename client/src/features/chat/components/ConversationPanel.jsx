@@ -28,6 +28,8 @@ import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
 import ViewAllModalShell from "./ViewAllModalShell.jsx";
 import MediaExplorer from "./MediaExplorer.jsx";
+import FilesExplorer from "./FilesExplorer.jsx";
+import LinksExplorer from "./LinksExplorer.jsx";
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
   const k = 1024;
@@ -59,6 +61,12 @@ const ConversationPanel = ({
   // State và Ref cho View All Media Modal (Slice 9)
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const mediaScrollRef = useRef(null);
+
+  // State và Ref cho View All Files & Links Modals (Slice 10)
+  const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
+  const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
+  const filesScrollRef = useRef(null);
+  const linksScrollRef = useRef(null);
 
   // State quản lý đổi tên nhóm
   const [isEditingName, setIsEditingName] = useState(false);
@@ -720,7 +728,7 @@ const ConversationPanel = ({
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tài liệu</h4>
                   {filesState.items.length > 0 && (
                     <button 
-                      onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                      onClick={() => setIsFilesModalOpen(true)}
                       className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
                     >
                       Xem tất cả
@@ -795,7 +803,7 @@ const ConversationPanel = ({
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Liên kết</h4>
                   {linksState.items.length > 0 && (
                     <button 
-                      onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                      onClick={() => setIsLinksModalOpen(true)}
                       className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
                     >
                       Xem tất cả
@@ -1029,6 +1037,40 @@ const ConversationPanel = ({
           <MediaExplorer
             conversationId={conversationId}
             scrollRef={mediaScrollRef}
+            socket={socket}
+            currentUserId={currentUser?._id}
+          />
+        </ViewAllModalShell>
+      )}
+
+      {isFilesModalOpen && (
+        <ViewAllModalShell
+          isOpen={isFilesModalOpen}
+          onClose={() => setIsFilesModalOpen(false)}
+          title="Tất cả tài liệu"
+          size="normal"
+          scrollRef={filesScrollRef}
+        >
+          <FilesExplorer
+            conversationId={conversationId}
+            scrollRef={filesScrollRef}
+            socket={socket}
+            currentUserId={currentUser?._id}
+          />
+        </ViewAllModalShell>
+      )}
+
+      {isLinksModalOpen && (
+        <ViewAllModalShell
+          isOpen={isLinksModalOpen}
+          onClose={() => setIsLinksModalOpen(false)}
+          title="Tất cả liên kết"
+          size="normal"
+          scrollRef={linksScrollRef}
+        >
+          <LinksExplorer
+            conversationId={conversationId}
+            scrollRef={linksScrollRef}
             socket={socket}
             currentUserId={currentUser?._id}
           />

@@ -31,8 +31,8 @@ test("MediaExplorer implements CLS protection layout rules", () => {
 
 test("MediaExplorer implements Floating Freshness Banner positioning rules", () => {
   const source = readFileSync(new URL("./MediaExplorer.jsx", import.meta.url), "utf8");
-  // Enforces absolute, top-, and z-20 floating banner positioning for user visibility
-  assert.match(source, /absolute/);
+  // Enforces sticky, top-, and z-20 floating banner positioning for user visibility
+  assert.match(source, /sticky/);
   assert.match(source, /top-/);
   assert.match(source, /z-20/);
 });

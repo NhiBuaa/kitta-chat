@@ -1,26 +1,25 @@
-# Next Session — Slice 10: View All Files & Links Modals Integration
+# Next Session — Slice 11: View All Common Groups Modal Integration & Quality Gate
 
 ## Slice Mục tiêu
-**Slice 10: View All Files & Links Modals Integration**
+**Slice 11: View All Common Groups Modal Integration & Quality Gate**
 
 ## Bối cảnh
-- Slice 9 (Tích hợp và xem tất cả Shared Media cùng Lightbox phóng to ảnh/video) đã hoàn thành xuất sắc, vượt qua toàn bộ 146 client tests và 293 server tests (100% xanh).
-- Tính năng Freshness Banner của Explorer đã được nâng cấp lên vị trí nổi cố định (Floating) `absolute top-[72px] left-1/2 -translate-x-1/2 z-20` đè lên scroll container để cải thiện tối đa trải nghiệm người dùng (UX).
-- Phiên tiếp theo sẽ tiến hành tích hợp hai Explorer tài nguyên còn lại: Files (Tài liệu) và Links (Liên kết).
+- Slice 10 (Tích hợp và xem tất cả Shared Files và Links) đã hoàn thành xuất sắc.
+- Đã sửa đổi Freshness Banner của cả 3 Explorer (Media, Files, Links) sang dạng `sticky` trôi nổi cố định tại `top-0` để luôn hiển thị rõ ràng cho người dùng ở mọi vị trí cuộn trang.
+- Đã nâng kích thước của Freshness Banner lên `py-3 px-6 text-sm font-bold shadow-lg` để tăng khả năng tương tác và dễ click chuột.
+- Bộ test client regression `155/155` passed và server `293/293` passed (100% xanh).
 
 ## Mục tiêu cụ thể
-1. **Triển khai component `FilesExplorer.jsx`:**
-   - Sử dụng hook `useInfiniteScroll` để tự động tải thêm trang tài liệu khi cuộn xuống.
-   - Sử dụng hook `useExplorerFreshness` (type `files`) để hiển thị Freshness Banner nổi tuyệt đối (`absolute top-[72px] z-20`) khi có file tài liệu mới gửi đến. Click banner sẽ làm mới danh sách.
-   - Định dạng hiển thị: Danh sách các file đính kèm kèm theo tên file, icon tương ứng định dạng, dung lượng file (dùng helper `formatFileSize`), và nút download.
-2. **Triển khai component `LinksExplorer.jsx`:**
-   - Sử dụng hook `useInfiniteScroll` để tự động tải thêm liên kết khi cuộn xuống.
-   - Sử dụng hook `useExplorerFreshness` (type `links`) hiển thị Freshness Banner nổi tuyệt đối khi có tin nhắn chứa link mới.
-   - Định dạng hiển thị: Danh sách liên kết URL, click để mở liên kết trong tab mới (`target="_blank"`).
-3. **Tích hợp vào `ConversationPanel.jsx`:**
-   - Thêm sự kiện click mở Modal cho nút "Xem tất cả" trong phần Tài liệu (Files) và Liên kết (Links) của panel.
-   - Quản lý state mở/đóng các Modal này qua Portal bằng component `<ViewAllModalShell isOpen={...} title="..." size="normal">`.
+1. **Triển khai component `CommonGroupsExplorer.jsx`:**
+   - Sử dụng hook `useInfiniteScroll` để tự động tải thêm nhóm trò chuyện chung khi cuộn xuống.
+   - Định dạng hiển thị: Danh sách các nhóm chat chung của hai người dùng, bao gồm ảnh đại diện nhóm (avatar), tên nhóm, số lượng thành viên, và nút chuyển hướng.
+   - Khi click vào một nhóm trong danh sách, tự động điều hướng người dùng (chuyển đổi active chat) trực tiếp tới nhóm chat đó và đóng Modal Shell.
+2. **Tích hợp vào `ConversationPanel.jsx`:**
+   - Thêm sự kiện click mở Modal cho nút "Xem tất cả" trong phần Nhóm chung (Common Groups) của panel.
+   - Quản lý state mở/đóng Modal qua Portal bằng component `<ViewAllModalShell isOpen={...} title="Nhóm chung" size="normal">`.
+3. **Rà soát chất lượng toàn diện (Quality Gate):**
+   - Chạy skill `/code-check` để rà soát bảo mật và chất lượng code của toàn bộ các Explorer và Panel Service trước khi merge code.
 
 ## Guardrails bắt buộc
-- **Stale Response Protection:** Sử dụng `AbortController` hủy bỏ request cũ khi chuyển đổi active conversation để chống đè dữ liệu.
-- **Cursor Deduplication:** Lọc bỏ trùng lặp tệp tin/liên kết theo `_id` trước khi append vào danh sách hiển thị.
+- **Active Chat Redirection Safety:** Chuyển đổi chat cần giải phóng và cleanup các hook/socket event của cuộc trò chuyện cũ để tránh rò rỉ bộ nhớ hoặc gọi API sai ngữ cảnh.
+- **UI consistency:** Modal nhóm chung được cấu hình ở dạng `size="normal"`.

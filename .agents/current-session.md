@@ -29,7 +29,7 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 | 7 | Realtime Sync & Client State | **DONE** | Đồng bộ hóa realtime qua Socket.IO. Sửa lỗi ẩn hiện/reload sidebar, gộp preferences realtime và chống double-fetching. |
 | 8 | View All Core API, Generic Hooks & Shell Framework | **DONE** | Cập nhật API client `getPanelResources` hỗ trợ `cursor`, tạo hook generic `useInfiniteScroll`, hook `useExplorerFreshness` + utilities so khớp, và component `ViewAllModalShell` (Centered Modal + `size` prop + ESC handling). |
 | 9 | View All Media Modal Integration & Lightbox | **DONE** | Triển khai component `MediaExplorer.jsx` và `MediaLightbox.jsx`. Tích hợp Infinite Scroll, Lightbox và Freshness Banner. |
-| 10 | View All Files & Links Modals Integration | **TODO** | Triển khai `FilesExplorer.jsx` và `LinksExplorer.jsx`, tích hợp Infinite Scroll và Freshness Banner. |
+| 10 | View All Files & Links Modals Integration | **DONE** | Triển khai `FilesExplorer.jsx` và `LinksExplorer.jsx`, tích hợp Infinite Scroll và Freshness Banner. Cập nhật Freshness Banner dạng sticky trôi nổi cố định. |
 | 11 | View All Common Groups Modal Integration & Quality Gate | **TODO** | Triển khai `CommonGroupsExplorer.jsx` (click điều hướng active chat) và rà soát chất lượng thông qua `/code-check`. |
 
 ## Trạng thái kiểm thử gần nhất

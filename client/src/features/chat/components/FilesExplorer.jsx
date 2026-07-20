@@ -1,16 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaPlay, FaSync } from "react-icons/fa";
+import { FaFileAlt, FaDownload, FaSync } from "react-icons/fa";
 import { getPanelResources } from "@/services/api/conversationPanelApi.js";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll.js";
 import { useExplorerFreshness } from "../hooks/useExplorerFreshness.js";
-import MediaLightbox from "./MediaLightbox.jsx";
+
+const formatFileSize = (bytes) => {
+  if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+};
 
 /**
- * MediaExplorer
- * Component hiển thị danh sách ảnh/video lịch sử chia sẻ phân trang vô hạn (Infinite Scroll),
- * hỗ trợ Freshness Banner realtime và trình xem ảnh lớn MediaLightbox.
+ * FilesExplorer
+ * Component hiển thị danh sách tài liệu lịch sử chia sẻ phân trang vô hạn,
+ * hỗ trợ Freshness Banner realtime và nút tải xuống trực tiếp.
  */
-export const MediaExplorer = ({
+export const FilesExplorer = ({
   conversationId,
   scrollRef,
   socket,
@@ -21,13 +28,12 @@ export const MediaExplorer = ({
   const [hasMore, setHasMore] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedMedia, setSelectedMedia] = useState(null);
 
   const abortControllerRef = useRef(null);
 
-  // Gọi API lấy tài nguyên media
-  const fetchMediaData = async (cursor = null, isReset = false) => {
-    // Stale Response Protection: Hủy bỏ request đang chạy cũ nếu có
+  // Gọi API lấy tài nguyên files
+  const fetchFilesData = async (cursor = null, isReset = false) => {
+    // Stale Response Protection
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -39,17 +45,17 @@ export const MediaExplorer = ({
     setError(null);
 
     try {
-      const response = await getPanelResources(conversationId, "media", cursor, {
+      const response = await getPanelResources(conversationId, "files", cursor, {
         signal: controller.signal,
       });
 
-      const mediaData = response.data?.resourcesPreview?.media;
-      if (mediaData) {
-        if (mediaData.status === "error") {
+      const filesData = response.data?.resourcesPreview?.files;
+      if (filesData) {
+        if (filesData.status === "error") {
           throw new Error("API returned error status");
         }
 
-        const newItems = mediaData.items || [];
+        const newItems = filesData.items || [];
         
         setItems((prev) => {
           const merged = isReset ? newItems : [...prev, ...newItems];
@@ -63,57 +69,51 @@ export const MediaExplorer = ({
           });
         });
 
-        setNextCursor(mediaData.nextCursor || null);
-        setHasMore(!!mediaData.hasMore);
+        setNextCursor(filesData.nextCursor || null);
+        setHasMore(!!filesData.hasMore);
       } else {
         setHasMore(false);
       }
     } catch (err) {
       if (err.name !== "CanceledError" && err.name !== "AbortError") {
-        console.error("Lỗi lấy media trong explorer:", err);
+        console.error("Lỗi lấy files trong explorer:", err);
         setError("ERROR");
       }
     } finally {
-      // Giải phóng ref nếu đúng request hiện tại hoàn tất
       if (abortControllerRef.current === controller) {
         setIsFetching(false);
       }
     }
   };
 
-  // Reset và tải lại trang đầu tiên
   const handleRefresh = () => {
     setItems([]);
     setNextCursor(null);
     setHasMore(true);
-    fetchMediaData(null, true);
+    fetchFilesData(null, true);
   };
 
-  // Kích hoạt nạp dữ liệu khi thay đổi conversation
   useEffect(() => {
     handleRefresh();
 
     return () => {
-      // Cleanup: Hủy request đang chạy khi unmount hoặc đổi conversation
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
   }, [conversationId]);
 
-  // Đăng ký infinite scroll
   const sentinelRef = useInfiniteScroll({
     enabled: !error && hasMore && !isFetching,
     hasMore,
     isFetching,
-    onLoadMore: () => fetchMediaData(nextCursor),
+    onLoadMore: () => fetchFilesData(nextCursor),
     rootRef: scrollRef,
   });
 
-  // Tích hợp Freshness Banner qua hook useExplorerFreshness
   const { hasNewItems, refresh } = useExplorerFreshness({
     conversationId,
-    type: "media",
+    type: "files",
     socket,
     currentUserId,
   });
@@ -127,7 +127,7 @@ export const MediaExplorer = ({
             className="pointer-events-auto py-3 px-6 bg-blue-50/95 backdrop-blur-sm hover:bg-blue-100/95 border border-blue-200 text-blue-600 rounded-xl text-sm font-bold text-center cursor-pointer transition-all duration-200 shadow-lg flex items-center justify-center space-x-2.5 animate-bounce max-w-max"
           >
             <FaSync className="animate-spin text-[10px]" />
-            <span>Có tài nguyên mới. Bấm để làm mới</span>
+            <span>Có tài liệu mới. Bấm để làm mới</span>
           </div>
         </div>
       )}
@@ -135,7 +135,7 @@ export const MediaExplorer = ({
       {/* Lỗi tải dữ liệu */}
       {error && items.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 bg-red-50 rounded-2xl border border-red-100 space-y-3 my-4">
-          <span className="text-sm text-red-500 font-semibold">Không thể tải danh sách ảnh / video</span>
+          <span className="text-sm text-red-500 font-semibold">Không thể tải danh sách tài liệu</span>
           <button
             onClick={handleRefresh}
             className="flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-600 rounded-full text-xs font-bold hover:bg-red-200 transition-colors duration-200 shadow-sm"
@@ -147,35 +147,44 @@ export const MediaExplorer = ({
       ) : items.length === 0 && !isFetching ? (
         /* Empty State */
         <div className="flex flex-col items-center justify-center py-20 text-gray-400 italic text-sm">
-          Chưa có ảnh hoặc video nào được chia sẻ trong cuộc hội thoại này.
+          Chưa có tài liệu nào được chia sẻ trong cuộc hội thoại này.
         </div>
       ) : (
-        /* Grid hiển thị lưới ảnh và video */
-        <div className="grid grid-cols-3 gap-3">
-          {items.map((item) => {
-            const isVideo = item.mimeType?.startsWith("video/");
-            return (
-              <div
-                key={item._id}
-                onClick={() => setSelectedMedia(item)}
-                className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-150 relative group cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                <img
-                  src={item.url}
-                  alt={item.originalName || "Shared media"}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                />
-                
-                {/* Play button overlay cho video */}
-                {isVideo && (
-                  <div className="absolute inset-0 bg-black/35 flex items-center justify-center group-hover:bg-black/25 transition-colors duration-200">
-                    <FaPlay className="text-white text-sm opacity-85 group-hover:opacity-100 group-hover:scale-110 transition-all duration-200" />
-                  </div>
-                )}
+        /* List hiển thị danh sách tài liệu */
+        <div className="space-y-2.5">
+          {items.map((item) => (
+            <div
+              key={item._id}
+              className="flex items-center justify-between p-3.5 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <div className="flex items-center space-x-3.5 min-w-0 flex-1">
+                <div className="h-10 w-10 bg-blue-50 text-blue-500 flex items-center justify-center rounded-xl shrink-0">
+                  <FaFileAlt size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p 
+                    className="text-sm font-bold text-gray-800 truncate" 
+                    title={item.originalName}
+                  >
+                    {item.originalName}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {formatFileSize(item.size)}
+                  </p>
+                </div>
               </div>
-            );
-          })}
+              <a
+                href={item.url}
+                download={item.originalName}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 ml-3"
+                title="Tải xuống"
+              >
+                <FaDownload size={14} />
+              </a>
+            </div>
+          ))}
         </div>
       )}
 
@@ -194,25 +203,23 @@ export const MediaExplorer = ({
 
       {/* Skeleton loader hiển thị khi nạp trang đầu tiên */}
       {isFetching && items.length === 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {Array.from({ length: 6 }).map((_, idx) => (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, idx) => (
             <div 
               key={idx} 
-              className="bg-gray-200/70 h-full aspect-square rounded-lg animate-pulse"
-            />
+              className="flex items-center space-x-3.5 p-3.5 bg-gray-50/50 rounded-xl border border-gray-100 animate-pulse h-[70px]"
+            >
+              <div className="bg-gray-200 h-10 w-10 rounded-xl shrink-0" />
+              <div className="flex-1 space-y-2 py-1">
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-3 bg-gray-200 rounded w-1/4" />
+              </div>
+            </div>
           ))}
         </div>
-      )}
-
-      {/* Trình xem ảnh lớn phóng to Lightbox */}
-      {selectedMedia && (
-        <MediaLightbox
-          media={selectedMedia}
-          onClose={() => setSelectedMedia(null)}
-        />
       )}
     </div>
   );
 };
 
-export default MediaExplorer;
+export default FilesExplorer;
