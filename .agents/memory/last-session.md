@@ -1,25 +1,32 @@
-# Session Handoff Summary - 2026-07-17
+# Session Handoff — Slice 8 Complete & Approved
 
-## Những gì đã làm
-Trong session này, chúng ta đã hoàn thành xuất sắc **Slice 7 — Realtime Sync & Client State** và tích hợp thêm tính năng Đổi tên nhóm (Group Rename):
-1. **API Client đổi tên nhóm:** Đã tạo và export hàm `renameGroup` kết nối tới API `/api/groups/:groupId/rename`.
-2. **Giao diện Chỉnh sửa Tên nhóm:** Tích hợp giao diện chỉnh sửa inline trực tiếp trong Conversation Panel, hiển thị nút bút chì cho tất cả thành viên trong nhóm.
-3. **Đồng bộ hóa Realtime (Socket.IO):**
-   - Sự kiện `groupRenamed`: Cập nhật tên/ảnh đại diện nhóm realtime trên Panel, Header, và Sidebar.
-   - Sự kiện `groupMemberUpdated`: Xử lý dọn dẹp và cập nhật realtime danh sách thành viên/số lượng thành viên trên Panel khi có người rời nhóm hoặc bị xóa.
-   - Sự kiện `groupUpserted` (member-added): Tải lại realtime danh sách và metadata từ DB để cập nhật chính xác role và presence.
-4. **Tối ưu hóa Presence & Trạng thái hoạt động:**
-   - Cập nhật chấm xanh hoạt động realtime trên Panel cho bạn bè (chat 1-1) và tất cả thành viên (chat nhóm).
-   - Tối ưu hiệu năng render Sidebar bằng cách gom cụm (batch updates) sự kiện `USER_ONLINE` trong 200ms bằng `setTimeout` và `useRef` tại `SocketProvider.jsx`.
-5. **Sửa lỗi biên dịch:** Khắc phục lỗi thiếu dấu đóng ngoặc nhọn ở cleanup function của useEffect lấy metadata.
-6. **Sửa lỗi Responsive:** Định vị panel dạng Drawer (`fixed z-40`) trên màn hình nhỏ và giới hạn `max-w-full` để panel không bị cắt rìa phải khi thu nhỏ trình duyệt.
-7. **Chống Spam click & Stack Toast:** Sử dụng `isUpdatingPrefRef` để chặn spam click và `toast.dismiss()` để dọn dẹp hàng đợi thông báo.
-8. **Sửa lỗi Nhận thông báo từ chat đã Muted:** Đồng bộ danh sách `users`/`groups` vào `useMessageSocket` qua React Refs để kiểm tra trạng thái tắt thông báo realtime và tắt âm thanh + toast khi nhận tin nhắn mới.
+## 1. Kết quả đạt được trong phiên (Durable Progress)
+- **Slice 7 (Realtime Sync & Group Rename UI & Muted Notifications):** Đã hoàn tất và được sửa lỗi triệt để. Code đã ổn định và tích hợp mượt mà.
+- **Slice 8 (Pagination API, Generic Hooks & Shell Modal):**
+  - Đã cập nhật API client `getPanelResources` hỗ trợ truyền cursor phân trang và `AbortSignal` để hủy request.
+  - Xây dựng custom hook phân trang dùng chung `useInfiniteScroll` với cơ chế lock ref chống trùng lặp request và tự động tìm kiếm scroll container cha gần nhất bằng DOM selector `.closest(".overflow-y-auto")`. Đã lưu onLoadMore vào React Ref để bảo vệ chống unstable callback.
+  - Xây dựng custom hook realtime `useExplorerFreshness` hỗ trợ dọn dẹp cờ banner tránh state leak khi đổi context.
+  - Xây dựng component nền tảng `ViewAllModalShell` hỗ trợ khóa cuộn body khi hiển thị modal và chặn phím Escape khi lightbox xem ảnh to hoạt động.
 
-## Trạng thái hệ thống
-- Toàn bộ suite test Backend (`293/293` passed) và Frontend (`121/121` passed) tiếp tục xanh 100%.
-- Không có tiến trình ngầm nào chạy dở.
+## 2. Kết quả kiểm thử (Verification)
+- Đã chạy toàn bộ các bài test tự động cho cả frontend và backend.
+- Kết quả: **Client tests: 138/138 passed**, **Server tests: 293/293 passed**.
 
-## Kế hoạch phiên tiếp theo
-- Bàn giao mã nguồn, review và gộp nhánh (merge branch).
-- Xác định lộ trình / tính năng mới cho session kế tiếp.
+## 3. Điểm dừng hiện tại (Current State)
+- Mã nguồn sạch sẽ, không có thay đổi dở dang nào ngoài luồng (Working tree clean).
+- Nhánh hoạt động: `unfriend`.
+- Commits đã tạo:
+  - `908cdce`: `fix(panel): resolve findings from code review of Slice 7 and 8`
+  - `9dec3c2`: `feat(panel): implement Slice 8 - View All Core API, Generic Hooks & Shell Framework`
+  - `86b2c86`: `feat(panel): implement Slice 7 - Realtime Sync, Group Rename and Muted Chat Notifications`
+
+## 4. Kế hoạch phiên sau (Next Steps)
+- **Mục tiêu:** Thực hiện Slice 9 (Tích hợp giao diện Grid 3 cột Xem tất cả Media, banner làm mới realtime, và lightbox xem ảnh to).
+- **Ràng buộc kỹ thuật:**
+  - **Stale Response Protection:** Sử dụng `AbortController` hủy các request in-flight khi đổi context.
+  - **Cursor Deduplication:** Lọc trùng lặp `_id` trước khi append dữ liệu vào state.
+  - **ESC Priority Rule:** ESC chỉ được đóng Lightbox khi Lightbox đang mở, không đóng Modal Shell.
+
+## 5. Suggested Skills (Kỹ năng đề xuất cho phiên sau)
+- **`tdd`**: Sử dụng để triển khai chu kỳ phát triển test-driven (RED -> GREEN -> REFACTOR) cho các component giao diện `MediaExplorer.jsx` và `MediaLightbox.jsx`.
+- **`code-check`**: Sử dụng ở giai đoạn cuối của Slice 9 để chạy rà soát chất lượng code (Quality Gate) và rà soát rò rỉ bộ nhớ, listener trước khi merge.

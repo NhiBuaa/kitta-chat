@@ -33,4 +33,4 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 | 11 | View All Common Groups Modal Integration & Quality Gate | **TODO** | Triển khai `CommonGroupsExplorer.jsx` (click điều hướng active chat) và rà soát chất lượng thông qua `/code-check`. |
 
 ## Trạng thái kiểm thử gần nhất
-*   Sau Slice 8 (View All Core API, Generic Hooks & Shell Framework): Bộ test client regression `137/137` passed (100% xanh).
+*   Sau Slice 8 (View All Core API, Generic Hooks & Shell Framework): Bộ test client regression `138/138` passed (100% xanh).
