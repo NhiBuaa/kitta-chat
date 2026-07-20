@@ -60,6 +60,7 @@ export const useExplorerFreshness = ({
   const [hasNewItems, setHasNewItems] = useState(false);
 
   useEffect(() => {
+    setHasNewItems(false);
     if (!socket || !conversationId || type === "commonGroups") {
       return;
     }

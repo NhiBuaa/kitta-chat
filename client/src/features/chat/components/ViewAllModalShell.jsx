@@ -29,8 +29,14 @@ export const ViewAllModalShell = ({
     };
 
     window.addEventListener("keydown", handleKeyDown);
+
+    // Prevent body scroll leakage (custom modal concern)
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalOverflow;
     };
   }, [isOpen, onClose]);
 

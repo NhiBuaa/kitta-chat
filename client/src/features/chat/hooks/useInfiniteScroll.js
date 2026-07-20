@@ -10,6 +10,13 @@ export const setupInfiniteScrollObserver = ({
 }) => {
   if (!sentinel || !hasMore) return null;
 
+  // Dynamically resolve root scroll container from DOM hierarchy to avoid ref timing bugs
+  const resolvedRoot =
+    root ||
+    (typeof sentinel.closest === "function" ? sentinel.closest(".overflow-y-auto") : null) ||
+    sentinel.parentElement ||
+    null;
+
   const observer = new IntersectionObserverClass(
     (entries) => {
       const [entry] = entries;
@@ -19,7 +26,7 @@ export const setupInfiniteScrollObserver = ({
       }
     },
     {
-      root: root || null,
+      root: resolvedRoot,
       threshold: 0.1,
     }
   );
@@ -43,6 +50,10 @@ export const useInfiniteScroll = ({
     isFetchingRef.current = isFetching;
   }, [isFetching]);
 
+  // Keep onLoadMore stable across renders using a ref to prevent observer re-creation
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -51,7 +62,7 @@ export const useInfiniteScroll = ({
       root: rootRef?.current,
       hasMore,
       isFetchingRef,
-      onLoadMore,
+      onLoadMore: () => onLoadMoreRef.current(),
     });
 
     return () => {
@@ -59,7 +70,7 @@ export const useInfiniteScroll = ({
         observer.disconnect();
       }
     };
-  }, [enabled, hasMore, onLoadMore, rootRef]);
+  }, [enabled, hasMore, rootRef]);
 
   return sentinelRef;
 };

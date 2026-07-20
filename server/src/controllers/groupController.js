@@ -372,6 +372,15 @@ const renameGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
     const { newName } = req.body;
+    
+    if (!newName || !newName.trim()) {
+      return res.status(400).json({ success: false, message: "Tên nhóm không được để trống" });
+    }
+    const trimmed = newName.trim();
+    if (trimmed.length < 2 || trimmed.length > 50) {
+      return res.status(400).json({ success: false, message: "Tên nhóm phải từ 2 đến 50 ký tự" });
+    }
+
     const adminId = req.user.id;
     const io = req.app.get("socketio");
 

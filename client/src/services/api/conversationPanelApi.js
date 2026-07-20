@@ -7,12 +7,13 @@ export const getPanelMetadata = (conversationId) =>
     __skipAuthRefresh: true,
   })
 
-export const getPanelResources = (conversationId, scopes = "", cursor = null) => {
+export const getPanelResources = (conversationId, scopes = "", cursor = null, config = {}) => {
   const params = new URLSearchParams();
   if (scopes) params.append("scopes", scopes);
   if (cursor) params.append("cursor", cursor);
   const query = params.toString() ? `?${params.toString()}` : "";
   return axiosClient.get(`${API_URL}/${conversationId}/panel/resources${query}`, {
+    ...config,
     __skipAuthRefresh: true,
   });
 }

@@ -40,3 +40,23 @@ test("getPanelResources handles query string when only cursor is provided", asyn
     axiosClient.get = originalGet;
   }
 });
+
+test("getPanelResources passes down AbortSignal config parameters", async () => {
+  const originalGet = axiosClient.get;
+  let receivedConfig = null;
+
+  axiosClient.get = async (url, config) => {
+    receivedConfig = config;
+    return { data: { success: true } };
+  };
+
+  try {
+    const mockSignal = { aborted: false };
+    await getPanelResources("conv-123", "media", null, { signal: mockSignal, timeout: 5000 });
+    assert.equal(receivedConfig.signal, mockSignal);
+    assert.equal(receivedConfig.timeout, 5000);
+    assert.equal(receivedConfig.__skipAuthRefresh, true);
+  } finally {
+    axiosClient.get = originalGet;
+  }
+});
