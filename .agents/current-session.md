@@ -13,7 +13,7 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 7. **Retry chỉ reload loader lỗi:** Nhấp nút Retry chỉ gọi lại loader bị thất bại (qua query param `?scopes=<scope>`).
 8. **Retry không reload metadata:** Tuyệt đối không gọi lại Metadata endpoint khi đang retry tài nguyên.
 9. **View All là source of truth:** UI store chỉ là eventually consistent, trang Xem chi tiết luôn là nguồn chân lý tối cao của dữ liệu.
-10. **Orchestration Layer mỏng:** `ConversationPanelService` chỉ điều phối kết quả trả về từ các domain service con độc lập, không tự thực thi logic cụ thể.
+10: **Orchestration Layer mỏng:** `ConversationPanelService` chỉ điều phối kết quả trả về từ các domain service con độc lập, không tự thực thi logic cụ thể.
 
 ## Slice Roadmap
 
@@ -28,9 +28,9 @@ Triển khai tính năng Conversation Information Panel (Bảng thông tin chi t
 | 6 | Conversation Action Domain | **DONE** | Viết orchestrator xử lý các write actions: rời nhóm, ghim, tắt thông báo, xóa lịch sử trò chuyện. Sửa lỗi thoát màn hình chat và reset preference khi xóa lịch sử. |
 | 7 | Realtime Sync & Client State | **DONE** | Đồng bộ hóa realtime qua Socket.IO. Sửa lỗi ẩn hiện/reload sidebar, gộp preferences realtime và chống double-fetching. |
 | 8 | View All Core API, Generic Hooks & Shell Framework | **DONE** | Cập nhật API client `getPanelResources` hỗ trợ `cursor`, tạo hook generic `useInfiniteScroll`, hook `useExplorerFreshness` + utilities so khớp, và component `ViewAllModalShell` (Centered Modal + `size` prop + ESC handling). |
-| 9 | View All Media Modal Integration & Lightbox | **TODO** | Triển khai component `MediaExplorer.jsx` và `MediaLightbox.jsx`. Tích hợp Infinite Scroll, Lightbox và Freshness Banner. |
+| 9 | View All Media Modal Integration & Lightbox | **DONE** | Triển khai component `MediaExplorer.jsx` và `MediaLightbox.jsx`. Tích hợp Infinite Scroll, Lightbox và Freshness Banner. |
 | 10 | View All Files & Links Modals Integration | **TODO** | Triển khai `FilesExplorer.jsx` và `LinksExplorer.jsx`, tích hợp Infinite Scroll và Freshness Banner. |
 | 11 | View All Common Groups Modal Integration & Quality Gate | **TODO** | Triển khai `CommonGroupsExplorer.jsx` (click điều hướng active chat) và rà soát chất lượng thông qua `/code-check`. |
 
 ## Trạng thái kiểm thử gần nhất
-*   Sau Slice 8 (View All Core API, Generic Hooks & Shell Framework): Bộ test client regression `138/138` passed (100% xanh).
+*   Sau Slice 9 (View All Media Modal Integration & Lightbox): Bộ test client regression `146/146` passed, server `293/293` passed (100% xanh).

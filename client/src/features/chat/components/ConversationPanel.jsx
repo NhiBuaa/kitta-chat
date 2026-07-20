@@ -26,6 +26,8 @@ import { useSocket } from "@/services/socket/SocketContext.js";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
+import ViewAllModalShell from "./ViewAllModalShell.jsx";
+import MediaExplorer from "./MediaExplorer.jsx";
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
   const k = 1024;
@@ -53,6 +55,10 @@ const ConversationPanel = ({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { socket, onlineUsers } = useSocket();
+
+  // State và Ref cho View All Media Modal (Slice 9)
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const mediaScrollRef = useRef(null);
 
   // State quản lý đổi tên nhóm
   const [isEditingName, setIsEditingName] = useState(false);
@@ -655,7 +661,7 @@ const ConversationPanel = ({
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ảnh / Video</h4>
                   {mediaState.items.length > 0 && (
                     <button 
-                      onClick={() => toast.info("Tính năng Xem tất cả đang được phát triển")}
+                      onClick={() => setIsMediaModalOpen(true)}
                       className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
                     >
                       Xem tất cả
@@ -1010,6 +1016,23 @@ const ConversationPanel = ({
           onConfirm={handleConfirmDelete}
           onCancel={() => setConfirmDeleteOpen(false)}
         />
+      )}
+
+      {isMediaModalOpen && (
+        <ViewAllModalShell
+          isOpen={isMediaModalOpen}
+          onClose={() => setIsMediaModalOpen(false)}
+          title="Tất cả Media"
+          size="wide"
+          scrollRef={mediaScrollRef}
+        >
+          <MediaExplorer
+            conversationId={conversationId}
+            scrollRef={mediaScrollRef}
+            socket={socket}
+            currentUserId={currentUser?._id}
+          />
+        </ViewAllModalShell>
       )}
       </div>
     </div>
