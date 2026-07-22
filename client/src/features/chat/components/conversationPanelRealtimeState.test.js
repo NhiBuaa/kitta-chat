@@ -1,6 +1,59 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { shouldRefreshDirectCommonGroups } from "./conversationPanelRealtimeState.js";
+import {
+  getRealtimePanelResourceScopes,
+  shouldRefreshDirectCommonGroups,
+} from "./conversationPanelRealtimeState.js";
+
+test("returns media scope for a new image in the open direct conversation", () => {
+  assert.deepEqual(
+    getRealtimePanelResourceScopes({
+      message: {
+        senderId: "user-a",
+        receiverId: "user-b",
+        attachments: [{ mimeType: "image/jpeg" }],
+      },
+      conversationId: "user-a_user-b",
+      currentUserId: "user-b",
+    }),
+    ["media"],
+  );
+});
+
+test("returns every affected resource scope for a mixed message", () => {
+  assert.deepEqual(
+    getRealtimePanelResourceScopes({
+      message: {
+        conversationId: "group-1",
+        isGroup: true,
+        receiverId: "group-1",
+        text: "Xem thêm https://example.com",
+        attachmentsData: [
+          { mimeType: "video/mp4" },
+          { mimeType: "application/pdf" },
+        ],
+      },
+      conversationId: "group-1",
+      currentUserId: "user-b",
+    }),
+    ["media", "files", "links"],
+  );
+});
+
+test("ignores resource messages from another conversation", () => {
+  assert.deepEqual(
+    getRealtimePanelResourceScopes({
+      message: {
+        senderId: "user-c",
+        receiverId: "user-d",
+        image: "https://example.com/image.jpg",
+      },
+      conversationId: "user-a_user-b",
+      currentUserId: "user-b",
+    }),
+    [],
+  );
+});
 
 test("refreshes direct common groups when a created group contains both users", () => {
   assert.equal(

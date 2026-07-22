@@ -583,3 +583,32 @@ node -e 'const fs=require("fs"); const chat=fs.readFileSync("src/features/chat/p
 
 **Related architecture**:
 - `docs/adr/006-unified-sidebar-conversations.md`
+
+
+## Conversation Panel Resource Previews Need Their Own Message Listener
+
+**Symptom**: Khi Conversation Panel đang mở, tin nhắn mới chứa ảnh, video, file hoặc link xuất hiện trong khung chat nhưng resource preview trong panel không cập nhật cho tới khi đóng/mở lại panel hoặc refresh trang.
+
+**Root cause**: Panel chỉ tải media/files/links một lần qua `loadedConvIdRef`. Socket effect của `ConversationPanel` chỉ đăng ký các event lifecycle của group và không nghe `getMessage`. Listener trung tâm `useMessageSocket` cập nhật chat/sidebar nhưng không phát state update cho panel.
+
+**Reproduction**:
+
+```powershell
+node -e 'const fs=require("fs"); const source=fs.readFileSync("src/features/chat/components/ConversationPanel.jsx","utf8"); const hasMessageListener=source.includes("socket.on(\"getMessage\""); const hasConversationGuard=source.includes("getRealtimePanelResourceScopes({"); if(!hasMessageListener || !hasConversationGuard){process.exit(1)}'
+```
+
+**Fix**:
+- Thêm classifier thuần xác định message thuộc conversation đang mở và trả về các scope `media`, `files`, `links` bị ảnh hưởng.
+- `ConversationPanel` đăng ký/cleanup listener `getMessage` và chỉ refetch loader của scope phù hợp.
+- Resource loaders dùng `useCallback` để socket effect không giữ stale closure.
+- Mixed message có thể refresh nhiều scope; unrelated conversation không tạo request.
+
+**Prevention**:
+- Mỗi realtime consumer phải đăng ký hoặc nhận signal rõ ràng; không giả định một listener cập nhật chat/sidebar sẽ tự cập nhật panel/explorer.
+- Test socket lifecycle phải khóa cả `socket.on` và `socket.off` để tránh duplicate handlers.
+- Với resource preview, dùng scoped refetch từ backend thay vì chèn raw socket payload có schema khác DTO của Resources API.
+- Bao phủ direct, group, mixed attachments và unrelated conversation trong regression tests.
+
+**Related architecture**:
+- `docs/adr/005-conversation-panel-two-stage-loading.md`
+- `.agents/rules/realtime-state.md`

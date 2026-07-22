@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
   FaTimes, 
   FaBell, 
@@ -31,7 +31,7 @@ import MediaExplorer from "./MediaExplorer.jsx";
 import FilesExplorer from "./FilesExplorer.jsx";
 import LinksExplorer from "./LinksExplorer.jsx";
 import CommonGroupsExplorer from "./CommonGroupsExplorer.jsx";
-import { shouldRefreshDirectCommonGroups } from "./conversationPanelRealtimeState.js";
+import { getRealtimePanelResourceScopes, shouldRefreshDirectCommonGroups } from "./conversationPanelRealtimeState.js";
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
   const k = 1024;
@@ -120,7 +120,7 @@ const ConversationPanel = ({
   });
 
   // Hàm tải Shared Media
-  const fetchMedia = async () => {
+  const fetchMedia = useCallback(async () => {
     if (!conversationId) return;
     setMediaState(prev => ({ ...prev, loading: true, error: null }));
     try {
@@ -149,10 +149,10 @@ const ConversationPanel = ({
       console.error("Lỗi lấy media panel:", err);
       setMediaState(prev => ({ ...prev, loading: false, error: "ERROR" }));
     }
-  };
+  }, [conversationId]);
 
   // Hàm tải Shared Files
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     if (!conversationId) return;
     setFilesState(prev => ({ ...prev, loading: true, error: null }));
     try {
@@ -181,10 +181,10 @@ const ConversationPanel = ({
       console.error("Lỗi lấy files panel:", err);
       setFilesState(prev => ({ ...prev, loading: false, error: "ERROR" }));
     }
-  };
+  }, [conversationId]);
 
   // Hàm tải Shared Links
-  const fetchLinks = async () => {
+  const fetchLinks = useCallback(async () => {
     if (!conversationId) return;
     setLinksState(prev => ({ ...prev, loading: true, error: null }));
     try {
@@ -213,10 +213,10 @@ const ConversationPanel = ({
       console.error("Lỗi lấy links panel:", err);
       setLinksState(prev => ({ ...prev, loading: false, error: "ERROR" }));
     }
-  };
+  }, [conversationId]);
 
   // Hàm tải Membership
-  const fetchMembership = async () => {
+  const fetchMembership = useCallback(async () => {
     if (!conversationId) return;
     setMembershipState(prev => ({ ...prev, loading: true, error: null }));
     try {
@@ -247,7 +247,7 @@ const ConversationPanel = ({
       console.error("Lỗi lấy membership panel:", err);
       setMembershipState(prev => ({ ...prev, loading: false, error: "ERROR" }));
     }
-  };
+  }, [conversationId]);
 
   // Theo dõi cuộc hội thoại đã được nạp tài nguyên để tránh nạp lại khi metadata thay đổi (preferences update)
   const loadedConvIdRef = useRef(null);
@@ -267,7 +267,7 @@ const ConversationPanel = ({
       fetchLinks();
       fetchMembership();
     }
-  }, [conversationId, isOpen, metadata]);
+  }, [conversationId, isOpen, metadata, fetchMedia, fetchFiles, fetchLinks, fetchMembership]);
 
   useEffect(() => {
     if (!conversationId || !isOpen) {
@@ -310,6 +310,24 @@ const ConversationPanel = ({
 
   useEffect(() => {
     if (!socket || !isOpen || !conversationId) return;
+
+    const handleSocketMessage = (message) => {
+      const resourceScopes = getRealtimePanelResourceScopes({
+        message,
+        conversationId,
+        currentUserId: currentUser?._id,
+      });
+
+      if (resourceScopes.includes("media")) {
+        fetchMedia();
+      }
+      if (resourceScopes.includes("files")) {
+        fetchFiles();
+      }
+      if (resourceScopes.includes("links")) {
+        fetchLinks();
+      }
+    };
 
     const handleSocketGroupRenamed = ({ groupId, newName, newAvatar }) => {
       if (String(groupId) === String(conversationId)) {
@@ -383,11 +401,13 @@ const ConversationPanel = ({
       }
     };
 
+    socket.on("getMessage", handleSocketMessage);
     socket.on("groupRenamed", handleSocketGroupRenamed);
     socket.on("groupMemberUpdated", handleSocketGroupMemberUpdated);
     socket.on("groupUpserted", handleSocketGroupUpserted);
 
     return () => {
+      socket.off("getMessage", handleSocketMessage);
       socket.off("groupRenamed", handleSocketGroupRenamed);
       socket.off("groupMemberUpdated", handleSocketGroupMemberUpdated);
       socket.off("groupUpserted", handleSocketGroupUpserted);
@@ -399,6 +419,10 @@ const ConversationPanel = ({
     currentUser?._id,
     currentChatUser?._id,
     metadata?.overview?.kind,
+    fetchMedia,
+    fetchFiles,
+    fetchLinks,
+    fetchMembership,
   ]);
 
   const handlePreferenceChange = async (key, value) => {
@@ -537,8 +561,8 @@ const ConversationPanel = ({
       className={`h-full bg-white border-l border-gray-200 transition-all duration-300 ease-in-out overflow-hidden flex flex-col z-40 ${
         isOpen
           ? "w-80 max-w-full opacity-100 translate-x-0"
-          : "w-0 opacity-0 pointer-events-none translate-x-full lg:translate-x-0"
-      } fixed lg:relative inset-y-0 right-0 lg:inset-auto shadow-2xl lg:shadow-none`}
+          : "w-0 opacity-0 pointer-events-none translate-x-full sm:translate-x-0"
+      } fixed sm:relative inset-y-0 right-0 sm:inset-auto shadow-2xl sm:shadow-none`}
     >
       <div className="w-80 max-w-full h-full flex flex-col bg-white">
         {/* Header */}

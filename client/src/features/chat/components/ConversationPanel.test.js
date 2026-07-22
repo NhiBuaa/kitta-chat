@@ -36,3 +36,20 @@ test("ConversationPanel wires created common-group events to membership refresh"
   assert.ok(handlerSource.includes("if (shouldRefreshCommonGroups) {"));
   assert.ok(handlerSource.includes("fetchMembership();"));
 });
+
+test("ConversationPanel refreshes matching resource previews on getMessage and cleans up the listener", () => {
+  const source = readFileSync(new URL("./ConversationPanel.jsx", import.meta.url), "utf8");
+
+  assert.ok(source.includes("getRealtimePanelResourceScopes({"));
+  const handlerStart = source.indexOf("const handleSocketMessage");
+  const handlerEnd = source.indexOf("const handleSocketGroupRenamed", handlerStart);
+  const handlerSource = source.slice(handlerStart, handlerEnd);
+  assert.ok(handlerSource.includes('resourceScopes.includes("media")'));
+  assert.ok(handlerSource.includes("fetchMedia();"));
+  assert.ok(handlerSource.includes('resourceScopes.includes("files")'));
+  assert.ok(handlerSource.includes("fetchFiles();"));
+  assert.ok(handlerSource.includes('resourceScopes.includes("links")'));
+  assert.ok(handlerSource.includes("fetchLinks();"));
+  assert.ok(source.includes('socket.on("getMessage", handleSocketMessage);'));
+  assert.ok(source.includes('socket.off("getMessage", handleSocketMessage);'));
+});

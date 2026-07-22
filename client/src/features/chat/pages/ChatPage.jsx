@@ -641,7 +641,7 @@ const Home = () => {
 
       {/* CHAT AREA */}
       <div
-        className={`${activeChat ? "flex" : "hidden sm:flex"} flex-1 flex-col bg-gray-50 h-full`}
+        className={`${activeChat ? "flex" : "hidden sm:flex"} flex-1 min-w-0 flex-col bg-gray-50 h-full`}
       >
         {activeChat && currentChatUser ? (
           <FilePicker
