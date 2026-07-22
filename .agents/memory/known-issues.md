@@ -394,3 +394,165 @@ ConfigValidationError: server configuration is invalid: CONVERSATION_DUAL_WRITE_
 - `client/src/components/layout/Sidebar.jsx`
 - `client/src/features/chat/hooks/useSidebarState.js`
 
+## Disconnected Socket Hook for Unified Sidebar Real-time Updates
+
+**Symptom**: Khi User B gửi tin nhắn mới cho User A, Sidebar hiển thị danh sách hội thoại phía User A không tự động cập nhật preview tin nhắn cuối cùng (`lastMessage`) của User B theo thời gian thực mà phải F5 / refresh trang mới thấy.
+
+**Root cause**: Hook `useMessageSocket.js` lắng nghe sự kiện socket `getMessage` ở top-level nhưng chỉ cập nhật các mảng state legacy cũ (`users` và `groups`). Hook chưa truyền dữ liệu socket tới `sidebarState.handleSocketMessage(data)` của Unified Sidebar (`SidebarStateManager`).
+
+**Fix**:
+- Thêm tham số `onSocketMessage` vào `useMessageSocket` hook.
+- Trong `ChatPage.jsx`, truyền `onSocketMessage: (data) => sidebarState.handleSocketMessage(data, ...)` vào `useMessageSocket`.
+
+**Prevention**: Khi xây dựng UI state manager mới (như `SidebarStateManager`), luôn kiểm tra và wire callback socket event tương ứng tại top-level Container/Page (`ChatPage.jsx`) để đảm bảo state manager mới nhận được dữ liệu realtime.
+
+## Sidebar API Fetch Called Before Auth Bootstrap Completion
+
+**Symptom**: Khi ứng dụng khởi chạy (`ChatPage`), Sidebar hiển thị mảng rỗng `conversations = []` vĩnh viễn và không nạp được danh sách cuộc trò chuyện.
+
+**Root cause**: `useSidebarState()` tự động gọi `manager.init()` trong `useEffect` ngay khi component mount (lúc `isChecking === true` và token chưa có trong bộ nhớ). API `/api/sidebar/conversations` trả về lỗi 401. Sau khi `bootstrapAuth` hoàn tất (`isChecking = false`), `useSidebarState()` thiếu cờ `enabled` / dependency nên không tự nạp lại dữ liệu.
+
+**Fix**:
+- Thêm cờ `options.enabled = true` vào `useSidebarState`. Trong `useEffect`, kiểm tra `if (!enabled) return;` và đưa `enabled` vào dependency array.
+- Trong `ChatPage.jsx`, truyền `enabled: !isChecking && isAuthenticated && Boolean(token)` khi gọi `useSidebarState(...)`.
+
+**Prevention**: Mọi hook thực hiện gọi API tự động (như `useSidebarState`) ở top-level container phải nhận cờ `enabled` phản ánh trạng thái auth ready trước khi gửi HTTP request.
+
+## Unread Count Badge Retained On Unified Sidebar Upon Selecting Active Chat
+
+**Symptom**: Khi người dùng click chọn một cuộc trò chuyện trên Sidebar (`handleSelectUser`), khung chat window bên phải đã được mở nhưng huy hiệu màu đỏ báo chưa đọc (`unreadCount > 0`) trên item Sidebar đó vẫn giữ nguyên không xóa thành 0.
+
+**Root cause**: `handleSelectUser` trong `ChatPage.jsx` chỉ xóa `unreadCount` trên các mảng state legacy cũ (`setUsers` và `setGroups`), chưa hề gọi lệnh xóa chưa đọc tới `sidebarState` (`SidebarStateManager`). Đồng thời `SidebarStateManager` cũng chưa có hàm `markConversationRead`.
+
+**Fix**:
+- Thêm phương thức `markConversationRead(targetIdOrConvId)` vào `SidebarStateManager` và xuất ra `useSidebarState` hook. Hàm này tự tìm item khớp ID và set `unreadCount = 0` cũng như `lastMessage.isRead = true`.
+- Trong `ChatPage.jsx` tại `handleSelectUser`, gọi `sidebarState.markConversationRead(user._id || user.conversationId)`.
+
+**Prevention**: Khi chuyển đổi giao diện sang State Manager mới, mọi sự kiện hành động của user (như đọc tin, chọn chat, xóa lịch sử) làm thay đổi badge state phải đồng thời gửi tín hiệu tới State Manager mới.
+
+## Conversation Retained On Unified Sidebar After Deleting History
+
+**Symptom**: Khi người dùng xóa lịch sử cuộc trò chuyện từ Conversation Panel (`handleDeleteHistory`), cuộc trò chuyện đó vẫn tiếp tục xuất hiện trên Sidebar bên trái.
+
+**Root cause**: `handleDeleteHistory` và `handleLeaveGroup` trong `ChatPage.jsx` chỉ tải lại dữ liệu cho hai mảng state legacy cũ (`setUsers` và `setGroups`), chưa hề gọi lệnh loại bỏ conversation tới `sidebarState` (`SidebarStateManager`). Đồng thời `SidebarStateManager` cũng chưa có hàm `removeConversation`.
+
+**Fix**:
+- Thêm phương thức `clearHistory(targetIdOrConvId)` vào `SidebarStateManager` để đặt `lastMessage = null`, `lastMessageAt = null`, `unreadCount = 0` (giữ lại đối tượng cuộc trò chuyện trong mảng để hỗ trợ tìm kiếm).
+- Trong `SidebarStateManager.getDisplayedConversations()`, ở chế độ xem mặc định (`searchTerm` rỗng), tự động ẩn các cuộc trò chuyện chưa ghim (`!isPinned`) và không có tin nhắn (`!lastMessage`). Khi người dùng gõ từ khóa tìm kiếm (`searchTerm` có chữ), hiển thị lại tất cả các kết quả tìm kiếm tương ứng.
+- Trong `ChatPage.jsx` tại `handleDeleteHistory`, gọi `sidebarState.clearHistory(convId)`.
+
+**Prevention**: Khi xóa lịch sử cuộc trò chuyện, không purge hẳn object khỏi mảng client mà dùng `clearHistory` kết hợp với bộ lọc hiển thị thông minh (`!lastMessage` trong default view) để đảm bảo tính năng Tìm kiếm vẫn tìm ra được bạn bè / nhóm.
+
+## Active Search Query Omitted During Tab Switch In SidebarStateManager
+
+**Symptom**: Khi ô Tìm kiếm đang có từ khóa (ví dụ "Group A") ở tab "Tất cả", nếu người dùng bấm chuyển sang tab "Nhóm", từ khóa vẫn giữ nguyên trên thanh search nhưng danh sách cuộc trò chuyện bên dưới lại rỗng.
+
+**Root cause**: Khi bấm chuyển tab, `setFilter(newFilter)` kích hoạt `fetchData(signal)`. Hàm `fetchData` chỉ đính kèm `params.kind` mà không đính kèm `params.q = this.searchTerm.trim()`, dẫn đến server trả về 20 item phân trang mặc định và client không tìm thấy kết quả matching ở tab mới.
+
+**Fix**:
+- Trong `SidebarStateManager.fetchData(signal)`, kiểm tra `if (this.searchTerm && this.searchTerm.trim()) { params.q = this.searchTerm.trim(); }` để tự động truyền `q` lên API trong mọi đợt fetch dữ liệu khi search đang active.
+
+**Prevention**: Mọi yêu cầu gọi API tải dữ liệu danh sách khi giao diện đang ở trạng thái tìm kiếm phải luôn kiểm tra và giữ lại query parameter `q`.
+
+## Group Socket Message Avatar Fallback In SidebarStateManager
+
+**Symptom**: Khi B ở tab "Nhóm" nhận được tin nhắn từ A gửi vào nhóm (sau khi xóa lịch sử trò chuyện), cuộc trò chuyện nhóm hiển thị lại trên Sidebar nhưng avatar bị nhầm thành avatar cá nhân của A.
+
+**Root cause**: Khi tạo lại target object cho tin nhắn socket nhóm chưa có trong memory, client `useSidebarState.js` fallback `avatar: senderAvatar`. Đồng thời backend `messageHandler.js` bỏ quên đính kèm `groupAvatar` trong socket payload `getMessage`.
+
+**Fix**:
+- Tại backend `messageHandler.js`: Bổ sung `select("name displayName avatar")` và đính kèm `payloadToEmit.groupAvatar`.
+- Tại client `useSidebarState.js`: Khi `isGroup === true`, gán `avatar: data.groupAvatar || data.group?.avatar || ""` (không bao giờ dùng `senderAvatar` cho nhóm).
+
+**Prevention**: Khi xử lý dữ liệu socket cho cuộc trò chuyện nhóm, tuyệt đối không gán `avatar` của sender làm avatar của nhóm.
+
+## Search Term Clear Auto-Refetch In SidebarStateManager
+
+**Symptom**: Khi người dùng đang ở tab "Nhóm" với từ khóa tìm kiếm "B" (đang hiển thị "Không tìm thấy nhóm nào"), nếu xóa từ khóa "B" về rỗng `""`, giao diện hiển thị "Bạn chưa tham gia nhóm chat nào" thay vì tự nạp lại nhóm "ALOO".
+
+**Root cause**: Trong `useSidebarState.js`, hàm `setSearchTerm(term)` khi nhận `term = ""` chỉ gán `this.searchTerm = ""` mà không kích hoạt `fetchData()` nạp lại danh sách mặc định của tab hiện tại, khiến mảng `this.conversations` bị giữ nguyên mảng rỗng `[]` của đợt tìm kiếm trước.
+
+**Fix**:
+- Trong `SidebarStateManager.setSearchTerm(term)`: Kiểm tra `else if (prevTrimmed.length > 0)` khi chuyển từ từ khóa có chữ về rỗng `""`, thực hiện reset `cursor = null`, `conversations = []` và gọi `this.fetchData(signal)` để tự động nạp lại danh sách mặc định của tab hiện tại từ server.
+
+**Prevention**: Khi xóa từ khóa tìm kiếm về rỗng `""`, phải tự động kích hoạt nạp lại danh sách cuộc trò chuyện mặc định cho tab đang active.
+
+## Realtime Online Presence Check After Clearing Chat History
+
+**Symptom**: Khi B xóa lịch sử cuộc trò chuyện với bạn bè A rồi B tìm kiếm lại A, Sidebar và Conversation Panel không hiển thị chấm xanh (online dot) của A mặc dù A đang online.
+
+**Root cause**:
+1. Trong `Sidebar.jsx`, hàm `isTargetOnline(conv)` chỉ kiểm tra dữ liệu tĩnh DB `conv.target.isOnline` mà không kiểm tra mảng realtime `onlineUsers` từ Socket Context.
+2. Trong `ConversationPanel.jsx`, hàm `getPartnerUserId()` bị lấy nhầm conversation ObjectId khi `conversationId` không chứa dấu `_`, khiến `onlineUsers.some` so sánh nhầm ID.
+
+**Fix**:
+- Tại `Sidebar.jsx`: Bổ sung kiểm tra `onlineUsers.some(u => String(u.userId) === String(targetId))` từ Socket Context.
+- Tại `ConversationPanel.jsx`: Cập nhật `getPartnerUserId()` ưu tiên lấy `activeChat?.target?._id || activeChat?._id || metadata?.overview?.targetId`.
+
+**Prevention**: Mọi vị trí hiển thị trạng thái online cá nhân đều phải kiểm tra danh sách `onlineUsers` từ Socket Context với chính xác User ID của đối phương.
+
+## Incorrect useSocket Import Path In Sidebar.jsx
+
+**Symptom**: Trình duyệt báo lỗi `Uncaught SyntaxError: The requested module '/src/services/socket/SocketProvider.jsx' does not provide an export named 'useSocket'`.
+
+**Root cause**: Hook `useSocket` được export từ `SocketContext.js`, không phải từ `SocketProvider.jsx`.
+
+**Fix**:
+- Trong `Sidebar.jsx`: Đổi `import { useSocket } from "@/services/socket/SocketProvider.jsx"` thành `import { useSocket } from "@/services/socket/SocketContext.js"`.
+
+**Prevention**: Kiểm tra chính xác vị trí export của custom hooks trong codebase trước khi import.
+
+## Stale Conversation Target In Search Results & UserStatus Override
+
+**Symptom**: Sau khi B xóa lịch sử cuộc trò chuyện với A, khi B tìm kiếm lại A và mở conversation, trạng thái "Đang hoạt động" không hiển thị ở Header và Sidebar.
+
+**Root cause**:
+1. Trong `useSidebarState.js`, `fetchSearchData(term)` không merge dữ liệu `target` mới từ backend cho các cuộc trò chuyện đã có sẵn trong memory.
+2. Trong `UserStatus.jsx`, biến `isActive` dùng ternary `isOnline !== undefined ? isOnline : ...` đè `isActive = false` khi `isOnline` của socket trả về false, bỏ qua thông tin `user.isOnline` hoặc `user.activityStatus` tươi từ backend.
+
+**Fix**:
+- Trong `useSidebarState.js`: Cập nhật `fetchSearchData` để merge `sc.target` vào `existing.target` khi conversation đã tồn tại.
+- Trong `UserStatus.jsx`: Cập nhật `isActive = Boolean(isOnline || user?.isOnline || user?.activityStatus?.state === "active" || user?.activityStatus?.state === "online")`.
+- Trong `ConversationPanel.jsx`: Thêm fallback `activeChat?.isOnline || activeChat?.activityStatus` vào `isPartnerOnline`.
+
+**Prevention**: Kết quả tìm kiếm từ server phải luôn merge lại thông tin `target` mới cho danh sách memory hiện có, và các component status phải OR các nguồn thông tin online thay vì cho phép cờ rỗng đè mất dữ liệu tươi.
+
+## Missing isOnline In Sidebar selectPayload & ChatPage handleSelectUser
+
+**Symptom**: Sau khi chọn cuộc trò chuyện từ Sidebar, Sidebar hiển thị chấm xanh nhưng thanh Header và Details Panel không hiển thị "Đang hoạt động" / chấm xanh online.
+
+**Root cause**: Đối tượng `selectPayload` trong `Sidebar.jsx` khi truyền cho `handleSelectUser` thiếu hai thuộc tính `isOnline` và `activityStatus`, làm cho `activeChat` nhận được object thiếu cờ online.
+
+**Fix**:
+- Trong `Sidebar.jsx`: Đính kèm `isOnline: online` và `activityStatus: conv.target?.activityStatus` vào `selectPayload`.
+- Trong `ChatPage.jsx`: Trong `handleSelectUser`, chủ động làm giàu `user` với `isOnline: Boolean(onlineUsers.some(...) || user.isOnline || user.activityStatus?.state === "active")` trước khi đặt `setActiveChat`.
+- Trong `ChatWindow.jsx`: Cập nhật `isOnline={checkIsOnline(currentChatUser) || currentChatUser?.isOnline || currentChatUser?.activityStatus?.state === "active"}`.
+
+**Prevention**: Đối tượng payload khi chọn item từ Sidebar và handler `handleSelectUser` phải luôn bảo tồn và làm giàu cờ trạng thái online `isOnline` cho `activeChat`.
+
+## ChatWindow shouldShowOnlineStatus Hiding Header UserStatus Component
+
+**Symptom**: Thanh Header bên phải bị ẩn hoàn toàn (không render) dòng hiển thị "Đang hoạt động" khi nhấp chọn cuộc trò chuyện cá nhân từ Sidebar.
+
+**Root cause**: Trong `ChatWindow.jsx`, `shouldShowOnlineStatus = !isGroupChat && Boolean(currentChatUser?.isFriend)` dùng `Boolean(isFriend)`. Khi dữ liệu từ Sidebar chưa truyền `isFriend` (trả về `undefined`), `Boolean(undefined)` bằng `false`, làm cho `UserStatus` bị ẩn hoàn toàn.
+
+**Fix**:
+- Trong `ChatWindow.jsx`: Đổi `shouldShowOnlineStatus = !isGroupChat && currentChatUser?.isFriend !== false`.
+- Trong `Sidebar.jsx`: Đính kèm `isFriend: conv.target?.isFriend !== false` trong `selectPayload`.
+- Trong `ChatPage.jsx`: Đính kèm `isFriend: user?.isFriend !== false` trong `handleSelectUser`.
+
+**Prevention**: Tránh dùng `Boolean(prop)` cho các thuộc tính optional khi kiểm tra điều kiện hiển thị header; sử dụng `prop !== false` để giữ mặc định hiển thị cho cuộc trò chuyện cá nhân.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

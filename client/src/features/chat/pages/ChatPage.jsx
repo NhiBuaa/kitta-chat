@@ -107,7 +107,9 @@ const Home = () => {
   }, []);
 
   const { checkIsOnline } = usePresence();
-  const sidebarState = useSidebarState();
+  const sidebarState = useSidebarState({
+    enabled: !isChecking && isAuthenticated && Boolean(token),
+  });
 
   const renderLastMessage = (user, currentUserId) => {
     if (!user.lastMessage)
@@ -287,6 +289,11 @@ const Home = () => {
     setMessages, setUsers, setGroups, setHasNewUnread,
     scrollRef, scrollChatToBottom, fetchNewConversation, setSearchResult,
     users, groups,
+    onSocketMessage: (data) => sidebarState.handleSocketMessage(data, {
+      activeChat: activeChatRef.current,
+      currentUserId: currentUser?._id,
+      socket,
+    }),
   });
 
   // Initial data fetch
@@ -389,7 +396,28 @@ const Home = () => {
 
     resetChatState();
     armAutoScrollLock();
-    setActiveChat(user);
+
+    const targetUserId = user?._id || user?.id;
+    const isOnline = Boolean(
+      (targetUserId && onlineUsers.some((ou) => String(ou.userId) === String(targetUserId))) ||
+      user?.isOnline ||
+      user?.activityStatus?.state === "active"
+    );
+
+    const enrichedUser = {
+      ...user,
+      isOnline,
+      isFriend: user?.isFriend !== false,
+    };
+
+    setActiveChat(enrichedUser);
+
+    if (user?._id) {
+      sidebarState.markConversationRead(user._id);
+    }
+    if (user?.conversationId) {
+      sidebarState.markConversationRead(user.conversationId);
+    }
 
     setUsers((prev) =>
       prev.map((u) => {
@@ -515,16 +543,24 @@ const Home = () => {
 
   const handleLeaveGroup = useCallback((groupId) => {
     setGroups((prev) => prev.filter((g) => g._id !== groupId));
+    if (groupId) {
+      sidebarState.removeConversation(groupId);
+    }
     if (activeChatRef.current?._id === groupId) {
       setActiveChat(null);
       setShowConversationPanel(false);
     }
-  }, []);
+  }, [sidebarState]);
 
   const handleDeleteHistory = useCallback((convId) => {
     setMessages([]);
     setActiveChat(null);
     setShowConversationPanel(false);
+
+    if (convId) {
+      sidebarState.clearHistory(convId);
+      sidebarState.init();
+    }
 
     const refreshSidebarData = async () => {
       try {
@@ -546,7 +582,7 @@ const Home = () => {
       }
     };
     refreshSidebarData();
-  }, [setMessages, setActiveChat]);
+  }, [setMessages, setActiveChat, sidebarState]);
 
   // Render
   if (isLoading)

@@ -73,9 +73,12 @@ const createRegisterMessageHandlers = ({
       };
 
       if (isGroup) {
+        const groupDoc = await GroupModel.findById(receiverId).select("name displayName avatar");
         if (!payloadToEmit.groupName) {
-          const groupDoc = await GroupModel.findById(receiverId).select("name displayName");
           payloadToEmit.groupName = groupDoc?.displayName || groupDoc?.name || "Nhóm chat";
+        }
+        if (!payloadToEmit.groupAvatar) {
+          payloadToEmit.groupAvatar = groupDoc?.avatar || "";
         }
 
         emitToConversation(io, receiverId, SOCKET_EVENTS.MESSAGE_RECEIVE, payloadToEmit);

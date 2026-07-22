@@ -485,13 +485,25 @@ const ConversationPanel = ({
   const canRename = metadata?.overview?.kind === "group";
 
   const getPartnerUserId = () => {
+    if (activeChat?._id && activeChat._id !== conversationId) return activeChat._id;
+    if (activeChat?.target?._id) return activeChat.target._id;
+    if (metadata?.overview?.targetId) return metadata.overview.targetId;
     if (!conversationId || !currentUser) return null;
-    const parts = conversationId.split("_");
-    return parts.find(id => id !== currentUser._id) || parts[0];
+    if (conversationId.includes("_")) {
+      const parts = conversationId.split("_");
+      return parts.find(id => id !== currentUser._id) || parts[0];
+    }
+    return null;
   };
 
-  const isPartnerOnline = metadata?.overview?.kind === "direct" && getPartnerUserId()
-    ? onlineUsers.some(u => String(u.userId) === String(getPartnerUserId()))
+  const isPartnerOnline = (metadata?.overview?.kind === "direct" || !metadata?.overview) && getPartnerUserId()
+    ? (
+        onlineUsers.some(u => String(u.userId) === String(getPartnerUserId())) ||
+        metadata?.overview?.isOnline ||
+        metadata?.overview?.activityStatus?.state === "active" ||
+        activeChat?.isOnline ||
+        activeChat?.activityStatus?.state === "active"
+      )
     : false;
 
   const checkMemberIsOnline = (member) => {

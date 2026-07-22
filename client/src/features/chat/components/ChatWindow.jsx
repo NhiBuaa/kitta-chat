@@ -118,7 +118,7 @@ const ChatWindow = ({
   // BIẾN
   const isGroupChat = Boolean(activeChat?.members);
   const shouldShowOnlineStatus =
-    !isGroupChat && Boolean(currentChatUser?.isFriend);
+    !isGroupChat && currentChatUser?.isFriend !== false;
 
   useEffect(() => {
     canLoadMoreFromTopRef.current = true;
@@ -280,7 +280,7 @@ const ChatWindow = ({
               {shouldShowOnlineStatus && (
                 <UserStatus
                   user={currentChatUser}
-                  isOnline={checkIsOnline(currentChatUser)}
+                  isOnline={checkIsOnline(currentChatUser) || currentChatUser?.isOnline || currentChatUser?.activityStatus?.state === "active"}
                 />
               )}
 

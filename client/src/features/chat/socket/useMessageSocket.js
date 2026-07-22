@@ -32,14 +32,19 @@ export const useMessageSocket = ({
     setSearchResult,
     users,
     groups,
+    onSocketMessage,
 }) => {
     const processedMessageIdsRef = useRef(new Set());
     const fetchingIdsRef = useRef(new Set());
     const usersRef = useRef(users);
     const groupsRef = useRef(groups);
+    const onSocketMessageRef = useRef(onSocketMessage);
 
-    usersRef.current = users;
-    groupsRef.current = groups;
+    useEffect(() => {
+        usersRef.current = users;
+        groupsRef.current = groups;
+        onSocketMessageRef.current = onSocketMessage;
+    }, [users, groups, onSocketMessage]);
 
     useEffect(() => {
         if (!socket) return;
@@ -295,6 +300,10 @@ export const useMessageSocket = ({
 
             if (incomingMessageId) {
                 processedMessageIdsRef.current.add(incomingMessageId);
+            }
+
+            if (typeof onSocketMessageRef.current === "function") {
+                onSocketMessageRef.current(data);
             }
 
             const isMuted = checkIfConversationMuted(data, {

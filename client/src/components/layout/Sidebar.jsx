@@ -3,6 +3,7 @@ import { FaUserPlus, FaBell, FaSearch, FaUsers, FaCheck, FaHistory, FaThumbtack,
 import { FiLogOut } from "react-icons/fi";
 import CallHistoryBadge from '@/features/calls/components/CallHistoryBadge.jsx';
 import { useInfiniteScroll } from "@/features/chat/hooks/useInfiniteScroll.js";
+import { useSocket } from "@/services/socket/SocketContext.js";
 
 const FILTER_CHIPS = [
   { key: "all", label: "Tất cả" },
@@ -33,6 +34,8 @@ const Sidebar = ({
   hasMore,
   isFetching,
 }) => {
+  const { onlineUsers = [] } = useSocket() || {};
+
   const sentinelRef = useInfiniteScroll({
     enabled: true,
     hasMore,
@@ -57,6 +60,11 @@ const Sidebar = ({
 
   const isTargetOnline = (conv) => {
     if (conv.kind !== "direct") return false;
+    const targetId = conv.target?._id || conv.target?.id;
+    if (targetId && onlineUsers.some((u) => String(u.userId) === String(targetId))) {
+      return true;
+    }
+    if (conv.target && checkIsOnline && checkIsOnline(conv.target)) return true;
     if (conv.target?.isOnline) return true;
     if (conv.target?.activityStatus?.state === "active") return true;
     return false;
@@ -293,6 +301,9 @@ const Sidebar = ({
               _id: conv.target?._id,
               displayName: conv.target?.displayName,
               avatar: conv.target?.avatar,
+              isOnline: online,
+              isFriend: conv.target?.isFriend !== false,
+              activityStatus: conv.target?.activityStatus,
               conversationId: conv.legacyConversationId || conv.conversationId,
               lastMessage: conv.lastMessage,
               ...(conv.kind === "group" ? { members: conv.target?.members || [], isGroup: true, name: conv.target?.displayName, admin: conv.target?.admin } : {}),

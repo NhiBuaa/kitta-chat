@@ -561,3 +561,34 @@ test("GET /api/sidebar/conversations handles tie-breaker sorting when lastMessag
     await testServer.close();
   }
 });
+
+test("GET /api/sidebar/conversations supports q search parameter for groups with null lastMessageAt", async () => {
+  const testServer = await createTestServer();
+  const currentUserId = "60c72b2f9b1d8a0015f8a3c1";
+  const token = generateToken(currentUserId);
+
+  try {
+    const groupId = "60c72b2f9b1d8a0015f8a3g9";
+    testServer.store.groups.push({ _id: groupId, name: "Secret Club", members: [currentUserId] });
+    testServer.store.conversations.push({ _id: "60c72b2f9b1d8a0015f8a3d9", kind: "group", legacyConversationId: groupId, groupId });
+
+    // Participant with lastMessageAt = null (history cleared)
+    testServer.store.participants.push({
+      userId: currentUserId,
+      conversationId: "60c72b2f9b1d8a0015f8a3d9",
+      leftAt: null,
+      state: { pinnedAt: null, lastMessageAt: null, lastMessageId: null },
+      legacyConversationId: groupId
+    });
+
+    const res = await testServer.request("/api/sidebar/conversations?q=Secret", {
+      headers: { authorization: `Bearer ${token}` }
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.conversations.length, 1);
+    assert.equal(res.body.conversations[0].target.displayName, "Secret Club");
+  } finally {
+    await testServer.close();
+  }
+});

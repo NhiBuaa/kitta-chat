@@ -24,14 +24,60 @@ const getSidebarConversations = async (req, res, next) => {
   try {
     const currentUserId = req.user.id || req.user._id;
     const limit = parseInt(req.query.limit, 10) || 20;
-    const { cursor, kind } = req.query;
+    const { cursor, kind, q } = req.query;
 
-    // 1. Lọc conversations theo kind nếu có
+    // 1. Lọc conversations theo kind và từ khóa tìm kiếm q nếu có
     let conversationIdFilter = null;
+    let kindConvIds = null;
+
     if (kind === "direct" || kind === "group") {
       const convs = await Conversation.find({ kind }).select("_id");
-      const convIds = convs.map(c => c._id);
-      conversationIdFilter = { $in: convIds };
+      kindConvIds = convs.map(c => c._id);
+      conversationIdFilter = { $in: kindConvIds };
+    }
+
+    if (q && q.trim()) {
+      const searchRegex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      const [matchedUsers, matchedGroups] = await Promise.all([
+        User.find({ displayName: searchRegex }).select("_id"),
+        Group.find({ name: searchRegex }).select("_id")
+      ]);
+
+      const matchedUserIds = matchedUsers.map(u => u._id.toString());
+      const matchedGroupIds = matchedGroups.map(g => g._id.toString());
+
+      const searchOrConds = [];
+      if (matchedGroupIds.length > 0) {
+        searchOrConds.push({ groupId: { $in: matchedGroupIds } });
+        searchOrConds.push({ legacyConversationId: { $in: matchedGroupIds } });
+      }
+      if (matchedUserIds.length > 0) {
+        const userPairRegexes = matchedUserIds.flatMap(uId => [
+          new RegExp(`^${currentUserId}_${uId}$`),
+          new RegExp(`^${uId}_${currentUserId}$`)
+        ]);
+        searchOrConds.push({ legacyConversationId: { $in: userPairRegexes } });
+      }
+
+      if (searchOrConds.length > 0) {
+        const searchConvs = await Conversation.find({ $or: searchOrConds }).select("_id");
+        const searchConvIds = searchConvs.map(c => c._id.toString());
+
+        if (kindConvIds) {
+          const kindSet = new Set(kindConvIds.map(id => id.toString()));
+          const intersected = searchConvIds.filter(id => kindSet.has(id));
+          conversationIdFilter = { $in: intersected.map(id => new mongoose.Types.ObjectId(id)) };
+        } else {
+          conversationIdFilter = { $in: searchConvIds.map(id => new mongoose.Types.ObjectId(id)) };
+        }
+      } else {
+        return res.status(200).json({
+          success: true,
+          conversations: [],
+          nextCursor: null,
+          hasMore: false
+        });
+      }
     }
 
     // 2. Query pinned conversations (chỉ ở trang đầu tiên cursor === null)

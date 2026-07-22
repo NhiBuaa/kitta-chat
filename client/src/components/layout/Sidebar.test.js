@@ -189,4 +189,39 @@ test("ChatPage.jsx passes onLoadMore, hasMore, and isFetching props to Sidebar c
   );
 });
 
+test("[BUG-PRESENCE] Sidebar.jsx isTargetOnline must check onlineUsers from socket context for realtime presence", () => {
+  const source = readFileSync(new URL("./Sidebar.jsx", import.meta.url), "utf8");
+
+  assert.match(
+    source,
+    /onlineUsers.*some|useSocket|SocketContext/,
+    "Sidebar.jsx must check onlineUsers from socket context to display green dot online indicator"
+  );
+});
+
+test("[BUG-SELECT-PAYLOAD] Sidebar.jsx selectPayload must include isOnline and activityStatus for activeChat", () => {
+  const source = readFileSync(new URL("./Sidebar.jsx", import.meta.url), "utf8");
+
+  assert.match(
+    source,
+    /isOnline:\s*online|isOnline:\s*isTargetOnline\(conv\)|isOnline:\s*conv\.target\?\.isOnline/,
+    "Sidebar selectPayload must include isOnline property for activeChat"
+  );
+  assert.match(
+    source,
+    /activityStatus:\s*conv\.target\?\.activityStatus/,
+    "Sidebar selectPayload must include activityStatus property for activeChat"
+  );
+});
+
+test("[BUG-HEADER-VISIBLE] ChatWindow.jsx shouldShowOnlineStatus must not hide status when isFriend is undefined", () => {
+  const source = readFileSync(new URL("../../features/chat/components/ChatWindow.jsx", import.meta.url), "utf8");
+
+  assert.match(
+    source,
+    /shouldShowOnlineStatus\s*=\s*!isGroupChat\s*&&\s*currentChatUser\?\.isFriend\s*!==\s*false/,
+    "ChatWindow.jsx shouldShowOnlineStatus must use isFriend !== false to show online status for direct chats"
+  );
+});
+
 

@@ -12,10 +12,12 @@ const UserStatus = ({ user, isOnline }) => {
         return () => clearInterval(interval);
     }, [user?.activityStatus?.lastSeen]);
 
-    const isActive =
-        isOnline !== undefined
-            ? isOnline
-            : user.activityStatus?.state === "online" || user.activityStatus?.state === "active";
+    const isActive = Boolean(
+        isOnline ||
+        user?.isOnline ||
+        user?.activityStatus?.state === "online" ||
+        user?.activityStatus?.state === "active"
+    );
 
     const lastSeen = user.activityStatus?.lastSeen;
     const timeAgo = lastSeen && ticker !== undefined ? formatTimeAgo(lastSeen) : null;
