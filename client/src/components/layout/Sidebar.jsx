@@ -66,6 +66,17 @@ const Sidebar = ({
       return text;
     }
     // Fallback khi không có tin nhắn
+    if (conv.isGlobalUserSearchResult && conv.target?.isFriend === false) {
+      const targetId = conv.target?._id || conv.target?.id;
+      const requestWasSent = Boolean(
+        conv.target?.isSent ||
+        (Array.isArray(sentRequests) && sentRequests.some(
+          (requestUserId) => String(requestUserId) === String(targetId),
+        )),
+      );
+      if (conv.target?.isReceived) return "Đã gửi lời mời kết bạn cho bạn";
+      return requestWasSent ? "Đã gửi lời mời kết bạn" : "Chưa kết bạn";
+    }
     if (conv.kind === "group") {
       return `${conv.target?.memberCount || 0} thành viên`;
     }
@@ -309,6 +320,17 @@ const Sidebar = ({
             const hasUnread = unreadCount > 0;
             const online = isTargetOnline(conv);
             const displayName = conv.target?.displayName || "Không rõ";
+            const targetId = conv.target?._id || conv.target?.id;
+            const isGlobalUserSearchResult = Boolean(conv.isGlobalUserSearchResult);
+            const isExplicitNonFriend = conv.target?.isFriend === false;
+            const hasSentRequest = Boolean(
+              conv.target?.isSent ||
+              (Array.isArray(sentRequests) && sentRequests.some(
+                (requestUserId) => String(requestUserId) === String(targetId),
+              )),
+            );
+            const hasIncomingRequest = Boolean(conv.target?.isReceived);
+            const canOpenConversation = !isGlobalUserSearchResult || !isExplicitNonFriend;
 
             // Transform conv thành object tương thích handleSelectUser
             // handleSelectUser cần: _id (top-level), members (truthy cho group),
@@ -328,8 +350,12 @@ const Sidebar = ({
             return (
               <div
                 key={conv.conversationId || conv._id}
-                onClick={() => handleSelectUser(selectPayload)}
-                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition cursor-pointer ${
+                onClick={() => {
+                  if (canOpenConversation) handleSelectUser(selectPayload);
+                }}
+                className={`group px-4 py-3 flex items-center gap-3 border-b border-gray-100 transition ${
+                  canOpenConversation ? "cursor-pointer" : "cursor-default"
+                } ${
                   hasUnread
                     ? "bg-blue-50 hover:bg-blue-100"
                     : "hover:bg-gray-100"
@@ -383,6 +409,39 @@ const Sidebar = ({
                     </p>
                   </div>
                 </div>
+
+                {isGlobalUserSearchResult && isExplicitNonFriend && (
+                  <div className="ml-2 flex-shrink-0">
+                    {hasIncomingRequest ? (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setShowRequestModal?.(true);
+                        }}
+                        className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-600 hover:bg-blue-100"
+                        title="Xem lời mời kết bạn"
+                      >
+                        Lời mời đến
+                      </button>
+                    ) : hasSentRequest ? (
+                      <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-500">
+                        <FaCheck size={10} />
+                        Đã gửi
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(event) => handleAddFriend(event, conv.target)}
+                        className="flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-green-600"
+                        title="Gửi lời mời kết bạn"
+                      >
+                        <FaUserPlus size={10} />
+                        Kết bạn
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {unreadCount > 0 && (
                   <div className="ml-2 flex-shrink-0">

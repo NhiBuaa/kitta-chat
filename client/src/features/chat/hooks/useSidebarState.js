@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { getSidebarConversations } from "../../../services/api/sidebarApi.js";
+import { useState, useEffect, useCallback } from "react";
+import { getSidebarConversations, searchSidebarUsers } from "../../../services/api/sidebarApi.js";
 
 export class SidebarStateManager {
-  constructor({ fetchConversationsApi, onStateChange } = {}) {
+  constructor({ fetchConversationsApi, fetchUsersApi, onStateChange } = {}) {
     this.fetchConversationsApi = fetchConversationsApi || getSidebarConversations;
+    this.fetchUsersApi = fetchUsersApi || searchSidebarUsers;
     this.onStateChange = onStateChange || (() => {});
 
     // Khôi phục preference từ localStorage
@@ -18,6 +19,8 @@ export class SidebarStateManager {
 
     this.abortController = null;
     this.reorderTimer = null;
+    this.searchTimer = null;
+    this.searchRequestId = 0;
   }
 
   getActiveFilter() {
@@ -64,6 +67,11 @@ export class SidebarStateManager {
     if (this.abortController) {
       this.abortController.abort();
     }
+    this.searchRequestId += 1;
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
 
     // 2. Reset state lập tức trước khi request mới gửi đi
     this.conversations = [];
@@ -79,27 +87,38 @@ export class SidebarStateManager {
     this.abortController = new AbortController();
 
     // 4. Gọi fetch trang đầu
+    const trimmedSearchTerm = this.searchTerm.trim();
+    if (trimmedSearchTerm) {
+      return this.fetchSearchData(trimmedSearchTerm);
+    }
     return this.fetchData(this.abortController.signal);
   }
 
   // Cập nhật từ khóa tìm kiếm
   setSearchTerm(term) {
     const prevTrimmed = this.searchTerm ? this.searchTerm.trim() : "";
-    this.searchTerm = term;
-    this.onStateChange();
+    const trimmed = term ? term.trim() : "";
+
+    this.searchTerm = term || "";
+    this.searchRequestId += 1;
 
     if (this.searchTimer) {
       clearTimeout(this.searchTimer);
+      this.searchTimer = null;
     }
 
-    const trimmed = term ? term.trim() : "";
+    if (!trimmed) {
+      this.conversations = this.conversations.filter(
+        (conversation) => !conversation.isGlobalUserSearchResult,
+      );
+    }
+    this.onStateChange();
 
     if (trimmed.length > 0) {
       this.searchTimer = setTimeout(() => {
         this.fetchSearchData(trimmed);
       }, 300);
     } else if (prevTrimmed.length > 0) {
-      // Khi từ khóa được xoá về rỗng "", reset danh sách và nạp lại dữ liệu mặc định của tab hiện tại
       this.cursor = null;
       this.conversations = [];
       this.hasMore = true;
@@ -112,31 +131,120 @@ export class SidebarStateManager {
   }
 
   async fetchSearchData(term) {
+    const requestId = ++this.searchRequestId;
+    const shouldSearchUsers = this.activeFilter !== "group";
+    this.isFetching = true;
+    this.onStateChange();
+
     try {
       const params = { q: term, limit: 30 };
       if (this.activeFilter === "direct") params.kind = "direct";
       else if (this.activeFilter === "group") params.kind = "group";
 
-      const res = await this.fetchConversationsApi(params);
-      const data = res?.data?.conversations ? res.data : (res?.conversations ? res : (res?.data || res));
-      const searchConvs = data?.conversations || (Array.isArray(data) ? data : []);
+      const [conversationResponse, userResponse] = await Promise.all([
+        this.fetchConversationsApi(params).catch(() => ({
+          success: false,
+          conversations: [],
+        })),
+        shouldSearchUsers
+          ? this.fetchUsersApi(term).catch(() => ({
+              data: { success: false, users: [] },
+            }))
+          : Promise.resolve({ data: { success: true, users: [] } }),
+      ]);
 
-      if (searchConvs.length > 0) {
-        const convMap = new Map(this.conversations.map(c => [c.conversationId || c._id, c]));
-        searchConvs.forEach(sc => {
-          const id = sc.conversationId || sc._id;
-          if (convMap.has(id)) {
-            const existing = convMap.get(id);
-            existing.target = { ...existing.target, ...sc.target };
-            if (sc.legacyConversationId) existing.legacyConversationId = sc.legacyConversationId;
-          } else {
-            this.conversations.push(sc);
-          }
-        });
-        this.onStateChange();
+      if (requestId !== this.searchRequestId) {
+        return;
       }
+
+      const conversationData = conversationResponse?.data?.conversations
+        ? conversationResponse.data
+        : (conversationResponse?.conversations
+          ? conversationResponse
+          : (conversationResponse?.data || conversationResponse));
+      const searchConversations = conversationData?.conversations ||
+        (Array.isArray(conversationData) ? conversationData : []);
+      const userData = userResponse?.data?.users
+        ? userResponse.data
+        : (userResponse?.users ? userResponse : (userResponse?.data || userResponse));
+      const globalUsers = Array.isArray(userData?.users) ? userData.users : [];
+
+      const normalizedSearchTerm = term.toLowerCase().trim();
+      const mergedConversations = this.conversations
+        .filter((conversation) => !conversation.isGlobalUserSearchResult)
+        .map((conversation) => {
+          if (!conversation.globalUserSearchMatchTerm) return conversation;
+          const { globalUserSearchMatchTerm: _ignored, ...rest } = conversation;
+          return rest;
+        });
+      const conversationById = new Map(
+        mergedConversations.map((conversation) => [
+          conversation.conversationId || conversation._id,
+          conversation,
+        ]),
+      );
+
+      searchConversations.forEach((searchConversation) => {
+        const conversationId = searchConversation.conversationId || searchConversation._id;
+        if (conversationById.has(conversationId)) {
+          const existingConversation = conversationById.get(conversationId);
+          existingConversation.target = {
+            ...existingConversation.target,
+            ...searchConversation.target,
+          };
+          if (searchConversation.legacyConversationId) {
+            existingConversation.legacyConversationId = searchConversation.legacyConversationId;
+          }
+        } else {
+          mergedConversations.push(searchConversation);
+          conversationById.set(conversationId, searchConversation);
+        }
+      });
+
+      const conversationByTargetId = new Map();
+      mergedConversations.forEach((conversation) => {
+        const targetId = conversation.target?._id || conversation.target?.id;
+        if (targetId) conversationByTargetId.set(String(targetId), conversation);
+      });
+
+      globalUsers.forEach((user) => {
+        if (!user?._id) return;
+        const targetId = String(user._id);
+        const existingConversation = conversationByTargetId.get(targetId);
+        if (existingConversation) {
+          existingConversation.target = {
+            ...existingConversation.target,
+            ...user,
+          };
+          existingConversation.globalUserSearchMatchTerm = normalizedSearchTerm;
+          return;
+        }
+
+        const searchResultConversation = {
+          _id: `user-search:${targetId}`,
+          kind: "direct",
+          target: user,
+          lastMessage: null,
+          lastMessageAt: null,
+          unreadCount: 0,
+          hasUnread: false,
+          isPinned: false,
+          isGlobalUserSearchResult: true,
+          globalUserSearchMatchTerm: normalizedSearchTerm,
+        };
+        mergedConversations.push(searchResultConversation);
+        conversationByTargetId.set(targetId, searchResultConversation);
+      });
+
+      this.conversations = mergedConversations;
+      this.onStateChange();
     } catch (err) {
       console.error("[SidebarStateManager] Fetch search data error:", err);
+    } finally {
+      if (requestId === this.searchRequestId) {
+        this.isFetching = false;
+        this.onStateChange();
+      }
     }
   }
 
@@ -227,7 +335,8 @@ export class SidebarStateManager {
       if (hasSearch) {
         const term = this.searchTerm.toLowerCase().trim();
         const displayName = (conv.target?.displayName || "").toLowerCase();
-        if (!displayName.includes(term)) {
+        const matchesGlobalUserSearch = conv.globalUserSearchMatchTerm === term;
+        if (!displayName.includes(term) && !matchesGlobalUserSearch) {
           return false;
         }
       }
@@ -460,6 +569,11 @@ export class SidebarStateManager {
       clearTimeout(this.reorderTimer);
       this.reorderTimer = null;
     }
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+    this.searchRequestId += 1;
   }
 }
 
@@ -475,9 +589,6 @@ export function useSidebarState(options = {}) {
         onStateChange: forceUpdate,
       }),
   );
-
-  // Giữ manager.onStateChange luôn được cập nhật
-  manager.onStateChange = forceUpdate;
 
   // Gọi init ở lần render đầu tiên khi enabled === true
   useEffect(() => {

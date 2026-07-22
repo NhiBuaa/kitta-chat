@@ -15,7 +15,7 @@ const mockLocalStorage = {
     this.store = {};
   }
 };
-global.localStorage = mockLocalStorage;
+globalThis.localStorage = mockLocalStorage;
 
 test("SidebarStateManager initialization restores active filter from localStorage", () => {
   mockLocalStorage.clear();
@@ -183,3 +183,212 @@ test("SidebarStateManager prevents race condition on rapid tab switching (out-of
   assert.equal(manager.getConversations()[0].target.displayName, "Alice");
 });
 
+
+
+test("SidebarStateManager search includes a non-friend user without an existing conversation", async () => {
+  let userSearchCalls = 0;
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async () => ({
+      success: true,
+      conversations: [],
+      nextCursor: null,
+      hasMore: false,
+    }),
+    fetchUsersApi: async (keyword) => {
+      userSearchCalls += 1;
+      assert.equal(keyword, "alice");
+      return {
+        data: {
+          success: true,
+          users: [
+            {
+              _id: "user-alice",
+              displayName: "Alice Stranger",
+              isFriend: false,
+              isSent: false,
+              isReceived: false,
+            },
+          ],
+        },
+      };
+    },
+  });
+
+  manager.searchTerm = "alice";
+  await manager.fetchSearchData("alice");
+
+  const displayed = manager.getDisplayedConversations();
+  assert.equal(userSearchCalls, 1);
+  assert.equal(displayed.length, 1);
+  assert.equal(displayed[0].kind, "direct");
+  assert.equal(displayed[0].target._id, "user-alice");
+  assert.equal(displayed[0].target.isFriend, false);
+  assert.equal(displayed[0].isGlobalUserSearchResult, true);
+});
+
+test("SidebarStateManager preserves users matched by server email search", async () => {
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async () => ({
+      success: true,
+      conversations: [],
+    }),
+    fetchUsersApi: async () => ({
+      data: {
+        success: true,
+        users: [{
+          _id: "user-alice",
+          displayName: "Alice Stranger",
+          isFriend: false,
+        }],
+      },
+    }),
+  });
+
+  manager.searchTerm = "alice@example.com";
+  await manager.fetchSearchData("alice@example.com");
+
+  const displayed = manager.getDisplayedConversations();
+  assert.equal(displayed.length, 1);
+  assert.equal(displayed[0].target._id, "user-alice");
+});
+
+test("SidebarStateManager search dedupes a global user against an existing conversation", async () => {
+  const existingConversation = {
+    conversationId: "conv-alice",
+    kind: "direct",
+    target: { _id: "user-alice", displayName: "Alice" },
+  };
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async () => ({
+      success: true,
+      conversations: [existingConversation],
+      nextCursor: null,
+      hasMore: false,
+    }),
+    fetchUsersApi: async () => ({
+      data: {
+        success: true,
+        users: [{ _id: "user-alice", displayName: "Alice", isFriend: true }],
+      },
+    }),
+  });
+
+  manager.searchTerm = "alice";
+  await manager.fetchSearchData("alice");
+
+  const matchingRows = manager
+    .getDisplayedConversations()
+    .filter((conversation) => conversation.target?._id === "user-alice");
+  assert.equal(matchingRows.length, 1);
+  assert.equal(matchingRows[0].conversationId, "conv-alice");
+  assert.equal(matchingRows[0].target.isFriend, true);
+});
+
+test("SidebarStateManager keeps conversation search results when global user search fails", async () => {
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async () => ({
+      success: true,
+      conversations: [{
+        conversationId: "conv-alice",
+        kind: "direct",
+        target: { _id: "user-alice", displayName: "Alice", isOnline: true },
+      }],
+    }),
+    fetchUsersApi: async () => {
+      throw new Error("user search unavailable");
+    },
+  });
+
+  manager.searchTerm = "alice";
+  await manager.fetchSearchData("alice");
+
+  const displayed = manager.getDisplayedConversations();
+  assert.equal(displayed.length, 1);
+  assert.equal(displayed[0].conversationId, "conv-alice");
+  assert.equal(displayed[0].target.isOnline, true);
+});
+
+test("SidebarStateManager keeps global user results when conversation search fails", async () => {
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async () => {
+      throw new Error("conversation search unavailable");
+    },
+    fetchUsersApi: async () => ({
+      data: {
+        success: true,
+        users: [{
+          _id: "user-alice",
+          displayName: "Alice Stranger",
+          isFriend: false,
+        }],
+      },
+    }),
+  });
+
+  manager.searchTerm = "alice";
+  await manager.fetchSearchData("alice");
+
+  const displayed = manager.getDisplayedConversations();
+  assert.equal(displayed.length, 1);
+  assert.equal(displayed[0].target._id, "user-alice");
+  assert.equal(displayed[0].isGlobalUserSearchResult, true);
+});
+
+test("SidebarStateManager filter change rejects an older search response", async () => {
+  let resolveOldConversationSearch;
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async (params) => {
+      if (params.kind === "group") {
+        return {
+          success: true,
+          conversations: [{
+            conversationId: "group-design",
+            kind: "group",
+            target: { _id: "group-design", displayName: "Design Team" },
+          }],
+        };
+      }
+      return new Promise((resolve) => {
+        resolveOldConversationSearch = resolve;
+      });
+    },
+    fetchUsersApi: async () => ({ data: { success: true, users: [] } }),
+  });
+
+  manager.searchTerm = "design";
+  const oldSearch = manager.fetchSearchData("design");
+  await Promise.resolve();
+  await manager.setFilter("group");
+
+  resolveOldConversationSearch({
+    success: true,
+    conversations: [{
+      conversationId: "direct-design",
+      kind: "direct",
+      target: { _id: "user-design", displayName: "Design Person" },
+    }],
+  });
+  await oldSearch;
+
+  const displayed = manager.getDisplayedConversations();
+  assert.equal(displayed.length, 1);
+  assert.equal(displayed[0].conversationId, "group-design");
+  assert.equal(displayed[0].kind, "group");
+});
+
+test("SidebarStateManager group search does not request global users", async () => {
+  let userSearchCalls = 0;
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async () => ({ success: true, conversations: [] }),
+    fetchUsersApi: async () => {
+      userSearchCalls += 1;
+      return { data: { success: true, users: [] } };
+    },
+  });
+
+  manager.setFilterStateOnly("group");
+  manager.searchTerm = "design";
+  await manager.fetchSearchData("design");
+
+  assert.equal(userSearchCalls, 0);
+});

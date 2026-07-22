@@ -6,3 +6,10 @@ export const getSidebarConversations = (params = {}, config = {}) => {
     ...config,
   });
 };
+
+export const searchSidebarUsers = (keyword, config = {}) => {
+  return axiosClient.get('/api/users/search', {
+    params: { keyword },
+    ...config,
+  });
+};

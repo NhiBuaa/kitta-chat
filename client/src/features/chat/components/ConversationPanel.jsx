@@ -31,6 +31,7 @@ import MediaExplorer from "./MediaExplorer.jsx";
 import FilesExplorer from "./FilesExplorer.jsx";
 import LinksExplorer from "./LinksExplorer.jsx";
 import CommonGroupsExplorer from "./CommonGroupsExplorer.jsx";
+import { shouldRefreshDirectCommonGroups } from "./conversationPanelRealtimeState.js";
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
   const k = 1024;
@@ -350,6 +351,19 @@ const ConversationPanel = ({
 
     const handleSocketGroupUpserted = (payload) => {
       const groupId = payload?.group?._id || payload?.groupId;
+      const shouldRefreshCommonGroups = payload?.action === "created" && shouldRefreshDirectCommonGroups({
+        action: payload?.action,
+        group: payload?.group,
+        currentUserId: currentUser?._id,
+        peerUserId: currentChatUser?._id,
+        panelKind: metadata?.overview?.kind,
+      });
+
+      if (shouldRefreshCommonGroups) {
+        fetchMembership();
+        return;
+      }
+
       if (String(groupId) === String(conversationId) && payload?.action === "member-added") {
         // Khi có thành viên mới được thêm, gọi lại fetchMembership và fetchMetadata để cập nhật dữ liệu chính xác nhất
         fetchMembership();
@@ -378,7 +392,14 @@ const ConversationPanel = ({
       socket.off("groupMemberUpdated", handleSocketGroupMemberUpdated);
       socket.off("groupUpserted", handleSocketGroupUpserted);
     };
-  }, [socket, isOpen, conversationId]);
+  }, [
+    socket,
+    isOpen,
+    conversationId,
+    currentUser?._id,
+    currentChatUser?._id,
+    metadata?.overview?.kind,
+  ]);
 
   const handlePreferenceChange = async (key, value) => {
     if (!conversationId || !metadata) return;

@@ -556,3 +556,30 @@ ConfigValidationError: server configuration is invalid: CONVERSATION_DUAL_WRITE_
 
 
 
+
+
+## Unified Sidebar Search Must Include Global Non-Friends
+
+**Symptom**: Ô tìm kiếm Unified Sidebar chỉ trả về người đã có Conversation. Người dùng chưa kết bạn và chưa từng nhắn tin không xuất hiện, nên không thể gửi lời mời kết bạn từ kết quả tìm kiếm.
+
+**Root cause**: Quá trình migration sang Unified Sidebar chưa nối lại luồng global user search. UI dùng `sidebarState.searchTerm` và `sidebarState.conversations`, trong khi hook legacy `useSearch()` gọi `/api/users/search` nhưng kết quả `usersToDisplay` không còn được render. Endpoint `/api/sidebar/conversations?q=...` chỉ tìm trong Conversation read model nên không thể trả về người chưa có conversation.
+
+**Reproduction**:
+
+```powershell
+node -e 'const fs=require("fs"); const chat=fs.readFileSync("src/features/chat/pages/ChatPage.jsx","utf8"); const state=fs.readFileSync("src/features/chat/hooks/useSidebarState.js","utf8"); const usesGlobalSearch=chat.includes("usersToDisplay") && chat.includes("conversations={usersToDisplay}"); const managerSearchesUsers=state.includes("searchUsers") || state.includes("fetchUsersApi"); if(!usesGlobalSearch && !managerSearchesUsers){process.exit(1)}'
+```
+
+**Fix**:
+- `SidebarStateManager` tìm conversation và global user song song, bỏ qua global user search ở filter `group`.
+- Merge và dedupe global users theo `target._id`; tạo transient direct rows cho người chưa có conversation.
+- Dùng request ID để loại stale response khi đổi từ khóa/filter và cô lập lỗi của hai API để một nguồn lỗi không che nguồn còn lại.
+- `Sidebar.jsx` hiển thị trạng thái/lời mời kết bạn và chặn mở chat đối với transient non-friend rows.
+
+**Prevention**:
+- Khi thay UI sang state manager/read model mới, lập checklist toàn bộ producer và consumer của state legacy; không chỉ kiểm tra endpoint chính.
+- Với search tổng hợp từ nhiều nguồn, giữ test cho: entity chưa tồn tại trong read model, dedupe, filter-specific behavior, stale response và partial API failure.
+- Không giả định Conversation search có thể thay thế User directory search; đây là hai seam có phạm vi dữ liệu khác nhau.
+
+**Related architecture**:
+- `docs/adr/006-unified-sidebar-conversations.md`

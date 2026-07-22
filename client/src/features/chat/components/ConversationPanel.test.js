@@ -20,3 +20,19 @@ test("ConversationPanel slices resources to exact preview limits (media: 6, file
 });
 
 
+
+
+test("ConversationPanel wires created common-group events to membership refresh", () => {
+  const source = readFileSync(new URL("./ConversationPanel.jsx", import.meta.url), "utf8");
+
+  assert.ok(
+    source.includes('payload?.action === "created" && shouldRefreshDirectCommonGroups({'),
+  );
+  assert.ok(source.includes("currentUserId: currentUser?._id"));
+  assert.ok(source.includes("peerUserId: currentChatUser?._id"));
+  const handlerStart = source.indexOf("const handleSocketGroupUpserted");
+  const handlerEnd = source.indexOf('socket.on("groupRenamed"', handlerStart);
+  const handlerSource = source.slice(handlerStart, handlerEnd);
+  assert.ok(handlerSource.includes("if (shouldRefreshCommonGroups) {"));
+  assert.ok(handlerSource.includes("fetchMembership();"));
+});

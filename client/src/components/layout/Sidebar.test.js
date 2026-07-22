@@ -225,3 +225,14 @@ test("[BUG-HEADER-VISIBLE] ChatWindow.jsx shouldShowOnlineStatus must not hide s
 });
 
 
+
+
+test("Sidebar renders friendship actions for global user search results", () => {
+  const source = readFileSync(new URL("./Sidebar.jsx", import.meta.url), "utf8");
+
+  assert.match(source, /isGlobalUserSearchResult/);
+  assert.ok(source.includes("handleAddFriend(event, conv.target)"));
+  assert.match(source, /sentRequests/);
+  assert.match(source, /FaUserPlus/);
+  assert.match(source, /FaCheck/);
+});
