@@ -49,6 +49,7 @@ If the user explicitly invokes a skill, read that skill's `SKILL.md` and follow 
 
 ### Implementation And Validation
 
+- Use `test-craft` to systematically predict edge-case matrices, boundary conditions, and author exhaustive RED test suites before coding or for manual testing guides.
 - Use `tdd` for feature implementation, bug fixes requiring regression coverage, or any request that asks for tests first.
 - Use `diagnosing-bugs` for broken behavior, failing flows, crashes, exceptions, regressions, or performance issues.
 - Use `code-check` for code review, audit, pre-merge review, or finding defects in existing changes.

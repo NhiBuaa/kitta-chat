@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export const setupInfiniteScrollObserver = ({
   sentinel,
@@ -42,8 +42,12 @@ export const useInfiniteScroll = ({
   onLoadMore,
   rootRef,
 }) => {
-  const sentinelRef = useRef(null);
+  const [sentinelNode, setSentinelNode] = useState(null);
   const isFetchingRef = useRef(false);
+
+  const sentinelRef = useCallback((node) => {
+    setSentinelNode(node);
+  }, []);
 
   // Synchronously update the fetching state ref to mirror isFetching prop
   useEffect(() => {
@@ -55,10 +59,10 @@ export const useInfiniteScroll = ({
   onLoadMoreRef.current = onLoadMore;
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !sentinelNode) return;
 
     const observer = setupInfiniteScrollObserver({
-      sentinel: sentinelRef.current,
+      sentinel: sentinelNode,
       root: rootRef?.current,
       hasMore,
       isFetchingRef,
@@ -70,7 +74,8 @@ export const useInfiniteScroll = ({
         observer.disconnect();
       }
     };
-  }, [enabled, hasMore, rootRef]);
+  }, [enabled, hasMore, rootRef, sentinelNode]);
 
   return sentinelRef;
 };
+

@@ -133,3 +133,60 @@ test("[BUG-FLASH] Sidebar.jsx must check isSearching/loading state before render
   );
 });
 
+// ──────────── SLICE 3: INFINITE SCROLL INTEGRATION TESTS ────────────
+
+test("Sidebar.jsx imports and uses useInfiniteScroll hook for Sentinel Node", () => {
+  const source = readFileSync(new URL("./Sidebar.jsx", import.meta.url), "utf8");
+
+  assert.match(
+    source,
+    /import.*useInfiniteScroll.*from/,
+    "Sidebar.jsx must import useInfiniteScroll hook"
+  );
+  assert.match(
+    source,
+    /useInfiniteScroll\s*\(/,
+    "Sidebar.jsx must invoke useInfiniteScroll hook"
+  );
+  assert.match(
+    source,
+    /ref=\{\s*sentinelRef\s*\}/,
+    "Sidebar.jsx must attach sentinelRef to a Sentinel DOM element"
+  );
+});
+
+test("Sidebar.jsx renders a bottom loading spinner when isFetching is true and list is not empty", () => {
+  const source = readFileSync(new URL("./Sidebar.jsx", import.meta.url), "utf8");
+
+  // Check for rendering bottom loading spinner when fetching page > 1
+  assert.match(
+    source,
+    /isFetching.*animate-spin|isFetching\s*&&.*Loading/s,
+    "Sidebar.jsx must render loading indicator when isFetching is true during loadMore"
+  );
+});
+
+test("ChatPage.jsx passes onLoadMore, hasMore, and isFetching props to Sidebar component", () => {
+  const source = readFileSync(
+    new URL("../../features/chat/pages/ChatPage.jsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(
+    source,
+    /onLoadMore=\{\s*sidebarState\.onLoadMore\s*\}/,
+    "ChatPage.jsx must pass onLoadMore prop to Sidebar"
+  );
+  assert.match(
+    source,
+    /hasMore=\{\s*sidebarState\.hasMore\s*\}/,
+    "ChatPage.jsx must pass hasMore prop to Sidebar"
+  );
+  assert.match(
+    source,
+    /isFetching=\{\s*sidebarState\.isFetching\s*\}/,
+    "ChatPage.jsx must pass isFetching prop to Sidebar"
+  );
+});
+
+

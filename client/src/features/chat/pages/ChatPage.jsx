@@ -581,6 +581,9 @@ const Home = () => {
           checkIsOnline={checkIsOnline}
           handleAddFriend={handleAddFriend}
           setShowCallHistoryModal={setShowCallHistoryModal}
+          onLoadMore={sidebarState.onLoadMore}
+          hasMore={sidebarState.hasMore}
+          isFetching={sidebarState.isFetching}
         />
       </div>
 

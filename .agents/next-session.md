@@ -1,27 +1,31 @@
-# Next Session Plan: Slice 3 — Client Infinite Scroll (loadMore) Integration
+# Next Session Plan: Slice 4 — Real-time Socket events, Debounced UI Sorting, and Unread Sync
 
 ## Bối cảnh
-- **Slice 1 (Backend API)** và **Slice 2 (Client Layout & Filter Chips)** đã hoàn thành 100% với 175/175 unit tests xanh.
-- Đã khắc phục toàn bộ 5 lỗi ban đầu (Bug A, B, C, D, E) và lỗi nháy Empty State khi chuyển tab.
-- Trạng thái hiện tại: Sidebar hiển thị trang đầu tiên (20 items), chuyển tab mượt mà bằng filter chips có skeleton loader.
+- **Slice 1 (Backend API)**, **Slice 2 (Client Layout)**, và **Slice 3 (Client Infinite Scroll)** đã hoàn thành 100% với 178/178 client unit tests và 298/298 server integration tests xanh.
+- Đã hỗ trợ Sentinel DOM Node, Callback Ref re-observe khi remount/chuyển tab mượt mà.
+- Trạng thái hiện tại: Sidebar hiển thị phân trang cursor, chuyển tab giữ nguyên state, cuộn trang tự động nạp tiếp.
 
 ## Slice Mục Tiêu
-**Slice 3: Client Infinite Scroll (loadMore) Integration**
+**Slice 4: Real-time Socket events, Debounced UI Sorting, and Unread Sync**
 
 ## Mục Tiêu Cụ Thể
-1. **Sentinel Node & Intersection Observer:**
-   - Thêm Sentinel DOM element tại vị trí cuối danh sách cuộc trò chuyện trong `Sidebar.jsx`.
-   - Thiết lập `IntersectionObserver` lắng nghe khi Sentinel vào viewport để kích hoạt `onLoadMore`.
-2. **Phân Trang Độc Lập Theo Tab:**
-   - Sử dụng cursor dạng `<lastMessageAt>_<conversationId>` trả về từ backend API.
-   - Khi cuộn xuống cuối, gửi request trang tiếp theo với `cursor` tương ứng của tab active (`all`, `direct`, `group`).
-3. **Guard Anti-duplicate & Race Condition:**
-   - Tránh nạp trùng cuộc trò chuyện trùng `conversationId`.
-   - Giữ nguyên bảo vệ race condition bằng `AbortController` khi cuộn hoặc đổi tab nhanh.
-4. **Viết Automated Tests:**
-   - Thêm test suite cho Infinite Scroll behavior, Intersection Observer trigger, và cursor state management.
+1. **Real-time Socket Updates:**
+   - Lắng nghe sự kiện socket tin nhắn mới (`getMessage`, `receive_message`).
+   - Cập nhật `lastMessage` và `lastMessageAt` lập tức trên UI để không bị trễ thông tin.
+2. **Debounced UI Sorting (300-500ms):**
+   - Tích hợp debounce timer (300-500ms) cho hành vi sắp xếp lại vị trí (reorder) phần tử trên danh sách Sidebar khi có tin nhắn mới dồn dập, tránh giật UI.
+3. **Unread Badge & Multi-tab Sync Guard:**
+   - Nếu `senderId === currentUserId`, không tăng unread.
+   - Nếu tin nhắn thuộc `activeChat`, không tăng unread và bắn ngay sự kiện `mark-as-read` về backend.
+   - Nếu tin nhắn thuộc cuộc trò chuyện khác `activeChat`, tăng unreadCount lên 1.
+4. **Ingestion Cuộc Trò Chuyện Mới Qua Socket:**
+   - Nếu nhận tin nhắn từ cuộc trò chuyện chưa có trong danh sách local, tự động thêm mới row với đầy đủ metadata `target`.
+
+## Slice Verification Checklist
+- File kịch bản kiểm thử nghiệm thu thủ công sẽ được khởi tạo tại:
+  [.agents/manual-tests/unified-sidebar-conversations/slice-4-realtime-socket-sync.md](file:///d:/Developer/Projects/shotter/shot-chat/.agents/manual-tests/unified-sidebar-conversations/slice-4-realtime-socket-sync.md)
 
 ## Guardrails Bắt Buộc
-- **Format Cursor:** Giữ nguyên định dạng string `<lastMessageAt>_<conversationId>`.
-- **Reset State khi đổi Tab:** Luôn reset `cursor = null` và xóa mảng khi đổi tab filter chip.
-- **Tải Trang:** Chỉ fetch trang kế tiếp khi `hasMore === true` và `isFetching === false`.
+- **Không trễ tin nhắn:** Cập nhật nội dung `lastMessage` bắt buộc thực thi tức thời (instant), chỉ debounce hành vi sắp xếp lại thứ tự (reorder index).
+- **Active Chat Guard:** Không tăng unread count khi cuộc trò chuyện đó đang mở active trên màn hình.
+- **Dữ liệu Socket:** Đóng gói đầy đủ object `target` khi emit sự kiện socket mới cho người dùng.

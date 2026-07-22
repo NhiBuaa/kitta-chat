@@ -2,6 +2,7 @@ import React from "react";
 import { FaUserPlus, FaBell, FaSearch, FaUsers, FaCheck, FaHistory, FaThumbtack, FaBellSlash } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 import CallHistoryBadge from '@/features/calls/components/CallHistoryBadge.jsx';
+import { useInfiniteScroll } from "@/features/chat/hooks/useInfiniteScroll.js";
 
 const FILTER_CHIPS = [
   { key: "all", label: "Tất cả" },
@@ -27,8 +28,17 @@ const Sidebar = ({
   sentRequests,
   checkIsOnline,
   handleAddFriend,
-  setShowCallHistoryModal
+  setShowCallHistoryModal,
+  onLoadMore,
+  hasMore,
+  isFetching,
 }) => {
+  const sentinelRef = useInfiniteScroll({
+    enabled: true,
+    hasMore,
+    isFetching,
+    onLoadMore,
+  });
 
   const renderSubtitle = (conv) => {
     if (conv.lastMessage) {
@@ -357,11 +367,21 @@ const Sidebar = ({
               </div>
             );
           })
-        ) : isSearching ? (
-          renderSkeletonLoader()
-        ) : (
-          renderEmptyState()
+          ) : null}
+
+        {/* Sentinel Node & Infinite Scroll Loading Spinner */}
+        {conversations.length > 0 && (
+          <div ref={sentinelRef} className="h-8 flex items-center justify-center p-2">
+            {isFetching && (
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                <span>Đang tải thêm...</span>
+              </div>
+            )}
+          </div>
         )}
+
+        {conversations.length === 0 && (isSearching ? renderSkeletonLoader() : renderEmptyState())}
       </div>
     </div>
   );
