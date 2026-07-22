@@ -592,3 +592,55 @@ test("GET /api/sidebar/conversations supports q search parameter for groups with
     await testServer.close();
   }
 });
+
+test("GET /api/sidebar/conversations returns placeholder content for messages with empty text (attachments or call_log)", async () => {
+  const testServer = await createTestServer();
+  const currentUserId = "60c72b2f9b1d8a0015f8a3c1";
+  const token = generateToken(currentUserId);
+
+  try {
+    const user2Id = "60c72b2f9b1d8a0015f8a3c2";
+    testServer.store.users.push({ _id: user2Id, displayName: "Bob" });
+
+    testServer.store.conversations.push({
+      _id: "60c72b2f9b1d8a0015f8a3d8",
+      kind: "direct",
+      legacyConversationId: `${currentUserId}_${user2Id}`
+    });
+
+    // Message with attachments and empty text ""
+    testServer.store.messages.push({
+      _id: "60c72b2f9b1d8a0015f8a3m8",
+      sender: user2Id,
+      text: "",
+      attachments: ["att-1"],
+      type: "file",
+      createdAt: new Date("2026-07-20T09:30:00Z")
+    });
+
+    testServer.store.participants.push({
+      userId: currentUserId,
+      conversationId: "60c72b2f9b1d8a0015f8a3d8",
+      leftAt: null,
+      state: {
+        pinnedAt: null,
+        lastMessageAt: new Date("2026-07-20T09:30:00Z"),
+        lastMessageId: "60c72b2f9b1d8a0015f8a3m8"
+      },
+      legacyConversationId: `${currentUserId}_${user2Id}`
+    });
+
+    const res = await testServer.request("/api/sidebar/conversations", {
+      headers: { authorization: `Bearer ${token}` }
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.conversations.length, 1);
+    const lastMsg = res.body.conversations[0].lastMessage;
+    assert.ok(lastMsg);
+    assert.notEqual(lastMsg.content, "", "lastMessage.content should not be empty string when message has attachments");
+  } finally {
+    await testServer.close();
+  }
+});
+

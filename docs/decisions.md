@@ -227,4 +227,27 @@ Rules:
 
 **References**: `specs/active/view-all-modals.md`, `client/src/services/api/conversationPanelApi.js`.
 
+## 2026-07-22 — Conversation Panel Resource Preview Limits & View All Trigger
+
+**Decision**: Quy định giới hạn phân vùng số lượng hiển thị xem trước (Preview Limits) ở Conversation Panel và điều kiện kích hoạt nút Xem tất cả:
+1. **Backend Panel Controller Limits (`GET /api/conversations/:id/panel/resources`):**
+   - Media (Ảnh / Video): `limit = 6`
+   - Files (Tài liệu): `limit = 3`
+   - Links (Liên kết): `limit = 3`
+   - Membership - Common Groups (Nhóm chung cho Chat 1-1): `limit = 3`
+   - Membership - Members Preview (Thành viên cho Nhóm Chat): `limit = 5`
+2. **Client Panel Display & Trigger:**
+   - Client hiển thị đúng số lượng items trả về từ Backend API.
+   - Nút "Xem tất cả" được hiển thị bất cứ khi nào phần tài nguyên có ít nhất 1 mục (`items.length > 0`), cho phép người dùng mở View All Modal Shell để xem giao diện phân trang toàn màn hình với `limit = 20`.
+
+**Why**: Tối ưu dung lượng response của Resources API, tránh query thừa dữ liệu không cần thiết từ DB/Redis, đồng thời mang lại bố cục Panel nhỏ gọn, cân đối ở Sidebar phải trước khi người dùng cần mở Modal xem toàn bộ.
+
+**Consequences**:
+- Controller gửi `limit` chuyên biệt tương ứng từng scope tới `ResourceService`.
+- Giảm tải DB I/O khi nạp tài liệu, liên kết và nhóm chung trong giai đoạn 2 (Resources Loading).
+- Giao diện Panel đồng nhất và tinh gọn.
+
+**References**: `server/src/controllers/conversationPanelController.js`, `client/src/features/chat/components/ConversationPanel.jsx`, `docs/adr/005-conversation-panel-two-stage-loading.md`.
+
+
 

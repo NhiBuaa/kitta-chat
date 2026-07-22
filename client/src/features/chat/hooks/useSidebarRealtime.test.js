@@ -534,3 +534,52 @@ test("SidebarStateManager fetchSearchData updates existing conversations target 
 
   manager.cleanup();
 });
+
+test("SidebarStateManager handleSocketMessage updates existing conversation in realtime for media/file messages with String or ObjectId IDs", async () => {
+  mockLocalStorage.clear();
+
+  const initialConversations = [
+    {
+      conversationId: "60c72b2f9b1d8a0015f8a3d1",
+      kind: "direct",
+      isPinned: false,
+      unreadCount: 0,
+      lastMessageAt: "2026-07-20T08:00:00.000Z",
+      lastMessage: { content: "Old message", createdAt: "2026-07-20T08:00:00.000Z" },
+      target: { _id: "60c72b2f9b1d8a0015f8a3u2", displayName: "Bob" }
+    }
+  ];
+
+  const manager = new SidebarStateManager({
+    fetchConversationsApi: async () => ({ success: true, conversations: initialConversations, nextCursor: null, hasMore: false })
+  });
+
+  await manager.init();
+
+  // Socket message with ObjectId string / String object for target and file attachment
+  const incomingMediaMessage = {
+    _id: "msg-media-1",
+    conversationId: "60c72b2f9b1d8a0015f8a3d1",
+    senderId: "60c72b2f9b1d8a0015f8a3u2",
+    sender: { _id: "60c72b2f9b1d8a0015f8a3u2", displayName: "Bob" },
+    receiverId: "me-id",
+    text: "",
+    type: "file",
+    attachments: [{ mimeType: "image/png", originalName: "photo.png" }],
+    createdAt: "2026-07-22T15:00:00Z"
+  };
+
+  manager.handleSocketMessage(incomingMediaMessage, {
+    currentUserId: "me-id",
+    activeChat: null,
+    debounceMs: 100
+  });
+
+  const convs = manager.getConversations();
+  assert.equal(convs.length, 1, "Should update existing conversation in place, not create duplicate");
+  assert.equal(convs[0].lastMessage.content, "[Hình ảnh]", "Should update lastMessage content to [Hình ảnh] in realtime");
+  assert.equal(convs[0].lastMessageAt, "2026-07-22T15:00:00Z", "Should update lastMessageAt in realtime");
+
+  manager.cleanup();
+});
+

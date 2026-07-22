@@ -86,24 +86,31 @@ export const appendIncomingChatMessage = (prev, data, { senderId, resolvedAttach
 };
 
 export const getMessagePreviewContent = (data, { isCallLog, resolvedAttachments }) => {
-    if (data?.text) return data.text;
+    if (data?.text && data.text.trim()) return data.text;
 
     if (isCallLog) {
-        return data.callData?.type === "video"
-            ? "[Cuộc gọi video]"
-            : "[Cuộc gọi thoại]";
+        if (data.callData?.status === "missed") return "[Cuộc gọi nhỡ]";
+        return data.callData?.type === "audio"
+            ? "[Cuộc gọi thoại]"
+            : "[Cuộc gọi video]";
     }
 
-    if (data?.image) return "[Hình ảnh]";
+    if (data?.image || data?.type === "image") return "[Hình ảnh]";
 
     if (resolvedAttachments.length > 0) {
-        return resolvedAttachments.some((file) => file?.mimeType?.startsWith("image/"))
-            ? "[Hình ảnh]"
-            : "[Tệp đính kèm]";
+        const first = resolvedAttachments[0];
+        const mime = (typeof first === "object" ? (first?.mimeType || first?.type || "") : "") || data?.mimeType || "";
+        if (mime.startsWith("image/")) return "[Hình ảnh]";
+        if (mime.startsWith("video/")) return "[Video]";
+        if (mime.startsWith("audio/")) return "[Tệp âm thanh]";
+        return "[Tệp tin]";
     }
 
-    return data?.text;
+    if (data?.type === "file") return "[Tệp tin]";
+
+    return data?.text || "";
 };
+
 
 export const updateListWithMessagePreview = (
     list = [],

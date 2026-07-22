@@ -258,27 +258,55 @@ export class SidebarStateManager {
   handleSocketMessage(data, { activeChat, currentUserId, socket, debounceMs = 300 } = {}) {
     if (!data) return;
 
+    const equalsId = (a, b) => Boolean(a && b && String(a) === String(b));
+
     const senderId = data.senderId || data.sender?._id || data.sender;
     const receiverId = data.receiverId || data.receiver?._id || data.receiver;
-    const isMeSender = senderId === currentUserId;
+    const isMeSender = equalsId(senderId, currentUserId);
     const isGroup = Boolean(data.isGroup);
 
     const incomingConvId = data.conversationId || data._id;
     const incomingTargetId = isGroup ? receiverId : (isMeSender ? receiverId : senderId);
 
     let conv = this.conversations.find((c) => {
-      if (incomingConvId && (c.conversationId === incomingConvId || c.legacyConversationId === incomingConvId || c._id === incomingConvId)) {
+      if (incomingConvId && (equalsId(c.conversationId, incomingConvId) || equalsId(c.legacyConversationId, incomingConvId) || equalsId(c._id, incomingConvId))) {
         return true;
       }
-      if (c.target && (c.target._id === incomingTargetId || c.target.id === incomingTargetId)) {
+      if (c.target && (equalsId(c.target._id, incomingTargetId) || equalsId(c.target.id, incomingTargetId))) {
         return true;
       }
       return false;
     });
 
     const createdAt = data.createdAt || new Date().toISOString();
-    const content = data.text || data.content || (data.image ? "[Hình ảnh]" : (data.file ? "[Tệp tin]" : ""));
+    let content = data.text || data.content || "";
+    if (!content.trim()) {
+      if (data.type === "call_log" || data.callData) {
+        content = data.callData?.status === "missed" ? "[Cuộc gọi nhỡ]" : (data.callData?.type === "audio" ? "[Cuộc gọi thoại]" : "[Cuộc gọi video]");
+      } else {
+        const atts = Array.isArray(data.attachmentsData) && data.attachmentsData.length > 0
+          ? data.attachmentsData
+          : (Array.isArray(data.attachments) && data.attachments.length > 0
+            ? data.attachments
+            : (Array.isArray(data.files) ? data.files : []));
+
+        const firstAtt = atts[0];
+        const mime = (typeof firstAtt === "object" ? (firstAtt?.mimeType || firstAtt?.type || "") : "") || data.mimeType || "";
+
+        if (mime.startsWith("image/") || data.type === "image" || data.image) {
+          content = "[Hình ảnh]";
+        } else if (mime.startsWith("video/") || data.type === "video") {
+          content = "[Video]";
+        } else if (mime.startsWith("audio/") || data.type === "audio") {
+          content = "[Tệp âm thanh]";
+        } else if (atts.length > 0 || data.type === "file" || data.file) {
+          content = "[Tệp tin]";
+        }
+      }
+    }
     const senderName = data.sender?.displayName || data.senderName || "";
+
+
     const senderAvatar = data.sender?.avatar || data.senderAvatar || "";
 
     const lastMessageObj = {

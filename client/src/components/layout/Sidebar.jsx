@@ -43,13 +43,27 @@ const Sidebar = ({
     onLoadMore,
   });
 
+  const formatContentFallback = (msg) => {
+    if (!msg) return "";
+    const rawContent = msg.content || msg.text || "";
+    if (rawContent && rawContent.trim()) return rawContent;
+    if (msg.type === "call_log") {
+      return msg.callData?.status === "missed" ? "[Cuộc gọi nhỡ]" : (msg.callData?.type === "audio" ? "[Cuộc gọi thoại]" : "[Cuộc gọi video]");
+    }
+    if (msg.type === "image" || msg.image) return "[Hình ảnh]";
+    if (msg.type === "video") return "[Video]";
+    if (msg.type === "file" || msg.file || (msg.attachments && msg.attachments.length > 0)) return "[Tệp tin]";
+    return "";
+  };
+
   const renderSubtitle = (conv) => {
     if (conv.lastMessage) {
+      const text = formatContentFallback(conv.lastMessage) || conv.lastMessage.content || "";
       if (conv.kind === "group") {
         const prefix = conv.lastMessage.senderName ? `${conv.lastMessage.senderName}: ` : "";
-        return `${prefix}${conv.lastMessage.content}`;
+        return `${prefix}${text}`;
       }
-      return conv.lastMessage.content;
+      return text;
     }
     // Fallback khi không có tin nhắn
     if (conv.kind === "group") {
@@ -57,6 +71,8 @@ const Sidebar = ({
     }
     return "Bắt đầu trò chuyện";
   };
+
+
 
   const isTargetOnline = (conv) => {
     if (conv.kind !== "direct") return false;

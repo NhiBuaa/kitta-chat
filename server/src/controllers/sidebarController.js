@@ -20,7 +20,38 @@ const encodeCursor = (lastMessageAt, conversationId) => {
   return `${isoStr}_${conversationId.toString()}`;
 };
 
+const formatLastMessageContent = (m) => {
+  if (!m) return "";
+  if (m.text && m.text.trim()) {
+    return m.text;
+  }
+  if (m.type === "call_log") {
+    if (m.callData?.status === "missed") {
+      return "[Cuộc gọi nhỡ]";
+    }
+    return m.callData?.type === "audio" ? "[Cuộc gọi thoại]" : "[Cuộc gọi video]";
+  }
+  if (m.type === "system") {
+    return m.text || "";
+  }
+  if (Array.isArray(m.attachments) && m.attachments.length > 0) {
+    const firstAtt = m.attachments[0];
+    if (firstAtt && typeof firstAtt === "object" && firstAtt.mimeType) {
+      if (firstAtt.mimeType.startsWith("image/")) return "[Hình ảnh]";
+      if (firstAtt.mimeType.startsWith("video/")) return "[Video]";
+      if (firstAtt.mimeType.startsWith("audio/")) return "[Tệp âm thanh]";
+      return "[Tệp tin]";
+    }
+    return "[Tệp tin]";
+  }
+  if (m.type === "file") {
+    return "[Tệp tin]";
+  }
+  return "";
+};
+
 const getSidebarConversations = async (req, res, next) => {
+
   try {
     const currentUserId = req.user.id || req.user._id;
     const limit = parseInt(req.query.limit, 10) || 20;
@@ -178,7 +209,7 @@ const getSidebarConversations = async (req, res, next) => {
         ? Group.find({ _id: { $in: Array.from(targetGroupIds) } }).select("name avatar members admin")
         : [],
       lastMessageIds.length > 0
-        ? Message.find({ _id: { $in: lastMessageIds } }).lean()
+        ? Message.find({ _id: { $in: lastMessageIds } }).populate("attachments", "mimeType originalName").lean()
         : []
     ]);
 
@@ -266,7 +297,7 @@ const getSidebarConversations = async (req, res, next) => {
           senderId: m.sender || null,
           senderName,
           senderAvatar,
-          content: m.text || "",
+          content: formatLastMessageContent(m),
           createdAt: m.createdAt
         };
       }

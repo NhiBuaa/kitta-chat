@@ -719,7 +719,7 @@ const ConversationPanel = ({
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2 px-2">
-                    {mediaState.items.map((item) => (
+                    {mediaState.items.slice(0, 6).map((item) => (
                       <div 
                         key={item._id} 
                         className="relative group aspect-square bg-gray-150 rounded-lg overflow-hidden cursor-pointer border border-gray-100 shadow-sm"
@@ -784,7 +784,7 @@ const ConversationPanel = ({
                   </div>
                 ) : (
                   <div className="space-y-2 px-2">
-                    {filesState.items.map((item) => (
+                    {filesState.items.slice(0, 3).map((item) => (
                       <div 
                         key={item._id} 
                         className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
@@ -859,7 +859,7 @@ const ConversationPanel = ({
                   </div>
                 ) : (
                   <div className="space-y-2 px-2">
-                    {linksState.items.map((item, idx) => (
+                    {linksState.items.slice(0, 3).map((item, idx) => (
                       <div 
                         key={idx} 
                         className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
@@ -983,7 +983,7 @@ const ConversationPanel = ({
                     </div>
                   ) : (
                     <div className="space-y-2 px-2">
-                      {membershipState.commonGroups.slice(0, 5).map((grp) => (
+                      {membershipState.commonGroups.slice(0, 3).map((grp) => (
                         <div 
                           key={grp._id} 
                           className="flex items-center space-x-3 p-1.5 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"

@@ -77,4 +77,8 @@ Banner thông báo độ tươi mới xuất hiện khi có tài nguyên mới k
 **ESC Blocker**:
 Cơ chế điều phối sự kiện bàn phím phím Escape. Nếu bộ xem ảnh to (MediaLightbox) đang mở, nhấn ESC chỉ đóng Lightbox, không đóng Modal Shell.
 
+**Resource Preview Limits**:
+Quy định phân vùng số lượng hiển thị xem trước tài nguyên ở Conversation Panel: tối đa 6 cho Media, 3 cho Files, 3 cho Links, 3 cho Common Groups và 5 cho Members Preview. Nút Xem tất cả kích hoạt Modal phân trang đầy đủ.
+
+
 

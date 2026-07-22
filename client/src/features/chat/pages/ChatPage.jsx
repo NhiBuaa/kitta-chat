@@ -209,9 +209,25 @@ const Home = () => {
       patchUserEverywhere(String(updatedUserId), applyUserUpdate);
     };
 
+    const handleFileProcessed = (event) => {
+      const payload = event.detail;
+      if (payload && (payload.conversationId || payload._id || payload.messageId)) {
+        sidebarState.handleSocketMessage(payload, {
+          activeChat: activeChatRef.current,
+          currentUserId: currentUser?._id,
+          socket,
+        });
+      }
+    };
+
     window.addEventListener("avatar-updated", handleAvatarUpdated);
-    return () => window.removeEventListener("avatar-updated", handleAvatarUpdated);
-  }, [currentUser, patchUserEverywhere]);
+    window.addEventListener("file-processed", handleFileProcessed);
+    return () => {
+      window.removeEventListener("avatar-updated", handleAvatarUpdated);
+      window.removeEventListener("file-processed", handleFileProcessed);
+    };
+  }, [currentUser, patchUserEverywhere, sidebarState, socket]);
+
 
   // Search hook
   const { searchTerm, setSearchTerm, isSearching, usersToDisplay } = useSearch({

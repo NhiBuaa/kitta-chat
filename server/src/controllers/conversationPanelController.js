@@ -231,7 +231,6 @@ exports.getResources = async (req, res) => {
 
     const resourceService = require("../services/resourceService");
 
-    const limit = 6;
     const cursor = req.query.cursor || null;
 
     // Helper timeout loader 2s
@@ -261,7 +260,7 @@ exports.getResources = async (req, res) => {
 
     if (requestedScopes.includes("media")) {
       promises.media = runLoaderWithTimeout(
-        resourceService.loadMedia(conversationId, limit, cursor, userId),
+        resourceService.loadMedia(conversationId, 6, cursor, userId),
         2000,
         { items: [], hasMore: false, nextCursor: null }
       );
@@ -269,7 +268,7 @@ exports.getResources = async (req, res) => {
 
     if (requestedScopes.includes("files")) {
       promises.files = runLoaderWithTimeout(
-        resourceService.loadFiles(conversationId, limit, cursor, userId),
+        resourceService.loadFiles(conversationId, 3, cursor, userId),
         2000,
         { items: [], hasMore: false, nextCursor: null }
       );
@@ -277,15 +276,17 @@ exports.getResources = async (req, res) => {
 
     if (requestedScopes.includes("links")) {
       promises.links = runLoaderWithTimeout(
-        resourceService.loadLinks(conversationId, limit, cursor, userId),
+        resourceService.loadLinks(conversationId, 3, cursor, userId),
         2000,
         { items: [], hasMore: false, nextCursor: null }
       );
     }
 
     if (requestedScopes.includes("membership")) {
+      const isDirect = conversationId.includes("_");
+      const membershipLimit = isDirect ? 3 : 5;
       promises.membership = runLoaderWithTimeout(
-        resourceService.loadMembership(conversationId, limit, cursor, userId),
+        resourceService.loadMembership(conversationId, membershipLimit, cursor, userId),
         2000,
         {
           commonGroups: [],
@@ -295,6 +296,7 @@ exports.getResources = async (req, res) => {
         }
       );
     }
+
 
     // Chạy song song các loaders
     const results = {};

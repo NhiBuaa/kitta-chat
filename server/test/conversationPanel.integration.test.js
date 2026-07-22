@@ -950,4 +950,48 @@ test("Action API - POST /panel/delete successfully soft-deletes history", async 
   }
 });
 
+test("Resources API - passes specific preview limits to loaders (media: 6, files: 3, links: 3, direct membership: 3, group membership: 5)", async () => {
+  const server = await createTestServer({
+    CONVERSATION_PANEL_ENABLED: "true",
+    CONVERSATION_PANEL_RESOURCES_ENABLED: "true",
+  });
+
+  try {
+    const token = generateToken("user-1");
+
+    const limitsCaptured = {};
+    server.resourceMock.loadMedia = async (conversationId, limit, cursor, userId) => {
+      limitsCaptured.media = limit;
+      return { items: [], hasMore: false, nextCursor: null };
+    };
+    server.resourceMock.loadFiles = async (conversationId, limit, cursor, userId) => {
+      limitsCaptured.files = limit;
+      return { items: [], hasMore: false, nextCursor: null };
+    };
+    server.resourceMock.loadLinks = async (conversationId, limit, cursor, userId) => {
+      limitsCaptured.links = limit;
+      return { items: [], hasMore: false, nextCursor: null };
+    };
+    server.resourceMock.loadMembership = async (conversationId, limit, cursor, userId) => {
+      limitsCaptured.membership = limit;
+      return { commonGroups: [], membersPreview: [], hasMoreMembers: false, nextMemberCursor: null };
+    };
+
+    // Call for direct chat
+    await server.get("/api/conversations/user-1_user-2/panel/resources", token);
+
+    assert.equal(limitsCaptured.media, 6);
+    assert.equal(limitsCaptured.files, 3);
+    assert.equal(limitsCaptured.links, 3);
+    assert.equal(limitsCaptured.membership, 3);
+
+    // Call for group chat
+    await server.get("/api/conversations/group-123/panel/resources?scopes=membership", token);
+    assert.equal(limitsCaptured.membership, 5);
+  } finally {
+    await server.close();
+  }
+});
+
+
 

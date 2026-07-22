@@ -108,7 +108,7 @@ async function loadMedia(conversationId, limit = 6, cursor = null, userId = null
   }
 
   return {
-    items,
+    items: items.slice(0, limit),
     hasMore,
     nextCursor
   };
