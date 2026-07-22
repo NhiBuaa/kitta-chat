@@ -265,7 +265,7 @@ const ChatWindow = ({
                 : handleOpenUserProfileModal
             }
             disabled={!isPanelEnabled && isGroupChat}
-            className="flex items-center text-left rounded-lg transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-200"
+            className="flex items-center text-left rounded-lg border-0 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-0 focus-visible:bg-gray-100"
             title={isPanelEnabled ? "Chi tiết cuộc trò chuyện" : (isGroupChat ? undefined : "Xem hồ sơ")}
           >
             <img
