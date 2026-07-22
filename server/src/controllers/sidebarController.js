@@ -129,7 +129,7 @@ const getSidebarConversations = async (req, res, next) => {
         ? User.find({ _id: { $in: Array.from(targetUserIds) } }).select("displayName avatar status activityStatus")
         : [],
       targetGroupIds.size > 0
-        ? Group.find({ _id: { $in: Array.from(targetGroupIds) } }).select("displayName avatar members admin")
+        ? Group.find({ _id: { $in: Array.from(targetGroupIds) } }).select("name avatar members admin")
         : [],
       lastMessageIds.length > 0
         ? Message.find({ _id: { $in: lastMessageIds } }).lean()
@@ -190,9 +190,11 @@ const getSidebarConversations = async (req, res, next) => {
           const g = groupMap.get(groupId);
           target = {
             _id: g._id,
-            displayName: g.displayName,
+            displayName: g.name,
             avatar: g.avatar,
-            memberCount: g.members?.length || 0
+            memberCount: g.members?.length || 0,
+            members: (g.members || []).map(id => ({ _id: id })),
+            admin: g.admin
           };
         }
       }

@@ -256,7 +256,7 @@ test("GET /api/sidebar/conversations returns unified lists correctly on Page 1 (
     const groupId1 = "60c72b2f9b1d8a0015f8a3g1";
 
     testServer.store.users.push({ _id: user2Id, displayName: "Bob", avatar: "bob-avt" });
-    testServer.store.groups.push({ _id: groupId1, displayName: "Design Group", avatar: "group-avt" });
+    testServer.store.groups.push({ _id: groupId1, name: "Design Group", avatar: "group-avt" });
 
     // Setup conversations
     testServer.store.conversations.push(

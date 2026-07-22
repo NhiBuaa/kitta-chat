@@ -37,6 +37,7 @@ import { useFriendSocket } from "@/features/friends/socket/useFriendSocket.js";
 import { useGroupSocket } from "@/features/groups/socket/useGroupSocket.js";
 import { useMessageSocket } from "@/features/chat/socket/useMessageSocket.js";
 import { usePresence } from "@/features/profile/hooks/usePresence.js";
+import { useSidebarState } from "@/features/chat/hooks/useSidebarState.js";
 
 const Home = () => {
   // Core state
@@ -106,6 +107,7 @@ const Home = () => {
   }, []);
 
   const { checkIsOnline } = usePresence();
+  const sidebarState = useSidebarState();
 
   const renderLastMessage = (user, currentUserId) => {
     if (!user.lastMessage)
@@ -568,16 +570,15 @@ const Home = () => {
           setShowRequestModal={setShowRequestModal}
           requestCount={requestCount}
           handleLogout={handleLogout}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          isSearching={isSearching}
-          groups={groups}
+          searchTerm={sidebarState.searchTerm}
+          setSearchTerm={sidebarState.setSearchTerm}
+          isSearching={sidebarState.isFetching}
+          conversations={sidebarState.conversations}
+          activeFilter={sidebarState.activeFilter}
+          setActiveFilter={sidebarState.setActiveFilter}
           handleSelectUser={handleSelectUser}
-          usersToDisplay={usersToDisplay}
-          users={users}
           sentRequests={sentRequests}
           checkIsOnline={checkIsOnline}
-          renderLastMessage={renderLastMessage}
           handleAddFriend={handleAddFriend}
           setShowCallHistoryModal={setShowCallHistoryModal}
         />

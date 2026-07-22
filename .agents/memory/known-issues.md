@@ -334,3 +334,63 @@ ConfigValidationError: server configuration is invalid: CONVERSATION_DUAL_WRITE_
 
 - `server/src/models/Message.js` (extractAndNormalizeLinks)
 - `client/src/features/chat/components/ChatWindow.jsx` (renderMessageTextWithLinks)
+
+## Sidebar API response shape mismatch with legacy handleSelectUser
+
+**Symptom**: Click conversation trên sidebar không mở được chat (cả direct và group). Chat nhóm hiện subtitle bị thừa dấu `:` khi senderName rỗng (": A đã tạo nhóm").
+
+**Root cause**:
+1. `Sidebar.jsx` truyền raw API conversation object vào `handleSelectUser(conv)`. API `/api/sidebar/conversations` trả về `{ conversationId, target: { _id, displayName, ... }, kind, ... }` nhưng `handleSelectUser` expect `{ _id, members, displayName, avatar }` (legacy user/group shape). Thiếu `_id` top-level khiến `setActiveChat` set object thiếu identifier.
+2. `renderSubtitle` dùng template literal `` `${senderName}: ${content}` `` không guard empty string. API trả `senderName: ""` khi sender chưa enrich, output thành `: nội dung`.
+
+**Fix**:
+- `Sidebar.jsx`: Tạo `selectPayload` transform `conv.target._id` → `_id`, thêm `members: true` cho group, map `displayName`/`avatar` lên top-level.
+- `Sidebar.jsx`: Guard `senderName` trước khi concat.
+
+**Prevention**: Khi component mới consume API response mới nhưng truyền data vào callback/handler cũ (legacy), luôn kiểm tra contract/shape mà handler expect. Viết regression test kiểm tra object shape transformation.
+
+**Related files**:
+
+- `client/src/components/layout/Sidebar.jsx`
+- `client/src/features/chat/pages/ChatPage.jsx` (handleSelectUser)
+- `server/src/controllers/sidebarController.js`
+
+## Group Model Schema Field Mismatch & Group Members Payload Shape
+
+**Symptom**:
+- Chat nhóm bên sidebar hiển thị tên nhóm là "Không rõ"
+- Khi bấm vào chat nhóm, hiển thị "undefined Thành viên" và không gửi được tin nhắn
+
+**Root cause**:
+1. **BUG-D**: `sidebarController.js` dùng `Group.find().select("displayName ...")` và `target.displayName = g.displayName`. Tuy nhiên `Group` Mongoose model chỉ định nghĩa field `name`, không phải `displayName`. Kết quả là `g.displayName` luôn trả về `undefined`.
+2. **BUG-E**: `Sidebar.jsx` gán `members: true` (boolean) trong `selectPayload`. Trong khi `ChatWindow.jsx` và `useChatMessages.js` gọi `.length`, `.find()`, `.some()` trên `activeChat.members`. Việc gán boolean làm Javascript ném TypeError runtime crash khi gửi tin nhắn hoặc hiển thị số thành viên.
+
+**Fix**:
+- Backend (`sidebarController.js`): Thay `displayName` thành `name` trong `Group.find().select("name avatar members admin")`, map `target.displayName = g.name` và `target.members = (g.members || []).map(id => ({ _id: id }))`.
+- Frontend (`Sidebar.jsx`): Map `members: conv.target?.members || []` trong `selectPayload`.
+
+**Prevention**:
+- Kiểm tra chính xác Mongoose Schema field names khi viết `.select(...)` query.
+- Kiểm tra các type contract/type assumption (`Array` vs `Boolean`) tại nơi tiêu thụ object trong UI components.
+
+**Related files**:
+- `server/src/models/Group.js`
+- `server/src/controllers/sidebarController.js`
+- `client/src/components/layout/Sidebar.jsx`
+- `client/src/features/chat/components/ChatWindow.jsx`
+- `client/src/features/chat/hooks/useChatMessages.js`
+
+## Flashing Empty State UI on Sidebar Tab Switching
+
+**Symptom**: Khi chuyển tab giữa Tất cả -> Cá nhân -> Nhóm, UI bị nháy hiển thị giao diện Empty State ("Chưa có cuộc trò chuyện...", nút "Tạo nhóm mới") vài trăm ms trong lúc chờ fetch dữ liệu từ API.
+
+**Root cause**: Trong `Sidebar.jsx`, điều kiện render list là `{conversations.length > 0 ? (...) : renderEmptyState()}`. Khi user chuyển tab, `useSidebarState.setFilter()` lập tức reset `conversations = []` và đặt `isFetching = true`. Việc không kiểm tra `isFetching` khiến React render `renderEmptyState()` ngay lập tức trong khoảng thời gian request pending.
+
+**Fix**: Thêm `renderSkeletonLoader()` (dạng placeholder mờ giật nhè nhẹ) và đổi điều kiện render thành: `{conversations.length > 0 ? (...) : isSearching ? renderSkeletonLoader() : renderEmptyState()}`.
+
+**Prevention**: Khi reset danh sách về mảng rỗng trước khi fetch async, luôn phải check flag loading/fetching trước khi fallback render Empty State UI.
+
+**Related files**:
+- `client/src/components/layout/Sidebar.jsx`
+- `client/src/features/chat/hooks/useSidebarState.js`
+
