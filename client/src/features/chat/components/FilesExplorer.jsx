@@ -3,6 +3,7 @@ import { FaFileAlt, FaDownload, FaSync } from "react-icons/fa";
 import { getPanelResources } from "@/services/api/conversationPanelApi.js";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll.js";
 import { useExplorerFreshness } from "../hooks/useExplorerFreshness.js";
+import { downloadChatFile } from "../actions/downloadChatFile.js";
 
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
@@ -173,16 +174,19 @@ export const FilesExplorer = ({
                   </p>
                 </div>
               </div>
-              <a
-                href={item.url}
-                download={item.originalName}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() =>
+                  downloadChatFile({
+                    fileId: item._id,
+                    messageId: item.messageId,
+                  })
+                }
                 className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 ml-3"
                 title="Tải xuống"
               >
                 <FaDownload size={14} />
-              </a>
+              </button>
             </div>
           ))}
         </div>

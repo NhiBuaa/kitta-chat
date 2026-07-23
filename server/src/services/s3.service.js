@@ -46,6 +46,32 @@ const validateFile = (mimeType) => {
 const buildObjectUrl = (key) =>
   `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
+const encodeRfc5987Value = (value) =>
+  encodeURIComponent(value).replace(/[!'()*]/g, (character) =>
+    `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+const buildDownloadObjectInput = ({ key, originalName, mimeType }) => {
+  const safeOriginalName = String(originalName || "download")
+    .replace(/[\r\n]/g, " ")
+    .trim() || "download";
+  const asciiFallback = safeOriginalName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/["\\]/g, "_");
+
+  return {
+    Bucket: BUCKET,
+    Key: key,
+    ResponseContentType: mimeType || "application/octet-stream",
+    ResponseContentDisposition:
+      `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeRfc5987Value(safeOriginalName)}`,
+  };
+};
+
 const streamToBuffer = async (stream) => {
   const chunks = [];
   for await (const chunk of stream) {
@@ -82,6 +108,14 @@ const downloadObject = async (key) => {
   );
 
   return streamToBuffer(response.Body);
+};
+
+const getDownloadUrl = async (key, originalName, mimeType) => {
+  const command = new GetObjectCommand(
+    buildDownloadObjectInput({ key, originalName, mimeType }),
+  );
+
+  return getSignedUrl(s3Client, command, { expiresIn: 300 });
 };
 
 const deleteObject = async (key) => {
@@ -147,7 +181,9 @@ module.exports = {
 
   uploadObject,
   downloadObject,
+  getDownloadUrl,
   deleteObject,
+  buildDownloadObjectInput,
 
   uploadSingleFile: async (fileBuffer, fileName, mimeType, folder = "uploads") => {
     if (!mimeType?.startsWith("image/")) {

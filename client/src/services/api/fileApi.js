@@ -1,6 +1,6 @@
-import { axiosClient } from '@/services/api/axiosClient.js';
+import { axiosClient } from './axiosClient.js';
 
-const API_URL = import.meta.env.VITE_API_URL_FILES || '/api/files';
+const API_URL = import.meta.env?.VITE_API_URL_FILES || '/api/files';
 
 export const initUpload = async (fileName, fileType, fileHash) => {
     const res = await axiosClient.post(`${API_URL}/init`, {
@@ -34,4 +34,11 @@ export const completeUpload = async (uploadId, key, parts, fileInfo) => {
     });
 
     return res.data.file;
+};
+export const requestFileDownloadUrl = async (fileId, messageId) => {
+    const res = await axiosClient.post(`${API_URL}/${fileId}/download-url`, {
+        messageId,
+    });
+
+    return res.data;
 };

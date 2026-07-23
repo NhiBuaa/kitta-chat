@@ -29,3 +29,16 @@ test("chat scroll container reports genuine user scroll intent separately from s
   assert.ok(scrollContainerSource.includes('onTouchMove={handleScrollTouchMove}'));
   assert.ok(scrollContainerSource.includes('onPointerDown={handleScrollPointerDown}'));
 });
+
+test("chat document attachments use the authenticated download action", () => {
+  const source = readFileSync(new URL("./ChatWindow.jsx", import.meta.url), "utf8");
+  const attachmentStart = source.indexOf("{/* Files đính kèm */}");
+  const attachmentEnd = source.indexOf("{/* Text tin nhắn */}", attachmentStart);
+  const attachmentSource = source.slice(attachmentStart, attachmentEnd);
+
+  assert.ok(source.includes('import { downloadChatFile } from "../actions/downloadChatFile.js";'));
+  assert.ok(attachmentSource.includes("downloadChatFile({"));
+  assert.ok(attachmentSource.includes("fileId: file._id"));
+  assert.ok(attachmentSource.includes("messageId: message._id"));
+  assert.equal(attachmentSource.includes("href={file.url}"), false);
+});

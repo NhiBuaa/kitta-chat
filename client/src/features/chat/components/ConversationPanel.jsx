@@ -32,6 +32,7 @@ import FilesExplorer from "./FilesExplorer.jsx";
 import LinksExplorer from "./LinksExplorer.jsx";
 import CommonGroupsExplorer from "./CommonGroupsExplorer.jsx";
 import { getRealtimePanelResourceScopes, shouldRefreshDirectCommonGroups } from "./conversationPanelRealtimeState.js";
+import { downloadChatFile } from "../actions/downloadChatFile.js";
 const formatFileSize = (bytes) => {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return "0 B";
   const k = 1024;
@@ -845,16 +846,19 @@ const ConversationPanel = ({
                             </p>
                           </div>
                         </div>
-                        <a 
-                          href={item.url} 
-                          download={item.originalName} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
+                          onClick={() =>
+                            downloadChatFile({
+                              fileId: item._id,
+                              messageId: item.messageId,
+                            })
+                          }
                           className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
                           title="Tải về"
                         >
                           <FaDownload size={12} />
-                        </a>
+                        </button>
                       </div>
                     ))}
                   </div>

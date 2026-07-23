@@ -53,3 +53,16 @@ test("ConversationPanel refreshes matching resource previews on getMessage and c
   assert.ok(source.includes('socket.on("getMessage", handleSocketMessage);'));
   assert.ok(source.includes('socket.off("getMessage", handleSocketMessage);'));
 });
+
+test("ConversationPanel document previews use the authenticated download action", () => {
+  const source = readFileSync(new URL("./ConversationPanel.jsx", import.meta.url), "utf8");
+  const filesStart = source.indexOf("filesState.items.slice(0, 3)");
+  const filesEnd = source.indexOf("{/* Shared Links Section", filesStart);
+  const filesSource = source.slice(filesStart, filesEnd);
+
+  assert.ok(source.includes('import { downloadChatFile } from "../actions/downloadChatFile.js";'));
+  assert.ok(filesSource.includes("downloadChatFile({"));
+  assert.ok(filesSource.includes("fileId: item._id"));
+  assert.ok(filesSource.includes("messageId: item.messageId"));
+  assert.equal(filesSource.includes("href={item.url}"), false);
+});

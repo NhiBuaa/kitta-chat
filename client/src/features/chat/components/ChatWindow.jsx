@@ -21,6 +21,7 @@ import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
 import UserProfileModal from "@/features/profile/components/UserProfileModal.jsx";
 import MessageSeenBy from '@/features/chat/components/MessageSeenBy.jsx';
 import OfflineBanner from "@/features/chat/components/OfflineBanner.jsx";
+import { downloadChatFile } from "../actions/downloadChatFile.js";
 import CallLogItem from "@/features/calls/components/CallLogItem.jsx";
 import { removeFriend } from "@/services/api/friendApi.js";
 import { runRemoveFriendAction } from "@/features/friends/actions/removeFriendAction.js";
@@ -556,19 +557,23 @@ const ChatWindow = ({
                             );
                           }
                           return (
-                            <a
+                            <button
                               key={file._id}
-                              href={file.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`flex items-center gap-2 p-2 rounded-lg transition text-xs font-medium ${isMe
+                              type="button"
+                              onClick={() =>
+                                downloadChatFile({
+                                  fileId: file._id,
+                                  messageId: message._id,
+                                })
+                              }
+                              className={`flex w-full items-center gap-2 p-2 rounded-lg transition text-left text-xs font-medium ${isMe
                                 ? "bg-green-700 hover:bg-green-800 text-white"
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                                 }`}
                             >
                               <FaPaperclip className="text-lg" />
                               <span className="truncate">{file.originalName}</span>
-                            </a>
+                            </button>
                           );
                         })}
                       </div>

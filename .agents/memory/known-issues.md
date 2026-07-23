@@ -640,3 +640,33 @@ Browser harness với `onScroll` thật trước fix kết thúc cách đáy 800
 - Mọi state transition “rời đáy” phải được bảo vệ bởi tín hiệu input thật như wheel, touch hoặc scrollbar interaction.
 - Test cả hai chiều: programmatic layout growth phải tiếp tục follow, còn người dùng đọc lịch sử không được bị ép xuống.
 - Với media bất đồng bộ, luôn chạy browser harness có scroll event thật ngoài unit test state controller.
+
+## Cross-Origin File Downloads Need Server-Controlled Content-Disposition
+
+**Symptom**: Khi tải tài liệu từ chat, browser lưu file bằng basename ngẫu nhiên của S3 object key thay vì `File.originalName`, ví dụ `1721234567890-847362910-bao-cao-quy-2.pdf` thay cho `Báo cáo quý 2.pdf`.
+
+**Root cause**: Các link tài liệu trỏ trực tiếp sang S3/CloudFront khác origin. Thuộc tính HTML `download={originalName}` không đáng tin cậy với cross-origin URL, trong khi object response không có `Content-Disposition` chứa tên file gốc. Browser vì vậy suy ra tên từ URL/object key đã được random hóa lúc upload.
+
+**Reproduction**:
+- Mở một tài liệu chat có `File.originalName` Unicode nhưng URL trỏ tới object key đã random hóa trên S3/CloudFront khác origin.
+- Trước fix, click tải xuống và quan sát browser dùng basename của object key thay vì tên gốc.
+- Feedback loop browser tạm đã quan sát 3/3 lần tên random trước fix và 3/3 lần `Báo cáo quý 2.pdf` sau fix; harness được xóa sau khi chuyển các assertion bền vững vào test suite.
+
+```powershell
+cd server
+node --test test/fileDownload.test.js
+cd ../client
+node --test src/features/chat/actions/downloadChatFile.test.js src/features/chat/components/ChatWindow.test.js src/features/chat/components/ConversationPanel.test.js src/features/chat/components/FilesExplorer.test.js
+```
+
+**Fix**:
+- Thêm endpoint authenticated tạo signed S3 `GetObject` URL sau khi xác minh file thuộc message, người dùng có quyền đọc conversation và message nằm trong visibility window của participant.
+- Signed response đặt `Content-Disposition` với ASCII `filename` fallback và RFC 5987 `filename*` UTF-8 lấy từ `File.originalName`.
+- Client tải tài liệu qua action dùng signed URL tại ChatWindow, Conversation Panel và Files Explorer.
+- Loại bỏ CR/LF, quote và backslash khỏi phần header fallback để tránh header injection.
+
+**Prevention**:
+- Không dựa vào thuộc tính `download` để đặt tên file cho tài nguyên cross-origin.
+- Tên tải xuống phải do response header phía storage/server kiểm soát và lấy từ metadata bền vững, không lấy từ object key.
+- Endpoint ký URL phải kiểm tra authorization, quan hệ file-message và visibility window trước khi tạo URL.
+- Regression tests phải bao phủ Unicode filename, header injection, unauthorized access, attachment mismatch và participant visibility.

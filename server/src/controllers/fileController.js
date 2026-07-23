@@ -1,5 +1,11 @@
 const s3Service = require("../services/s3.service");
 const FileModel = require("../models/File");
+const MessageModel = require("../models/Message");
+const ConversationParticipant = require("../models/ConversationParticipant");
+const permissionService = require("../services/permissionService");
+const {
+  buildMessageVisibilityFilter,
+} = require("../services/conversationVisibilityHelpers");
 const { buildChatImageJob } = require("../queues/imageJobs");
 const { imageQueue: defaultImageQueue } = require("../queues/imageQueue");
 const { buildQueueFailureResponse } = require("../utils/queueApiSemantics");
@@ -7,6 +13,10 @@ const { buildQueueFailureResponse } = require("../utils/queueApiSemantics");
 const createFileController = ({
   imageQueue = defaultImageQueue,
   storage = s3Service,
+  fileModel = FileModel,
+  messageModel = MessageModel,
+  participantModel = ConversationParticipant,
+  permissionService: permissions = permissionService,
 } = {}) => ({
   init: async (req, res) => {
     try {
@@ -65,6 +75,73 @@ const createFileController = ({
           .catch((e) => console.error(" lỗi hủy S3:", e));
       }
       res.status(500).json({ message: "Ghép file thất bại", error: error.message });
+    }
+  },
+
+
+  createDownloadUrl: async (req, res) => {
+    try {
+      const userId = req.user?.id || req.user?._id || req.userId;
+      const { fileId } = req.params;
+      const { messageId } = req.body;
+
+      if (!userId || !fileId || !messageId) {
+        return res.status(400).json({ message: "Thiếu thông tin tải tài liệu." });
+      }
+
+      const [file, message] = await Promise.all([
+        fileModel.findById(fileId).lean(),
+        messageModel
+          .findOne({ _id: messageId, attachments: fileId })
+          .select("conversationId")
+          .lean(),
+      ]);
+
+      if (!file || !message) {
+        return res.status(404).json({ message: "Không tìm thấy tài liệu." });
+      }
+
+      const access = await permissions.getPermissions(userId, message.conversationId);
+      if (!access.canRead) {
+        return res.status(403).json({ message: "Bạn không có quyền tải tài liệu này." });
+      }
+
+      const participant = await participantModel
+        .findOne({
+          legacyConversationId: message.conversationId,
+          userId,
+        })
+        .lean();
+      const visibilityFilter = participant
+        ? buildMessageVisibilityFilter(participant)
+        : {};
+
+      if (Object.keys(visibilityFilter).length > 0) {
+        const visibleMessage = await messageModel.exists({
+          _id: messageId,
+          attachments: fileId,
+          conversationId: message.conversationId,
+          ...visibilityFilter,
+        });
+        if (!visibleMessage) {
+          return res.status(403).json({
+            message: "Bạn không có quyền tải tài liệu này.",
+          });
+        }
+      }
+
+      const url = await storage.getDownloadUrl(
+        file.s3Key,
+        file.originalName,
+        file.mimeType,
+      );
+
+      return res.status(200).json({ url, originalName: file.originalName });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Không thể tạo liên kết tải tài liệu.",
+        error: error.message,
+      });
     }
   },
 

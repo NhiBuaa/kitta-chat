@@ -30,3 +30,13 @@ test("FilesExplorer implements Floating Freshness Banner positioning rules", () 
   assert.match(source, /top-/);
   assert.match(source, /z-20/);
 });
+
+test("FilesExplorer downloads documents through the authenticated action", () => {
+  const source = readFileSync(new URL("./FilesExplorer.jsx", import.meta.url), "utf8");
+
+  assert.ok(source.includes('import { downloadChatFile } from "../actions/downloadChatFile.js";'));
+  assert.ok(source.includes("downloadChatFile({"));
+  assert.ok(source.includes("fileId: item._id"));
+  assert.ok(source.includes("messageId: item.messageId"));
+  assert.equal(source.includes("href={item.url}"), false);
+});

@@ -15,6 +15,7 @@ router.use(authMiddleware);
 
 router.post('/init', fileController.init);
 router.post('/get-presigned-url', fileController.getPresignedUrl);
+router.post('/:fileId/download-url', fileController.createDownloadUrl);
 router.post('/complete', fileController.complete);
 router.post('/upload-single', upload.single('file'), fileController.uploadSingleFile);
 
