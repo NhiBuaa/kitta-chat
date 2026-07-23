@@ -243,8 +243,9 @@ const Home = () => {
     scrollChatToBottom,
     handleScrollToBottom,
     armAutoScrollLock,
+    handleUserScrollIntent,
     handleMediaContentLoad,
-    handleUserMovedAwayFromBottom,
+    handleScrollPositionChange,
   } = useScrollBehavior();
 
   // Messages hook
@@ -669,7 +670,8 @@ const Home = () => {
               setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
               onMediaContentLoad={handleMediaContentLoad}
-              onUserMovedAwayFromBottom={handleUserMovedAwayFromBottom}
+              onScrollPositionChange={handleScrollPositionChange}
+              onUserScrollIntent={handleUserScrollIntent}
               handleRetryMessage={handleRetryMessage}
               loadMoreMessages={loadMoreMessages}
               isLoadingMore={isLoadingMore}

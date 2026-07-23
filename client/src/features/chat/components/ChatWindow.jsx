@@ -92,7 +92,8 @@ const ChatWindow = ({
   setShowGroupMembers,
   handleScrollToBottom,
   onMediaContentLoad,
-  onUserMovedAwayFromBottom,
+  onScrollPositionChange,
+  onUserScrollIntent,
   handleRetryMessage,
   loadMoreMessages,
   isLoadingMore,
@@ -112,6 +113,7 @@ const ChatWindow = ({
     createClosedRemoveFriendModalState,
   );
   const topSentinelRef = useRef(null);
+  const scrollTouchYRef = useRef(null);
   const canLoadMoreFromTopRef = useRef(true);
   const removeFriendSubmitInFlightRef = useRef(false);
 
@@ -215,6 +217,38 @@ const ChatWindow = ({
     scrollRef,
   ]);
 
+  const handleScrollWheel = (event) => {
+    if (event.deltaY < 0) {
+      onUserScrollIntent?.();
+    }
+  };
+
+  const handleScrollTouchStart = (event) => {
+    scrollTouchYRef.current = event.touches[0]?.clientY ?? null;
+  };
+
+  const handleScrollTouchMove = (event) => {
+    const currentTouchY = event.touches[0]?.clientY;
+    if (
+      Number.isFinite(currentTouchY) &&
+      Number.isFinite(scrollTouchYRef.current) &&
+      currentTouchY > scrollTouchYRef.current
+    ) {
+      onUserScrollIntent?.();
+    }
+    scrollTouchYRef.current = currentTouchY ?? null;
+  };
+
+  const handleScrollPointerDown = (event) => {
+    const container = event.currentTarget;
+    const scrollbarWidth = container.offsetWidth - container.clientWidth;
+    const scrollbarLeft = container.getBoundingClientRect().right - scrollbarWidth;
+
+    if (scrollbarWidth > 0 && event.clientX >= scrollbarLeft) {
+      onUserScrollIntent?.();
+    }
+  };
+
   // HÀM KIỂM TRA VỊ TRÍ ĐỂ HIỆN BUTTON SCROLL
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
@@ -223,11 +257,12 @@ const ChatWindow = ({
     // Nếu cách đáy hơn 150px thì hiện nút
     if (distanceToBottom > 150) {
       setShowScrollButton(true);
-      onUserMovedAwayFromBottom?.();
     } else {
       setShowScrollButton(false);
       setHasNewUnread(false);
     }
+
+    onScrollPositionChange?.(distanceToBottom);
 
     // Nếu kéo lên trên thì hiện load thêm tin nhắn
   };
@@ -359,6 +394,10 @@ const ChatWindow = ({
         className="flex-1 overflow-y-auto p-6 space-y-4 relative bg-gradient-to-b from-gray-50 via-white to-gray-100"
         ref={scrollRef}
         onScroll={handleScroll}
+        onWheel={handleScrollWheel}
+        onTouchStart={handleScrollTouchStart}
+        onTouchMove={handleScrollTouchMove}
+        onPointerDown={handleScrollPointerDown}
       >
         <div ref={topSentinelRef} className="h-px w-full" />
         {isChatBootstrapping && (

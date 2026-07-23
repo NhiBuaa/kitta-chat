@@ -223,13 +223,14 @@ export const useChatMessages = ({
             rawPayload: messagePayload,
         };
 
+        armAutoScrollLock();
         setMessages((prev) => [...prev, optimisticMessage]);
         setNewMessage("");
         clearUploads();
         setShowEmoji(false);
 
         setTimeout(() => {
-            scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+            scrollChatToBottom("smooth");
         }, 50);
 
         // Lưu vào PendingQueue (localStorage) reload detection
@@ -280,7 +281,7 @@ export const useChatMessages = ({
             clearTimeout(timeoutId);
             handleServerResponse(res);
         });
-    }, [activeChat, currentUser, socket, uploadQueue, clearUploads, newMessage, scrollRef, setShowEmoji]);
+    }, [activeChat, currentUser, socket, uploadQueue, clearUploads, newMessage, armAutoScrollLock, scrollChatToBottom, setShowEmoji]);
 
     // Gửi lại tin nhắn lỗi (tap trực tiếp trên bubble)
     const handleRetryMessage = useCallback((failedMessage) => {

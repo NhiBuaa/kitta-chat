@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from "react";
+import { createScrollFollowState } from "./scrollFollowState.js";
 
 /**
  * Quản lý toàn bộ scroll behavior của khung chat:
@@ -12,11 +13,14 @@ export const useScrollBehavior = () => {
     const bottomRef = useRef();
     const shouldAutoScrollOnMediaLoadRef = useRef(false);
     const autoScrollReleaseTimeoutRef = useRef(null);
-
+    const userScrollIntentRef = useRef(false);
+    const userScrollIntentTimeoutRef = useRef(null);
+    const [scrollFollowState] = useState(createScrollFollowState);
     const [hasNewUnread, setHasNewUnread] = useState(false);
 
     // Scroll xuống đáy
     const scrollChatToBottom = useCallback((behavior = "auto") => {
+        scrollFollowState.markAtBottom();
         if (bottomRef.current?.scrollIntoView) {
             bottomRef.current.scrollIntoView({ block: "end", behavior });
             setHasNewUnread(false);
@@ -26,7 +30,7 @@ export const useScrollBehavior = () => {
             scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior });
             setHasNewUnread(false);
         }
-    }, []);
+    }, [scrollFollowState]);
 
     // Giải phóng lock auto-scroll
     const releaseAutoScrollLock = useCallback(() => {
@@ -39,7 +43,13 @@ export const useScrollBehavior = () => {
 
     // Bật lock auto-scroll (tự tắt sau 2s)
     const armAutoScrollLock = useCallback(() => {
+        scrollFollowState.markAtBottom();
         shouldAutoScrollOnMediaLoadRef.current = true;
+        userScrollIntentRef.current = false;
+        if (userScrollIntentTimeoutRef.current) {
+            clearTimeout(userScrollIntentTimeoutRef.current);
+            userScrollIntentTimeoutRef.current = null;
+        }
         if (autoScrollReleaseTimeoutRef.current) {
             clearTimeout(autoScrollReleaseTimeoutRef.current);
         }
@@ -47,7 +57,7 @@ export const useScrollBehavior = () => {
             shouldAutoScrollOnMediaLoadRef.current = false;
             autoScrollReleaseTimeoutRef.current = null;
         }, 2000);
-    }, []);
+    }, [scrollFollowState]);
 
     // Handler cho nút "scroll xuống"
     const handleScrollToBottom = useCallback(() => {
@@ -55,27 +65,45 @@ export const useScrollBehavior = () => {
         scrollChatToBottom("smooth");
     }, [armAutoScrollLock, scrollChatToBottom]);
 
+    const handleUserScrollIntent = useCallback(() => {
+        releaseAutoScrollLock();
+        userScrollIntentRef.current = true;
+        if (userScrollIntentTimeoutRef.current) {
+            clearTimeout(userScrollIntentTimeoutRef.current);
+        }
+        userScrollIntentTimeoutRef.current = setTimeout(() => {
+            userScrollIntentRef.current = false;
+            userScrollIntentTimeoutRef.current = null;
+        }, 300);
+    }, [releaseAutoScrollLock]);
+
     // Scroll khi image/video load xong
     const handleMediaContentLoad = useCallback(() => {
         const container = scrollRef.current;
         if (!container) return;
-        const distanceToBottom =
-            container.scrollHeight - container.scrollTop - container.clientHeight;
-        if (shouldAutoScrollOnMediaLoadRef.current || distanceToBottom <= 150) {
+        if (
+            shouldAutoScrollOnMediaLoadRef.current ||
+            scrollFollowState.shouldFollowMediaLoad()
+        ) {
             scrollChatToBottom("auto");
         }
-    }, [scrollChatToBottom]);
+    }, [scrollChatToBottom, scrollFollowState]);
 
-    // User cuộn lên (rời khỏi đáy)
-    const handleUserMovedAwayFromBottom = useCallback(() => {
-        releaseAutoScrollLock();
-    }, [releaseAutoScrollLock]);
+    // Đồng bộ ý định bám đáy từ vị trí scroll hiện tại
+    const handleScrollPositionChange = useCallback((distanceToBottom) => {
+        scrollFollowState.updateFromDistance(distanceToBottom, {
+            allowMovingAway: userScrollIntentRef.current,
+        });
+    }, [scrollFollowState]);
 
     // Cleanup
     useEffect(() => {
         return () => {
             if (autoScrollReleaseTimeoutRef.current) {
                 clearTimeout(autoScrollReleaseTimeoutRef.current);
+            }
+            if (userScrollIntentTimeoutRef.current) {
+                clearTimeout(userScrollIntentTimeoutRef.current);
             }
         };
     }, []);
@@ -89,7 +117,8 @@ export const useScrollBehavior = () => {
         handleScrollToBottom,
         armAutoScrollLock,
         releaseAutoScrollLock,
+        handleUserScrollIntent,
         handleMediaContentLoad,
-        handleUserMovedAwayFromBottom,
+        handleScrollPositionChange,
     };
 };

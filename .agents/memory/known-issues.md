@@ -612,3 +612,31 @@ node -e 'const fs=require("fs"); const source=fs.readFileSync("src/features/chat
 **Related architecture**:
 - `docs/adr/005-conversation-panel-two-stage-loading.md`
 - `.agents/rules/realtime-state.md`
+
+## Conversation Media Auto-Scroll Must Preserve Explicit User Intent
+
+**Symptom**: Khi người gửi đang đứng ở cuối conversation và gửi một message gồm nhiều ảnh/video, optimistic bubble tăng chiều cao qua nhiều lần media load nhưng viewport có thể dừng cách đáy hàng trăm pixel. Người gửi phải tự cuộn xuống để thấy hết nội dung vừa gửi.
+
+**Root cause**: Browser phát sinh sự kiện `scroll` cho cả thao tác người dùng và các lệnh programmatic như `scrollIntoView`. Khi outgoing bubble tăng chiều cao, những scroll event trung gian có khoảng cách tới đáy lớn hơn ngưỡng 150px. Luồng cũ coi mọi khoảng cách lớn như user đã chủ động rời đáy, chuyển follow-state thành false và giải phóng auto-scroll lock. Các media callback tiếp theo vì vậy không còn kéo viewport xuống đáy. Đổi `smooth` thành `auto` không đủ vì scroll event programmatic trì hoãn vẫn có thể đến sau lần layout tiếp theo.
+
+**Reproduction**:
+
+```powershell
+cd client
+node --test src/features/chat/hooks/scrollFollowState.test.js src/features/chat/components/ChatWindow.test.js
+```
+
+Browser harness với `onScroll` thật trước fix kết thúc cách đáy 800px. Probe tắt scroll-state sync hoặc re-arm trước mỗi media callback đều đưa kết quả về 0px, xác nhận media callback hoạt động và state bị hủy bởi programmatic scroll event.
+
+**Fix**:
+- `createScrollFollowState.updateFromDistance` nhận policy `allowMovingAway`; khoảng cách gần đáy luôn khôi phục follow-state, còn khoảng cách xa chỉ được phép tắt follow-state khi có user intent thật.
+- `useScrollBehavior` duy trì một cửa sổ user-scroll-intent ngắn và không để programmatic/layout-driven scroll event hủy trạng thái bám đáy.
+- `ChatWindow` phát user intent riêng cho wheel hướng lên, touch kéo lên lịch sử và thao tác trên scrollbar.
+- Outgoing send arm auto-scroll trước optimistic render và mọi bottom-scroll đi qua API scroll trung tâm.
+- Regression tests bao phủ programmatic intermediate distance, explicit user intent và nhiều lần media tăng chiều cao.
+
+**Prevention**:
+- Không suy ra user intent chỉ từ `scrollTop`/`scrollHeight`; browser scroll event không cho biết nguồn programmatic hay người dùng.
+- Mọi state transition “rời đáy” phải được bảo vệ bởi tín hiệu input thật như wheel, touch hoặc scrollbar interaction.
+- Test cả hai chiều: programmatic layout growth phải tiếp tục follow, còn người dùng đọc lịch sử không được bị ép xuống.
+- Với media bất đồng bộ, luôn chạy browser harness có scroll event thật ngoài unit test state controller.

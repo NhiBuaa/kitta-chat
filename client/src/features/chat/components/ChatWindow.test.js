@@ -16,3 +16,16 @@ test("chat header identity button does not show a border or focus ring after ope
   assert.ok(identityButtonSource.includes("focus-visible:bg-gray-100"));
   assert.doesNotMatch(identityButtonSource, /focus:ring-[1-9]/);
 });
+
+test("chat scroll container reports genuine user scroll intent separately from scroll position", () => {
+  const source = readFileSync(new URL("./ChatWindow.jsx", import.meta.url), "utf8");
+  const containerStart = source.indexOf('ref={scrollRef}');
+  const containerEnd = source.indexOf('>', containerStart);
+  const scrollContainerSource = source.slice(containerStart, containerEnd);
+
+  assert.ok(containerStart >= 0 && containerEnd > containerStart);
+  assert.ok(scrollContainerSource.includes('onWheel={handleScrollWheel}'));
+  assert.ok(scrollContainerSource.includes('onTouchStart={handleScrollTouchStart}'));
+  assert.ok(scrollContainerSource.includes('onTouchMove={handleScrollTouchMove}'));
+  assert.ok(scrollContainerSource.includes('onPointerDown={handleScrollPointerDown}'));
+});
