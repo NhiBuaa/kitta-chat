@@ -1,24 +1,52 @@
-# Unified Sidebar Conversations — Current Session Roadmap
+# Recruiter-Facing README — Current Session Roadmap
 
-## Mục tiêu tổng thể
-Triển khai tính năng Unified Sidebar Conversations (Gộp danh sách Chat cá nhân và Nhóm chat trên Sidebar) sử dụng Cursor-based Pagination hoàn chỉnh ở cả Client & Backend, hỗ trợ Filter Chips lọc tại Backend và đồng bộ real-time mượt mà (chống giật UI).
+## Mục Tiêu Tổng Thể
 
-## Các Invariant Bắt buộc (Architecture Invariants)
-1. **Cursor theo định dạng chuẩn:** Cursor là chuỗi mã hóa hoặc string dạng `<lastMessageAt>_<conversationId>` sử dụng ObjectId của Conversation (`Conversation._id`) làm tie-breaker duy nhất, không dùng legacyConversationId.
-2. **Batch Query tuyệt đối:** Enrich thông tin target (User/Group) và lastMessage.sender bằng batch query `$in`. Cấm sử dụng vòng lặp (N+1 query) trong code database.
-3. **Cursor độc lập theo bộ lọc:** Cursor và dữ liệu trang được phân vùng và quản lý độc lập cho từng tab filter chip ("Tất cả", "Cá nhân", "Nhóm") ở Client. Khi chuyển tab, bắt buộc reset cursor = null để bắt đầu tải lại.
-4. **Không merge dữ liệu khi reload:** Sự kiện reload/pull-to-refresh thay thế 100% mảng local state bằng trang 1 từ API, không viết cơ chế merge phức tạp.
-5. **Debounce sắp xếp real-time:** Chỉ debounce (300-500ms) cho hành vi sắp xếp lại vị trí (reorder) hiển thị của phần tử trên UI, cập nhật data tin nhắn mới (lastMessage) bắt buộc thực thi tức thời.
-6. **Multi-tab Sync & Active Chat Guard:** Tin nhắn từ chính mình không tăng unread. Nhận tin nhắn từ active chat không tăng unread và bắn ngay sự kiện mark-as-read về backend.
+Xây dựng README hướng recruiter giúp người đọc hiểu sản phẩm và năm điểm kỹ thuật chính trong khoảng 60 giây, có đường dẫn demo rõ ràng, quy trình chạy local tái lập được và không chứa secret hoặc credential thật.
+
+Nguồn đặc tả: `specs/active/recruiter-facing-readme.md`.
+
+## Engineering Narrative Đã Chốt
+
+README kể câu chuyện theo flow:
+
+`Product → Demo → Engineering Decisions → Architecture → Setup`
+
+Năm Engineering Highlights:
+
+1. Cross-Replica Realtime Delivery.
+2. Retry-Safe Message Persistence.
+3. MongoDB-Gated Call Finalization.
+4. Scalable Conversation Sidebar.
+5. Resilient Background Job Processing.
 
 ## Slice Roadmap
 
-| Slice | Tên | Trạng thái | Ghi chú |
-|---|---|---|---|
-| 1 | Backend Unified Sidebar API with Cursor Pagination & Batch Queries | **DONE** | Viết endpoint `GET /api/sidebar/conversations`, tách query pinned/non-pinned, phân trang bằng ObjectId tie-breaker, batch query `$in` và integration tests. |
-| 2 | Client Unified Sidebar Layout & Filter Chips Integration | **DONE** | Thay thế UI sidebar cũ, tích hợp Filter Chips ("Tất cả", "Cá nhân", "Nhóm") lưu localStorage, AND search logic, Empty States, Skeleton Loaders và fix 6 lỗi giao diện/data contract. |
-| 3 | Client Infinite Scroll (loadMore) Integration | **DONE** | Tích hợp Sentinel DOM Node, IntersectionObserver với callback ref auto-reobserve khi remount/chuyển tab, phân trang cursor mượt mà và unit tests xanh 178/178. |
-| 4 | Real-time Socket events, Debounced UI Sorting, and Unread Sync | **DONE** | Đóng gói target ở backend socket, tích hợp client socket listener, debounce sorting (300-500ms), unread sync (active mark-as-read, multi-tab bypass), và test tích hợp real-time/pagination. |
+| Slice | GitHub Issue | Tên | Trạng thái | Ghi chú |
+|---|---:|---|---|---|
+| 0 | — | PRD, repository agent setup và issue slicing | **DONE** | PRD đã chốt; root `AGENTS.md`, `docs/agents/` và GitHub labels/issues đã được tạo. |
+| 1 | #8 | Reproducible Seeded Demo Environment | **TODO-NEXT** | Không có blocker; triển khai đầu tiên. |
+| 2 | #9 | Tests and Build Status | **TODO** | Không có blocker; có thể triển khai độc lập sau Slice 1. |
+| 3 | #10 | Recruiter Engineering Narrative | **BLOCKED** | Phụ thuộc #8 và #9. |
+| 4 | #11 | Visual Product Tour | **BLOCKED** | Phụ thuộc #8. |
+| 5 | #12 | Narrated Demo and Final README | **BLOCKED** | Phụ thuộc #9, #10 và #11; cần Developer thực hiện phần quay/publish video. |
 
-## Trạng thái kiểm thử gần nhất
-* Sau Slice 4 + Bug fixes: Client tests `193/193` passed (100% xanh). Manual test guide Run #2 `PASSED`.
+## Trạng Thái Kiểm Thử Gần Nhất
+
+- Ngày kiểm tra: `2026-07-24`.
+- Server tests: `308/308` passed.
+- Client tests: `230/230` passed.
+- Client production build: passed.
+- Build có cảnh báo bundle JavaScript lớn hơn `500 kB`; không chặn build.
+- Phiên này chỉ hoàn thành planning và repository setup, không triển khai product slice nên không ghi manual acceptance giả.
+
+## Guardrails Bắt Buộc
+
+1. Không tuyên bố exactly-once message delivery.
+2. Không tuyên bố sidebar luôn dùng chính xác hai database queries.
+3. Không tuyên bố multi-region deployment.
+4. Không tuyên bố mọi emergency call fallback đều sử dụng shared MongoDB finalization gate.
+5. Docker Compose là source of truth; `npm run demo` chỉ là convenience wrapper.
+6. Không commit secret, credential thật, `.env`, Firebase service account hoặc dữ liệu cá nhân.
+7. Demo data chỉ sử dụng identity giả thuộc namespace `.test` và không được xóa dữ liệu ngoài namespace demo.
+8. Architecture diagram chỉ thể hiện các thành phần core đã được chốt trong PRD.
