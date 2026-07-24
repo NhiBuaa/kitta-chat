@@ -10,6 +10,18 @@ const { buildChatImageJob } = require("../queues/imageJobs");
 const { imageQueue: defaultImageQueue } = require("../queues/imageQueue");
 const { buildQueueFailureResponse } = require("../utils/queueApiSemantics");
 
+const getLocalDemoDownloadUrl = (file) => {
+  if (
+    typeof file?.s3Key === "string" &&
+    file.s3Key.startsWith("demo-local/") &&
+    typeof file?.url === "string" &&
+    file.url.startsWith("/demo-assets/")
+  ) {
+    return file.url;
+  }
+  return null;
+};
+
 const createFileController = ({
   imageQueue = defaultImageQueue,
   storage = s3Service,
@@ -130,7 +142,8 @@ const createFileController = ({
         }
       }
 
-      const url = await storage.getDownloadUrl(
+      const localDemoUrl = getLocalDemoDownloadUrl(file);
+      const url = localDemoUrl || await storage.getDownloadUrl(
         file.s3Key,
         file.originalName,
         file.mimeType,
@@ -215,3 +228,4 @@ const createFileController = ({
 
 module.exports = createFileController();
 module.exports.createFileController = createFileController;
+module.exports.getLocalDemoDownloadUrl = getLocalDemoDownloadUrl;

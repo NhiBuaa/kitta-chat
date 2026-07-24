@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+  <rect width="960" height="600" rx="36" fill="#fff7ed"/>
+  <text x="480" y="88" text-anchor="middle" font-family="Arial" font-size="40" font-weight="700" fill="#9a3412">Backend Team</text>
+  <g><circle cx="260" cy="235" r="70" fill="#22c55e"/><circle cx="480" cy="205" r="70" fill="#3b82f6"/><circle cx="700" cy="235" r="70" fill="#f97316"/></g>
+  <g fill="#fff" stroke="#fed7aa" stroke-width="4"><rect x="155" y="350" width="650" height="100" rx="28"/><rect x="245" y="475" width="470" height="65" rx="24"/></g>
+  <text x="190" y="395" font-family="Arial" font-size="24" font-weight="700" fill="#7c2d12">Alice</text><text x="280" y="395" font-family="Arial" font-size="23" fill="#374151">The release checklist is ready.</text>
+  <text x="480" y="518" text-anchor="middle" font-family="Arial" font-size="22" fill="#9a3412">Sender identity preserved across realtime updates</text>
+</svg>

@@ -2,6 +2,8 @@
   "scripts": {
     "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d",
     "dev:docker:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
+    "seed:demo": "docker compose exec -T backend npm run seed:demo",
+    "demo": "node scripts/demo.js",
     "prod:docker": "docker compose up --build"
   },
   "dependencies": {

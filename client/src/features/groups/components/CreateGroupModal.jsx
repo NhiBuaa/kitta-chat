@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { FaTimes, FaCheck } from "react-icons/fa";
 import { FiX, FiCheck, FiUsers } from "react-icons/fi";
 import { createGroup } from "@/services/api/groupApi.js";
+import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
 
 
 const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
@@ -29,9 +30,9 @@ const CreateGroupModal = ({ isOpen, onClose, users, onCreateSuccess }) => {
   };
 
   const getAvatarUrl = (avatarPath) => {
-    if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
-    if (avatarPath.startsWith("http")) return avatarPath;
-    return `/uploads${avatarPath}`;
+    return resolveAvatarUrl(avatarPath, {
+      defaultAvatar: import.meta.env.VITE_DEFAULT_AVATAR,
+    });
   };
 
   const handleSubmit = async () => {

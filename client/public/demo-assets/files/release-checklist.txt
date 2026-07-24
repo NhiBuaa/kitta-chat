@@ -1,0 +1,8 @@
+KittaChat Demo Release Checklist
+
+[x] Server tests
+[x] Client tests
+[x] Production build
+[x] Docker Compose health checks
+[x] Demo seed idempotency
+[ ] Record narrated walkthrough

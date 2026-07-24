@@ -5,6 +5,7 @@ import { getGroups } from "@/services/api/groupApi.js";
 import { getFriendRequests } from "@/services/api/friendApi.js";
 import { getSidebarUsers, getUserProfile } from "@/services/api/userApi.js";
 import { useAuth } from "@/services/auth/useAuth.js";
+import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
 
 // Components
 import Sidebar from "@/components/layout/Sidebar.jsx";
@@ -101,9 +102,9 @@ const Home = () => {
 
   // Utility fns
   const getAvatarUrl = useCallback((avatarPath) => {
-    if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
-    if (/^(https?:|blob:|data:)/.test(avatarPath)) return avatarPath;
-    return `/uploads${avatarPath}`;
+    return resolveAvatarUrl(avatarPath, {
+      defaultAvatar: import.meta.env.VITE_DEFAULT_AVATAR,
+    });
   }, []);
 
   const { checkIsOnline } = usePresence();

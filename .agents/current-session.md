@@ -25,20 +25,22 @@ Năm Engineering Highlights:
 | Slice | GitHub Issue | Tên | Trạng thái | Ghi chú |
 |---|---:|---|---|---|
 | 0 | — | PRD, repository agent setup và issue slicing | **DONE** | PRD đã chốt; root `AGENTS.md`, `docs/agents/` và GitHub labels/issues đã được tạo. |
-| 1 | #8 | Reproducible Seeded Demo Environment | **TODO-NEXT** | Không có blocker; triển khai đầu tiên. |
-| 2 | #9 | Tests and Build Status | **TODO** | Không có blocker; có thể triển khai độc lập sau Slice 1. |
+| 1 | #8 | Reproducible Seeded Demo Environment | **DONE** | Dataset demo, safe/idempotent seed, Docker Compose flow, one-command wrapper và manual acceptance đã hoàn thành. |
+| 2 | #9 | Tests and Build Status | **TODO-NEXT** | Tách workflow Tests/Build và thêm đúng hai badge động. |
 | 3 | #10 | Recruiter Engineering Narrative | **BLOCKED** | Phụ thuộc #8 và #9. |
-| 4 | #11 | Visual Product Tour | **BLOCKED** | Phụ thuộc #8. |
+| 4 | #11 | Visual Product Tour | **TODO** | Blocker #8 đã hoàn thành; thực hiện sau Slice 2 theo thứ tự roadmap. |
 | 5 | #12 | Narrated Demo and Final README | **BLOCKED** | Phụ thuộc #9, #10 và #11; cần Developer thực hiện phần quay/publish video. |
 
 ## Trạng Thái Kiểm Thử Gần Nhất
 
 - Ngày kiểm tra: `2026-07-24`.
-- Server tests: `308/308` passed.
-- Client tests: `230/230` passed.
+- Server tests: `321/321` passed.
+- Client tests: `232/232` passed.
 - Client production build: passed.
 - Build có cảnh báo bundle JavaScript lớn hơn `500 kB`; không chặn build.
-- Phiên này chỉ hoàn thành planning và repository setup, không triển khai product slice nên không ghi manual acceptance giả.
+- Docker Compose config và JavaScript syntax checks: passed.
+- Manual acceptance Slice 1: `PASSED`; call preparation/signaling entry đã được xác minh, full accept/toggle bị giới hạn bởi shared browser session/popup isolation của môi trường automation.
+- Targeted ESLint ghi nhận năm lỗi và hai warning đã tồn tại sẵn trong các file legacy được chạm tới; không phát sinh từ các hunk Slice 1 và không chặn test/build.
 
 ## Guardrails Bắt Buộc
 
