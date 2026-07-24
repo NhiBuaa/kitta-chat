@@ -27,8 +27,7 @@ This guide turns the approved recruiter-demo storyboard into a repeatable record
 | Time | Product footage | English callout |
 | --- | --- | --- |
 | `0:00–0:10` | Logo, tagline and two clean login/demo sessions. | `Full-Stack Realtime Communication` |
-| `0:10–0:35` | Alice sends Bob a direct message; show immediate optimistic rendering and delivery in Bob's window. | `Optimistic UI + Retry-Safe Persistence` |
-| `0:35–1:00` | Keep Alice in another conversation; Sam sends a message; show unread increment, reorder, filter chips and infinite scroll. | `Realtime Conversation Reordering` |
+| `0:10–1:00` | Alice sends Bob a direct message; show immediate optimistic rendering and delivery, then switch focus to an incoming background message, unread increment, conversation reorder, filter chips and infinite scroll. | `Optimistic UI + Realtime Conversation Reordering` |
 | `1:00–1:20` | Send a message in `Backend Team`; keep Bob's sender identity visible and show the update in another member's window. | `Cross-Replica Realtime Delivery` |
 | `1:20–1:50` | Open Conversation Information Panel; show metadata, members, Media/Files/Links, one View All explorer, infinite scroll, Freshness Banner and Media Lightbox. | `Shared Resource Explorers with Cursor Pagination` |
 | `1:50–2:10` | Alice starts a call, Bob accepts, toggle media, then end the call. | `WebRTC Peer-to-Peer Media · Socket.IO Signaling` |
@@ -40,13 +39,9 @@ This guide turns the approved recruiter-demo storyboard into a repeatable record
 
 KittaChat is a full-stack realtime platform for direct messages, group collaboration, file sharing, presence, and peer-to-peer calls. This walkthrough starts with the product experience.
 
-### `0:10–0:35` — Direct Messaging
+### `0:10–1:00` — Direct Messaging and Realtime Sidebar
 
-In direct chat, Alice sends a message and sees it immediately through optimistic UI. The client preserves a generated idempotency key across retries, while MongoDB safely upserts by sender and key. Bob receives the persisted message in realtime, even when his socket is attached to a different backend replica. The result is responsive delivery without marketing the system as exactly once.
-
-### `0:35–1:00` — Realtime Sidebar
-
-The conversation sidebar reacts to incoming activity without a refresh. Sam's background message increments unread state and moves the conversation upward. Filter-specific cursor pagination keeps direct and group views independent, while infinite scroll loads older conversations without losing the active selection. Backend batch enrichment avoids a per-conversation lookup pattern as the unified list grows.
+Alice's message appears immediately through optimistic UI, while a client-generated idempotency key makes retries safe. After MongoDB persists it, Bob receives the update in realtime—even through another backend replica. The same event increments unread state and reorders the sidebar without a refresh. Cursor-based pagination keeps filters independent, and batch enrichment scales the unified conversation list without per-conversation lookups.
 
 ### `1:00–1:20` — Group Collaboration
 
