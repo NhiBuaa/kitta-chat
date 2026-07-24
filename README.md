@@ -1,5 +1,8 @@
 # KittaChat
 
+[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)
+[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)
+
 Realtime Chat & Calling Platform built with React, Express, Socket.IO, MongoDB, Redis, RabbitMQ, nginx, and Docker Compose.
 
 KittaChat is intentionally conservative in its architecture:
@@ -221,12 +224,12 @@ cd server
 npm test
 ```
 
-GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `main`/`master`:
+GitHub Actions uses independent workflows on pull requests and pushes to `main`:
 
-- `Server Tests`: installs `server/` with `npm ci` and runs `npm test`.
-- `Client Build`: installs `client/` with `npm ci` and runs `npm run build`.
+- `Tests` (`.github/workflows/tests.yml`): installs dependencies independently and runs both server and client test suites.
+- `Build` (`.github/workflows/build.yml`): installs client dependencies and verifies the production frontend build.
 
-Lint and Docker image builds are intentionally not part of the current small CI slice.
+The two dynamic badges at the top of this README report the current `main` branch status. Lint and Docker image builds remain separate future workflow candidates.
 
 ## Known Production Gaps
 
