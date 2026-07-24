@@ -80,11 +80,11 @@ Under the hood, KittaChat combines three Socket.IO replicas, Redis, RabbitMQ wor
 
 ## README Handoff Values
 
-Fill these values after the final export and anonymous Drive verification:
+Final publication values, verified in an anonymous Google Drive viewer session:
 
 ```text
-Google Drive URL: <verified viewer URL>
-Duration: <mm:ss>
-Recorded: <YYYY-MM-DD>
-Demonstrated commit: <full or traceable short SHA>
+Google Drive URL: https://drive.google.com/file/d/1qqE7t2oZpm36_EXk7Y98evX5B2TUkoW0/view?usp=drive_link
+Duration: 02:44
+Recorded: 2026-07-24
+Demonstrated commit: 05916acb6c6191a7924491d5189c562a2ffde017
 ```

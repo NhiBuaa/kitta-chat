@@ -13,9 +13,15 @@ Built as a production-oriented engineering project focused on scalable realtime 
 
 ## Watch the Demo
 
-> **Recorded walkthrough in preparation.** A 2–3 minute English-narrated product demo will be published on Google Drive after final capture and anonymous-viewer verification.
+<p align="center">
+  <a href="https://drive.google.com/file/d/1qqE7t2oZpm36_EXk7Y98evX5B2TUkoW0/view?usp=drive_link"><strong>▶ Watch the 2:44 product demo on Google Drive</strong></a>
+</p>
 
-KittaChat does not currently advertise a hosted public environment. Until the recording is published, the verified Docker Compose workflow below provides the complete local product experience. This section intentionally contains no placeholder or unverified demo URL.
+<p align="center">
+  <sub>English narration and captions · Recorded July 24, 2026 · Demonstrated commit <a href="https://github.com/NhiBuaa/kitta-chat/commit/05916acb6c6191a7924491d5189c562a2ffde017"><code>05916acb</code></a></sub>
+</p>
+
+KittaChat does not currently advertise a hosted public environment. The video provides the fastest product overview, while the verified Docker Compose workflow below reproduces the complete local experience.
 
 ## Product Tour
 
@@ -195,7 +201,7 @@ The badges in the Hero read directly from these workflows; no passing state or t
 
 ## Known Limitations
 
-1. **No hosted public environment** — The product demo will be provided through a recorded walkthrough; the complete product is currently available through the reproducible local Docker Compose setup.
+1. **No hosted public environment** — The recorded walkthrough above provides the fastest product tour; the complete product is available through the reproducible local Docker Compose setup.
 2. **Deployment focuses on local reproducibility** — The project demonstrates horizontal scaling with Docker Compose. Production orchestration, for example Kubernetes, is intentionally outside the current scope.
 3. **Optional providers require configuration** — AWS S3/CloudFront, SMTP and Firebase integrations require reviewer-provided credentials to run end-to-end.
 4. **Production observability has a focused scope** — The current stack provides health, readiness and operational endpoints plus application logs; a full metrics and distributed tracing stack is a future extension.
