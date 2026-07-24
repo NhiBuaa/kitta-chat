@@ -26,10 +26,10 @@ Năm Engineering Highlights:
 |---|---:|---|---|---|
 | 0 | — | PRD, repository agent setup và issue slicing | **DONE** | PRD đã chốt; root `AGENTS.md`, `docs/agents/` và GitHub labels/issues đã được tạo. |
 | 1 | #8 | Reproducible Seeded Demo Environment | **DONE** | Dataset demo, safe/idempotent seed, Docker Compose flow, one-command wrapper và manual acceptance đã hoàn thành. |
-| 2 | #9 | Tests and Build Status | **TODO-NEXT** | Tách workflow Tests/Build và thêm đúng hai badge động. |
-| 3 | #10 | Recruiter Engineering Narrative | **BLOCKED** | Phụ thuộc #8 và #9. |
-| 4 | #11 | Visual Product Tour | **TODO** | Blocker #8 đã hoàn thành; thực hiện sau Slice 2 theo thứ tự roadmap. |
-| 5 | #12 | Narrated Demo and Final README | **BLOCKED** | Phụ thuộc #9, #10 và #11; cần Developer thực hiện phần quay/publish video. |
+| 2 | #9 | Tests and Build Status | **DONE** | Tests/Build workflows và hai badge động đã được kiểm chứng trên GitHub Actions qua PR #13. |
+| 3 | #10 | Recruiter Engineering Narrative | **DONE** | README recruiter narrative, năm evidence-backed highlights và architecture SVG đã hoàn thành, kiểm thử và push. |
+| 4 | #11 | Visual Product Tour | **DONE** | Bốn WebP và realtime GIF đã publish, kiểm tra privacy/metadata, render GitHub desktop/mobile và pass GitHub Actions. |
+| 5 | #12 | Narrated Demo and Final README | **TODO-NEXT** | Cần Developer quay, narrate và publish video Google Drive trước khi gắn CTA cuối cùng. |
 
 ## Trạng Thái Kiểm Thử Gần Nhất
 
@@ -39,7 +39,8 @@ Năm Engineering Highlights:
 - Client production build: passed.
 - Build có cảnh báo bundle JavaScript lớn hơn `500 kB`; không chặn build.
 - Docker Compose config và JavaScript syntax checks: passed.
-- Manual acceptance Slice 1: `PASSED`; call preparation/signaling entry đã được xác minh, full accept/toggle bị giới hạn bởi shared browser session/popup isolation của môi trường automation.
+- Manual acceptance Slice 1 và Slice 4: `PASSED`; Slice 4 đã xác minh realtime reorder và connected camera-off WebRTC call bằng hai demo identities độc lập.
+- GitHub Actions trên commit `3151c108`: Server Tests, Client Tests và Client Build đều `success`.
 - Targeted ESLint ghi nhận năm lỗi và hai warning đã tồn tại sẵn trong các file legacy được chạm tới; không phát sinh từ các hunk Slice 1 và không chặn test/build.
 
 ## Guardrails Bắt Buộc

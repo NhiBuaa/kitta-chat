@@ -1,42 +1,59 @@
-# Session Handoff Report
+# Handoff — Recruiter-Facing README
 
-## Session Summary
+## Next Focus
 
-- Hoàn thành Slice 1 / GitHub Issue `#8`: Reproducible Seeded Demo Environment.
-- Nguồn yêu cầu: `specs/active/recruiter-facing-readme.md` và manual guide `.agents/manual-tests/recruiter-facing-readme/slice-1-reproducible-seeded-demo-environment.md`.
-- Dataset mặc định tạo 19 identities `.test`, 24 Alice conversations, 6 groups, 60 local files, 244 seeded messages và các edge-case conversations đã chốt.
-- Docker Compose vẫn là source of truth; `npm run demo` chỉ là convenience wrapper và không ghi đè `.env`.
-- Avatar demo, local panel resources, file download, cursor pagination, Freshness Banner và realtime sidebar đã được xác minh trong UI.
+Continue Slice 5 / GitHub Issue #12: publish the narrated Google Drive demo and finalize the recruiter-facing README.
 
-## Validation
+## Current State
 
-- Ngày chạy: `2026-07-24`.
-- Server tests: `321/321` passed.
-- Client tests: `232/232` passed.
-- Client production build: passed; bundle-size warning không chặn build.
-- Docker Compose config và syntax checks: passed.
-- Manual acceptance Slice 1: `PASSED` với ghi chú môi trường cho full call accept/toggle; call preparation route và signaling entry đã hoạt động.
-- Sequential seed giữ counts ổn định, không duplicate, giữ nguyên sentinel ngoài namespace và dùng password hash ổn định.
-- Remote/malformed MongoDB targets bị từ chối trước connect và error output không lộ credential.
-- `npm run demo` giữ nguyên checksum `.env` hiện có và không in generated secrets.
-- Targeted ESLint chỉ phát hiện các lỗi/warning legacy đã tồn tại ngoài hunk Slice 1.
+- Repository: `D:\Developer\Projects\shotter\shot-chat`
+- Branch: `minor-bug-fixes`
+- Draft PR: `https://github.com/NhiBuaa/kitta-chat/pull/13`
+- Latest pushed commit: `3151c108 docs: improve product tour mobile layout`
+- Source PRD: `specs/active/recruiter-facing-readme.md`
+- Next-session plan: `.agents/next-session.md`
 
-## Next Session
+## Completed This Session
 
-- Bắt đầu Slice 2 / GitHub Issue `#9`: Expose Trustworthy Tests and Build Status.
-- Đọc `.agents/next-session.md`, `.github/workflows/ci.yml` và package scripts làm nguồn thực thi.
-- Tạo manual guide Slice 2 và xin Developer duyệt trước khi chỉnh workflows.
-- Tách `tests.yml` và `build.yml`, retire workflow cũ, sau đó thêm đúng hai dynamic badges vào README.
+- Published the Visual Product Tour with exact assets under `docs/assets/readme/`:
+  - `direct-chat.webp`
+  - `group-chat.webp`
+  - `conversation-panel.webp`
+  - `video-call.webp`
+  - `realtime-sidebar.gif`
+- Verified the GIF shows an actual incoming message, unread increment and conversation reorder.
+- Verified a connected WebRTC call using two isolated demo identities with both cameras disabled.
+- Replaced Product Tour placeholders with real assets, English alt text and value-oriented captions.
+- Revised the Direct/Group layout after GitHub mobile review so both render full-width instead of cramped table columns.
+
+## Verification Evidence
+
+- Asset audit: correct WebP/GIF MIME; no EXIF; GIF `460x900`, `5.91s`, `2.13 MB`.
+- Local tests: Server `321/321`, Client `232/232`, production build passed.
+- GitHub render: desktop and `390px` mobile viewport passed without horizontal overflow.
+- GitHub Actions on commit `3151c108`: Server Tests, Client Tests and Client Build all succeeded.
+- Manual acceptance: `.agents/manual-tests/recruiter-facing-readme/slice-4-visual-product-tour.md` is `PASSED`.
+
+## Remaining Work
+
+1. Developer records the approved 2–3 minute product-first walkthrough.
+2. Add English AI narration and English captions/callouts.
+3. Upload to Google Drive with viewer-only `Anyone with the link` access.
+4. Verify the link in an anonymous/incognito session.
+5. Replace the `Watch the Demo` preparation copy with the real CTA, duration, recording date and demonstrated commit.
+6. Run the final recruiter 60-second audit, tests/build, link/secret scan and GitHub rendering checks.
+7. Update Issue #12 and PR #13 when acceptance passes.
+
+## Guardrails
+
+- Do not add an unverified Google Drive URL.
+- Do not commit video/raw captures, secrets, credentials or personal data.
+- Do not claim a live deployment.
+- Keep Docker Compose as the source of truth.
+- Keep the approved five Engineering Highlights and recruiter-level architecture unchanged unless evidence requires a correction.
 
 ## Suggested Skills
 
-- `test-craft`: thiết kế manual acceptance matrix cho workflow triggers, job scope và badge correctness.
-- `tdd`: triển khai workflow theo acceptance tests/checklist nhỏ nhất có thể xác minh.
-- `code-check`: review YAML, duplicate execution và badge URLs trước khi đóng slice.
-- `diagnosing-bugs`: dùng nếu GitHub Actions khác biệt so với local test/build.
-
-## Workspace Notes
-
-- `.agents/` tiếp tục là local session state và đang được ignore theo quyết định repository hiện tại.
-- `server/.env`, `client/dist/`, dependency directories và runtime artifacts đã được ignore đúng; không cần thêm ignore rule cho Slice 1.
-- Docker Compose stack được dừng khi kết thúc session.
+- `browser:control-in-app-browser` — verify Google Drive anonymous viewing and final GitHub rendering.
+- `test-craft` — create the Slice 5 manual acceptance guide.
+- `handoff` — compact the next session when finalization is complete.
