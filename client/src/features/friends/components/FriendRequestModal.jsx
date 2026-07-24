@@ -3,6 +3,7 @@ import { FaTimes, FaUserCheck, FaUserTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSocket } from "@/services/socket/SocketContext.js";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
 import {
   acceptFriendRequest,
   getFriendRequests,
@@ -15,9 +16,9 @@ const FriendRequestModal = ({ onClose, setRequestCount }) => {
   const { socket } = useSocket();
 
   const getAvatarUrl = (avatarPath) => {
-    if (!avatarPath) return import.meta.env.VITE_DEFAULT_AVATAR;
-    if (avatarPath.startsWith("http")) return avatarPath;
-    return `/uploads${avatarPath}`;
+    return resolveAvatarUrl(avatarPath, {
+      defaultAvatar: import.meta.env.VITE_DEFAULT_AVATAR,
+    });
   };
 
   const handleAccept = async (senderId) => {

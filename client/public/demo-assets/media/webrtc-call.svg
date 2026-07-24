@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+  <rect width="960" height="600" rx="36" fill="#111827"/>
+  <rect x="70" y="70" width="820" height="390" rx="28" fill="#1f2937"/>
+  <circle cx="360" cy="245" r="105" fill="#22c55e"/><circle cx="600" cy="245" r="105" fill="#3b82f6"/>
+  <text x="360" y="258" text-anchor="middle" font-family="Arial" font-size="52" font-weight="700" fill="#fff">A</text><text x="600" y="258" text-anchor="middle" font-family="Arial" font-size="52" font-weight="700" fill="#fff">B</text>
+  <g><circle cx="390" cy="520" r="38" fill="#374151"/><circle cx="480" cy="520" r="38" fill="#dc2626"/><circle cx="570" cy="520" r="38" fill="#374151"/></g>
+  <text x="480" y="50" text-anchor="middle" font-family="Arial" font-size="30" font-weight="700" fill="#f9fafb">WebRTC Peer-to-Peer Call</text>
+</svg>

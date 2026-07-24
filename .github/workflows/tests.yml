@@ -1,17 +1,16 @@
-name: CI
+name: Tests
 
 on:
   pull_request:
   push:
     branches:
       - main
-      - master
 
 permissions:
   contents: read
 
 jobs:
-  server-test:
+  server-tests:
     name: Server Tests
     runs-on: ubuntu-latest
 
@@ -36,8 +35,8 @@ jobs:
       - name: Run server tests
         run: npm test
 
-  client-build:
-    name: Client Build
+  client-tests:
+    name: Client Tests
     runs-on: ubuntu-latest
 
     defaults:
@@ -58,5 +57,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build client
-        run: npm run build
+      - name: Run client tests
+        run: npm test

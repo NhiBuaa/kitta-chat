@@ -1,0 +1,4 @@
+Realtime Delivery Review
+
+Correlation IDs connect the HTTP request, persisted message, queue jobs, and worker logs.
+Retry handling keeps asynchronous work observable without claiming exactly-once delivery.
