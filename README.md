@@ -27,20 +27,21 @@ KittaChat does not currently advertise a hosted public environment. Until the re
 
 <p align="center"><em>Incoming messages update unread state and reorder conversations in realtime.</em></p>
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <strong>Direct Chat</strong><br /><br />
-      <img src="docs/assets/readme/direct-chat.webp" alt="KittaChat direct conversation between Alice and Bob with neutral demo messages" width="100%" /><br /><br />
-      <em>Optimistic direct messaging with retry-safe persistence and realtime delivery.</em>
-    </td>
-    <td width="50%" valign="top">
-      <strong>Group Chat</strong><br /><br />
-      <img src="docs/assets/readme/group-chat.webp" alt="KittaChat Backend Team group conversation with visible sender identity" width="100%" /><br /><br />
-      <em>Group collaboration preserves sender identity and synchronizes updates across members.</em>
-    </td>
-  </tr>
-</table>
+### Direct Chat
+
+<p align="center">
+  <img src="docs/assets/readme/direct-chat.webp" alt="KittaChat direct conversation between Alice and Bob with neutral demo messages" width="960" />
+</p>
+
+<p align="center"><em>Optimistic direct messaging with retry-safe persistence and realtime delivery.</em></p>
+
+### Group Chat
+
+<p align="center">
+  <img src="docs/assets/readme/group-chat.webp" alt="KittaChat Backend Team group conversation with visible sender identity" width="960" />
+</p>
+
+<p align="center"><em>Group collaboration preserves sender identity and synchronizes updates across members.</em></p>
 
 ### Conversation Information Panel
 
