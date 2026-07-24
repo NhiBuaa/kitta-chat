@@ -19,17 +19,44 @@ KittaChat does not currently advertise a hosted public environment. Until the re
 
 ## Product Tour
 
-The final visual tour will pair each caption below with a focused WebP screenshot, plus one short realtime GIF. Asset references will be added only after the captures exist and have been reviewed.
+### Realtime Sidebar
 
-| Product view | Recruiter-facing caption |
-| --- | --- |
-| Direct Chat | Optimistic direct messaging with retry-safe persistence and realtime delivery. |
-| Realtime Sidebar | Incoming messages update unread state and reorder conversations in realtime. |
-| Group Chat | Group collaboration preserves sender identity and synchronizes updates across members. |
-| Conversation Information Panel | Shared media, files and links use focused explorers with cursor-based pagination and freshness indicators. |
-| Audio/Video Call | WebRTC peer-to-peer media with Socket.IO signaling and durable call history. |
+<p align="center">
+  <img src="docs/assets/readme/realtime-sidebar.gif" alt="KittaChat sidebar receiving a message from Sam, incrementing unread state and moving the conversation upward" width="460" />
+</p>
 
-The realtime animation will demonstrate only incoming messages, unread-count changes and conversation reordering in a 5–8 second loop under 5 MB.
+<p align="center"><em>Incoming messages update unread state and reorder conversations in realtime.</em></p>
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Direct Chat</strong><br /><br />
+      <img src="docs/assets/readme/direct-chat.webp" alt="KittaChat direct conversation between Alice and Bob with neutral demo messages" width="100%" /><br /><br />
+      <em>Optimistic direct messaging with retry-safe persistence and realtime delivery.</em>
+    </td>
+    <td width="50%" valign="top">
+      <strong>Group Chat</strong><br /><br />
+      <img src="docs/assets/readme/group-chat.webp" alt="KittaChat Backend Team group conversation with visible sender identity" width="100%" /><br /><br />
+      <em>Group collaboration preserves sender identity and synchronizes updates across members.</em>
+    </td>
+  </tr>
+</table>
+
+### Conversation Information Panel
+
+<p align="center">
+  <img src="docs/assets/readme/conversation-panel.webp" alt="KittaChat conversation information panel showing members, shared media, files and links" width="620" />
+</p>
+
+<p align="center"><em>Shared media, files and links use focused explorers with cursor-based pagination and freshness indicators.</em></p>
+
+### WebRTC Audio/Video Call
+
+<p align="center">
+  <img src="docs/assets/readme/video-call.webp" alt="Connected KittaChat WebRTC video call between Alice and Bob with cameras disabled for privacy" width="960" />
+</p>
+
+<p align="center"><em>WebRTC peer-to-peer media with Socket.IO signaling and durable call history.</em></p>
 
 ## Engineering Highlights
 
