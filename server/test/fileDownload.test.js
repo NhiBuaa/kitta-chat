@@ -100,6 +100,70 @@ test("authorized attachment download returns a signed URL using the stored origi
   ]);
 });
 
+test("authorized local demo attachment download returns its same-origin URL without calling S3", async () => {
+  let storageCalls = 0;
+  const controller = createFileController({
+    fileModel: {
+      findById() {
+        return {
+          lean: async () => ({
+            _id: "file-demo",
+            s3Key: "demo-local/architecture-notes.txt",
+            url: "/demo-assets/files/architecture-notes.txt",
+            originalName: "architecture-notes.txt",
+            mimeType: "text/plain",
+          }),
+        };
+      },
+    },
+    messageModel: {
+      findOne() {
+        return {
+          select() {
+            return {
+              lean: async () => ({
+                _id: "message-demo",
+                conversationId: "user-1_user-2",
+              }),
+            };
+          },
+        };
+      },
+    },
+    permissionService: {
+      getPermissions: async () => ({ canRead: true }),
+    },
+    participantModel: {
+      findOne() {
+        return { lean: async () => null };
+      },
+    },
+    storage: {
+      async getDownloadUrl() {
+        storageCalls += 1;
+        return "https://signed.example/download";
+      },
+    },
+  });
+  const response = createResponseRecorder();
+
+  await controller.createDownloadUrl(
+    {
+      user: { id: "user-1" },
+      params: { fileId: "file-demo" },
+      body: { messageId: "message-demo" },
+    },
+    response,
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body, {
+    url: "/demo-assets/files/architecture-notes.txt",
+    originalName: "architecture-notes.txt",
+  });
+  assert.equal(storageCalls, 0);
+});
+
 test("file routes expose the authenticated signed-download endpoint", () => {
   const fileRouter = require("../src/routes/file");
   const downloadRoute = fileRouter.stack.find(
@@ -279,4 +343,3 @@ test("download rejects a file that is not attached to the requested message", as
 
   assert.equal(response.statusCode, 404);
 });
-

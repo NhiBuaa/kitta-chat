@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+  <rect width="960" height="600" rx="36" fill="#f0fdf4"/>
+  <rect x="70" y="60" width="320" height="480" rx="28" fill="#fff" stroke="#bbf7d0" stroke-width="4"/>
+  <g font-family="Arial"><text x="110" y="120" font-size="30" font-weight="700" fill="#14532d">Realtime Sidebar</text><text x="110" y="158" font-size="18" fill="#4b5563">Unread state and ordering update live</text></g>
+  <g fill="#dcfce7"><rect x="104" y="200" width="252" height="70" rx="18"/><rect x="104" y="290" width="252" height="70" rx="18"/><rect x="104" y="380" width="252" height="70" rx="18"/></g>
+  <circle cx="326" cy="216" r="18" fill="#22c55e"/><text x="326" y="223" text-anchor="middle" font-family="Arial" font-size="16" fill="#fff">3</text>
+  <path d="M455 300h300" stroke="#16a34a" stroke-width="18" stroke-linecap="round"/><path d="M710 250l75 50-75 50" fill="none" stroke="#16a34a" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="610" y="410" text-anchor="middle" font-family="Arial" font-size="34" font-weight="700" fill="#166534">Incoming → Unread → Reorder</text>
+</svg>

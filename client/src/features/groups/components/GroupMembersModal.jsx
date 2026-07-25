@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import AddMemberModal from "@/features/groups/components/AddMemberModal.jsx";
 import ConfirmationModal from "@/components/ui/ConfirmationModal.jsx";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
 import {
   deleteGroup,
   removeGroupMember,
@@ -157,9 +158,9 @@ const GroupMembersModal = ({ group, currentUser, onClose, onGroupUpdated }) => {
   };
 
   const getAvatarUrl = (avatar) => {
-    if (!avatar) return "https://via.placeholder.com/40";
-    if (avatar.startsWith("http")) return avatar;
-    return `/uploads${avatar}`;
+    return resolveAvatarUrl(avatar, {
+      defaultAvatar: "https://via.placeholder.com/40",
+    });
   };
 
   return (

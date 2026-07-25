@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FaTimes, FaUserPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
+import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
 import { getFriends } from "@/services/api/friendApi.js";
 import { addGroupMember } from "@/services/api/groupApi.js";
 
@@ -53,9 +54,10 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
   };
 
   const getAvatarUrl = (avatar) => {
-    if (!avatar) return "https://via.placeholder.com/40";
-    if (avatar.startsWith("http")) return avatar;
-    return `${import.meta.env.VITE_API_URL_USERS || '/api/users'}/${avatar}`;
+    return resolveAvatarUrl(avatar, {
+      defaultAvatar: "https://via.placeholder.com/40",
+      legacyBaseUrl: import.meta.env.VITE_API_URL_USERS || "/api/users",
+    });
   };
 
   if (!isOpen) return null;

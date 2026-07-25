@@ -1,0 +1,8 @@
+KittaChat Architecture Notes
+
+- React client behind nginx
+- Three Express and Socket.IO replicas
+- Redis Adapter for cross-replica realtime delivery
+- RabbitMQ workers for asynchronous side effects
+- MongoDB as the durable source of truth
+- WebRTC media flows directly between clients

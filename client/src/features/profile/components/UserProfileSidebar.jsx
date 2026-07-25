@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import imageCompression from "browser-image-compression";
 import { useAuth } from "@/services/auth/useAuth.js";
 import { updateUserProfile } from "@/services/api/userApi.js";
+import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
 const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
 const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
@@ -20,9 +21,10 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const getAvatarUrl = (avatar) => {
-    if (!avatar) return defaultAvatar;
-    if (/^(https?:|blob:|data:)/.test(avatar)) return avatar;
-    return `${VITE_API_URL_USERS}/${avatar.replace(/^\/+/, "")}`;
+    return resolveAvatarUrl(avatar, {
+      defaultAvatar,
+      legacyBaseUrl: VITE_API_URL_USERS,
+    });
   };
 
   useEffect(() => {
