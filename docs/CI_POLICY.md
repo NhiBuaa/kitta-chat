@@ -24,7 +24,10 @@ Advisory job names remain open. They may be added without changing this list whe
 
 ## CI Policy v1 Execution
 
-`CI Policy v1` calls a reusable support workflow through a full immutable commit SHA. The caller accepts no policy root, path, ref, or revision input.
+The Quality workflow separates trust execution from the stable Required check name:
+
+- `Trusted CI Policy v1 Baseline` calls a reusable support workflow through a full immutable commit SHA. The caller accepts no policy root, path, ref, or revision input.
+- `CI Policy v1` is an exact-name result gate. It runs with `if: always()`, depends on the trusted baseline job, and succeeds only when that job result is `success`. A failed, cancelled, or skipped baseline therefore cannot turn the exact gate green.
 
 The reusable workflow performs these stages in order:
 

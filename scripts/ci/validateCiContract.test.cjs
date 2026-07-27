@@ -72,6 +72,28 @@ function createValidRepositoryFixture(overrides = {}) {
   });
 }
 
+function createPolicyQualityWorkflow() {
+  const pinnedQualityWorkflow = validQualityWorkflow.replace(
+    '2222222222222222222222222222222222222222',
+    '2222222222222222222222222222222222222222 # v4.2.2',
+  );
+
+  return (
+    `${pinnedQualityWorkflow}  ci-policy-baseline:\n` +
+    '    name: Trusted CI Policy v1 Baseline\n' +
+    '    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@3333333333333333333333333333333333333333 # CI Policy v1\n' +
+    '  ci-policy-v1:\n' +
+    '    name: CI Policy v1\n' +
+    '    needs: ci-policy-baseline\n' +
+    '    if: ${{ always() }}\n' +
+    '    runs-on: ubuntu-latest\n' +
+    '    steps:\n' +
+    '      - env:\n' +
+    '          POLICY_RESULT: ${{ needs.ci-policy-baseline.result }}\n' +
+    '        run: test "$POLICY_RESULT" = "success"\n'
+  );
+}
+
 function runValidator(fixtureRoot, cliArguments = []) {
   return spawnSync(process.execPath, [validatorPath, ...cliArguments, fixtureRoot], {
     encoding: 'utf8',
@@ -710,7 +732,7 @@ test('ci contract CLI rejects a Quality workflow without the Client Lint contrac
   }
 });
 
-test('ci contract mode rejects a Quality workflow without the fixed-SHA CI Policy v1 caller', () => {
+test('ci contract mode rejects a Quality workflow without the policy baseline and exact gate', () => {
   const fixtureRoot = createValidRepositoryFixture();
 
   try {
@@ -720,14 +742,29 @@ test('ci contract mode rejects a Quality workflow without the fixed-SHA CI Polic
     assert.equal(result.status, 1);
     assert.match(
       output,
-      /quality\.yml must define the fixed-SHA CI Policy v1 caller/i,
+      /quality\.yml must define the fixed-SHA policy baseline and exact CI Policy v1 gate/i,
     );
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
 });
 
-test('ci contract mode accepts the fixed-SHA CI Policy v1 caller without inputs', () => {
+test('ci contract mode accepts a fixed-SHA baseline with an exact CI Policy v1 gate', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/quality.yml': createPolicyQualityWorkflow(),
+    '.github/workflows/ci-policy-v1.yml': validCiPolicySupportWorkflow,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot, ['--require-ci-policy']);
+
+    assert.equal(result.status, 0);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract mode rejects a direct reusable caller without the exact CI Policy v1 gate', () => {
   const pinnedQualityWorkflow = validQualityWorkflow.replace(
     '2222222222222222222222222222222222222222',
     '2222222222222222222222222222222222222222 # v4.2.2',
@@ -742,23 +779,21 @@ test('ci contract mode accepts the fixed-SHA CI Policy v1 caller without inputs'
 
   try {
     const result = runValidator(fixtureRoot, ['--require-ci-policy']);
+    const output = `${result.stdout}${result.stderr}`;
 
-    assert.equal(result.status, 0);
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /quality\.yml must define the fixed-SHA policy baseline and exact CI Policy v1 gate/i,
+    );
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
 });
 
 test('ci contract mode rejects a missing CI Policy v1 support workflow', () => {
-  const pinnedQualityWorkflow = validQualityWorkflow.replace(
-    '2222222222222222222222222222222222222222',
-    '2222222222222222222222222222222222222222 # v4.2.2',
-  );
   const fixtureRoot = createValidRepositoryFixture({
-    '.github/workflows/quality.yml':
-      `${pinnedQualityWorkflow}  ci-policy-v1:\n` +
-      '    name: CI Policy v1\n' +
-      '    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@3333333333333333333333333333333333333333 # CI Policy v1\n',
+    '.github/workflows/quality.yml': createPolicyQualityWorkflow(),
   });
 
   try {
@@ -781,22 +816,15 @@ test('ci policy support mode rejects a missing reusable support workflow', () =>
 
     assert.equal(result.status, 1);
     assert.match(output, /missing CI Policy v1 support workflow/i);
-    assert.doesNotMatch(output, /fixed-SHA CI Policy v1 caller/i);
+    assert.doesNotMatch(output, /fixed-SHA policy baseline/i);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
 });
 
 test('ci contract mode rejects candidate policy tests that run before fixed-baseline validation', () => {
-  const pinnedQualityWorkflow = validQualityWorkflow.replace(
-    '2222222222222222222222222222222222222222',
-    '2222222222222222222222222222222222222222 # v4.2.2',
-  );
   const fixtureRoot = createValidRepositoryFixture({
-    '.github/workflows/quality.yml':
-      `${pinnedQualityWorkflow}  ci-policy-v1:\n` +
-      '    name: CI Policy v1\n' +
-      '    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@3333333333333333333333333333333333333333 # CI Policy v1\n',
+    '.github/workflows/quality.yml': createPolicyQualityWorkflow(),
     '.github/workflows/ci-policy-v1.yml': validCiPolicySupportWorkflow.replace(
       '      - run: node policy/scripts/ci/validateCiContract.cjs candidate --require-ci-policy\n' +
         '      - run: npm ci\n        working-directory: candidate\n' +

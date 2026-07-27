@@ -182,13 +182,32 @@ function matchesJobContract(job, contract) {
   );
 }
 
-function matchesCiPolicyCaller(job) {
+function matchesCiPolicyBaselineCaller(job) {
   return (
-    job?.name === 'CI Policy v1' &&
+    job?.name === 'Trusted CI Policy v1 Baseline' &&
     typeof job?.uses === 'string' &&
     job.uses.startsWith(CI_POLICY_WORKFLOW_REFERENCE) &&
     IMMUTABLE_EXTERNAL_ACTION.test(job.uses) &&
     !Object.hasOwn(job, 'with')
+  );
+}
+
+function matchesCiPolicyGate(job) {
+  const enforcementStep = Array.isArray(job?.steps)
+    ? job.steps.find(
+        (step) =>
+          step?.env?.POLICY_RESULT ===
+            '${{ needs.ci-policy-baseline.result }}' &&
+          step?.run?.trim() === 'test "$POLICY_RESULT" = "success"',
+      )
+    : undefined;
+
+  return (
+    job?.name === 'CI Policy v1' &&
+    job?.needs === 'ci-policy-baseline' &&
+    job?.if === '${{ always() }}' &&
+    job?.['runs-on'] === 'ubuntu-latest' &&
+    enforcementStep !== undefined
   );
 }
 
@@ -484,10 +503,12 @@ function validateRepository(repositoryRoot, options = {}) {
     if (
       options.requireCiPolicy === true &&
       workflowPath.endsWith('quality.yml') &&
-      !matchesCiPolicyCaller(workflow?.jobs?.['ci-policy-v1'])
+      (!matchesCiPolicyBaselineCaller(
+        workflow?.jobs?.['ci-policy-baseline'],
+      ) || !matchesCiPolicyGate(workflow?.jobs?.['ci-policy-v1']))
     ) {
       errors.push(
-        'quality.yml must define the fixed-SHA CI Policy v1 caller',
+        'quality.yml must define the fixed-SHA policy baseline and exact CI Policy v1 gate',
       );
     }
   }
