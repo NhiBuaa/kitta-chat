@@ -772,6 +772,21 @@ test('ci contract mode rejects a missing CI Policy v1 support workflow', () => {
   }
 });
 
+test('ci policy support mode rejects a missing reusable support workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture();
+
+  try {
+    const result = runValidator(fixtureRoot, ['--require-ci-policy-support']);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /missing CI Policy v1 support workflow/i);
+    assert.doesNotMatch(output, /fixed-SHA CI Policy v1 caller/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test('ci contract mode rejects candidate policy tests that run before fixed-baseline validation', () => {
   const pinnedQualityWorkflow = validQualityWorkflow.replace(
     '2222222222222222222222222222222222222222',

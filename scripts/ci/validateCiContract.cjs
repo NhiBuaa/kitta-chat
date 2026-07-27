@@ -277,13 +277,15 @@ function matchesCiPolicySupportWorkflow(workflow) {
 function validateRepository(repositoryRoot, options = {}) {
   const errors = [];
   const nodeVersionPath = path.join(repositoryRoot, '.nvmrc');
+  const requireCiPolicySupport =
+    options.requireCiPolicy === true || options.requireCiPolicySupport === true;
 
   if (
-    options.requireCiPolicy === true &&
+    requireCiPolicySupport &&
     !existsSync(path.join(repositoryRoot, CI_POLICY_SUPPORT_PATH))
   ) {
     errors.push('Missing CI Policy v1 support workflow');
-  } else if (options.requireCiPolicy === true) {
+  } else if (requireCiPolicySupport) {
     const supportWorkflow = parse(
       readFileSync(path.join(repositoryRoot, CI_POLICY_SUPPORT_PATH), 'utf8'),
     );
@@ -545,6 +547,9 @@ function runCli() {
   const repositoryRoot = path.resolve(repositoryArgument || process.cwd());
   const result = validateRepository(repositoryRoot, {
     requireCiPolicy: cliArguments.includes('--require-ci-policy'),
+    requireCiPolicySupport: cliArguments.includes(
+      '--require-ci-policy-support',
+    ),
   });
 
   if (!result.valid) {
