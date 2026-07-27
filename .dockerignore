@@ -1,0 +1,13 @@
+*
+!client/
+!client/**
+!nginx/
+!nginx/Dockerfile
+!nginx/nginx.conf
+client/node_modules/
+client/.env
+client/.env.*
+client/dist/
+client/.vite/
+client/.vite-cache/
+client/coverage/

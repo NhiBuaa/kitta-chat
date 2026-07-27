@@ -49,3 +49,28 @@ Run `.agents/playbooks/session-start.md` for Issue #16, then execute Phase 1 of 
 - Do not push/load images, authenticate to registries, start Docker Compose or require stateful services.
 - Do not remediate Client Lint, add Security workflows or modify repository Ruleset/Settings in Slice #16.
 - Do not create branches, commit, push or merge without explicit Developer authorization.
+
+## Session Start Checkpoint — 2026-07-27
+
+- Read `.agents/AGENTS.md`, `.agents/playbooks/session-start.md`, `.agents/CONTEXT.md`, `.agents/next-session.md`, `.agents/current-session.md`, architecture/decision records, the active CI/CD spec, `.agents/playbooks/manual-testing.md`, and the canonical `test-craft` skill.
+- Verified Issue #16 matches roadmap status `TODO-NEXT`.
+- Created `.agents/manual-tests/github-actions-ci-cd/slice-03-docker-build-readiness.md` with TC-01 through TC-14 and `PENDING_VERIFICATION` status.
+- Developer approved TC-01 through TC-14 on `2026-07-27`; Session Start may proceed to the Workspace Health Check. Do not write Slice #16 implementation until Session Start completes and the action plan is approved.
+- Workspace Health Check completed: `git status` exit `0`; no pre-existing dirty code was found, while `.agents/memory/last-session.md` contains only this Session Start checkpoint and the new manual guide is ignored by the repository-wide `/.agents` rule.
+- Sanity evidence: server tests `321/321` exit `0`; client tests `232/232` exit `0`; CI Contract tests `35/35` exit `0`; `npm run ci:validate` exit `0`; client production build exit `0` with the approved bundle-size warning.
+- Session Start is paused at Phase 3 Developer review. Do not call `update_plan` or start TDD implementation until the Developer approves the proposed action plan.
+- Developer approved the eight-step action plan on `2026-07-27`; `update_plan` succeeded and the first TDD RED step is `in_progress`.
+- Session Start is complete. The next action is to author Docker workflow contract RED fixtures only; branch creation, commit, push, PR, merge and repository Settings changes remain unauthorized.
+
+## Slice #16 Implementation Checkpoint — 2026-07-27
+
+- `$implement` was explicitly invoked. Its commit-current-branch instruction is authorized; push, PR, merge, branch creation and repository Settings changes remain unauthorized.
+- TDD RED was observed for missing Docker workflow, missing server/nginx contracts, server/nginx Node drift, missing runtime-version logs, registry login, GitHub secret consumption and runtime startup.
+- Current GREEN files: `.github/workflows/docker.yml`, `server/Dockerfile`, `nginx/Dockerfile`, `scripts/ci/validateCiContract.cjs`, and `scripts/ci/validateCiContract.test.cjs`.
+- Verification: CI Contract `56/56`, `ci:validate` exit `0`, server `321/321`, client `232/232`, client production build exit `0` with approved bundle warning.
+- Local cache-only Buildx acceptance: server `prod` exit `0`, nginx final image exit `0`, both `linux/amd64`, plain progress, resolved Node `v22.23.1`; no image push/load, Compose or runtime container.
+- Existing build warnings remain visible: dependency audit findings, client bundle-size warning and nginx Docker `SecretsUsedInArgOrEnv` warnings for existing Vite/Firebase ARG/ENV declarations. No values were printed and remediation is outside Issue #16.
+- Code review is paused because the `code-review` skill requires a Developer-supplied fixed point. Proposed fixed point is pre-implementation HEAD `c5da3898`; no commit has been created yet.
+- Developer confirmed review fixed point `c5da3898`. Two-axis review completed: Standards has no remaining findings; Spec stage-aware runtime logging finding was fixed with RED coverage for misplaced server/nginx logging.
+- Root `.dockerignore` was added after local evidence showed nginx sent a `402.43MB` context containing possible host artifacts. The locked allowlist reduced the context to `14.89kB`; nginx cache-only build still exited `0`.
+- Final local CI evidence after review corrections: CI Contract `59/59`, `ci:validate` exit `0`, and `git diff --check c5da3898` exit `0`. Hosted PR/`main` evidence remains pending and is the only acceptance blocker.
