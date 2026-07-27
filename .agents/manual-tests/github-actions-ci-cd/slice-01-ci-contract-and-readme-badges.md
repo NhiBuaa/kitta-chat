@@ -6,7 +6,7 @@
 - **Slice:** Slice 1 — Shared Node Setup and Tests/Build Readiness
 - **Nguồn đặc tả:** [`specs/active/github-actions-ci-cd.md`](../../../specs/active/github-actions-ci-cd.md)
 - **GitHub Issue:** https://github.com/NhiBuaa/kitta-chat/issues/14
-- **Trạng thái mới nhất:** PENDING_VERIFICATION
+- **Trạng thái mới nhất:** PASSED
 - **Phê duyệt `[KHÓA]`:** APPROVED — Developer xác nhận TC-01 đến TC-11 ngày `2026-07-27`.
 
 ---
@@ -195,6 +195,7 @@
 
 | Lần chạy | Ngày | Người test | TC-01 | TC-02 | TC-03 | TC-04 | TC-05 | TC-06 | TC-07 | TC-08 | TC-09 | TC-10 | TC-11 | Tổng kết | Ghi chú / Link Log |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| Run #1 | 2026-07-27 | Agent / Developer | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASSED** | Local Node 22 contract `21/21`; server `321/321`; client `232/232`; build pass. PR: https://github.com/NhiBuaa/kitta-chat/pull/21. PR checks: Tests `30255523687`, Build `30255523667`. Superseded runs cancelled: `30255505428`, `30255505396`. Main push checks: Tests `30255771237`, Build `30255771121`. |
 
 ---
 
