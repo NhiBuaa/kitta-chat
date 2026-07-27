@@ -1,59 +1,52 @@
-# Handoff — Recruiter-Facing README
+# Last Session Handoff — K2 GitHub Actions CI/CD Setup In Progress
 
-## Next Focus
+## Status
 
-Continue Slice 5 / GitHub Issue #12: publish the narrated Google Drive demo and finalize the recruiter-facing README.
+- Current branch: `feature/github-actions-setup`.
+- Developer requested K2 CI/CD implementation through `.agents/playbooks/feature-development.md`.
+- Pha 1 was completed and explicitly approved by Developer.
+- Pha 2 was completed with glossary and architectural decision updates.
+- Pha 3 breakdown was explicitly approved by Developer.
+- GitHub Issues #14–#18 were created in dependency order.
+- Roadmap and next-session files now point to K2 Slice 1.
+- Manual acceptance guide for Slice 1 has been drafted and is awaiting Developer approval before implementation code.
 
-## Current State
+## Key Artifacts
 
-- Repository: `D:\Developer\Projects\shotter\shot-chat`
-- Branch: `minor-bug-fixes`
-- Draft PR: `https://github.com/NhiBuaa/kitta-chat/pull/13`
-- Latest pushed commit: `3151c108 docs: improve product tour mobile layout`
-- Source PRD: `specs/active/recruiter-facing-readme.md`
-- Next-session plan: `.agents/next-session.md`
+- PRD: `specs/active/github-actions-ci-cd.md`
+- Roadmap: `.agents/current-session.md`
+- Next slice guide: `.agents/next-session.md`
+- Manual acceptance Slice 1: `.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md`
+- Decision log: `docs/decisions.md`
+- Glossary: `.agents/CONTEXT.md`
+- Issues:
+  - #14 `Add repository CI contract and truthful README badges`
+  - #15 `Add client lint as a required CI quality gate`
+  - #16 `Validate production Docker image builds in CI`
+  - #17 `Add advisory dependency and security scanning`
+  - #18 `Enforce required CI checks and define the staging handoff`
 
-## Completed This Session
+## Verification Evidence So Far
 
-- Published the Visual Product Tour with exact assets under `docs/assets/readme/`:
-  - `direct-chat.webp`
-  - `group-chat.webp`
-  - `conversation-panel.webp`
-  - `video-call.webp`
-  - `realtime-sidebar.gif`
-- Verified the GIF shows an actual incoming message, unread increment and conversation reorder.
-- Verified a connected WebRTC call using two isolated demo identities with both cameras disabled.
-- Replaced Product Tour placeholders with real assets, English alt text and value-oriented captions.
-- Revised the Direct/Group layout after GitHub mobile review so both render full-width instead of cramped table columns.
+- Read `.agents/playbooks/feature-development.md` and relevant skills: `to-prd`, `grill-with-docs`, `domain-modeling`, `codebase-design`, `to-issues`, `test-craft`.
+- Created `specs/active/github-actions-ci-cd.md`.
+- Added CI/CD glossary terms to `.agents/CONTEXT.md`.
+- Added decision `2026-07-25 — Separate CI Quality Gates With a Repository-Level Contract` to `docs/decisions.md`.
+- Created manual test guide for Slice 1 with TC-01 through TC-07.
 
-## Verification Evidence
+## Current Stop Point
 
-- Asset audit: correct WebP/GIF MIME; no EXIF; GIF `460x900`, `5.91s`, `2.13 MB`.
-- Local tests: Server `321/321`, Client `232/232`, production build passed.
-- GitHub render: desktop and `390px` mobile viewport passed without horizontal overflow.
-- GitHub Actions on commit `3151c108`: Server Tests, Client Tests and Client Build all succeeded.
-- Manual acceptance: `.agents/manual-tests/recruiter-facing-readme/slice-4-visual-product-tour.md` is `PASSED`.
+Stop before implementation code. Developer must approve the locked manual test cases in:
 
-## Remaining Work
+`.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md`
 
-1. Developer records the approved 2–3 minute product-first walkthrough.
-2. Add English AI narration and English captions/callouts.
-3. Upload to Google Drive with viewer-only `Anyone with the link` access.
-4. Verify the link in an anonymous/incognito session.
-5. Replace the `Watch the Demo` preparation copy with the real CTA, duration, recording date and demonstrated commit.
-6. Run the final recruiter 60-second audit, tests/build, link/secret scan and GitHub rendering checks.
-7. Update Issue #12 and PR #13 when acceptance passes.
+After approval, continue with Pha 4 Slice Implementation Loop for Issue #14 using TDD RED → GREEN → REFACTOR.
 
 ## Guardrails
 
-- Do not add an unverified Google Drive URL.
-- Do not commit video/raw captures, secrets, credentials or personal data.
-- Do not claim a live deployment.
-- Keep Docker Compose as the source of truth.
-- Keep the approved five Engineering Highlights and recruiter-level architecture unchanged unless evidence requires a correction.
-
-## Suggested Skills
-
-- `browser:control-in-app-browser` — verify Google Drive anonymous viewing and final GitHub rendering.
-- `test-craft` — create the Slice 5 manual acceptance guide.
-- `handoff` — compact the next session when finalization is complete.
+- Do not implement code before manual tests are approved.
+- Do not use `continue-on-error` or `|| true` to fake Required Quality Gates.
+- Do not require local `.env`, GitHub secrets, MongoDB, Redis or RabbitMQ for Slice 1 CI Contract validation.
+- Do not claim branch protection enforcement until GitHub ruleset/branch protection is actually configured and verified.
+- Do not deploy or push Docker images in K2 Slice 1.
+- Do not commit or push unless Developer explicitly requests it.

@@ -209,6 +209,7 @@ The badges in the Hero read directly from these workflows; no passing state or t
 
 ## Technical Documentation
 
+- [Architecture Decision Records](docs/adr/README.md) — stable index for architectural decisions and their lifecycle status.
 - [Architecture Overview](docs/ARCHITECTURE.md) — ownership boundaries for MongoDB, Redis, RabbitMQ and Socket.IO.
 - [REST API Reference](docs/API.md) — authentication, request contracts and endpoint examples.
 - [Socket.IO Multi-Replica Scaling](docs/SOCKET_IO_SCALING.md) — rooms, Redis Adapter fan-out, reconnect behavior and operational proof.
