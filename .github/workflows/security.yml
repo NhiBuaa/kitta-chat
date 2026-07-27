@@ -1,0 +1,216 @@
+name: Security
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  root-audit:
+    name: Dependency Audit (root)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          working-directory: .
+          cache-dependency-path: package-lock.json
+
+      - name: Audit root dependencies
+        run: npm audit --audit-level=high
+
+  client-audit:
+    name: Dependency Audit (client)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          working-directory: client
+          cache-dependency-path: client/package-lock.json
+
+      - name: Audit client dependencies
+        run: npm audit --audit-level=high
+
+  server-audit:
+    name: Dependency Audit (server)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          working-directory: server
+          cache-dependency-path: server/package-lock.json
+
+      - name: Audit server dependencies
+        run: npm audit --audit-level=high
+
+  root-license-scan:
+    name: License Scan (root)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          working-directory: .
+          cache-dependency-path: package-lock.json
+
+      - name: Scan root dependency licenses
+        run: npm run license:check
+
+  client-license-scan:
+    name: License Scan (client)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          working-directory: client
+          cache-dependency-path: client/package-lock.json
+
+      - name: Scan client dependency licenses
+        run: npm run license:check
+
+  server-license-scan:
+    name: License Scan (server)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          working-directory: server
+          cache-dependency-path: server/package-lock.json
+
+      - name: Scan server dependency licenses
+        run: npm run license:check
+
+  codeql-analysis:
+    name: CodeQL Analysis (advisory)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7fc6561ed893d15cec696e062df840b21db27eb0 # v4.35.2
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@7fc6561ed893d15cec696e062df840b21db27eb0 # v4.35.2
+        with:
+          upload: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'never' || 'always' }}
+
+  secret-scan:
+    name: Secret Scan (advisory)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout full repository history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js for the dependency-free sanitizer
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+
+      # v8.30.1, pinned by the official container digest.
+      - name: Scan full history with redacted Gitleaks output
+        id: gitleaks
+        run: >-
+          docker run --rm
+          -v "$PWD:/repo:ro"
+          -v "$PWD:/out"
+          ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo
+          --redact=100
+          --report-format sarif
+          --report-path /out/gitleaks-results.sarif
+          --exit-code 1
+          --no-banner
+          --no-color
+          --log-level warn
+
+      - name: Sanitize Gitleaks SARIF
+        id: sanitize
+        if: ${{ always() }}
+        run: node scripts/ci/sanitizeGitleaksSarif.cjs gitleaks-results.sarif gitleaks-results-sanitized.sarif
+
+      - name: Upload sanitized Gitleaks SARIF
+        if: ${{ always() && steps.sanitize.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/upload-sarif@7fc6561ed893d15cec696e062df840b21db27eb0 # v4.35.2
+        with:
+          sarif_file: gitleaks-results-sanitized.sarif

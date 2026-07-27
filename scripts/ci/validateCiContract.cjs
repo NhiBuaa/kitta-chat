@@ -7,6 +7,7 @@ const REQUIRED_WORKFLOW_PATHS = [
   '.github/workflows/build.yml',
   '.github/workflows/quality.yml',
   '.github/workflows/docker.yml',
+  '.github/workflows/security.yml',
 ];
 const CONCURRENCY_GROUP = '${{ github.workflow }}-${{ github.ref }}';
 const PULL_REQUEST_CANCELLATION = "${{ github.event_name == 'pull_request' }}";
@@ -33,17 +34,36 @@ const CI_POLICY_WORKFLOW_REFERENCE =
   'NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@';
 const CI_POLICY_SUPPORT_PATH = '.github/workflows/ci-policy-v1.yml';
 const README_BADGES = {
-  Build:
-    '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)',
   Tests:
     '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)',
+  Build:
+    '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)',
+  Quality:
+    '[![Quality](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml)',
+  Docker:
+    '[![Docker](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml)',
+  Security:
+    '[![Security](https://github.com/NhiBuaa/kitta-chat/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/security.yml)',
 };
+const README_SECURITY_ADVISORY_COPY =
+  'Dependency audit, CodeQL, secret scan and license scan results are Advisory findings, not merge blockers or proof that the repository has no vulnerabilities.';
 const PUBLIC_COMMANDS = {
   'ci:validate': 'node scripts/ci/validateCiContract.cjs',
   'test:ci': 'node --test scripts/ci/*.test.cjs',
 };
 const CLIENT_LINT_COMMAND =
   'eslint . --ignore-pattern .vite-cache/** --max-warnings=13';
+const LICENSE_CHECK_COMMAND =
+  'license-checker-rseidelsohn --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD" --summary';
+const LICENSE_CHECKER_VERSION = '4.4.2';
+const GITLEAKS_COMMAND =
+  'docker run --rm -v "$PWD:/repo:ro" -v "$PWD:/out" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --redact=100 --report-format sarif --report-path /out/gitleaks-results.sarif --exit-code 1 --no-banner --no-color --log-level warn';
+const SANITIZE_SARIF_COMMAND =
+  'node scripts/ci/sanitizeGitleaksSarif.cjs gitleaks-results.sarif gitleaks-results-sanitized.sarif';
+const SARIF_UPLOAD_CONDITION =
+  "${{ always() && steps.sanitize.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}";
+const CODEQL_UPLOAD_CONDITION =
+  "${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'never' || 'always' }}";
 const REQUIRED_CHECK_LOCATIONS = new Map([
   ['Server Tests', '.github/workflows/tests.yml#server-tests'],
   ['Client Tests', '.github/workflows/tests.yml#client-tests'],
@@ -61,6 +81,7 @@ const VALIDATED_CATEGORIES = [
   'concurrency',
   'action pins',
   'docker',
+  'security',
   'badges',
 ];
 
@@ -260,6 +281,104 @@ function matchesDockerBuildContract(job, contract) {
     !steps.some(
       (step) => step?.uses === './.github/actions/setup-node-env',
     )
+  );
+}
+
+function matchesCodeqlContract(job) {
+  const steps = job?.steps;
+  const permissionEntries = Object.entries(job?.permissions || {});
+
+  if (!Array.isArray(steps)) {
+    return false;
+  }
+
+  const checkoutIndex = steps.findIndex((step) =>
+    step?.uses?.startsWith('actions/checkout@'),
+  );
+  const initIndex = steps.findIndex(
+    (step) =>
+      step?.uses?.startsWith('github/codeql-action/init@') &&
+      step?.with?.languages === 'javascript-typescript' &&
+      step?.with?.['build-mode'] === 'none',
+  );
+  const analyzeIndex = steps.findIndex((step) =>
+    step?.uses?.startsWith('github/codeql-action/analyze@'),
+  );
+
+  return (
+    job?.name === 'CodeQL Analysis (advisory)' &&
+    job?.['runs-on'] === 'ubuntu-latest' &&
+    permissionEntries.length === 3 &&
+    job?.permissions?.contents === 'read' &&
+    job?.permissions?.actions === 'read' &&
+    job?.permissions?.['security-events'] === 'write' &&
+    checkoutIndex >= 0 &&
+    checkoutIndex < initIndex &&
+    initIndex < analyzeIndex &&
+    !steps.some((step) =>
+      step?.uses?.startsWith('github/codeql-action/autobuild@'),
+    ) &&
+    !collectRunCommands(job).some((command) =>
+      /(?:npm\s+(?:run\s+)?build|yarn\s+build|pnpm\s+build)/i.test(command),
+    )
+  );
+}
+
+function hasForkSafeCodeqlUpload(job) {
+  return job?.steps?.some(
+    (step) =>
+      step?.uses?.startsWith('github/codeql-action/analyze@') &&
+      step?.with?.upload === CODEQL_UPLOAD_CONDITION,
+  );
+}
+
+function matchesSecretScanContract(job) {
+  const steps = job?.steps;
+  const permissionEntries = Object.entries(job?.permissions || {});
+
+  if (!Array.isArray(steps)) {
+    return false;
+  }
+
+  const checkoutIndex = steps.findIndex(
+    (step) =>
+      step?.uses?.startsWith('actions/checkout@') &&
+      step?.with?.['fetch-depth'] === 0,
+  );
+  const setupIndex = steps.findIndex(
+    (step) =>
+      step?.uses?.startsWith('actions/setup-node@') &&
+      step?.with?.['node-version-file'] === '.nvmrc',
+  );
+  const scanIndex = steps.findIndex(
+    (step) => step?.id === 'gitleaks' && step?.run?.trim() === GITLEAKS_COMMAND,
+  );
+  const sanitizeIndex = steps.findIndex(
+    (step) =>
+      step?.id === 'sanitize' &&
+      step?.if === '${{ always() }}' &&
+      step?.run?.trim() === SANITIZE_SARIF_COMMAND,
+  );
+  const uploadIndex = steps.findIndex(
+    (step) =>
+      step?.if === SARIF_UPLOAD_CONDITION &&
+      step?.uses?.startsWith('github/codeql-action/upload-sarif@') &&
+      step?.with?.sarif_file === 'gitleaks-results-sanitized.sarif',
+  );
+
+  return (
+    job?.name === 'Secret Scan (advisory)' &&
+    job?.['runs-on'] === 'ubuntu-latest' &&
+    permissionEntries.length === 2 &&
+    job?.permissions?.contents === 'read' &&
+    job?.permissions?.['security-events'] === 'write' &&
+    checkoutIndex >= 0 &&
+    checkoutIndex < setupIndex &&
+    setupIndex < scanIndex &&
+    scanIndex < sanitizeIndex &&
+    sanitizeIndex < uploadIndex &&
+    !steps.some((step) => step?.uses === './.github/actions/setup-node-env') &&
+    !collectRunCommands(job).some((command) => command.trim() === 'npm ci')
   );
 }
 
@@ -662,6 +781,14 @@ function validateRepository(repositoryRoot, options = {}) {
     }
 
     if (
+      workflowPath.endsWith('security.yml') &&
+      (workflow?.on?.schedule?.length !== 1 ||
+        workflow.on.schedule[0]?.cron !== '0 3 * * 1')
+    ) {
+      errors.push('security.yml must schedule Monday at 03:00 UTC');
+    }
+
+    if (
       workflow?.concurrency?.group !== CONCURRENCY_GROUP ||
       workflow?.concurrency?.['cancel-in-progress'] !== PULL_REQUEST_CANCELLATION
     ) {
@@ -728,6 +855,93 @@ function validateRepository(repositoryRoot, options = {}) {
     }
 
     if (
+      workflowPath.endsWith('security.yml') &&
+      ![
+        {
+          id: 'root-audit',
+          lockfile: 'package-lock.json',
+          name: 'Dependency Audit (root)',
+          workingDirectory: '.',
+        },
+        {
+          id: 'client-audit',
+          lockfile: 'client/package-lock.json',
+          name: 'Dependency Audit (client)',
+          workingDirectory: 'client',
+        },
+        {
+          id: 'server-audit',
+          lockfile: 'server/package-lock.json',
+          name: 'Dependency Audit (server)',
+          workingDirectory: 'server',
+        },
+      ].every((contract) =>
+        matchesJobContract(workflow?.jobs?.[contract.id], {
+          command: 'npm audit --audit-level=high',
+          lockfile: contract.lockfile,
+          name: contract.name,
+          workingDirectory: contract.workingDirectory,
+        }),
+      )
+    ) {
+      errors.push('security.yml must define three dependency audit jobs');
+    }
+
+    if (
+      workflowPath.endsWith('security.yml') &&
+      ![
+        {
+          id: 'root-license-scan',
+          lockfile: 'package-lock.json',
+          name: 'License Scan (root)',
+          workingDirectory: '.',
+        },
+        {
+          id: 'client-license-scan',
+          lockfile: 'client/package-lock.json',
+          name: 'License Scan (client)',
+          workingDirectory: 'client',
+        },
+        {
+          id: 'server-license-scan',
+          lockfile: 'server/package-lock.json',
+          name: 'License Scan (server)',
+          workingDirectory: 'server',
+        },
+      ].every((contract) =>
+        matchesJobContract(workflow?.jobs?.[contract.id], {
+          command: 'npm run license:check',
+          lockfile: contract.lockfile,
+          name: contract.name,
+          workingDirectory: contract.workingDirectory,
+        }),
+      )
+    ) {
+      errors.push('security.yml must define three license scan jobs');
+    }
+
+    if (
+      workflowPath.endsWith('security.yml') &&
+      !matchesCodeqlContract(workflow?.jobs?.['codeql-analysis'])
+    ) {
+      errors.push('security.yml must define the CodeQL advisory contract');
+    }
+
+    if (
+      workflowPath.endsWith('security.yml') &&
+      !hasForkSafeCodeqlUpload(workflow?.jobs?.['codeql-analysis'])
+    ) {
+      errors.push('security.yml CodeQL upload must skip fork pull requests');
+    }
+
+    if (
+      workflowPath.endsWith('security.yml') &&
+      !matchesSecretScanContract(workflow?.jobs?.['secret-scan'])
+    ) {
+      errors.push('security.yml must define the sanitized secret scan contract');
+    }
+
+    if (
       workflowPath.endsWith('docker.yml') &&
       !matchesDockerBuildContract(workflow?.jobs?.['build-server'], {
         context: './server',
@@ -772,6 +986,31 @@ function validateRepository(repositoryRoot, options = {}) {
     }
   }
 
+  const badgePositions = Object.values(README_BADGES).map((badge) =>
+    readme.indexOf(badge),
+  );
+
+  if (
+    badgePositions.some((position) => position < 0) ||
+    badgePositions.some(
+      (position, index) => index > 0 && position <= badgePositions[index - 1],
+    )
+  ) {
+    errors.push('README workflow badges must use the approved order');
+  }
+
+  if (!readme.includes(README_SECURITY_ADVISORY_COPY)) {
+    errors.push('README must describe Security findings as Advisory');
+  }
+
+  const gitleaksConfigPath = path.join(repositoryRoot, '.gitleaks.toml');
+
+  if (!existsSync(gitleaksConfigPath)) {
+    errors.push('Repository must include the owned .gitleaks.toml policy');
+  } else if (/\bpaths\s*=\s*\[/i.test(readFileSync(gitleaksConfigPath, 'utf8'))) {
+    errors.push('.gitleaks.toml must not use broad path exclusions');
+  }
+
   if (
     /!\[[^\]]*(?:tests|build)[^\]]*\]\([^\n)]*img\.shields\.io\/badge\/[^\n)]*(?:passing|tests?-\d+|build-\d+)/i.test(
       readme,
@@ -801,6 +1040,27 @@ function validateRepository(repositoryRoot, options = {}) {
     errors.push(
       'client/package.json must own lint:ci with max-warnings 13',
     );
+  }
+
+  for (const [packagePath, packageConfig] of [
+    ['package.json', packageDocument],
+    ['client/package.json', clientPackageDocument],
+    [
+      'server/package.json',
+      existsSync(path.join(repositoryRoot, 'server/package.json'))
+        ? JSON.parse(
+            readFileSync(path.join(repositoryRoot, 'server/package.json'), 'utf8'),
+          )
+        : {},
+    ],
+  ]) {
+    if (
+      packageConfig?.scripts?.['license:check'] !== LICENSE_CHECK_COMMAND ||
+      packageConfig?.devDependencies?.['license-checker-rseidelsohn'] !==
+        LICENSE_CHECKER_VERSION
+    ) {
+      errors.push(`${packagePath} must own the exact license scan policy`);
+    }
   }
 
   return {
