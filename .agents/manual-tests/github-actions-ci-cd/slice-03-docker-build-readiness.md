@@ -6,7 +6,7 @@
 - **Slice:** Slice 3 — Production Docker Build Readiness
 - **Nguồn đặc tả:** [`specs/active/github-actions-ci-cd.md`](../../../specs/active/github-actions-ci-cd.md)
 - **GitHub Issue:** https://github.com/NhiBuaa/kitta-chat/issues/16
-- **Trạng thái mới nhất:** PENDING_VERIFICATION
+- **Trạng thái mới nhất:** PASSED
 - **Phê duyệt `[KHÓA]`:** APPROVED — Developer xác nhận TC-01 đến TC-14 ngày `2026-07-27`.
 
 ---
@@ -242,6 +242,7 @@
 | Lần chạy | Ngày | Người test | TC-01 | TC-02 | TC-03 | TC-04 | TC-05 | TC-06 | TC-07 | TC-08 | TC-09 | TC-10 | TC-11 | TC-12 | TC-13 | TC-14 | Tổng kết | Ghi chú / Link Log |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | Chưa chạy | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | **PENDING_VERIFICATION** | `[KHÓA]` TC-01 đến TC-14 đã được Developer duyệt; chưa chạy acceptance. |
+| Run #1 | 2026-07-27 | Agent | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASSED** | Local: CI Contract `59/59`, `ci:validate` exit `0`, server `321/321`, client `232/232`, client build exit `0`, server/nginx Buildx exit `0` với Node `v22.23.1`. PR Docker run `30276105663` và main Docker run `30277118128` đều thành công; main jobs: server `90013879480`, nginx `90013879586`. Quality main chỉ fail `Client Lint` baseline Issue #18; `CI Policy v1` và trusted baseline thành công. Không push/load/login/deploy/Ruleset/Settings. |
 
 ---
 
