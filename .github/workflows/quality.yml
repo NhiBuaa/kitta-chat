@@ -1,0 +1,38 @@
+name: Quality
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  client-lint:
+    name: Client Lint
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          working-directory: client
+          cache-dependency-path: client/package-lock.json
+
+      - name: Run client lint readiness
+        run: npm run lint:ci

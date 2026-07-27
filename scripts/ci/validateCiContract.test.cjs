@@ -12,6 +12,20 @@ const validSharedSetup =
   "name: Setup Node environment\ninputs:\n  working-directory:\n    required: true\n  cache-dependency-path:\n    required: true\nruns:\n  using: composite\n  steps:\n    - uses: actions/setup-node@1111111111111111111111111111111111111111\n      with:\n        node-version-file: .nvmrc\n        cache: npm\n        cache-dependency-path: ${{ inputs.cache-dependency-path }}\n    - run: node --version\n      shell: bash\n    - run: npm ci\n      shell: bash\n      working-directory: ${{ inputs.working-directory }}\n";
 const validTestsWorkflow = `${validWorkflowHeader}jobs:\n  server-tests:\n    name: Server Tests\n    defaults:\n      run:\n        working-directory: server\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: server\n          cache-dependency-path: server/package-lock.json\n      - run: npm test\n  client-tests:\n    name: Client Tests\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm test\n`;
 const validBuildWorkflow = `${validWorkflowHeader}jobs:\n  client-build:\n    name: Client Build\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm run build\n`;
+const validQualityWorkflow = `${validWorkflowHeader}jobs:\n  client-lint:\n    name: Client Lint\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm run lint:ci\n`;
+const validCiPolicySupportWorkflow =
+  'name: CI Policy v1 Support\n' +
+  'on:\n  workflow_call:\n' +
+  'permissions:\n  contents: read\n' +
+  'jobs:\n  validate-policy:\n    name: Trusted CI Policy v1\n    runs-on: ubuntu-latest\n    steps:\n' +
+  '      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n        with:\n          path: candidate\n' +
+  '      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n        with:\n          repository: NhiBuaa/kitta-chat\n          ref: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n          path: policy\n' +
+  '      - uses: actions/setup-node@1111111111111111111111111111111111111111 # v4.4.0\n        with:\n          node-version-file: policy/.nvmrc\n          cache: npm\n          cache-dependency-path: policy/package-lock.json\n' +
+  '      - run: npm ci\n        working-directory: policy\n' +
+  '      - run: node policy/scripts/ci/validateCiContract.cjs candidate --require-ci-policy\n' +
+  '      - run: npm ci\n        working-directory: candidate\n' +
+  '      - run: npm run test:ci\n        working-directory: candidate\n' +
+  '      - run: npm run ci:validate\n        working-directory: candidate\n';
 
 function createFixture(files = {}) {
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'kitta-ci-contract-'));
@@ -25,8 +39,41 @@ function createFixture(files = {}) {
   return fixtureRoot;
 }
 
-function runValidator(fixtureRoot) {
-  return spawnSync(process.execPath, [validatorPath, fixtureRoot], {
+function createValidRepositoryFixture(overrides = {}) {
+  const testsBadge =
+    '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)';
+  const buildBadge =
+    '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)';
+
+  return createFixture({
+    '.nvmrc': '22\n',
+    '.github/actions/setup-node-env/action.yml': validSharedSetup.replace(
+      '1111111111111111111111111111111111111111',
+      '1111111111111111111111111111111111111111 # v4.4.0',
+    ),
+    '.github/workflows/tests.yml': validTestsWorkflow.replaceAll(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    '.github/workflows/build.yml': validBuildWorkflow.replace(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    '.github/workflows/quality.yml': validQualityWorkflow.replace(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    'README.md': `${testsBadge}\n${buildBadge}\n`,
+    'package.json':
+      '{"scripts":{"test:ci":"node --test scripts/ci/*.test.cjs","ci:validate":"node scripts/ci/validateCiContract.cjs"}}\n',
+    'client/package.json':
+      '{"scripts":{"lint:ci":"eslint . --ignore-pattern .vite-cache/** --max-warnings=13"}}\n',
+    ...overrides,
+  });
+}
+
+function runValidator(fixtureRoot, cliArguments = []) {
+  return spawnSync(process.execPath, [validatorPath, ...cliArguments, fixtureRoot], {
     encoding: 'utf8',
   });
 }
@@ -287,6 +334,26 @@ test('ci contract CLI rejects repository write permissions in required workflows
   }
 });
 
+test('ci contract CLI rejects repository write permissions in an extension workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/observability.yml':
+      'name: Observability\non:\n  workflow_dispatch:\npermissions:\n  contents: write\njobs: {}\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /observability\.yml must not use repository write permissions/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test('ci contract CLI rejects mutable external Action references', () => {
   const fixtureRoot = createFixture({
     '.nvmrc': '22\n',
@@ -296,6 +363,23 @@ test('ci contract CLI rejects mutable external Action references', () => {
       'actions/checkout@v4',
     ),
     '.github/workflows/build.yml': validBuildWorkflow,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /mutable external Action reference: actions\/checkout@v4/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects mutable Action refs in an extension workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/observability.yml':
+      'name: Observability\non:\n  workflow_dispatch:\npermissions:\n  contents: read\njobs:\n  observe:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n',
   });
 
   try {
@@ -331,6 +415,26 @@ test('ci contract CLI rejects pull_request_target everywhere', () => {
   }
 });
 
+test('ci contract CLI rejects pull_request_target in an extension workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/observability.yml':
+      'name: Observability\non:\n  pull_request_target:\n    branches: [main]\npermissions:\n  contents: read\njobs: {}\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /observability\.yml must not use pull_request_target/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test('ci contract CLI rejects continue-on-error true everywhere', () => {
   const fixtureRoot = createFixture({
     '.nvmrc': '22\n',
@@ -348,6 +452,61 @@ test('ci contract CLI rejects continue-on-error true everywhere', () => {
 
     assert.equal(result.status, 1);
     assert.match(output, /build\.yml must not use continue-on-error: true/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects continue-on-error in an extension workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/observability.yml':
+      'name: Observability\non:\n  workflow_dispatch:\npermissions:\n  contents: read\njobs:\n  observe:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo observe\n        continue-on-error: true\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /observability\.yml must not use continue-on-error: true/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects an extension job that reuses a Required check name', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/observability.yml':
+      'name: Observability\non:\n  workflow_dispatch:\npermissions:\n  contents: read\njobs:\n  observe:\n    name: Client Lint\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo observe\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /observability\.yml job observe must not reuse Required check name Client Lint/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI allows a safe Advisory extension job', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/observability.yml':
+      'name: Observability\non:\n  workflow_dispatch:\npermissions:\n  contents: read\njobs:\n  observe:\n    name: Advisory Observability\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo observe\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+
+    assert.equal(result.status, 0);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -454,6 +613,10 @@ test('ci contract CLI rejects missing public package commands', () => {
       '2222222222222222222222222222222222222222',
       '2222222222222222222222222222222222222222 # v4.2.2',
     ),
+    '.github/workflows/quality.yml': validQualityWorkflow.replace(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
     'README.md': `${testsBadge}\n${buildBadge}\n`,
     'package.json': '{"scripts":{}}\n',
   });
@@ -464,6 +627,180 @@ test('ci contract CLI rejects missing public package commands', () => {
 
     assert.equal(result.status, 1);
     assert.match(output, /package\.json must expose test:ci and ci:validate/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a missing client-owned lint readiness command', () => {
+  const testsBadge =
+    '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)';
+  const buildBadge =
+    '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)';
+  const fixtureRoot = createFixture({
+    '.nvmrc': '22\n',
+    '.github/actions/setup-node-env/action.yml': validSharedSetup.replace(
+      '1111111111111111111111111111111111111111',
+      '1111111111111111111111111111111111111111 # v4.4.0',
+    ),
+    '.github/workflows/tests.yml': validTestsWorkflow.replaceAll(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    '.github/workflows/build.yml': validBuildWorkflow.replace(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    '.github/workflows/quality.yml': validQualityWorkflow.replace(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    'README.md': `${testsBadge}\n${buildBadge}\n`,
+    'package.json':
+      '{"scripts":{"test:ci":"node --test scripts/ci/*.test.cjs","ci:validate":"node scripts/ci/validateCiContract.cjs"}}\n',
+    'client/package.json': '{"scripts":{"lint":"eslint ."}}\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /client\/package\.json must own lint:ci with max-warnings 13/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a Quality workflow without the Client Lint contract', () => {
+  const testsBadge =
+    '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)';
+  const buildBadge =
+    '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)';
+  const fixtureRoot = createFixture({
+    '.nvmrc': '22\n',
+    '.github/actions/setup-node-env/action.yml': validSharedSetup.replace(
+      '1111111111111111111111111111111111111111',
+      '1111111111111111111111111111111111111111 # v4.4.0',
+    ),
+    '.github/workflows/tests.yml': validTestsWorkflow.replaceAll(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    '.github/workflows/build.yml': validBuildWorkflow.replace(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
+    '.github/workflows/quality.yml': `${validWorkflowHeader}jobs: {}\n`,
+    'README.md': `${testsBadge}\n${buildBadge}\n`,
+    'package.json':
+      '{"scripts":{"test:ci":"node --test scripts/ci/*.test.cjs","ci:validate":"node scripts/ci/validateCiContract.cjs"}}\n',
+    'client/package.json':
+      '{"scripts":{"lint:ci":"eslint . --ignore-pattern .vite-cache/** --max-warnings=13"}}\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /quality\.yml must define the Client Lint contract/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract mode rejects a Quality workflow without the fixed-SHA CI Policy v1 caller', () => {
+  const fixtureRoot = createValidRepositoryFixture();
+
+  try {
+    const result = runValidator(fixtureRoot, ['--require-ci-policy']);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /quality\.yml must define the fixed-SHA CI Policy v1 caller/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract mode accepts the fixed-SHA CI Policy v1 caller without inputs', () => {
+  const pinnedQualityWorkflow = validQualityWorkflow.replace(
+    '2222222222222222222222222222222222222222',
+    '2222222222222222222222222222222222222222 # v4.2.2',
+  );
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/quality.yml':
+      `${pinnedQualityWorkflow}  ci-policy-v1:\n` +
+      '    name: CI Policy v1\n' +
+      '    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@3333333333333333333333333333333333333333 # CI Policy v1\n',
+    '.github/workflows/ci-policy-v1.yml': validCiPolicySupportWorkflow,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot, ['--require-ci-policy']);
+
+    assert.equal(result.status, 0);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract mode rejects a missing CI Policy v1 support workflow', () => {
+  const pinnedQualityWorkflow = validQualityWorkflow.replace(
+    '2222222222222222222222222222222222222222',
+    '2222222222222222222222222222222222222222 # v4.2.2',
+  );
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/quality.yml':
+      `${pinnedQualityWorkflow}  ci-policy-v1:\n` +
+      '    name: CI Policy v1\n' +
+      '    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@3333333333333333333333333333333333333333 # CI Policy v1\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot, ['--require-ci-policy']);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /missing CI Policy v1 support workflow/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract mode rejects candidate policy tests that run before fixed-baseline validation', () => {
+  const pinnedQualityWorkflow = validQualityWorkflow.replace(
+    '2222222222222222222222222222222222222222',
+    '2222222222222222222222222222222222222222 # v4.2.2',
+  );
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/quality.yml':
+      `${pinnedQualityWorkflow}  ci-policy-v1:\n` +
+      '    name: CI Policy v1\n' +
+      '    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@3333333333333333333333333333333333333333 # CI Policy v1\n',
+    '.github/workflows/ci-policy-v1.yml': validCiPolicySupportWorkflow.replace(
+      '      - run: node policy/scripts/ci/validateCiContract.cjs candidate --require-ci-policy\n' +
+        '      - run: npm ci\n        working-directory: candidate\n' +
+        '      - run: npm run test:ci\n        working-directory: candidate\n',
+      '      - run: npm ci\n        working-directory: candidate\n' +
+        '      - run: npm run test:ci\n        working-directory: candidate\n' +
+        '      - run: node policy/scripts/ci/validateCiContract.cjs candidate --require-ci-policy\n',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot, ['--require-ci-policy']);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /CI Policy v1 support must validate the fixed baseline before candidate policy tests/i,
+    );
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -488,9 +825,15 @@ test('ci contract CLI reports every validated Slice 1 contract category', () => 
       '2222222222222222222222222222222222222222',
       '2222222222222222222222222222222222222222 # v4.2.2',
     ),
+    '.github/workflows/quality.yml': validQualityWorkflow.replace(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    ),
     'README.md': `${testsBadge}\n${buildBadge}\n`,
     'package.json':
       '{"scripts":{"test:ci":"node --test scripts/ci/*.test.cjs","ci:validate":"node scripts/ci/validateCiContract.cjs"}}\n',
+    'client/package.json':
+      '{"scripts":{"lint:ci":"eslint . --ignore-pattern .vite-cache/** --max-warnings=13"}}\n',
   });
 
   try {

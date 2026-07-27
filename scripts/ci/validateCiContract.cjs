@@ -1,16 +1,20 @@
-const { existsSync, readFileSync } = require('node:fs');
+const { existsSync, readFileSync, readdirSync } = require('node:fs');
 const path = require('node:path');
 const { parse } = require('yaml');
 
 const REQUIRED_WORKFLOW_PATHS = [
   '.github/workflows/tests.yml',
   '.github/workflows/build.yml',
+  '.github/workflows/quality.yml',
 ];
 const CONCURRENCY_GROUP = '${{ github.workflow }}-${{ github.ref }}';
 const PULL_REQUEST_CANCELLATION = "${{ github.event_name == 'pull_request' }}";
 const SHARED_SETUP_PATH = '.github/actions/setup-node-env/action.yml';
 const IMMUTABLE_EXTERNAL_ACTION =
-  /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9a-f]{40}$/;
+  /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[^@\s]+)?@[0-9a-f]{40}$/;
+const CI_POLICY_WORKFLOW_REFERENCE =
+  'NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@';
+const CI_POLICY_SUPPORT_PATH = '.github/workflows/ci-policy-v1.yml';
 const README_BADGES = {
   Build:
     '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)',
@@ -21,6 +25,17 @@ const PUBLIC_COMMANDS = {
   'ci:validate': 'node scripts/ci/validateCiContract.cjs',
   'test:ci': 'node --test scripts/ci/*.test.cjs',
 };
+const CLIENT_LINT_COMMAND =
+  'eslint . --ignore-pattern .vite-cache/** --max-warnings=13';
+const REQUIRED_CHECK_LOCATIONS = new Map([
+  ['Server Tests', '.github/workflows/tests.yml#server-tests'],
+  ['Client Tests', '.github/workflows/tests.yml#client-tests'],
+  ['Client Build', '.github/workflows/build.yml#client-build'],
+  ['Client Lint', '.github/workflows/quality.yml#client-lint'],
+  ['Docker Build (server)', '.github/workflows/docker.yml#build-server'],
+  ['Docker Build (nginx)', '.github/workflows/docker.yml#build-nginx'],
+  ['CI Policy v1', '.github/workflows/quality.yml#ci-policy-v1'],
+]);
 const VALIDATED_CATEGORIES = [
   'workflows',
   'shared setup',
@@ -105,6 +120,39 @@ function containsTrueSetting(value, settingName) {
   );
 }
 
+function containsRepositoryWritePermissions(value) {
+  if (Array.isArray(value)) {
+    return value.some(containsRepositoryWritePermissions);
+  }
+
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return Object.entries(value).some(([key, child]) => {
+    if (
+      key === 'permissions' &&
+      (child === 'write-all' || child?.contents === 'write')
+    ) {
+      return true;
+    }
+
+    return containsRepositoryWritePermissions(child);
+  });
+}
+
+function listWorkflowPaths(repositoryRoot) {
+  const workflowDirectory = path.join(repositoryRoot, '.github/workflows');
+
+  if (!existsSync(workflowDirectory)) {
+    return [];
+  }
+
+  return readdirSync(workflowDirectory)
+    .filter((fileName) => /\.ya?ml$/i.test(fileName))
+    .map((fileName) => `.github/workflows/${fileName}`);
+}
+
 function matchesJobContract(job, contract) {
   const steps = job?.steps;
 
@@ -134,9 +182,157 @@ function matchesJobContract(job, contract) {
   );
 }
 
-function validateRepository(repositoryRoot) {
+function matchesCiPolicyCaller(job) {
+  return (
+    job?.name === 'CI Policy v1' &&
+    typeof job?.uses === 'string' &&
+    job.uses.startsWith(CI_POLICY_WORKFLOW_REFERENCE) &&
+    IMMUTABLE_EXTERNAL_ACTION.test(job.uses) &&
+    !Object.hasOwn(job, 'with')
+  );
+}
+
+function matchesCiPolicySupportWorkflow(workflow) {
+  const workflowCall = workflow?.on?.workflow_call;
+  const workflowCallHasNoInputs =
+    workflowCall == null ||
+    (typeof workflowCall === 'object' &&
+      !Object.hasOwn(workflowCall, 'inputs') &&
+      !Object.hasOwn(workflowCall, 'secrets'));
+  const permissionEntries = Object.entries(workflow?.permissions || {});
+  const job = workflow?.jobs?.['validate-policy'];
+  const steps = job?.steps;
+
+  if (
+    !Object.hasOwn(workflow?.on || {}, 'workflow_call') ||
+    !workflowCallHasNoInputs ||
+    permissionEntries.length !== 1 ||
+    workflow?.permissions?.contents !== 'read' ||
+    job?.name !== 'Trusted CI Policy v1' ||
+    job?.['runs-on'] !== 'ubuntu-latest' ||
+    !Array.isArray(steps)
+  ) {
+    return false;
+  }
+
+  const candidateCheckoutIndex = steps.findIndex(
+    (step) =>
+      step?.uses?.startsWith('actions/checkout@') &&
+      step?.with?.path === 'candidate' &&
+      !Object.hasOwn(step.with, 'repository') &&
+      !Object.hasOwn(step.with, 'ref'),
+  );
+  const baselineCheckoutIndex = steps.findIndex(
+    (step) =>
+      step?.uses?.startsWith('actions/checkout@') &&
+      step?.with?.repository === 'NhiBuaa/kitta-chat' &&
+      /^[0-9a-f]{40}$/.test(step?.with?.ref) &&
+      step?.with?.path === 'policy',
+  );
+  const setupIndex = steps.findIndex(
+    (step) =>
+      step?.uses?.startsWith('actions/setup-node@') &&
+      step?.with?.['node-version-file'] === 'policy/.nvmrc' &&
+      step?.with?.cache === 'npm' &&
+      step?.with?.['cache-dependency-path'] === 'policy/package-lock.json',
+  );
+  const policyInstallIndex = steps.findIndex(
+    (step) =>
+      step?.run?.trim() === 'npm ci' &&
+      step?.['working-directory'] === 'policy',
+  );
+  const baselineValidationIndex = steps.findIndex(
+    (step) =>
+      step?.run?.trim() ===
+      'node policy/scripts/ci/validateCiContract.cjs candidate --require-ci-policy',
+  );
+  const candidateInstallIndex = steps.findIndex(
+    (step) =>
+      step?.run?.trim() === 'npm ci' &&
+      step?.['working-directory'] === 'candidate',
+  );
+  const candidateTestIndex = steps.findIndex(
+    (step) =>
+      step?.run?.trim() === 'npm run test:ci' &&
+      step?.['working-directory'] === 'candidate',
+  );
+  const candidateValidationIndex = steps.findIndex(
+    (step) =>
+      step?.run?.trim() === 'npm run ci:validate' &&
+      step?.['working-directory'] === 'candidate',
+  );
+
+  return (
+    candidateCheckoutIndex >= 0 &&
+    candidateCheckoutIndex < baselineCheckoutIndex &&
+    baselineCheckoutIndex < setupIndex &&
+    setupIndex < policyInstallIndex &&
+    policyInstallIndex < baselineValidationIndex &&
+    baselineValidationIndex < candidateInstallIndex &&
+    candidateInstallIndex < candidateTestIndex &&
+    candidateTestIndex < candidateValidationIndex
+  );
+}
+
+function validateRepository(repositoryRoot, options = {}) {
   const errors = [];
   const nodeVersionPath = path.join(repositoryRoot, '.nvmrc');
+
+  if (
+    options.requireCiPolicy === true &&
+    !existsSync(path.join(repositoryRoot, CI_POLICY_SUPPORT_PATH))
+  ) {
+    errors.push('Missing CI Policy v1 support workflow');
+  } else if (options.requireCiPolicy === true) {
+    const supportWorkflow = parse(
+      readFileSync(path.join(repositoryRoot, CI_POLICY_SUPPORT_PATH), 'utf8'),
+    );
+
+    if (!matchesCiPolicySupportWorkflow(supportWorkflow)) {
+      errors.push(
+        'CI Policy v1 support must validate the fixed baseline before candidate policy tests',
+      );
+    }
+  }
+
+  for (const workflowPath of listWorkflowPaths(repositoryRoot)) {
+    const workflowSource = readFileSync(
+      path.join(repositoryRoot, workflowPath),
+      'utf8',
+    );
+    const workflow = parse(workflowSource);
+    validateExternalActionReferences(workflow, errors);
+    validateExternalActionVersionComments(workflowSource, workflowPath, errors);
+
+    if (Object.hasOwn(workflow?.on || {}, 'pull_request_target')) {
+      errors.push(
+        `${path.basename(workflowPath)} must not use pull_request_target`,
+      );
+    }
+
+    if (containsTrueSetting(workflow, 'continue-on-error')) {
+      errors.push(
+        `${path.basename(workflowPath)} must not use continue-on-error: true`,
+      );
+    }
+
+    if (containsRepositoryWritePermissions(workflow)) {
+      errors.push(
+        `${path.basename(workflowPath)} must not use repository write permissions`,
+      );
+    }
+
+    for (const [jobId, job] of Object.entries(workflow?.jobs || {})) {
+      const approvedLocation = REQUIRED_CHECK_LOCATIONS.get(job?.name);
+      const actualLocation = `${workflowPath}#${jobId}`;
+
+      if (approvedLocation && approvedLocation !== actualLocation) {
+        errors.push(
+          `${path.basename(workflowPath)} job ${jobId} must not reuse Required check name ${job.name}`,
+        );
+      }
+    }
+  }
 
   if (
     !existsSync(nodeVersionPath) ||
@@ -204,16 +400,7 @@ function validateRepository(repositoryRoot) {
 
     const workflowSource = readFileSync(absoluteWorkflowPath, 'utf8');
     const workflow = parse(workflowSource);
-    validateExternalActionReferences(workflow, errors);
-    validateExternalActionVersionComments(workflowSource, workflowPath, errors);
 
-    if (Object.hasOwn(workflow?.on || {}, 'pull_request_target')) {
-      errors.push(`${path.basename(workflowPath)} must not use pull_request_target`);
-    }
-
-    if (containsTrueSetting(workflow, 'continue-on-error')) {
-      errors.push(`${path.basename(workflowPath)} must not use continue-on-error: true`);
-    }
     const pullRequestBranches = workflow?.on?.pull_request?.branches;
 
     if (!Array.isArray(pullRequestBranches) || !pullRequestBranches.includes('main')) {
@@ -279,6 +466,28 @@ function validateRepository(repositoryRoot) {
     ) {
       errors.push('build.yml must define the Client Build contract');
     }
+
+    if (
+      workflowPath.endsWith('quality.yml') &&
+      !matchesJobContract(workflow?.jobs?.['client-lint'], {
+        command: 'npm run lint:ci',
+        lockfile: 'client/package-lock.json',
+        name: 'Client Lint',
+        workingDirectory: 'client',
+      })
+    ) {
+      errors.push('quality.yml must define the Client Lint contract');
+    }
+
+    if (
+      options.requireCiPolicy === true &&
+      workflowPath.endsWith('quality.yml') &&
+      !matchesCiPolicyCaller(workflow?.jobs?.['ci-policy-v1'])
+    ) {
+      errors.push(
+        'quality.yml must define the fixed-SHA CI Policy v1 caller',
+      );
+    }
   }
 
   const readmePath = path.join(repositoryRoot, 'README.md');
@@ -310,6 +519,17 @@ function validateRepository(repositoryRoot) {
     errors.push('package.json must expose test:ci and ci:validate');
   }
 
+  const clientPackagePath = path.join(repositoryRoot, 'client/package.json');
+  const clientPackageDocument = existsSync(clientPackagePath)
+    ? JSON.parse(readFileSync(clientPackagePath, 'utf8'))
+    : {};
+
+  if (clientPackageDocument?.scripts?.['lint:ci'] !== CLIENT_LINT_COMMAND) {
+    errors.push(
+      'client/package.json must own lint:ci with max-warnings 13',
+    );
+  }
+
   return {
     errors,
     valid: errors.length === 0,
@@ -318,8 +538,14 @@ function validateRepository(repositoryRoot) {
 }
 
 function runCli() {
-  const repositoryRoot = path.resolve(process.argv[2] || process.cwd());
-  const result = validateRepository(repositoryRoot);
+  const cliArguments = process.argv.slice(2);
+  const repositoryArgument = cliArguments.find(
+    (argument) => !argument.startsWith('--'),
+  );
+  const repositoryRoot = path.resolve(repositoryArgument || process.cwd());
+  const result = validateRepository(repositoryRoot, {
+    requireCiPolicy: cliArguments.includes('--require-ci-policy'),
+  });
 
   if (!result.valid) {
     for (const error of result.errors) {
