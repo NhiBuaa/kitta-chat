@@ -249,5 +249,116 @@ Rules:
 
 **References**: `server/src/controllers/conversationPanelController.js`, `client/src/features/chat/components/ConversationPanel.jsx`, `docs/adr/005-conversation-panel-two-stage-loading.md`.
 
+## 2026-07-25 — Separate CI Quality Gates With a Repository-Level Contract
+
+**Decision**: Mở rộng CI/CD bằng các GitHub Actions check tách biệt. Server Tests, Client Tests, Client Production Build, Client Lint và Docker Image Build Validation là Required Quality Gates và phải được cấu hình làm merge blockers. Dependency vulnerability, security/SAST, secret và license scans là Advisory Checks trong K2: chúng phải cung cấp quality signals cho reviewer nhưng chưa chặn merge vì có thể còn baseline findings hoặc false positives. Thêm một repository-level CI Contract validator có một public CLI interface để kiểm tra trigger, required command coverage, Docker build targets và README badge linkage. Optional Staging Deployment trong K2 được ghi nhận là **Deferred Capability — Pending Infrastructure Availability** vì hiện chưa có staging target thực tế; không tạo placeholder/readiness-only workflow, không dùng `BLOCKED_BY_*` wording, và CD thật sẽ mở lại như K2.1 hoặc hạng mục tương đương khi có target. Việc nâng các phát hiện mới mức `Critical`/`High` thành merge blockers được hoãn đến một quyết định hậu K2 sau khi baseline và policy được phê duyệt.
+
+**Why**: Các workflow tests/build hiện có đã cung cấp bằng chứng tốt nhưng chưa bảo vệ lint hoặc Docker packaging. Một CI Contract nhỏ ở seam cấp repository tạo locality cho các invariant pipeline và cho phép test RED → GREEN mà không rải assertions theo từng workflow. Tách check theo trách nhiệm giúp lỗi dễ định vị, trong khi giữ security scan advisory tránh làm toàn bộ pipeline đỏ vì pre-existing dependency findings chưa được triage.
+
+**Alternatives Considered**:
+
+- Gộp mọi bước vào một workflow/job duy nhất: bị loại vì làm giảm khả năng định vị lỗi và tạo badge/check quá thô.
+- Chỉ dựa vào workflow execution, không có CI Contract test: bị loại vì việc vô tình xóa trigger/job/badge contract khó được phát hiện cục bộ trước khi push.
+- Cho dependency audit chặn merge ngay: bị hoãn cho đến khi có baseline severity và remediation policy.
+- Build/push image trong pull request: bị loại vì yêu cầu registry credentials và mở rộng quyền không cần thiết.
+- Loại staging khỏi K2: bị loại vì milestone là CI/CD, nên K2 cần có Initial CD Capability tối thiểu.
+- Biến staging thành Full CD: bị loại vì production deployment, rollback automation, progressive delivery, environment promotion và release orchestration thuộc milestone sau.
+- Dùng nhãn `BLOCKED_BY_INFRASTRUCTURE` cho staging: bị loại vì tạo cảm giác K2 chưa hoàn thành dù Optional Staging Deployment không nằm trong Completion Criteria.
+- Tạo staging readiness/checklist workflow khi chưa có target: bị loại vì không deploy artifact, không kiểm chứng runtime và không tạo confidence mới.
+
+**Consequences**:
+
+- Pull request nhận các check có tên ổn định và trách nhiệm rõ ràng.
+- Basic CI không cần `.env` local, MongoDB, Redis, RabbitMQ hoặc external-provider secrets.
+- Docker validation chỉ chứng minh image construction, không chứng minh runtime integration.
+- CI Contract validation không thay thế GitHub Actions execution hoặc repository branch protection/ruleset.
+- README chỉ được hiển thị badge phản ánh workflow thực và không được claim staging/security guarantees vượt quá evidence.
+- Required check names phải được cấu hình trong GitHub repository ruleset trước khi completion criterion “không merge khi check fail” được coi là đạt đầy đủ.
+- Advisory Checks vẫn phải xuất hiện rõ ràng trong GitHub Actions, nhưng kết quả của chúng không được làm pull request mất trạng thái green trong K2.
+- Một slice hậu K2 có thể chuyển các phát hiện mới mức `Critical`/`High` thành merge blockers sau khi baseline findings và false positives đã được xử lý.
+- Optional Staging Deployment được ghi nhận là **Deferred Capability — Pending Infrastructure Availability**, không phải blocker và không nằm trong Completion Criteria của K2.
+- K2 hoàn thành khi toàn bộ Required Quality Gates pass và Advisory Checks chạy/hiển thị trong GitHub Actions.
+- Khi có staging target thực tế, deployment sẽ được xử lý như K2.1 hoặc hạng mục mở rộng tương đương, không phải “hoàn tất phần còn thiếu” của K2.
+
+### Multi-Workflow Structure
+
+- K2 uses five responsibility-aligned workflows: `tests.yml`, `build.yml`, `quality.yml`, `docker.yml` and `security.yml`.
+- Tests, Build, Quality and Docker contain Required Quality Gates; Security contains Advisory Checks and is excluded from required branch-protection checks.
+- Shared Node + npm setup is centralized in the local composite action `.github/actions/setup-node-env` with required inputs `working-directory` and `cache-dependency-path`.
+- The composite action owns `setup-node@v4` and `npm ci`, applies the working directory consistently, and uses the exact server/client lockfile path for cache separation.
+- Each workflow caller repeats `actions/checkout` before invoking the composite action.
+- A repository-local composite action cannot replace the caller's initial checkout step because its `action.yml` is unavailable until the repository has been checked out.
+- No reusable workflow is created for environment setup; it would not share the caller job's filesystem state for a setup-then-run sequence.
+- `docker.yml` is an explicit exception and does not call `.github/actions/setup-node-env`; it checks out the repository and builds Docker images directly because the image build owns its isolated `npm ci` environment.
+- Docker validation uses `docker/build-push-action` with two independent Required jobs, `build-server` and `build-nginx`, targeting `linux/amd64`. Both set `push: false`, `load: false` and plain progress output; no registry login or Docker secret is used.
+- Branch protection requires both Docker check names, `Docker Build (server)` and `Docker Build (nginx)`.
+- `main` uses a GitHub Ruleset rather than classic branch protection. It requires pull requests and exactly six job-level checks: `Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)` and `Docker Build (nginx)`.
+- Advisory job names are explicitly excluded. Ruleset configuration references check run/job names, not workflow filenames, to avoid accidentally making `ci-contract` or `security.yml` jobs merge blockers.
+- All external GitHub Actions are pinned to full immutable commit SHAs with adjacent version comments. Mutable tags/branches are rejected by the CI Contract.
+- Dependabot monitors the `github-actions` ecosystem weekly and proposes SHA updates through normal pull requests; Dependabot changes receive no bypass from Required or Advisory checks.
+- README exposes this as a deliberate supply-chain decision and links to a dedicated CI/CD ADR created after the design is fully approved.
+- The CI/CD design is captured in five ADRs that can be superseded independently: `ADR-007` for workflow decomposition/Required-Advisory boundary/atomic Ruleset activation; `ADR-008` for the CI Contract rule model; `ADR-009` for security scanning strategy; `ADR-010` for supply-chain and permissions; and `ADR-011` for the K2/K2.1 staging-CD boundary.
+- README points to a stable ADR index, not directly to one physical CI/CD ADR. A future decision outside those boundaries receives a new ADR rather than being folded into an unrelated existing record.
+- All five workflows group concurrency by workflow and ref. `cancel-in-progress` is true only for pull-request events; `main` push runs are retained to preserve a complete integration audit trail and avoid creating a dangerous cancellation default for future deployment work.
+- All five workflows limit `pull_request` and `push` triggers to `main`; Security alone adds the weekly schedule. `pull_request_target` and special draft-PR event handling are excluded from K2.
+- Client lint baseline on `2026-07-27` found `1662` findings with generated `.vite-cache` included and `17` real errors after excluding that cache. K2 must explicitly decide remediation scope before Client Lint can become a Required Quality Gate.
+- K2 separates workflow readiness from enforcement. Readiness PRs first introduce shared setup/tests/build, Quality, Docker and Security workflows without changing the Ruleset; Security remains advisory and may be sequenced flexibly among those workflow PRs.
+- The dedicated lint remediation PR runs only after the real `Client Lint` job exists: ignore only generated `.vite-cache/**`, fix all 17 real errors without rule suppression, and use TDD regression tests for the two React hook correctness bugs. The GitHub check, not manual-only verification, must confirm the remediation.
+- Ruleset activation occurs exactly once after all six Required check names have run and been observed. That atomic activation requires all six together rather than gradually creating a partially protected `main` branch.
+- Client Lint starts with `--max-warnings=13`: zero errors are required and warning count cannot increase. The budget is owned only by `client/package.json`; optional root scripts delegate through `npm --prefix client` and do not repeat the number. The baseline is documented rather than hidden, and a separate follow-up reduces it toward zero with behavior-aware regression testing.
+- This corrects the earlier proposal to define the budget in root `package.json`, which does not own ESLint configuration or dependencies.
+- The CI Contract separates host-side setup coverage from Docker build isolation and verifies that Dockerfile Node base versions stay synchronized with the host runtime.
+- Node version has one canonical source, preferably `.nvmrc`; the composite action/workflows read it and Dockerfile base-image versions are validated against it.
+- `.nvmrc` is `22` major-only rather than full semver. This matches the current `node:22-alpine` convention, accepts patch/minor security updates, and avoids pretending host and Alpine image patch resolution are identical. Resolved Node versions are logged with `node --version` for traceability.
+- Confirmed scope: `server/Dockerfile` and the Node build stage in `nginx/Dockerfile` are included in Node major-version drift validation. `client/Dockerfile` exists but is development-only and is outside K2 production Docker validation, so it is excluded from this contract.
+- Drift validation reads `.nvmrc`, parses `FROM node:X` using shell tooling, compares major versions and fails on mismatch; it does not call host-side `setup-node-env`.
+- CI Contract uses the root `yaml` npm package for workflow parsing; README badge validation is a separate Markdown-based mechanism. Because the root repository has its own `package-lock.json`, a CI Contract job must install root dependencies rather than relying on client/server dependency trees.
+- `quality.yml` contains `client-lint` as a Required Quality Gate and `ci-contract` as an independent Advisory Check. `ci-contract` uses the root dependency tree and `client-lint` uses the client dependency tree; their check names remain separate.
+- `ci-contract` is excluded from K2 branch-protection required checks and may be promoted only after stability evidence is collected.
+- Root CI tooling exposes two commands rather than one wrapper: `test:ci` for fixture-based `node:test` coverage and `ci:validate` for real repository validation. `quality.yml` runs them sequentially in the advisory `ci-contract` job.
+- CI Contract uses three distinct rule classes. Closed contract rules compare approved triggers, permissions, concurrency, command/setup contracts, immutable action SHAs and the six Required check names exactly. Global deny rules independently reject `continue-on-error: true`, `pull_request_target` and mutable action references everywhere. The extension surface remains open for safe steps and new advisory security jobs that do not violate either rule class, reuse a Required check name or alter a Required check's outcome contract.
+- Advisory job names are not a closed list. This keeps the validator focused on stable interfaces rather than internal step inventories and allows security coverage to expand without adding a validator exception for every new advisory job.
+- Advisory jobs do not use `continue-on-error: true`. They are allowed to fail visibly; branch protection alone determines merge blocking by requiring only Server Tests, Client Tests, Client Build, Client Lint and Docker Build Validation.
+- Workflow permissions follow least privilege: ordinary workflows and security jobs default to `contents: read`; only CodeQL and Gitleaks SARIF upload jobs receive `security-events: write`, with CodeQL also receiving `actions: read`. No workflow uses `write-all`, `contents: write` or `pull_request_target`.
+- The earlier assumption that Gitleaks SARIF was safe to upload directly was rejected. `secret-scan` uses `--redact=100` and then a repository-owned whitelist sanitizer that creates a new SARIF document containing only rule IDs, safe location coordinates and fingerprints.
+- Raw/sanitized SARIF content is never printed. Sanitization and upload use `if: always()` so findings can reach Code Scanning after Gitleaks exits `1`, while the job still fails truthfully for a finding or sanitizer error and never uses `continue-on-error`.
+- Scan and sanitize always run, but Gitleaks SARIF upload is conditional: push, schedule and same-repository pull requests upload; fork pull requests skip only the upload because their token is read-only. Findings still fail the job, and no write-token escalation or `pull_request_target` is used.
+- A future K2.x external-contributor enhancement may use a `workflow_run` artifact handoff if fork PR Security-tab uploads become valuable.
+- The sanitizer is a dependency-free CommonJS module at `scripts/ci/sanitizeGitleaksSarif.cjs`, with pure-function `node:test` coverage and a CLI wrapper.
+- `secret-scan` calls SHA-pinned `actions/setup-node` directly with `.nvmrc` and skips `npm ci`; this is an explicit locality exception because the sanitizer uses only Node built-ins. Docker remains the other workflow that intentionally skips `setup-node-env`.
+- This keeps CI outcome truthful and separates failure reporting from merge policy; README or contributor documentation must explain the distinction so a visible Advisory failure is not mistaken for a merge blocker.
+- Dependency scanning starts with `npm audit --audit-level=high` for root, client and server lockfile trees. The threshold is intentionally an initial K2 policy and may be lowered after real CI noise is evaluated; OSV-Scanner/Dependabot expansion is deferred.
+- The dependency scan uses three parallel jobs — `root-audit`, `client-audit` and `server-audit` — rather than one sequential job. This preserves independent observability and truthful failure for every dependency tree without `continue-on-error`; all three remain outside required checks.
+- License scanning uses `license-checker-rseidelsohn` in three parallel jobs — `root-license-scan`, `client-license-scan` and `server-license-scan` — for full root/client/server baselines. The initial allowlist is `MIT`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC` and `0BSD`; out-of-policy licenses fail visibly and require explicit review. GitHub dependency review is not the primary mechanism because it focuses on PR dependency changes rather than the complete baseline.
+- CodeQL is the K2 SAST tool for `javascript-typescript`, with pull request, `main` push and weekly schedule triggers. It uploads findings to GitHub code scanning and remains outside required checks.
+- `security.yml` schedule is `0 3 * * 1` (Monday 03:00 UTC / 10:00 Vietnam time); scheduled runs retain their full audit history.
+- `codeql-analysis` fails only when init/build/analyze has a technical failure. Detected security alerts remain Advisory findings and do not fail the job in K2; no custom SARIF parser or severity threshold is added.
+- CodeQL uses `build-mode: none` for `javascript-typescript`, with no autobuild or client/server build step. This keeps the SAST signal focused on source analysis; application build correctness remains covered by the separate Required Quality Gate.
+- A future milestone may promote new Critical/High CodeQL alerts into a failure gate after false-positive behavior and severity mapping have been observed on this repository.
+- Gitleaks is the K2 secret scanner because it provides static repository/history scanning without verified-secret network calls. `secret-scan` remains advisory, fails truthfully and is excluded from required checks; TruffleHog verified mode is deferred.
+- The repository currently has `client/.env.example` and `server/.env.example`, no tracked Google/AWS/private-key-shaped values in the preliminary scan, and several synthetic MongoDB URI shapes in committed config/scripts/tests.
+- Before `.gitleaks.toml` is finalized, Gitleaks scans the full repository and Git history. Exceptions are limited to exact regex/fingerprint matches for confirmed synthetic findings, each with a documented reason. Path-level exclusions for `.env.example`, `server/test/**`, `client/**/test/**` or equivalent broad locations are forbidden.
+- New baseline findings require explicit false-positive verification before an exception is added; the implementation never auto-allows an unknown finding.
+- Each in-scope Node builder stage also runs `RUN node --version` before the final runtime stage. Static `FROM node:X` validation checks the declared major; the runtime log records the resolved version for that build, so the two mechanisms are complementary.
+- README can expose workflow-specific badges, while branch protection must reference stable required check/job names rather than assuming workflow filenames are the status-check identifiers.
+- README displays five badges — Tests, Build, Quality, Docker and Security — and does not hide the Security badge when Advisory jobs fail. Security badge copy explains the non-blocking policy and links to workflow/security details; `ci-contract` has no separate badge because it is included in `quality.yml`.
+- `docs/adr/README.md` is the stable ADR lifecycle index linked from the project README. It initially lists `ADR-007` through `ADR-011` as `Planned`; after grilling, each row becomes a link to its accepted physical ADR. `docs/decisions.md` remains a chronological evidence log rather than a mutable status table.
+- The `main` Ruleset requires pull requests with zero required approvals, conversation resolution enabled, and Code Owner review, stale-approval dismissal and most-recent-push approval disabled. Zero approvals avoids an unusable self-approval requirement in a solo repository while PR history and six required checks remain enforceable.
+- The Ruleset bypass list is empty for every actor, including administrators. An emergency relaxation must be an explicit, auditable Ruleset change rather than a silent bypass path.
+- The `main` Ruleset requires pull-request branches to be up to date before merge for all six Required status checks. This prevents stale independently-green PR states from merging without validation against current `main`; advisory checks are intentionally excluded from the requirement.
+
+## 2026-07-27 — Final K2 CI/CD Governance Consensus
+
+- Architecture stress-review completed with `GOVERNANCE_CONSENSUS_COMPLETE`.
+- Required checks are seven, adding versioned `CI Policy v1` to the six product/build checks. Security remains Advisory.
+- CI Policy uses a fixed-SHA reusable baseline, dual candidate/policy validation and versioned policy migration; same-repo caller mutability is an explicit solo-repository residual risk.
+- Ruleset activation, behavior verification, bounded rollback, merge policy and `Contributor Mode Entry` follow ADR-007 and ADR-008.
+- Security, supply-chain/permissions and staging boundaries follow ADR-009 through ADR-011.
+- `main` is protected with a GitHub Ruleset, not classic branch protection. The ruleset requires pull requests and exactly six job-level checks: `Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)` and `Docker Build (nginx)`.
+- Advisory jobs are deliberately omitted. Ruleset configuration occurs only after GitHub has observed the exact check run names, preventing workflow-level naming from accidentally making `ci-contract` or `security.yml` jobs required.
+- Full Continuous Delivery được ghi rõ là ngoài phạm vi K2.
+
+**References**: `specs/active/github-actions-ci-cd.md`, `.github/workflows/tests.yml`, `.github/workflows/build.yml`, `README.md`.
+
 
 

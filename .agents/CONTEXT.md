@@ -80,5 +80,65 @@ Cơ chế điều phối sự kiện bàn phím phím Escape. Nếu bộ xem ả
 **Resource Preview Limits**:
 Quy định phân vùng số lượng hiển thị xem trước tài nguyên ở Conversation Panel: tối đa 6 cho Media, 3 cho Files, 3 cho Links, 3 cho Common Groups và 5 cho Members Preview. Nút Xem tất cả kích hoạt Modal phân trang đầy đủ.
 
+**Required Quality Gate**:
+Một deterministic GitHub check được cấu hình làm merge blocker. Trong K2 gồm Server Tests, Client Tests, Client Production Build, Client Lint và Docker Image Build Validation; pull request chỉ được coi là xanh khi tất cả các gate này thành công.
+_Avoid_: gọi một check là bắt buộc nếu repository ruleset/branch protection chưa yêu cầu check đó để merge.
+
+**Advisory Check**:
+Một GitHub check cung cấp quality signal cho reviewer nhưng không chặn merge trong K2, gồm dependency vulnerability, security/SAST, secret và license scans nếu được triển khai.
+_Avoid_: trình bày Advisory Check như bằng chứng rằng repository không có vulnerability.
+
+**Merge Blocker**:
+Một Required Quality Gate được GitHub repository ruleset hoặc branch protection yêu cầu thành công trước khi merge.
+_Avoid_: dùng thuật ngữ này cho workflow chỉ tồn tại trong repository nhưng chưa được cấu hình làm required check.
+
+**Check Readiness**:
+Trạng thái một GitHub check đã tồn tại, chạy được và có tên ổn định để chuẩn bị đưa vào Ruleset, nhưng hiện chưa chặn merge.
+_Avoid_: gọi một readiness check là merge blocker trước Ruleset Activation.
+
+**Ruleset Activation**:
+Sự kiện bật chính sách bảo vệ `main` sau khi toàn bộ Required Quality Gate đã đạt Check Readiness; K2 thực hiện một lần cho đầy đủ sáu check.
+_Avoid_: kích hoạt tăng dần từng check và mô tả `main` là đã được bảo vệ đầy đủ trong trạng thái trung gian.
+
+**Quality Signal**:
+Kết quả hiển thị cho reviewer để đánh giá rủi ro hoặc chất lượng nhưng không quyết định trạng thái merge trong K2.
+_Avoid_: đồng nhất Quality Signal với Required Quality Gate.
+
+**CI Contract**:
+Tập hợp invariant pipeline đã được phê duyệt, được enforcement qua Required `CI Policy` và kiểm chứng bằng public repository commands.
+_Avoid_: coi CI Contract tĩnh là sự thay thế cho việc workflow thực sự chạy trên GitHub Actions.
+
+**Contributor Mode Entry**:
+Điểm chuyển governance trước khi merge PR đầu tiên của người không phải sole maintainer hoặc cấp collaborator thứ hai quyền write trở lên.
+_Avoid_: trì hoãn review approvals, CI authority và signing cho tới sau lần merge/cấp quyền đầu tiên.
+
+**Closed Contract Rule**:
+Một CI invariant phải khớp chính xác với chính sách đã duyệt; mọi sai lệch đều là contract regression.
+_Avoid_: áp dụng cho toàn bộ implementation detail hoặc danh sách Advisory Check có thể mở rộng.
+
+**Global Deny Rule**:
+Một mẫu cấu hình bị cấm trong mọi workflow, kể cả job hoặc step được bổ sung sau này.
+_Avoid_: coi deny rule là whitelist cấu trúc.
+
+**Open Extension Surface**:
+Phần CI được phép mở rộng mà không cần khai báo trước trong CI Contract, miễn không vi phạm Closed Contract Rule hoặc Global Deny Rule.
+_Avoid_: dùng extension surface để đổi ngầm outcome của Required Quality Gate hoặc chiếm dụng tên required check.
+
+**Docker Image Build Validation**:
+Việc build các image production-relevant mà không push image, không deploy và không khởi động stateful runtime dependencies. Mục tiêu là phát hiện lỗi packaging trong pull request.
+_Avoid_: gọi bước này là deployment hoặc full-stack smoke test.
+
+**Staging Deployment**:
+Initial CD Capability chỉ có giá trị khi deploy artifact hoặc revision thật sau khi CI trên `main` xanh và xác minh runtime bằng health check hoặc smoke test. Trong K2 hiện tại, vì chưa có staging target thực tế, nó được ghi nhận là **Deferred Capability — Pending Infrastructure Availability**.
+_Avoid_: `BLOCKED_BY_*` wording, checklist-only workflow, simulated deployment, Full Continuous Delivery, production deployment, rollback automation hoặc environment promotion.
+
+**Deferred Capability — Pending Infrastructure Availability**:
+Nhãn dùng cho Optional Staging Deployment trong K2: một capability được chủ đích hoãn vì chưa có staging target thực tế, không phải blocker và không nằm trong Completion Criteria của K2.
+_Avoid_: Blocked by infrastructure, missing CD, incomplete K2.
+
+**Full Continuous Delivery**:
+Năng lực release đầy đủ gồm production deployment, rollback automation, progressive delivery, environment promotion và release orchestration.
+_Avoid_: đưa Full Continuous Delivery vào phạm vi K2.
+
 
 

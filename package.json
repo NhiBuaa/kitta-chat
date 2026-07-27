@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "test:ci": "node --test scripts/ci/*.test.cjs",
+    "ci:validate": "node scripts/ci/validateCiContract.cjs",
     "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d",
     "dev:docker:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
     "seed:demo": "docker compose exec -T backend npm run seed:demo",
@@ -11,5 +13,8 @@
     "express": "^5.2.1",
     "lucide-react": "^1.7.0",
     "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "yaml": "^2.9.0"
   }
 }

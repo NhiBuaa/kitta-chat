@@ -1,55 +1,64 @@
-# Recruiter-Facing README — Current Session Roadmap
+# K2 GitHub Actions CI/CD — Current Session
 
-## Mục Tiêu Tổng Thể
+## Status
 
-Xây dựng README hướng recruiter giúp người đọc hiểu sản phẩm và năm điểm kỹ thuật chính trong khoảng 60 giây, có đường dẫn demo rõ ràng, quy trình chạy local tái lập được và không chứa secret hoặc credential thật.
+- Phase 1 PRD: completed.
+- Phase 2 architecture stress-review: completed with Claude/Codex consensus on `2026-07-27`.
+- Phase 3 issue breakdown: approved and rebuilt around seven Required checks.
+- Phase 3 Slice 1 manual guide: regenerated; TC-01 through TC-11 approved and locked on `2026-07-27`.
+- Phase 3: completed.
+- Phase 4 implementation: Slice #14 local implementation and regression verification complete; hosted/manual acceptance pending.
 
-Nguồn đặc tả: `specs/active/recruiter-facing-readme.md`.
+## Sources Of Truth
 
-## Engineering Narrative Đã Chốt
+- PRD: `specs/active/github-actions-ci-cd.md`
+- ADR index: `docs/adr/README.md`
+- ADRs: `docs/adr/007-*.md` through `docs/adr/011-*.md`
+- Slice 1 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md`
 
-README kể câu chuyện theo flow:
+## Technical Roadmap
 
-`Product → Demo → Engineering Decisions → Architecture → Setup`
+1. **IN_PROGRESS — #14 Establish shared Node setup and Tests/Build readiness**
+   - Blocked by: none.
+   - Delivers shared Node 22 setup, `Server Tests`, `Client Tests`, `Client Build`, initial CI Contract coverage and truthful Tests/Build badges.
+2. **TODO — #15 Establish Quality readiness with Client Lint and Required CI Policy v1**
+   - Blocked by: #14.
+   - Delivers live `Client Lint`, fixed-SHA reusable `CI Policy v1`, versioned policy migration and the explicit same-repository residual-risk boundary.
+3. **TODO — #16 Establish production Docker build readiness**
+   - Blocked by: #14.
+   - Delivers `Docker Build (server)` and `Docker Build (nginx)` with no push/deploy and contract-backed Node drift checks.
+4. **TODO — #17 Add truthful Advisory Security workflow**
+   - Blocked by: #14.
+   - Delivers dependency audits, CodeQL, sanitized Gitleaks SARIF and license scans as truthful Advisory checks.
+5. **TODO — #18 Remediate client lint baseline under the live check**
+   - Blocked by: #15.
+   - Delivers `.vite-cache/**` exclusion, fixes 17 real errors with TDD for hook defects and preserves warning budget `13`.
+6. **TODO — #19 Prepare the Ruleset verification branch before final readiness merge**
+   - Blocked by: #14; human-controlled checkpoint immediately before the final readiness merge.
+   - Preserves a recorded behind branch for post-activation behavior verification without changing repository Settings.
+7. **TODO — #20 Atomically activate and verify the seven-check main Ruleset**
+   - Blocked by: #15, #16, #17, #18 and #19.
+   - Performs one direct-Active activation, behind-branch verification and bounded one-correction rollback; human-controlled.
 
-Năm Engineering Highlights:
+## Delivery Order
 
-1. Cross-Replica Realtime Delivery.
-2. Retry-Safe Message Persistence.
-3. MongoDB-Gated Call Finalization.
-4. Scalable Conversation Sidebar.
-5. Resilient Background Job Processing.
+- Complete #14 first.
+- After #14, #15, #16 and #17 may proceed as independent readiness slices; Security remains Advisory.
+- Complete #18 only after the real `Client Lint` check from #15 exists.
+- Create and preserve #19 at the approved checkpoint immediately before the final readiness merge.
+- Begin #20 only after all seven Required check names have been observed, required readiness is green, lint remediation is verified and the behind branch exists.
 
-## Slice Roadmap
+## Required Checks
 
-| Slice | GitHub Issue | Tên | Trạng thái | Ghi chú |
-|---|---:|---|---|---|
-| 0 | — | PRD, repository agent setup và issue slicing | **DONE** | PRD đã chốt; root `AGENTS.md`, `docs/agents/` và GitHub labels/issues đã được tạo. |
-| 1 | #8 | Reproducible Seeded Demo Environment | **DONE** | Dataset demo, safe/idempotent seed, Docker Compose flow, one-command wrapper và manual acceptance đã hoàn thành. |
-| 2 | #9 | Tests and Build Status | **DONE** | Tests/Build workflows và hai badge động đã được kiểm chứng trên GitHub Actions qua PR #13. |
-| 3 | #10 | Recruiter Engineering Narrative | **DONE** | README recruiter narrative, năm evidence-backed highlights và architecture SVG đã hoàn thành, kiểm thử và push. |
-| 4 | #11 | Visual Product Tour | **DONE** | Bốn WebP và realtime GIF đã publish, kiểm tra privacy/metadata, render GitHub desktop/mobile và pass GitHub Actions. |
-| 5 | #12 | Narrated Demo and Final README | **TODO-NEXT** | Cần Developer quay, narrate và publish video Google Drive trước khi gắn CTA cuối cùng. |
+`Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)`, `Docker Build (nginx)`, `CI Policy v1`.
 
-## Trạng Thái Kiểm Thử Gần Nhất
+## Guardrails
 
-- Ngày kiểm tra: `2026-07-24`.
-- Server tests: `321/321` passed.
-- Client tests: `232/232` passed.
-- Client production build: passed.
-- Build có cảnh báo bundle JavaScript lớn hơn `500 kB`; không chặn build.
-- Docker Compose config và JavaScript syntax checks: passed.
-- Manual acceptance Slice 1 và Slice 4: `PASSED`; Slice 4 đã xác minh realtime reorder và connected camera-off WebRTC call bằng hai demo identities độc lập.
-- GitHub Actions trên commit `3151c108`: Server Tests, Client Tests và Client Build đều `success`.
-- Targeted ESLint ghi nhận năm lỗi và hai warning đã tồn tại sẵn trong các file legacy được chạm tới; không phát sinh từ các hunk Slice 1 và không chặn test/build.
-
-## Guardrails Bắt Buộc
-
-1. Không tuyên bố exactly-once message delivery.
-2. Không tuyên bố sidebar luôn dùng chính xác hai database queries.
-3. Không tuyên bố multi-region deployment.
-4. Không tuyên bố mọi emergency call fallback đều sử dụng shared MongoDB finalization gate.
-5. Docker Compose là source of truth; `npm run demo` chỉ là convenience wrapper.
-6. Không commit secret, credential thật, `.env`, Firebase service account hoặc dữ liệu cá nhân.
-7. Demo data chỉ sử dụng identity giả thuộc namespace `.test` và không được xóa dữ liệu ngoài namespace demo.
-8. Architecture diagram chỉ thể hiện các thành phần core đã được chốt trong PRD.
+- Slice 1 locked manual tests are approved; Phase 4 must still begin only from #14 and must not include later slices.
+- Slice #14 must remain `IN_PROGRESS` until GitHub-hosted `Server Tests`, `Client Tests` and `Client Build` evidence passes and the manual guide reaches `PASSED`.
+- No commit, push, merge, branch creation or Ruleset change without explicit Developer authorization.
+- Security jobs remain Advisory; `CI Policy v1` is Required.
+- No `continue-on-error`, `pull_request_target`, mutable external Action refs, repository write permissions or hidden bypasses.
+- Client lint remediation is separate from Quality readiness and must be verified by the live hosted check.
+- Verification branch preparation is separate from atomic Ruleset activation.
+- Optional staging remains **Deferred Capability — Pending Infrastructure Availability** and outside K2 completion.
