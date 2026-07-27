@@ -1,0 +1,51 @@
+name: CI Policy v1 Support
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-policy:
+    name: Trusted CI Policy v1
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: candidate
+
+      - name: Checkout trusted policy baseline
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: NhiBuaa/kitta-chat
+          ref: e68aec4bcca37ed49689049d63f90a3e9ebbba61
+          path: policy
+
+      - name: Setup trusted policy runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: policy/.nvmrc
+          cache: npm
+          cache-dependency-path: policy/package-lock.json
+
+      - name: Install trusted policy dependencies
+        run: npm ci
+        working-directory: policy
+
+      - name: Validate candidate with trusted baseline
+        run: node policy/scripts/ci/validateCiContract.cjs candidate --require-ci-policy
+
+      - name: Install candidate policy dependencies
+        run: npm ci
+        working-directory: candidate
+
+      - name: Run candidate policy tests
+        run: npm run test:ci
+        working-directory: candidate
+
+      - name: Validate candidate policy implementation
+        run: npm run ci:validate
+        working-directory: candidate
