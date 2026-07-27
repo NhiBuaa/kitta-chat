@@ -196,8 +196,9 @@ GitHub Actions separates verification by responsibility:
 
 - [Tests workflow](.github/workflows/tests.yml) runs the complete server and client test scripts.
 - [Build workflow](.github/workflows/build.yml) verifies the client production build independently.
+- [Quality workflow](.github/workflows/quality.yml) exposes the client lint readiness signal and versioned CI policy checks.
 
-The badges in the Hero read directly from these workflows; no passing state or test count is maintained manually. Multi-client behavior is additionally checked through the [Docker Compose smoke guide](docs/DEPLOYMENT_AND_SMOKE_TESTS.md).
+The badges in the Hero read directly from their workflows; no passing state or test count is maintained manually. Workflow readiness does not activate merge enforcement by itself; see [CI Policy Governance](docs/CI_POLICY.md). Multi-client behavior is additionally checked through the [Docker Compose smoke guide](docs/DEPLOYMENT_AND_SMOKE_TESTS.md).
 
 ## Known Limitations
 
@@ -210,6 +211,7 @@ The badges in the Hero read directly from these workflows; no passing state or t
 ## Technical Documentation
 
 - [Architecture Decision Records](docs/adr/README.md) — stable index for architectural decisions and their lifecycle status.
+- [CI Policy Governance](docs/CI_POLICY.md) — Required check names, policy upgrades, trust boundaries and contributor-mode controls.
 - [Architecture Overview](docs/ARCHITECTURE.md) — ownership boundaries for MongoDB, Redis, RabbitMQ and Socket.IO.
 - [REST API Reference](docs/API.md) — authentication, request contracts and endpoint examples.
 - [Socket.IO Multi-Replica Scaling](docs/SOCKET_IO_SCALING.md) — rooms, Redis Adapter fan-out, reconnect behavior and operational proof.
