@@ -2,12 +2,18 @@ name: Build
 
 on:
   pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   client-build:
@@ -20,17 +26,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
         with:
-          node-version: 22
-          cache: npm
+          working-directory: client
           cache-dependency-path: client/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Build client
         run: npm run build

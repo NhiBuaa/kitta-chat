@@ -1,0 +1,29 @@
+name: Setup Node environment
+description: Configure the canonical Node runtime and install one lockfile-owned dependency tree.
+
+inputs:
+  working-directory:
+    description: Directory containing the package.json used by subsequent commands.
+    required: true
+  cache-dependency-path:
+    description: Lockfile path used to scope the npm dependency cache.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    - name: Log resolved Node.js version
+      run: node --version
+      shell: bash
+
+    - name: Install dependencies
+      run: npm ci
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
