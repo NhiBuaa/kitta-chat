@@ -36,3 +36,19 @@ jobs:
 
       - name: Run client lint readiness
         run: npm run lint:ci
+
+  ci-policy-baseline:
+    name: Trusted CI Policy v1 Baseline
+    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@085647d5a1727e1ad06ca7e444c9ee1291138d0a # CI Policy v1
+
+  ci-policy-v1:
+    name: CI Policy v1
+    needs: ci-policy-baseline
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enforce trusted policy result
+        env:
+          POLICY_RESULT: ${{ needs.ci-policy-baseline.result }}
+        run: test "$POLICY_RESULT" = "success"
