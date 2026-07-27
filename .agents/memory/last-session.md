@@ -1,57 +1,76 @@
-# Last Session Handoff — K2 Phase 3 Rebuilt
+# Last Session Handoff — K2 Slice #15 Complete
 
-## Status
+## Current State
 
-- Current branch: `feature/github-actions-setup`.
-- K2 Phase 1 PRD: completed.
-- K2 Phase 2 architecture review: completed; ADR-007 through ADR-011 are Accepted.
-- K2 Phase 3: completed after replacing the provisional six-check breakdown.
-- GitHub issues #14–#18 were rewritten and issues #19–#20 were created.
-- Slice 1 manual guide TC-01 through TC-11 were approved and locked on `2026-07-27`.
-- Phase 4 Slice #14 local implementation is complete; hosted/manual acceptance is pending.
+- Phase 4 Slice #14 and Slice #15 are complete with manual acceptance `PASSED`.
+- GitHub Issue #15 is closed with state reason `completed`.
+- Final Slice #15 merge on `main`: `d0a106f239a4947e4741fec4fc14505d3ff8e26e`.
+- Current local branch: `issue-15-policy-caller-final` at `9538e5b0`.
+- Session-end documentation captures the completed Slice #15 state and Slice #16 entry point.
 
-## Approved Roadmap
+## Attempted Steps And Results
 
-1. #14 shared Node setup and Tests/Build readiness — `IN_PROGRESS`, awaiting hosted/manual acceptance.
-2. #15 Quality readiness with Client Lint and Required `CI Policy v1`.
-3. #16 production Docker build readiness.
-4. #17 truthful Advisory Security workflow.
-5. #18 client lint baseline remediation under the live check.
-6. #19 verification branch preparation before final readiness merge.
-7. #20 atomic seven-check Ruleset activation and behavior verification.
+- Full final regression evidence is recorded in `.agents/manual-tests/github-actions-ci-cd/slice-02-quality-readiness.md` Run #2: server `321/321`, client `232/232`, CI contract `35/35`, `ci:validate` exit `0`, and client production build exit `0` with the approved bundle warning.
+- Hosted `main` evidence: Tests run `30261255617` succeeded, Build run `30261255664` succeeded, and Quality run `30261255778` produced successful exact `CI Policy v1` and trusted-baseline results.
+- Hosted `Client Lint` failed truthfully with the approved readiness baseline of 17 errors and 13 warnings; remediation remains owned by Issue #18.
+- Developer explicitly accepted Slice #15 as passed.
+- GitHub Issue #15 was verified closed/completed and completion evidence was added in comment `5090846977`.
+- No repository Ruleset or Settings changes were made.
+- No background process started by the Agent remained running at Session End.
 
-## Required Checks
+## Authoritative Artifacts
 
-`Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)`, `Docker Build (nginx)`, `CI Policy v1`.
-
-## Key Artifacts
-
-- PRD: `specs/active/github-actions-ci-cd.md`
-- ADR index: `docs/adr/README.md`
 - Roadmap: `.agents/current-session.md`
-- Next slice: `.agents/next-session.md`
-- Slice 1 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md`
-- GitHub issues: #14 through #20 in `NhiBuaa/kitta-chat`.
+- Next session instructions: `.agents/next-session.md`
+- Slice #15 acceptance: `.agents/manual-tests/github-actions-ci-cd/slice-02-quality-readiness.md`
+- PRD: `specs/active/github-actions-ci-cd.md`
+- Issue #15: https://github.com/NhiBuaa/kitta-chat/issues/15
+- Completion comment: https://github.com/NhiBuaa/kitta-chat/issues/15#issuecomment-5090846977
 
-## Verification Evidence
+## Unresolved Blockers
 
-- Developer approved the seven-slice issue order and dependencies.
-- GitHub issue read-back confirmed labels and blockers for #14–#20.
-- Manual guide structure validation reported `TC_COUNT=11` and all five required sections.
-- Session-start sanity baseline before Phase 3: server `321/321` pass; client `232/232` pass.
-- Documentation diff validation: `git diff --check` exit `0`.
-- Slice #14 CI Contract tests: `21/21` pass under Node `v22.23.1`.
-- Slice #14 repository validation: `npm run ci:validate` exit `0`.
-- Post-change regressions: server `321/321` pass, client `232/232` pass, client production build pass with the approved bundle-size warning.
-- Static manual evidence: forbidden workflow config scan empty, README Tests/Build badges target `main`, negative fixtures leave the working tree unchanged.
+- None for Slice #15.
+- Slice #16 implementation is intentionally blocked until its manual guide is created, expanded through `test-craft`, and approved by the Developer.
 
-## Current Stop Point
+## Next Recommended Action
 
-Slice #14 local implementation is green. The next action requires explicit Developer authorization to commit/push and open or update a pull request so GitHub can produce hosted `Server Tests`, `Client Tests` and `Client Build` evidence. Keep the manual guide `PENDING_VERIFICATION` and do not start #15 while #14 remains incomplete.
+Run `.agents/playbooks/session-start.md` for Issue #16, then execute Phase 1 of `.agents/playbooks/manual-testing.md` to create `.agents/manual-tests/github-actions-ci-cd/slice-03-docker-build-readiness.md`. Do not implement Docker workflows before the locked manual test cases are approved.
+
+## Suggested Skills
+
+- `test-craft` to predict and lock Slice #16 Docker readiness cases.
+- `tdd` to implement Slice #16 after approval.
+- `code-check` for the final pre-merge review.
 
 ## Guardrails
 
-- Do not create branches, commit, push, merge or change Ruleset without explicit Developer authorization.
-- Security remains Advisory; `CI Policy v1` is Required.
-- No `continue-on-error`, `pull_request_target`, mutable external Action refs, repository write permissions or hidden bypasses.
-- Slice #14 excludes Client Lint, `CI Policy v1`, Docker, Security, Ruleset and staging implementation.
+- Preserve Slice #14 and Slice #15 checks and contracts.
+- Build only `server/Dockerfile` and `nginx/Dockerfile`; do not include `client/Dockerfile`.
+- Do not push/load images, authenticate to registries, start Docker Compose or require stateful services.
+- Do not remediate Client Lint, add Security workflows or modify repository Ruleset/Settings in Slice #16.
+- Do not create branches, commit, push or merge without explicit Developer authorization.
+
+## Session Start Checkpoint — 2026-07-27
+
+- Read `.agents/AGENTS.md`, `.agents/playbooks/session-start.md`, `.agents/CONTEXT.md`, `.agents/next-session.md`, `.agents/current-session.md`, architecture/decision records, the active CI/CD spec, `.agents/playbooks/manual-testing.md`, and the canonical `test-craft` skill.
+- Verified Issue #16 matches roadmap status `TODO-NEXT`.
+- Created `.agents/manual-tests/github-actions-ci-cd/slice-03-docker-build-readiness.md` with TC-01 through TC-14 and `PENDING_VERIFICATION` status.
+- Developer approved TC-01 through TC-14 on `2026-07-27`; Session Start may proceed to the Workspace Health Check. Do not write Slice #16 implementation until Session Start completes and the action plan is approved.
+- Workspace Health Check completed: `git status` exit `0`; no pre-existing dirty code was found, while `.agents/memory/last-session.md` contains only this Session Start checkpoint and the new manual guide is ignored by the repository-wide `/.agents` rule.
+- Sanity evidence: server tests `321/321` exit `0`; client tests `232/232` exit `0`; CI Contract tests `35/35` exit `0`; `npm run ci:validate` exit `0`; client production build exit `0` with the approved bundle-size warning.
+- Session Start is paused at Phase 3 Developer review. Do not call `update_plan` or start TDD implementation until the Developer approves the proposed action plan.
+- Developer approved the eight-step action plan on `2026-07-27`; `update_plan` succeeded and the first TDD RED step is `in_progress`.
+- Session Start is complete. The next action is to author Docker workflow contract RED fixtures only; branch creation, commit, push, PR, merge and repository Settings changes remain unauthorized.
+
+## Slice #16 Implementation Checkpoint — 2026-07-27
+
+- `$implement` was explicitly invoked. Its commit-current-branch instruction is authorized; push, PR, merge, branch creation and repository Settings changes remain unauthorized.
+- TDD RED was observed for missing Docker workflow, missing server/nginx contracts, server/nginx Node drift, missing runtime-version logs, registry login, GitHub secret consumption and runtime startup.
+- Current GREEN files: `.github/workflows/docker.yml`, `server/Dockerfile`, `nginx/Dockerfile`, `scripts/ci/validateCiContract.cjs`, and `scripts/ci/validateCiContract.test.cjs`.
+- Verification: CI Contract `56/56`, `ci:validate` exit `0`, server `321/321`, client `232/232`, client production build exit `0` with approved bundle warning.
+- Local cache-only Buildx acceptance: server `prod` exit `0`, nginx final image exit `0`, both `linux/amd64`, plain progress, resolved Node `v22.23.1`; no image push/load, Compose or runtime container.
+- Existing build warnings remain visible: dependency audit findings, client bundle-size warning and nginx Docker `SecretsUsedInArgOrEnv` warnings for existing Vite/Firebase ARG/ENV declarations. No values were printed and remediation is outside Issue #16.
+- Code review is paused because the `code-review` skill requires a Developer-supplied fixed point. Proposed fixed point is pre-implementation HEAD `c5da3898`; no commit has been created yet.
+- Developer confirmed review fixed point `c5da3898`. Two-axis review completed: Standards has no remaining findings; Spec stage-aware runtime logging finding was fixed with RED coverage for misplaced server/nginx logging.
+- Root `.dockerignore` was added after local evidence showed nginx sent a `402.43MB` context containing possible host artifacts. The locked allowlist reduced the context to `14.89kB`; nginx cache-only build still exited `0`.
+- Final local CI evidence after review corrections: CI Contract `59/59`, `ci:validate` exit `0`, and `git diff --check c5da3898` exit `0`. Hosted PR/`main` evidence remains pending and is the only acceptance blocker.

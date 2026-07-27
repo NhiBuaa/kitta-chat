@@ -7,7 +7,7 @@
 - Phase 3 issue breakdown: approved and rebuilt around seven Required checks.
 - Phase 3 Slice 1 manual guide: regenerated; TC-01 through TC-11 approved and locked on `2026-07-27`.
 - Phase 3: completed.
-- Phase 4 implementation: Slice #14 local implementation and regression verification complete; hosted/manual acceptance pending.
+- Phase 4 implementation: Slice #14 and Slice #15 completed with manual acceptance `PASSED`; Slice #16 is next and has not started.
 
 ## Sources Of Truth
 
@@ -15,16 +15,18 @@
 - ADR index: `docs/adr/README.md`
 - ADRs: `docs/adr/007-*.md` through `docs/adr/011-*.md`
 - Slice 1 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md`
+- Slice 2 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-02-quality-readiness.md`
 
 ## Technical Roadmap
 
-1. **IN_PROGRESS — #14 Establish shared Node setup and Tests/Build readiness**
+1. **DONE — #14 Establish shared Node setup and Tests/Build readiness**
    - Blocked by: none.
    - Delivers shared Node 22 setup, `Server Tests`, `Client Tests`, `Client Build`, initial CI Contract coverage and truthful Tests/Build badges.
-2. **TODO — #15 Establish Quality readiness with Client Lint and Required CI Policy v1**
+2. **DONE — #15 Establish Quality readiness with Client Lint and Required CI Policy v1**
    - Blocked by: #14.
    - Delivers live `Client Lint`, fixed-SHA reusable `CI Policy v1`, versioned policy migration and the explicit same-repository residual-risk boundary.
-3. **TODO — #16 Establish production Docker build readiness**
+   - Manual acceptance: Run #2 `PASSED`; final merge `d0a106f239a4947e4741fec4fc14505d3ff8e26e`.
+3. **TODO-NEXT — #16 Establish production Docker build readiness**
    - Blocked by: #14.
    - Delivers `Docker Build (server)` and `Docker Build (nginx)` with no push/deploy and contract-backed Node drift checks.
 4. **TODO — #17 Add truthful Advisory Security workflow**
@@ -54,8 +56,9 @@
 
 ## Guardrails
 
-- Slice 1 locked manual tests are approved; Phase 4 must still begin only from #14 and must not include later slices.
-- Slice #14 must remain `IN_PROGRESS` until GitHub-hosted `Server Tests`, `Client Tests` and `Client Build` evidence passes and the manual guide reaches `PASSED`.
+- Slice #14 is complete; do not modify its locked acceptance criteria or history except append-only corrections.
+- Slice #15 is complete; do not modify its locked acceptance criteria or history except append-only corrections.
+- Slice #16 implementation must not begin until its manual guide is created and approved.
 - No commit, push, merge, branch creation or Ruleset change without explicit Developer authorization.
 - Security jobs remain Advisory; `CI Policy v1` is Required.
 - No `continue-on-error`, `pull_request_target`, mutable external Action refs, repository write permissions or hidden bypasses.

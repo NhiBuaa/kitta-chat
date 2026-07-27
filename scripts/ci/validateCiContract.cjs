@@ -6,10 +6,27 @@ const REQUIRED_WORKFLOW_PATHS = [
   '.github/workflows/tests.yml',
   '.github/workflows/build.yml',
   '.github/workflows/quality.yml',
+  '.github/workflows/docker.yml',
 ];
 const CONCURRENCY_GROUP = '${{ github.workflow }}-${{ github.ref }}';
 const PULL_REQUEST_CANCELLATION = "${{ github.event_name == 'pull_request' }}";
 const SHARED_SETUP_PATH = '.github/actions/setup-node-env/action.yml';
+const ROOT_DOCKERIGNORE_PATH = '.dockerignore';
+const ROOT_DOCKERIGNORE_CONTRACT = [
+  '*',
+  '!client/',
+  '!client/**',
+  '!nginx/',
+  '!nginx/Dockerfile',
+  '!nginx/nginx.conf',
+  'client/node_modules/',
+  'client/.env',
+  'client/.env.*',
+  'client/dist/',
+  'client/.vite/',
+  'client/.vite-cache/',
+  'client/coverage/',
+];
 const IMMUTABLE_EXTERNAL_ACTION =
   /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[^@\s]+)?@[0-9a-f]{40}$/;
 const CI_POLICY_WORKFLOW_REFERENCE =
@@ -43,6 +60,7 @@ const VALIDATED_CATEGORIES = [
   'permissions',
   'concurrency',
   'action pins',
+  'docker',
   'badges',
 ];
 
@@ -67,6 +85,29 @@ function collectUses(value, references = []) {
   }
 
   return references;
+}
+
+function collectRunCommands(value, commands = []) {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectRunCommands(item, commands);
+    }
+    return commands;
+  }
+
+  if (!value || typeof value !== 'object') {
+    return commands;
+  }
+
+  for (const [key, child] of Object.entries(value)) {
+    if (key === 'run' && typeof child === 'string') {
+      commands.push(child);
+    } else {
+      collectRunCommands(child, commands);
+    }
+  }
+
+  return commands;
 }
 
 function validateExternalActionReferences(document, errors) {
@@ -180,6 +221,137 @@ function matchesJobContract(job, contract) {
     checkoutIndex < setupIndex &&
     setupIndex < commandIndex
   );
+}
+
+function matchesDockerBuildContract(job, contract) {
+  const steps = job?.steps;
+
+  if (!Array.isArray(steps)) {
+    return false;
+  }
+
+  const checkoutIndex = steps.findIndex((step) =>
+    step?.uses?.startsWith('actions/checkout@'),
+  );
+  const setupBuildxIndex = steps.findIndex((step) =>
+    step?.uses?.startsWith('docker/setup-buildx-action@'),
+  );
+  const buildIndex = steps.findIndex((step) =>
+    step?.uses?.startsWith('docker/build-push-action@'),
+  );
+  const buildStep = steps[buildIndex];
+  const targetMatches = Object.hasOwn(contract, 'target')
+    ? buildStep?.with?.target === contract.target
+    : !Object.hasOwn(buildStep?.with || {}, 'target');
+
+  return (
+    job?.name === contract.name &&
+    job?.['runs-on'] === 'ubuntu-latest' &&
+    job?.env?.BUILDKIT_PROGRESS === 'plain' &&
+    checkoutIndex >= 0 &&
+    checkoutIndex < setupBuildxIndex &&
+    setupBuildxIndex < buildIndex &&
+    buildStep?.with?.context === contract.context &&
+    buildStep?.with?.file === contract.file &&
+    targetMatches &&
+    buildStep?.with?.platforms === 'linux/amd64' &&
+    buildStep?.with?.push === false &&
+    buildStep?.with?.load === false &&
+    !steps.some(
+      (step) => step?.uses === './.github/actions/setup-node-env',
+    )
+  );
+}
+
+function validateDockerfileNodeMajor(
+  repositoryRoot,
+  dockerfilePath,
+  canonicalNodeMajor,
+  errors,
+) {
+  const absolutePath = path.join(repositoryRoot, dockerfilePath);
+
+  if (!existsSync(absolutePath)) {
+    errors.push(`Missing in-scope Dockerfile: ${dockerfilePath}`);
+    return;
+  }
+
+  const source = readFileSync(absolutePath, 'utf8');
+  const declaredMajors = Array.from(
+    source.matchAll(
+      /^\s*FROM(?:\s+--platform=\S+)?\s+node:(\d+)[^\s]*\s*(?:AS\s+\S+)?\s*$/gim,
+    ),
+    (match) => match[1],
+  );
+
+  if (
+    declaredMajors.length === 0 ||
+    declaredMajors.some((major) => major !== canonicalNodeMajor)
+  ) {
+    errors.push(
+      `${dockerfilePath} Node major must match canonical .nvmrc major ${canonicalNodeMajor}`,
+    );
+  }
+}
+
+function validateDockerfileRuntimeLogging(
+  repositoryRoot,
+  dockerfilePath,
+  expectedStage,
+  errors,
+) {
+  const absolutePath = path.join(repositoryRoot, dockerfilePath);
+
+  if (!existsSync(absolutePath)) {
+    return;
+  }
+
+  const source = readFileSync(absolutePath, 'utf8');
+  let currentStage = '';
+  let stageLogsRuntimeVersion = false;
+
+  for (const line of source.split(/\r?\n/)) {
+    const stageMatch = line.match(
+      /^\s*FROM(?:\s+--platform=\S+)?\s+\S+\s+AS\s+(\S+)\s*$/i,
+    );
+
+    if (stageMatch) {
+      currentStage = stageMatch[1].toLowerCase();
+      continue;
+    }
+
+    if (
+      currentStage === expectedStage.toLowerCase() &&
+      /^\s*RUN\s+node\s+--version\s*$/i.test(line)
+    ) {
+      stageLogsRuntimeVersion = true;
+    }
+  }
+
+  if (!stageLogsRuntimeVersion) {
+    errors.push(
+      `${dockerfilePath} must log the resolved Node version with RUN node --version in the ${expectedStage} stage`,
+    );
+  }
+}
+
+function validateRootDockerignore(repositoryRoot, errors) {
+  const absolutePath = path.join(repositoryRoot, ROOT_DOCKERIGNORE_PATH);
+  const actualContract = existsSync(absolutePath)
+    ? readFileSync(absolutePath, 'utf8')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#'))
+    : [];
+
+  if (
+    JSON.stringify(actualContract) !==
+    JSON.stringify(ROOT_DOCKERIGNORE_CONTRACT)
+  ) {
+    errors.push(
+      'Root .dockerignore must isolate the nginx build from host artifacts',
+    );
+  }
 }
 
 function matchesCiPolicyBaselineCaller(job) {
@@ -296,6 +468,9 @@ function matchesCiPolicySupportWorkflow(workflow) {
 function validateRepository(repositoryRoot, options = {}) {
   const errors = [];
   const nodeVersionPath = path.join(repositoryRoot, '.nvmrc');
+  const canonicalNodeMajor = existsSync(nodeVersionPath)
+    ? readFileSync(nodeVersionPath, 'utf8').trim()
+    : '';
   const requireCiPolicySupport =
     options.requireCiPolicy === true || options.requireCiPolicySupport === true;
 
@@ -324,6 +499,33 @@ function validateRepository(repositoryRoot, options = {}) {
     const workflow = parse(workflowSource);
     validateExternalActionReferences(workflow, errors);
     validateExternalActionVersionComments(workflowSource, workflowPath, errors);
+
+    if (
+      workflowPath.endsWith('docker.yml') &&
+      collectUses(workflow).some((reference) =>
+        reference.startsWith('docker/login-action@'),
+      )
+    ) {
+      errors.push('docker.yml must not authenticate to a container registry');
+    }
+
+    if (
+      workflowPath.endsWith('docker.yml') &&
+      /\$\{\{\s*secrets\./i.test(workflowSource)
+    ) {
+      errors.push('docker.yml must not consume GitHub secrets');
+    }
+
+    if (
+      workflowPath.endsWith('docker.yml') &&
+      collectRunCommands(workflow).some((command) =>
+        /(^|\s)docker\s+(?:compose|run)\b/i.test(command),
+      )
+    ) {
+      errors.push(
+        'docker.yml must not start Docker Compose or runtime containers',
+      );
+    }
 
     if (Object.hasOwn(workflow?.on || {}, 'pull_request_target')) {
       errors.push(
@@ -356,11 +558,36 @@ function validateRepository(repositoryRoot, options = {}) {
   }
 
   if (
-    !existsSync(nodeVersionPath) ||
-    readFileSync(nodeVersionPath, 'utf8').trim() !== '22'
+    !existsSync(nodeVersionPath) || canonicalNodeMajor !== '22'
   ) {
     errors.push('Canonical Node source .nvmrc must contain 22');
   }
+
+  validateDockerfileNodeMajor(
+    repositoryRoot,
+    'server/Dockerfile',
+    canonicalNodeMajor,
+    errors,
+  );
+  validateDockerfileNodeMajor(
+    repositoryRoot,
+    'nginx/Dockerfile',
+    canonicalNodeMajor,
+    errors,
+  );
+  validateDockerfileRuntimeLogging(
+    repositoryRoot,
+    'server/Dockerfile',
+    'prod',
+    errors,
+  );
+  validateDockerfileRuntimeLogging(
+    repositoryRoot,
+    'nginx/Dockerfile',
+    'frontend-build',
+    errors,
+  );
+  validateRootDockerignore(repositoryRoot, errors);
 
   const sharedSetupAbsolutePath = path.join(repositoryRoot, SHARED_SETUP_PATH);
 
@@ -498,6 +725,29 @@ function validateRepository(repositoryRoot, options = {}) {
       })
     ) {
       errors.push('quality.yml must define the Client Lint contract');
+    }
+
+    if (
+      workflowPath.endsWith('docker.yml') &&
+      !matchesDockerBuildContract(workflow?.jobs?.['build-server'], {
+        context: './server',
+        file: './server/Dockerfile',
+        name: 'Docker Build (server)',
+        target: 'prod',
+      })
+    ) {
+      errors.push('docker.yml must define the Docker Build (server) contract');
+    }
+
+    if (
+      workflowPath.endsWith('docker.yml') &&
+      !matchesDockerBuildContract(workflow?.jobs?.['build-nginx'], {
+        context: '.',
+        file: './nginx/Dockerfile',
+        name: 'Docker Build (nginx)',
+      })
+    ) {
+      errors.push('docker.yml must define the Docker Build (nginx) contract');
     }
 
     if (

@@ -2,6 +2,8 @@ FROM node:22-alpine AS frontend-build
 
 WORKDIR /app/client
 
+RUN node --version
+
 COPY client/package*.json ./
 RUN npm ci
 

@@ -1,48 +1,84 @@
-# Next Session — K2 Slice 1 Tests/Build Readiness
+# Next Session — Prepare K2 Slice 3 Docker Build Readiness
+
+## Completed Slice
+
+Issue #15 — [Establish Quality readiness with Client Lint and Required CI Policy v1](https://github.com/NhiBuaa/kitta-chat/issues/15).
+
+Status: `DONE`; manual guide Run #2 is `PASSED`. Baseline, support, correction and final caller were delivered through PRs #22–#26. Final merge is `d0a106f239a4947e4741fec4fc14505d3ff8e26e`.
+
+Hosted `main` evidence:
+
+- Tests run `30261255617`: `success`.
+- Build run `30261255664`: `success`.
+- Quality run `30261255778`: exact `CI Policy v1` and trusted baseline succeeded.
+- `Client Lint` failed truthfully with the approved 17-error/13-warning readiness baseline; Issue #18 owns remediation.
+- Repository Ruleset remains unchanged and inactive.
 
 ## Target Slice
 
-Issue #14 — [Establish shared Node setup and Tests/Build readiness](https://github.com/NhiBuaa/kitta-chat/issues/14).
+Issue #16 — [Establish production Docker build readiness](https://github.com/NhiBuaa/kitta-chat/issues/16).
 
-Status: `IN_PROGRESS`; local TDD implementation and regression checks are green. GitHub-hosted/manual acceptance remains pending.
+Status: `TODO-NEXT`; Slice 3 manual guide must be created and approved before implementation.
 
-## Context
+## Slice 3 Context
 
-K2 Phase 3 was rebuilt after architecture review superseded the provisional six-check plan. Slice 1 now establishes only the shared Node runtime/setup, Tests/Build readiness, initial candidate CI Contract and truthful Tests/Build badges. Later slices own Client Lint, Required `CI Policy v1`, Docker, Advisory Security, lint remediation, verification-branch preparation and Ruleset activation.
+Slice #14 established shared Node setup plus Tests/Build readiness. Slice #15 established Client Lint readiness and the fixed-SHA `CI Policy v1` trust chain.
 
-## Objectives
+Slice #16 adds stateless production Docker packaging verification through two independent Required check names. It must validate image construction and Node-major alignment without publishing images, deploying, starting Docker Compose, or requiring stateful services and credentials.
 
-1. Establish canonical Node major `22` and lockfile-aware shared host setup.
-2. Expose stable `Server Tests`, `Client Tests` and `Client Build` checks for pull requests targeting `main` and pushes to `main`.
-3. Establish public `test:ci` and `ci:validate` commands with positive and negative contract coverage for Slice 1.
-4. Preserve read-only permissions, approved concurrency and immutable external Action refs.
-5. Make Tests and Build README badges point truthfully to real workflows on `main`.
-6. Obtain local and GitHub-hosted readiness evidence without secrets or stateful application services.
+## Slice 3 Objectives
+
+1. Create and approve the Slice 3 locked manual test guide before implementation.
+2. Add stable `Docker Build (server)` and `Docker Build (nginx)` check names.
+3. Build the server production target and nginx-owned production frontend image through Buildx.
+4. Use `linux/amd64`, plain progress, `push: false` and `load: false`.
+5. Validate `.nvmrc` Node major against `server/Dockerfile` and the Node build stage in `nginx/Dockerfile`.
+6. Ensure each in-scope Node builder logs its resolved `node --version`.
+7. Extend CI Contract positive and negative coverage for Docker ownership, check names, no-push semantics and Node-major drift.
+8. Obtain hosted pull-request and `main` evidence for both Docker checks.
 
 ## Slice Verification Checklist
 
-- Manual guide: [`.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md`](manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md)
-- [x] Developer approved all test cases in `## [KHÓA] Kịch bản Kiểm thử` on `2026-07-27`.
-- [x] `npm run test:ci` passes 21 fixture-based positive/negative contract tests under canonical Node 22.
-- [x] `npm run ci:validate` passes against the repository state.
-- [x] Server tests (`321/321`), client tests (`232/232`) and client production build pass locally.
-- [ ] GitHub observes green `Server Tests`, `Client Tests` and `Client Build` checks on the approved PR/main evidence path.
-- [ ] Manual guide reaches `Trạng thái mới nhất: PASSED` before Slice 1 is marked done.
+Expected manual guide path:
 
-## Guardrails
+[`.agents/manual-tests/github-actions-ci-cd/slice-03-docker-build-readiness.md`](manual-tests/github-actions-ci-cd/slice-03-docker-build-readiness.md)
 
-- Follow TDD RED → GREEN → REFACTOR after locked-test approval.
-- Do not implement Client Lint, `CI Policy v1`, Docker or Security in Slice 1.
-- Do not configure repository Settings or Ruleset.
+The guide must be created during Session Start through Phase 1 of `playbooks/manual-testing.md`, expanded through `/test-craft`, and approved before Docker implementation begins.
+
+## Slice 3 Entry Checklist
+
+- [x] Slice #15 manual guide reached `PASSED`.
+- [x] Exact `CI Policy v1` appeared and succeeded on pull request and `main`.
+- [x] Client Lint readiness failure remains visible for Issue #18.
+- [ ] Create the Slice 3 manual guide during Session Start.
+- [ ] Expand Slice 3 cases across Data Shape, State, Async, UI and Security axes.
+- [ ] Developer approves all Slice 3 locked test cases.
+- [ ] Only after approval, begin TDD RED → GREEN → REFACTOR for Issue #16.
+
+## Slice 3 Guardrails
+
+- Do not write Slice #16 implementation before locked-test approval.
+- Follow TDD RED → GREEN → REFACTOR after approval.
+- Preserve all Slice #14 and Slice #15 checks and contracts.
+- Build only `server/Dockerfile` and `nginx/Dockerfile`.
+- Keep `client/Dockerfile` outside production validation and Node drift scope.
+- Do not push or load Docker images.
+- Do not authenticate to a registry or consume Docker secrets.
+- Do not start Docker Compose, MongoDB, Redis, RabbitMQ or provider-dependent services.
+- Do not use host-side `.github/actions/setup-node-env` inside Docker build jobs.
+- Do not remediate Client Lint errors; Issue #18 owns remediation.
+- Do not add Security workflows; Issue #17 owns Advisory Security.
+- Do not create or modify repository Ruleset/Settings.
 - Do not create branches, commit, push or merge without explicit Developer authorization.
-- Do not require local `.env`, GitHub secrets, MongoDB, Redis, RabbitMQ, registry credentials or provider credentials.
 - Do not use `continue-on-error`, `pull_request_target`, mutable external Action refs, repository write permissions or hidden bypasses.
-- Do not claim branch enforcement or staging/CD capability.
 
-## Non-Goals
+## Slice 3 Non-Goals
 
-- Client lint readiness or lint remediation.
-- Docker image build validation.
-- Dependency, CodeQL, secret or license scanning.
-- `CI Policy v1` trust-anchor implementation or policy migration.
-- Verification branch creation, Ruleset activation, merge-policy changes or staging deployment.
+- Docker image publication or registry authentication.
+- Docker Compose or runtime integration smoke testing.
+- Development-only `client/Dockerfile` validation.
+- Security, dependency, CodeQL, secret or license scanning.
+- Client lint remediation or warning reduction.
+- Verification branch preparation.
+- Ruleset activation or merge-policy changes.
+- Staging or production deployment.

@@ -6,6 +6,7 @@ RUN npm install
 COPY . .
 CMD ["npm", "run", "dev"]
 FROM base AS prod
+RUN node --version
 RUN npm ci --only=production
 
 COPY --chown=node:node . .

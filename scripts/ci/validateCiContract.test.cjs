@@ -13,6 +13,25 @@ const validSharedSetup =
 const validTestsWorkflow = `${validWorkflowHeader}jobs:\n  server-tests:\n    name: Server Tests\n    defaults:\n      run:\n        working-directory: server\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: server\n          cache-dependency-path: server/package-lock.json\n      - run: npm test\n  client-tests:\n    name: Client Tests\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm test\n`;
 const validBuildWorkflow = `${validWorkflowHeader}jobs:\n  client-build:\n    name: Client Build\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm run build\n`;
 const validQualityWorkflow = `${validWorkflowHeader}jobs:\n  client-lint:\n    name: Client Lint\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm run lint:ci\n`;
+const validDockerWorkflow = `${validWorkflowHeader}jobs:\n  build-server:\n    name: Docker Build (server)\n    runs-on: ubuntu-latest\n    env:\n      BUILDKIT_PROGRESS: plain\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n      - uses: docker/build-push-action@4444444444444444444444444444444444444444\n        with:\n          context: ./server\n          file: ./server/Dockerfile\n          target: prod\n          platforms: linux/amd64\n          push: false\n          load: false\n  build-nginx:\n    name: Docker Build (nginx)\n    runs-on: ubuntu-latest\n    env:\n      BUILDKIT_PROGRESS: plain\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n      - uses: docker/build-push-action@4444444444444444444444444444444444444444\n        with:\n          context: .\n          file: ./nginx/Dockerfile\n          platforms: linux/amd64\n          push: false\n          load: false\n`;
+const validServerDockerfile =
+  'FROM node:22-alpine AS base\nFROM base AS prod\nRUN node --version\n';
+const validNginxDockerfile =
+  'FROM node:22-alpine AS frontend-build\nRUN node --version\nFROM nginx:alpine\n';
+const validRootDockerignore =
+  '*\n' +
+  '!client/\n' +
+  '!client/**\n' +
+  '!nginx/\n' +
+  '!nginx/Dockerfile\n' +
+  '!nginx/nginx.conf\n' +
+  'client/node_modules/\n' +
+  'client/.env\n' +
+  'client/.env.*\n' +
+  'client/dist/\n' +
+  'client/.vite/\n' +
+  'client/.vite-cache/\n' +
+  'client/coverage/\n';
 const validCiPolicySupportWorkflow =
   'name: CI Policy v1 Support\n' +
   'on:\n  workflow_call:\n' +
@@ -63,6 +82,12 @@ function createValidRepositoryFixture(overrides = {}) {
       '2222222222222222222222222222222222222222',
       '2222222222222222222222222222222222222222 # v4.2.2',
     ),
+    '.github/workflows/docker.yml': pinDockerWorkflowActions(
+      validDockerWorkflow,
+    ),
+    'server/Dockerfile': validServerDockerfile,
+    'nginx/Dockerfile': validNginxDockerfile,
+    '.dockerignore': validRootDockerignore,
     'README.md': `${testsBadge}\n${buildBadge}\n`,
     'package.json':
       '{"scripts":{"test:ci":"node --test scripts/ci/*.test.cjs","ci:validate":"node scripts/ci/validateCiContract.cjs"}}\n',
@@ -92,6 +117,30 @@ function createPolicyQualityWorkflow() {
     '          POLICY_RESULT: ${{ needs.ci-policy-baseline.result }}\n' +
     '        run: test "$POLICY_RESULT" = "success"\n'
   );
+}
+
+function pinDockerWorkflowActions(workflow) {
+  return workflow
+    .replaceAll(
+      '2222222222222222222222222222222222222222',
+      '2222222222222222222222222222222222222222 # v4.2.2',
+    )
+    .replaceAll(
+      '3333333333333333333333333333333333333333',
+      '3333333333333333333333333333333333333333 # v3',
+    )
+    .replaceAll(
+      '4444444444444444444444444444444444444444',
+      '4444444444444444444444444444444444444444 # v6',
+    );
+}
+
+function replaceLast(source, search, replacement) {
+  const index = source.lastIndexOf(search);
+
+  return index < 0
+    ? source
+    : `${source.slice(0, index)}${replacement}${source.slice(index + search.length)}`;
 }
 
 function runValidator(fixtureRoot, cliArguments = []) {
@@ -125,6 +174,388 @@ test('ci contract CLI reports a missing Build workflow', () => {
 
     assert.equal(result.status, 1);
     assert.match(output, /missing required workflow: \.github\/workflows\/build\.yml/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI reports a missing Docker workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture();
+
+  try {
+    rmSync(path.join(fixtureRoot, '.github/workflows/docker.yml'));
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /missing required workflow: \.github\/workflows\/docker\.yml/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a missing root Docker context allowlist', () => {
+  const fixtureRoot = createValidRepositoryFixture();
+
+  try {
+    rmSync(path.join(fixtureRoot, '.dockerignore'));
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /root \.dockerignore must isolate the nginx build from host artifacts/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a Docker workflow without the server build contract', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/docker.yml': `${validWorkflowHeader}jobs: {}\n`,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /docker\.yml must define the Docker Build \(server\) contract/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a Docker workflow without the nginx build contract', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/docker.yml': pinDockerWorkflowActions(
+      validDockerWorkflow.split('  build-nginx:\n')[0],
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /docker\.yml must define the Docker Build \(nginx\) contract/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects server Docker Node major drift', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'server/Dockerfile': validServerDockerfile.replace(
+      'node:22-alpine',
+      'node:20-alpine',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /server\/Dockerfile Node major must match canonical \.nvmrc major 22/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects nginx Docker Node major drift', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'nginx/Dockerfile': validNginxDockerfile.replace(
+      'node:22-alpine',
+      'node:21-alpine',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /nginx\/Dockerfile Node major must match canonical \.nvmrc major 22/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a server Dockerfile without runtime version logging', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'server/Dockerfile': validServerDockerfile.replace(
+      'RUN node --version\n',
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /server\/Dockerfile must log the resolved Node version with RUN node --version/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects server runtime logging outside the prod stage', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'server/Dockerfile':
+      'FROM node:22-alpine AS base\n' +
+      'FROM base AS dev\n' +
+      'RUN node --version\n' +
+      'FROM base AS prod\n' +
+      'RUN npm ci --only=production\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /server\/Dockerfile must log the resolved Node version with RUN node --version in the prod stage/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects an nginx Dockerfile without runtime version logging', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'nginx/Dockerfile': validNginxDockerfile.replace(
+      'RUN node --version\n',
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /nginx\/Dockerfile must log the resolved Node version with RUN node --version/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects nginx runtime logging outside the frontend-build stage', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'nginx/Dockerfile':
+      'FROM node:22-alpine AS frontend-build\n' +
+      'RUN npm ci\n' +
+      'FROM nginx:alpine AS runtime\n' +
+      'RUN node --version\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /nginx\/Dockerfile must log the resolved Node version with RUN node --version in the frontend-build stage/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects registry authentication in the Docker workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/docker.yml': pinDockerWorkflowActions(
+      validDockerWorkflow.replace(
+        '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+        '      - uses: docker/login-action@5555555555555555555555555555555555555555 # v3\n' +
+          '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+      ),
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /docker\.yml must not authenticate to a container registry/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects secret consumption in the Docker workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/docker.yml': pinDockerWorkflowActions(
+      validDockerWorkflow.replace(
+        '          load: false\n',
+        '          load: false\n          secrets: npm_token=${{ secrets.NPM_TOKEN }}\n',
+      ),
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /docker\.yml must not consume GitHub secrets/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects runtime startup in the Docker workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/docker.yml': pinDockerWorkflowActions(
+      validDockerWorkflow.replace(
+        '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+        '      - run: docker compose up -d\n' +
+          '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+      ),
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /docker\.yml must not start Docker Compose or runtime containers/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects Docker Buildx contract regressions', async (t) => {
+  const cases = [
+    {
+      name: 'server image push enabled',
+      mutate: (source) =>
+        source.replace('          push: false\n', '          push: true\n'),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'server image load enabled',
+      mutate: (source) =>
+        source.replace('          load: false\n', '          load: true\n'),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'server platform drift',
+      mutate: (source) =>
+        source.replace('          platforms: linux/amd64\n', '          platforms: linux/arm64\n'),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'server progress is not plain',
+      mutate: (source) =>
+        source.replace('      BUILDKIT_PROGRESS: plain\n', '      BUILDKIT_PROGRESS: auto\n'),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'server production target missing',
+      mutate: (source) => source.replace('          target: prod\n', ''),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'server context owned by repository root',
+      mutate: (source) =>
+        source.replace('          context: ./server\n', '          context: .\n'),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'server job builds the development client Dockerfile',
+      mutate: (source) =>
+        source.replace('          file: ./server/Dockerfile\n', '          file: ./client/Dockerfile\n'),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'server job invokes host-side Node setup',
+      mutate: (source) =>
+        source.replace(
+          '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+          '      - uses: ./.github/actions/setup-node-env\n' +
+            '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+        ),
+      expected: /Docker Build \(server\) contract/i,
+    },
+    {
+      name: 'nginx job builds the development client Dockerfile',
+      mutate: (source) =>
+        replaceLast(
+          source,
+          '          file: ./nginx/Dockerfile\n',
+          '          file: ./client/Dockerfile\n',
+        ),
+      expected: /Docker Build \(nginx\) contract/i,
+    },
+  ];
+
+  for (const contractCase of cases) {
+    await t.test(contractCase.name, () => {
+      const fixtureRoot = createValidRepositoryFixture({
+        '.github/workflows/docker.yml': pinDockerWorkflowActions(
+          contractCase.mutate(validDockerWorkflow),
+        ),
+      });
+
+      try {
+        const result = runValidator(fixtureRoot);
+        const output = `${result.stdout}${result.stderr}`;
+
+        assert.equal(result.status, 1);
+        assert.match(output, contractCase.expected);
+      } finally {
+        rmSync(fixtureRoot, { recursive: true, force: true });
+      }
+    });
+  }
+});
+
+test('ci contract CLI excludes the development client Dockerfile from Node drift scope', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'client/Dockerfile': 'FROM node:18-alpine\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+
+    assert.equal(result.status, 0);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -849,35 +1280,8 @@ test('ci contract mode rejects candidate policy tests that run before fixed-base
   }
 });
 
-test('ci contract CLI reports every validated Slice 1 contract category', () => {
-  const testsBadge =
-    '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)';
-  const buildBadge =
-    '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)';
-  const fixtureRoot = createFixture({
-    '.nvmrc': '22\n',
-    '.github/actions/setup-node-env/action.yml': validSharedSetup.replace(
-      '1111111111111111111111111111111111111111',
-      '1111111111111111111111111111111111111111 # v4.4.0',
-    ),
-    '.github/workflows/tests.yml': validTestsWorkflow.replaceAll(
-      '2222222222222222222222222222222222222222',
-      '2222222222222222222222222222222222222222 # v4.2.2',
-    ),
-    '.github/workflows/build.yml': validBuildWorkflow.replace(
-      '2222222222222222222222222222222222222222',
-      '2222222222222222222222222222222222222222 # v4.2.2',
-    ),
-    '.github/workflows/quality.yml': validQualityWorkflow.replace(
-      '2222222222222222222222222222222222222222',
-      '2222222222222222222222222222222222222222 # v4.2.2',
-    ),
-    'README.md': `${testsBadge}\n${buildBadge}\n`,
-    'package.json':
-      '{"scripts":{"test:ci":"node --test scripts/ci/*.test.cjs","ci:validate":"node scripts/ci/validateCiContract.cjs"}}\n',
-    'client/package.json':
-      '{"scripts":{"lint:ci":"eslint . --ignore-pattern .vite-cache/** --max-warnings=13"}}\n',
-  });
+test('ci contract CLI reports every validated contract category', () => {
+  const fixtureRoot = createValidRepositoryFixture();
 
   try {
     const result = runValidator(fixtureRoot);
@@ -885,7 +1289,7 @@ test('ci contract CLI reports every validated Slice 1 contract category', () => 
     assert.equal(result.status, 0);
     assert.match(
       result.stdout,
-      /validated: workflows, shared setup, commands, permissions, concurrency, action pins, badges/i,
+      /validated: workflows, shared setup, commands, permissions, concurrency, action pins, docker, badges/i,
     );
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
