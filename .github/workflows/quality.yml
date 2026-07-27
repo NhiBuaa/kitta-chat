@@ -36,3 +36,7 @@ jobs:
 
       - name: Run client lint readiness
         run: npm run lint:ci
+
+  ci-policy-v1:
+    name: CI Policy v1
+    uses: NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@1ffac3c761b539a737ffdb1f4055529c155aad9f # CI Policy v1
