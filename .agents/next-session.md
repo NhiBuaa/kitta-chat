@@ -49,7 +49,7 @@ Expected manual guide:
 
 ## Guardrails
 
-- Branch Issue #18 from `main` SHA `5a3b9dc0`.
+- Branch Issue #18 from the latest `github/main`; the Issue #17 implementation/evidence baseline is `5a3b9dc0`.
 - Do not change `security.yml`, Security Advisory semantics, Ruleset or Settings.
 - Do not remediate dependency, license, secret or CodeQL findings.
 - Do not change the seven Required check names.
