@@ -850,6 +850,25 @@ test('ci contract CLI rejects a Tests workflow without the main pull request fil
   }
 });
 
+test('ci contract CLI rejects additional Security pull request branches', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      '    branches: [main]\n  push:',
+      '    branches: [main, develop]\n  push:',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must target main for pull_request/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test('ci contract CLI rejects a Tests workflow without the main push filter', () => {
   const fixtureRoot = createFixture({
     '.github/workflows/tests.yml':
@@ -864,6 +883,25 @@ test('ci contract CLI rejects a Tests workflow without the main push filter', ()
 
     assert.equal(result.status, 1);
     assert.match(output, /tests\.yml must target main for push/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects additional Security push branches', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      '  push:\n    branches: [main]\n',
+      '  push:\n    branches: [main, develop]\n',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must target main for push/i);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -1070,7 +1108,29 @@ test('ci contract CLI rejects repository write permissions in an extension workf
     assert.equal(result.status, 1);
     assert.match(
       output,
-      /observability\.yml must not use repository write permissions/i,
+      /observability\.yml must not use non-approved write permissions/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects non-approved write permissions in ordinary Security jobs', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      '  root-audit:\n',
+      '  root-audit:\n    permissions:\n      contents: read\n      issues: write\n',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /security\.yml must not use non-approved write permissions/i,
     );
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });

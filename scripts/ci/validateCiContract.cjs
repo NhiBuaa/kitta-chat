@@ -182,9 +182,18 @@ function containsTrueSetting(value, settingName) {
   );
 }
 
-function containsRepositoryWritePermissions(value) {
+function containsNonApprovedWritePermissions(
+  value,
+  workflowPath,
+  objectPath = [],
+) {
   if (Array.isArray(value)) {
-    return value.some(containsRepositoryWritePermissions);
+    return value.some((item, index) =>
+      containsNonApprovedWritePermissions(item, workflowPath, [
+        ...objectPath,
+        String(index),
+      ]),
+    );
   }
 
   if (!value || typeof value !== 'object') {
@@ -192,14 +201,35 @@ function containsRepositoryWritePermissions(value) {
   }
 
   return Object.entries(value).some(([key, child]) => {
-    if (
-      key === 'permissions' &&
-      (child === 'write-all' || child?.contents === 'write')
-    ) {
-      return true;
+    if (key === 'permissions') {
+      if (child === 'write-all') {
+        return true;
+      }
+
+      if (child && typeof child === 'object') {
+        const jobId =
+          objectPath.length === 2 && objectPath[0] === 'jobs'
+            ? objectPath[1]
+            : undefined;
+
+        for (const [scope, access] of Object.entries(child)) {
+          const approvedSecurityUpload =
+            workflowPath.endsWith('security.yml') &&
+            scope === 'security-events' &&
+            access === 'write' &&
+            (jobId === 'codeql-analysis' || jobId === 'secret-scan');
+
+          if (access === 'write' && !approvedSecurityUpload) {
+            return true;
+          }
+        }
+      }
     }
 
-    return containsRepositoryWritePermissions(child);
+    return containsNonApprovedWritePermissions(child, workflowPath, [
+      ...objectPath,
+      key,
+    ]);
   });
 }
 
@@ -658,9 +688,9 @@ function validateRepository(repositoryRoot, options = {}) {
       );
     }
 
-    if (containsRepositoryWritePermissions(workflow)) {
+    if (containsNonApprovedWritePermissions(workflow, workflowPath)) {
       errors.push(
-        `${path.basename(workflowPath)} must not use repository write permissions`,
+        `${path.basename(workflowPath)} must not use non-approved write permissions`,
       );
     }
 
@@ -770,13 +800,21 @@ function validateRepository(repositoryRoot, options = {}) {
 
     const pullRequestBranches = workflow?.on?.pull_request?.branches;
 
-    if (!Array.isArray(pullRequestBranches) || !pullRequestBranches.includes('main')) {
+    if (
+      !Array.isArray(pullRequestBranches) ||
+      pullRequestBranches.length !== 1 ||
+      pullRequestBranches[0] !== 'main'
+    ) {
       errors.push(`${path.basename(workflowPath)} must target main for pull_request`);
     }
 
     const pushBranches = workflow?.on?.push?.branches;
 
-    if (!Array.isArray(pushBranches) || !pushBranches.includes('main')) {
+    if (
+      !Array.isArray(pushBranches) ||
+      pushBranches.length !== 1 ||
+      pushBranches[0] !== 'main'
+    ) {
       errors.push(`${path.basename(workflowPath)} must target main for push`);
     }
 
