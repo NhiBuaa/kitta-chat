@@ -243,6 +243,7 @@
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | Chưa chạy | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | **PENDING_VERIFICATION** | `[KHÓA]` TC-01 đến TC-14 đã được Developer duyệt; chưa chạy acceptance. |
 | Run #1 | 2026-07-27 | Agent | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASSED** | Local: CI Contract `59/59`, `ci:validate` exit `0`, server `321/321`, client `232/232`, client build exit `0`, server/nginx Buildx exit `0` với Node `v22.23.1`. PR Docker run `30276105663` và main Docker run `30277118128` đều thành công; main jobs: server `90013879480`, nginx `90013879586`. Quality main chỉ fail `Client Lint` baseline Issue #18; `CI Policy v1` và trusted baseline thành công. Không push/load/login/deploy/Ruleset/Settings. |
+| Run #2 | 2026-07-27 | Agent / Developer | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASSED** | Session End regression: server `321/321`, client `232/232`, CI Contract `59/59`, `ci:validate` exit `0`, client production build exit `0` với warning bundle-size đã biết. Final `main` merge `130931d4`: Docker run `30280248995` success; server job `90024511655` và nginx job `90024511705` success; Tests `30280246834` và Build `30280249363` success; policy checks success. `Client Lint` vẫn fail đúng baseline Issue #18. Developer xác nhận Slice #16 hoàn tất. |
 
 ---
 

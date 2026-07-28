@@ -6,6 +6,8 @@ const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const validatorPath = path.resolve(__dirname, 'validateCiContract.cjs');
+const licenseCheckCommand =
+  'license-checker-rseidelsohn --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD" --summary';
 const validWorkflowHeader =
   "on:\n  pull_request:\n    branches: [main]\n  push:\n    branches: [main]\npermissions:\n  contents: read\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\n";
 const validSharedSetup =
@@ -13,6 +15,34 @@ const validSharedSetup =
 const validTestsWorkflow = `${validWorkflowHeader}jobs:\n  server-tests:\n    name: Server Tests\n    defaults:\n      run:\n        working-directory: server\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: server\n          cache-dependency-path: server/package-lock.json\n      - run: npm test\n  client-tests:\n    name: Client Tests\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm test\n`;
 const validBuildWorkflow = `${validWorkflowHeader}jobs:\n  client-build:\n    name: Client Build\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm run build\n`;
 const validQualityWorkflow = `${validWorkflowHeader}jobs:\n  client-lint:\n    name: Client Lint\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm run lint:ci\n`;
+const validRootAuditJob =
+  '  root-audit:\n    name: Dependency Audit (root)\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: .\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: .\n          cache-dependency-path: package-lock.json\n      - run: npm audit --audit-level=high\n';
+const validClientAuditJob =
+  '  client-audit:\n    name: Dependency Audit (client)\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm audit --audit-level=high\n';
+const validServerAuditJob =
+  '  server-audit:\n    name: Dependency Audit (server)\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: server\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: server\n          cache-dependency-path: server/package-lock.json\n      - run: npm audit --audit-level=high\n';
+const validRootLicenseJob =
+  '  root-license-scan:\n    name: License Scan (root)\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: .\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: .\n          cache-dependency-path: package-lock.json\n      - run: npm run license:check\n';
+const validClientLicenseJob =
+  '  client-license-scan:\n    name: License Scan (client)\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: client\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: client\n          cache-dependency-path: client/package-lock.json\n      - run: npm run license:check\n';
+const validServerLicenseJob =
+  '  server-license-scan:\n    name: License Scan (server)\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: server\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n      - uses: ./.github/actions/setup-node-env\n        with:\n          working-directory: server\n          cache-dependency-path: server/package-lock.json\n      - run: npm run license:check\n';
+const validCodeqlJob =
+  '  codeql-analysis:\n    name: CodeQL Analysis (advisory)\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      actions: read\n      security-events: write\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n      - uses: github/codeql-action/init@5555555555555555555555555555555555555555 # v4\n        with:\n          languages: javascript-typescript\n          build-mode: none\n      - uses: github/codeql-action/analyze@5555555555555555555555555555555555555555 # v4\n        with:\n          upload: ${{ github.event_name == \'pull_request\' && github.event.pull_request.head.repo.full_name != github.repository && \'never\' || \'always\' }}\n';
+const validSecretScanJob =
+  '  secret-scan:\n    name: Secret Scan (advisory)\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      security-events: write\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222 # v4.2.2\n        with:\n          fetch-depth: 0\n      - uses: actions/setup-node@1111111111111111111111111111111111111111 # v4.4.0\n        with:\n          node-version-file: .nvmrc\n      - id: gitleaks\n        run: docker run --rm -v "$PWD:/repo:ro" -v "$PWD:/out" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --redact=100 --report-format sarif --report-path /out/gitleaks-results.sarif --exit-code 1 --no-banner --no-color --log-level warn\n      - id: sanitize\n        if: ${{ always() }}\n        run: node scripts/ci/sanitizeGitleaksSarif.cjs gitleaks-results.sarif gitleaks-results-sanitized.sarif\n      - if: ${{ always() && steps.sanitize.outcome == \'success\' && (github.event_name != \'pull_request\' || github.event.pull_request.head.repo.full_name == github.repository) }}\n        uses: github/codeql-action/upload-sarif@5555555555555555555555555555555555555555 # v4\n        with:\n          sarif_file: gitleaks-results-sanitized.sarif\n';
+const validSecurityWorkflow =
+  "on:\n  pull_request:\n    branches: [main]\n  push:\n    branches: [main]\n  schedule:\n    - cron: '0 3 * * 1'\npermissions:\n  contents: read\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\njobs:\n" +
+  validRootAuditJob +
+  validClientAuditJob +
+  validServerAuditJob +
+  validRootLicenseJob +
+  validClientLicenseJob +
+  validServerLicenseJob +
+  validCodeqlJob +
+  validSecretScanJob;
+const validGitleaksConfig =
+  'title = "KittaChat Gitleaks policy"\n\n[extend]\nuseDefault = true\n';
 const validDockerWorkflow = `${validWorkflowHeader}jobs:\n  build-server:\n    name: Docker Build (server)\n    runs-on: ubuntu-latest\n    env:\n      BUILDKIT_PROGRESS: plain\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n      - uses: docker/build-push-action@4444444444444444444444444444444444444444\n        with:\n          context: ./server\n          file: ./server/Dockerfile\n          target: prod\n          platforms: linux/amd64\n          push: false\n          load: false\n  build-nginx:\n    name: Docker Build (nginx)\n    runs-on: ubuntu-latest\n    env:\n      BUILDKIT_PROGRESS: plain\n    steps:\n      - uses: actions/checkout@2222222222222222222222222222222222222222\n      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n      - uses: docker/build-push-action@4444444444444444444444444444444444444444\n        with:\n          context: .\n          file: ./nginx/Dockerfile\n          platforms: linux/amd64\n          push: false\n          load: false\n`;
 const validServerDockerfile =
   'FROM node:22-alpine AS base\nFROM base AS prod\nRUN node --version\n';
@@ -50,6 +80,10 @@ function createFixture(files = {}) {
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'kitta-ci-contract-'));
 
   for (const [relativePath, contents] of Object.entries(files)) {
+    if (contents === undefined) {
+      continue;
+    }
+
     const absolutePath = path.join(fixtureRoot, relativePath);
     mkdirSync(path.dirname(absolutePath), { recursive: true });
     writeFileSync(absolutePath, contents);
@@ -63,6 +97,12 @@ function createValidRepositoryFixture(overrides = {}) {
     '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)';
   const buildBadge =
     '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)';
+  const qualityBadge =
+    '[![Quality](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml)';
+  const dockerBadge =
+    '[![Docker](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml)';
+  const securityBadge =
+    '[![Security](https://github.com/NhiBuaa/kitta-chat/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/security.yml)';
 
   return createFixture({
     '.nvmrc': '22\n',
@@ -82,17 +122,18 @@ function createValidRepositoryFixture(overrides = {}) {
       '2222222222222222222222222222222222222222',
       '2222222222222222222222222222222222222222 # v4.2.2',
     ),
+    '.github/workflows/security.yml': validSecurityWorkflow,
+    '.gitleaks.toml': validGitleaksConfig,
     '.github/workflows/docker.yml': pinDockerWorkflowActions(
       validDockerWorkflow,
     ),
     'server/Dockerfile': validServerDockerfile,
     'nginx/Dockerfile': validNginxDockerfile,
     '.dockerignore': validRootDockerignore,
-    'README.md': `${testsBadge}\n${buildBadge}\n`,
-    'package.json':
-      '{"scripts":{"test:ci":"node --test scripts/ci/*.test.cjs","ci:validate":"node scripts/ci/validateCiContract.cjs"}}\n',
-    'client/package.json':
-      '{"scripts":{"lint:ci":"eslint . --ignore-pattern .vite-cache/** --max-warnings=13"}}\n',
+    'README.md': `${testsBadge}\n${buildBadge}\n${qualityBadge}\n${dockerBadge}\n${securityBadge}\n\nDependency audit, CodeQL, secret scan and license scan results are Advisory findings, not merge blockers or proof that the repository has no vulnerabilities.\n`,
+    'package.json': `${JSON.stringify({ scripts: { 'test:ci': 'node --test scripts/ci/*.test.cjs', 'ci:validate': 'node scripts/ci/validateCiContract.cjs', 'license:check': licenseCheckCommand }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
+    'client/package.json': `${JSON.stringify({ scripts: { 'lint:ci': 'eslint . --ignore-pattern .vite-cache/** --max-warnings=13', 'license:check': licenseCheckCommand }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
+    'server/package.json': `${JSON.stringify({ scripts: { 'license:check': licenseCheckCommand }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
     ...overrides,
   });
 }
@@ -192,6 +233,235 @@ test('ci contract CLI reports a missing Docker workflow', () => {
       output,
       /missing required workflow: \.github\/workflows\/docker\.yml/i,
     );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI reports a missing Security workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': undefined,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /missing required workflow: \.github\/workflows\/security\.yml/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a Security workflow without the weekly schedule', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      "  schedule:\n    - cron: '0 3 * * 1'\n",
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must schedule Monday at 03:00 UTC/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects Security without three independent dependency audits', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      validRootAuditJob,
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must define three dependency audit jobs/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects Security without three independent full-tree license scans', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      validServerLicenseJob,
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must define three license scan jobs/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a package tree with a widened license allowlist', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'client/package.json': `${JSON.stringify({ scripts: { 'lint:ci': 'eslint . --ignore-pattern .vite-cache/** --max-warnings=13', 'license:check': `${licenseCheckCommand};BlueOak-1.0.0` }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /client\/package\.json must own the exact license scan policy/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects CodeQL without JavaScript build-mode none', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      '          build-mode: none\n',
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must define the CodeQL advisory contract/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects CodeQL without a fork-safe SARIF upload guard', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      "        with:\n          upload: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'never' || 'always' }}\n",
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml CodeQL upload must skip fork pull requests/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a secret scan without complete redaction', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      ' --redact=100',
+      '',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must define the sanitized secret scan contract/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a README without the truthful Security badge', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'README.md':
+      '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)\n' +
+      '[![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)\n' +
+      '[![Quality](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml)\n' +
+      '[![Docker](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml)\n',
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /README must include the truthful Security badge for main/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a repository without the owned Gitleaks policy', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.gitleaks.toml': undefined,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /repository must include the owned \.gitleaks\.toml policy/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects README wording that overstates Security findings', () => {
+  const fixtureRoot = createValidRepositoryFixture();
+  const readmePath = path.join(fixtureRoot, 'README.md');
+  const readme = require('node:fs').readFileSync(readmePath, 'utf8');
+
+  writeFileSync(
+    readmePath,
+    readme.replace(
+      'Dependency audit, CodeQL, secret scan and license scan results are Advisory findings, not merge blockers or proof that the repository has no vulnerabilities.',
+      'Security checks are Required proof that the repository has no vulnerabilities.',
+    ),
+  );
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /README must describe Security findings as Advisory/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects README workflow badges in the wrong order', () => {
+  const fixtureRoot = createValidRepositoryFixture();
+  const readmePath = path.join(fixtureRoot, 'README.md');
+  const readme = require('node:fs').readFileSync(readmePath, 'utf8');
+  const lines = readme.split('\n');
+
+  [lines[0], lines[1]] = [lines[1], lines[0]];
+  writeFileSync(readmePath, lines.join('\n'));
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /README workflow badges must use the approved order/i);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -580,6 +850,25 @@ test('ci contract CLI rejects a Tests workflow without the main pull request fil
   }
 });
 
+test('ci contract CLI rejects additional Security pull request branches', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      '    branches: [main]\n  push:',
+      '    branches: [main, develop]\n  push:',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must target main for pull_request/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test('ci contract CLI rejects a Tests workflow without the main push filter', () => {
   const fixtureRoot = createFixture({
     '.github/workflows/tests.yml':
@@ -594,6 +883,25 @@ test('ci contract CLI rejects a Tests workflow without the main push filter', ()
 
     assert.equal(result.status, 1);
     assert.match(output, /tests\.yml must target main for push/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects additional Security push branches', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      '  push:\n    branches: [main]\n',
+      '  push:\n    branches: [main, develop]\n',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /security\.yml must target main for push/i);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -800,7 +1108,29 @@ test('ci contract CLI rejects repository write permissions in an extension workf
     assert.equal(result.status, 1);
     assert.match(
       output,
-      /observability\.yml must not use repository write permissions/i,
+      /observability\.yml must not use non-approved write permissions/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects non-approved write permissions in ordinary Security jobs', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/security.yml': validSecurityWorkflow.replace(
+      '  root-audit:\n',
+      '  root-audit:\n    permissions:\n      contents: read\n      issues: write\n',
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /security\.yml must not use non-approved write permissions/i,
     );
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
@@ -1289,8 +1619,21 @@ test('ci contract CLI reports every validated contract category', () => {
     assert.equal(result.status, 0);
     assert.match(
       result.stdout,
-      /validated: workflows, shared setup, commands, permissions, concurrency, action pins, docker, badges/i,
+      /validated: workflows, shared setup, commands, permissions, concurrency, action pins, docker, security, badges/i,
     );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI reports the Security contract category', () => {
+  const fixtureRoot = createValidRepositoryFixture();
+
+  try {
+    const result = runValidator(fixtureRoot);
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /validated: .*security/i);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }

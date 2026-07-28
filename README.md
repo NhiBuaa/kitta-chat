@@ -6,6 +6,11 @@
 
 [![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)
 [![Build](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/build.yml)
+[![Quality](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/quality.yml)
+[![Docker](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/docker.yml)
+[![Security](https://github.com/NhiBuaa/kitta-chat/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/security.yml)
+
+Dependency audit, CodeQL, secret scan and license scan results are Advisory findings, not merge blockers or proof that the repository has no vulnerabilities.
 
 KittaChat is a full-stack realtime communication platform for direct messaging, group collaboration, file sharing, presence, and WebRTC audio/video calls.
 
@@ -197,6 +202,8 @@ GitHub Actions separates verification by responsibility:
 - [Tests workflow](.github/workflows/tests.yml) runs the complete server and client test scripts.
 - [Build workflow](.github/workflows/build.yml) verifies the client production build independently.
 - [Quality workflow](.github/workflows/quality.yml) exposes the client lint readiness signal and versioned CI policy checks.
+- [Docker workflow](.github/workflows/docker.yml) validates the production server and nginx image builds without pushing or starting stateful services.
+- [Security workflow](.github/workflows/security.yml) runs dependency, license, CodeQL and redacted secret scans as Advisory findings.
 
 The badges in the Hero read directly from their workflows; no passing state or test count is maintained manually. Workflow readiness does not activate merge enforcement by itself; see [CI Policy Governance](docs/CI_POLICY.md). Multi-client behavior is additionally checked through the [Docker Compose smoke guide](docs/DEPLOYMENT_AND_SMOKE_TESTS.md).
 

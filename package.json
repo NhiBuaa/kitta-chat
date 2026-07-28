@@ -2,6 +2,7 @@
   "scripts": {
     "test:ci": "node --test scripts/ci/*.test.cjs",
     "ci:validate": "node scripts/ci/validateCiContract.cjs",
+    "license:check": "license-checker-rseidelsohn --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD\" --summary",
     "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d",
     "dev:docker:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
     "seed:demo": "docker compose exec -T backend npm run seed:demo",
@@ -15,6 +16,7 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
+    "license-checker-rseidelsohn": "4.4.2",
     "yaml": "^2.9.0"
   }
 }

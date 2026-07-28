@@ -1,0 +1,4 @@
+title = "KittaChat Gitleaks policy"
+
+[extend]
+useDefault = true

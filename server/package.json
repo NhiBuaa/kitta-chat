@@ -28,9 +28,11 @@
     "worker:audit": "node src/workers/auditWorker.js",
     "worker:notification": "node src/workers/notificationWorker.js",
     "seed:demo": "node scripts/seedDemo.js",
+    "license:check": "license-checker-rseidelsohn --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD\" --summary",
     "test": "node --test"
   },
   "devDependencies": {
+    "license-checker-rseidelsohn": "4.4.2",
     "socket.io-client": "^4.8.1"
   }
 }
