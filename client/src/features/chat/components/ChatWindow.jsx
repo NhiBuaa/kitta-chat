@@ -90,7 +90,6 @@ const ChatWindow = ({
   getAvatarUrl,
   checkIsOnline,
   handleCall,
-  setShowGroupMembers,
   handleScrollToBottom,
   onMediaContentLoad,
   onScrollPositionChange,

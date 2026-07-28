@@ -35,6 +35,19 @@ export const setupInfiniteScrollObserver = ({
   return observer;
 };
 
+const createCommittedCallback = (callback) => {
+  let committedCallback = callback;
+
+  return {
+    commit(nextCallback) {
+      committedCallback = nextCallback;
+    },
+    invoke(...args) {
+      return committedCallback(...args);
+    },
+  };
+};
+
 export const useInfiniteScroll = ({
   enabled = true,
   hasMore,
@@ -43,6 +56,9 @@ export const useInfiniteScroll = ({
   rootRef,
 }) => {
   const [sentinelNode, setSentinelNode] = useState(null);
+  const [loadMoreCallback] = useState(() =>
+    createCommittedCallback(onLoadMore)
+  );
   const isFetchingRef = useRef(false);
 
   const sentinelRef = useCallback((node) => {
@@ -54,9 +70,9 @@ export const useInfiniteScroll = ({
     isFetchingRef.current = isFetching;
   }, [isFetching]);
 
-  // Keep onLoadMore stable across renders using a ref to prevent observer re-creation
-  const onLoadMoreRef = useRef(onLoadMore);
-  onLoadMoreRef.current = onLoadMore;
+  useEffect(() => {
+    loadMoreCallback.commit(onLoadMore);
+  }, [loadMoreCallback, onLoadMore]);
 
   useEffect(() => {
     if (!enabled || !sentinelNode) return;
@@ -66,7 +82,7 @@ export const useInfiniteScroll = ({
       root: rootRef?.current,
       hasMore,
       isFetchingRef,
-      onLoadMore: () => onLoadMoreRef.current(),
+      onLoadMore: () => loadMoreCallback.invoke(),
     });
 
     return () => {
@@ -74,7 +90,7 @@ export const useInfiniteScroll = ({
         observer.disconnect();
       }
     };
-  }, [enabled, hasMore, rootRef, sentinelNode]);
+  }, [enabled, hasMore, loadMoreCallback, rootRef, sentinelNode]);
 
   return sentinelRef;
 };

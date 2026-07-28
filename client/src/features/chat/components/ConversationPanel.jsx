@@ -20,7 +20,7 @@ import {
   FaCheck
 } from "react-icons/fa";
 import { FaThumbtackSlash } from "react-icons/fa6";
-import { getPanelMetadata, getPanelResources, updatePanelPreference, leaveGroupPanel, deleteChatPanel } from "@/services/api/conversationPanelApi.js";
+import { getPanelMetadata, getPanelResources, updatePanelPreference, deleteChatPanel } from "@/services/api/conversationPanelApi.js";
 import { renameGroup } from "@/services/api/groupApi.js";
 import { useSocket } from "@/services/socket/SocketContext.js";
 import { toast } from "react-toastify";
@@ -49,7 +49,6 @@ const ConversationPanel = ({
   currentUser,
   getAvatarUrl,
   conversationId,
-  onLeaveGroup,
   onDeleteHistory,
   onPreferenceChange,
   onManageMembers,
@@ -346,7 +345,7 @@ const ConversationPanel = ({
       }
     };
 
-    const handleSocketGroupMemberUpdated = ({ groupId, updatedGroup, removedMemberId, isVoluntaryLeave }) => {
+    const handleSocketGroupMemberUpdated = ({ groupId, removedMemberId }) => {
       if (String(groupId) === String(conversationId)) {
         // Cập nhật members preview: loại bỏ thành viên rời/bị xóa
         setMembershipState(prev => ({

@@ -131,7 +131,7 @@ function createValidRepositoryFixture(overrides = {}) {
     'nginx/Dockerfile': validNginxDockerfile,
     '.dockerignore': validRootDockerignore,
     'README.md': `${testsBadge}\n${buildBadge}\n${qualityBadge}\n${dockerBadge}\n${securityBadge}\n\nDependency audit, CodeQL, secret scan and license scan results are Advisory findings, not merge blockers or proof that the repository has no vulnerabilities.\n`,
-    'package.json': `${JSON.stringify({ scripts: { 'test:ci': 'node --test scripts/ci/*.test.cjs', 'ci:validate': 'node scripts/ci/validateCiContract.cjs', 'license:check': licenseCheckCommand }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
+    'package.json': `${JSON.stringify({ scripts: { 'test:ci': 'node --test scripts/ci/*.test.cjs', 'ci:validate': 'node scripts/ci/validateCiContract.cjs', lint: 'npm --prefix client run lint', 'lint:ci': 'npm --prefix client run lint:ci', 'license:check': licenseCheckCommand }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
     'client/package.json': `${JSON.stringify({ scripts: { 'lint:ci': 'eslint . --ignore-pattern .vite-cache/** --max-warnings=13', 'license:check': licenseCheckCommand }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
     'server/package.json': `${JSON.stringify({ scripts: { 'license:check': licenseCheckCommand }, devDependencies: { 'license-checker-rseidelsohn': '4.4.2' } })}\n`,
     ...overrides,
@@ -1452,6 +1452,99 @@ test('ci contract CLI rejects a missing client-owned lint readiness command', ()
     assert.match(output, /client\/package\.json must own lint:ci with max-warnings 13/i);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects a widened warning budget or broad client ignore', () => {
+  const invalidCommands = [
+    'eslint . --ignore-pattern .vite-cache/** --max-warnings=14',
+    'eslint . --ignore-pattern src/** --max-warnings=13',
+  ];
+
+  for (const lintCommand of invalidCommands) {
+    const fixtureRoot = createValidRepositoryFixture({
+      'client/package.json': `${JSON.stringify({
+        scripts: {
+          'lint:ci': lintCommand,
+          'license:check': licenseCheckCommand,
+        },
+        devDependencies: { 'license-checker-rseidelsohn': '4.4.2' },
+      })}\n`,
+    });
+
+    try {
+      const result = runValidator(fixtureRoot);
+      const output = `${result.stdout}${result.stderr}`;
+
+      assert.equal(result.status, 1, lintCommand);
+      assert.match(
+        output,
+        /client\/package\.json must own lint:ci with max-warnings 13/i,
+      );
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  }
+});
+
+test('ci contract CLI rejects root lint commands that duplicate client policy', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    'package.json': `${JSON.stringify({
+      scripts: {
+        'test:ci': 'node --test scripts/ci/*.test.cjs',
+        'ci:validate': 'node scripts/ci/validateCiContract.cjs',
+        lint: 'eslint client',
+        'lint:ci': 'eslint client --ignore-pattern .vite-cache/** --max-warnings=13',
+        'license:check': licenseCheckCommand,
+      },
+      devDependencies: { 'license-checker-rseidelsohn': '4.4.2' },
+    })}\n`,
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /root lint commands must delegate to the client-owned commands/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects suppression of Slice 5 lint error rules', () => {
+  const fixtures = [
+    {
+      name: 'inline suppression',
+      overrides: {
+        'client/test/example.test.js':
+          '// eslint-disable-next-line no-unused-vars\nconst unused = true;\n',
+      },
+    },
+    {
+      name: 'severity downgrade',
+      overrides: {
+        'client/eslint.config.js':
+          "export default [{ rules: { 'react-hooks/refs': 'warn' } }];\n",
+      },
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const fixtureRoot = createValidRepositoryFixture(fixture.overrides);
+
+    try {
+      const result = runValidator(fixtureRoot);
+      const output = `${result.stdout}${result.stderr}`;
+
+      assert.equal(result.status, 1, fixture.name);
+      assert.match(output, /must not suppress Slice 5 lint error rules/i);
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
   }
 });
 

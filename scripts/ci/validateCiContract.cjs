@@ -51,6 +51,10 @@ const PUBLIC_COMMANDS = {
   'ci:validate': 'node scripts/ci/validateCiContract.cjs',
   'test:ci': 'node --test scripts/ci/*.test.cjs',
 };
+const ROOT_LINT_COMMANDS = {
+  lint: 'npm --prefix client run lint',
+  'lint:ci': 'npm --prefix client run lint:ci',
+};
 const CLIENT_LINT_COMMAND =
   'eslint . --ignore-pattern .vite-cache/** --max-warnings=13';
 const LICENSE_CHECK_COMMAND =
@@ -84,6 +88,57 @@ const VALIDATED_CATEGORIES = [
   'security',
   'badges',
 ];
+const SLICE_5_LINT_ERROR_RULE =
+  /(?:no-unused-vars|react-hooks\/(?:refs|set-state-in-effect))/;
+
+function hasSlice5LintSuppression(repositoryRoot) {
+  const sourceRoot = path.join(repositoryRoot, 'client');
+  const sourceFiles = [];
+  const ignoredDirectories = new Set([
+    '.vite-cache',
+    'coverage',
+    'dist',
+    'node_modules',
+  ]);
+
+  const collectSourceFiles = (directory) => {
+    if (!existsSync(directory)) return;
+
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (ignoredDirectories.has(entry.name)) continue;
+        collectSourceFiles(entryPath);
+      } else if (/\.[cm]?[jt]sx?$/.test(entry.name)) {
+        sourceFiles.push(entryPath);
+      }
+    }
+  };
+
+  collectSourceFiles(sourceRoot);
+
+  for (const sourcePath of sourceFiles) {
+    const source = readFileSync(sourcePath, 'utf8');
+    const directives = source.matchAll(
+      /eslint-disable(?:-next-line|-line)?(?:\s+([^\r\n]*))?/g,
+    );
+
+    for (const directive of directives) {
+      const disabledRules = directive[1]?.trim() || '';
+      if (!disabledRules || SLICE_5_LINT_ERROR_RULE.test(disabledRules)) {
+        return true;
+      }
+    }
+  }
+
+  const eslintConfigPath = path.join(repositoryRoot, 'client/eslint.config.js');
+  if (!existsSync(eslintConfigPath)) return false;
+
+  const eslintConfig = readFileSync(eslintConfigPath, 'utf8');
+  return new RegExp(
+    `["']?(?:no-unused-vars|react-hooks\\/(?:refs|set-state-in-effect))["']?\\s*:\\s*(?:["'](?:off|warn)["']|[01]\\b)`,
+  ).test(eslintConfig);
+}
 
 function collectUses(value, references = []) {
   if (Array.isArray(value)) {
@@ -1069,6 +1124,14 @@ function validateRepository(repositoryRoot, options = {}) {
     errors.push('package.json must expose test:ci and ci:validate');
   }
 
+  const rootLintCommandsValid = Object.entries(ROOT_LINT_COMMANDS).every(
+    ([commandName, command]) => packageDocument?.scripts?.[commandName] === command,
+  );
+
+  if (!rootLintCommandsValid) {
+    errors.push('Root lint commands must delegate to the client-owned commands');
+  }
+
   const clientPackagePath = path.join(repositoryRoot, 'client/package.json');
   const clientPackageDocument = existsSync(clientPackagePath)
     ? JSON.parse(readFileSync(clientPackagePath, 'utf8'))
@@ -1078,6 +1141,10 @@ function validateRepository(repositoryRoot, options = {}) {
     errors.push(
       'client/package.json must own lint:ci with max-warnings 13',
     );
+  }
+
+  if (hasSlice5LintSuppression(repositoryRoot)) {
+    errors.push('Client source and ESLint config must not suppress Slice 5 lint error rules');
   }
 
   for (const [packagePath, packageConfig] of [

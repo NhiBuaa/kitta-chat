@@ -30,7 +30,6 @@ import {
   applyFriendRemovedToActiveChat,
   applyFriendRemovedToList,
 } from "@/features/friends/socket/friendshipState.js";
-import { useSearch } from "@/hooks/useSearch.js";
 import { useScrollBehavior } from "@/features/chat/hooks/useScrollBehavior.js";
 import { useChatMessages } from "@/features/chat/hooks/useChatMessages.js";
 import { useTyping } from "@/features/chat/hooks/useTyping.js";
@@ -55,7 +54,7 @@ const Home = () => {
   const [requestCount, setRequestCount] = useState(0);
 
   // Search state (lifted để dùng trong patchUserEverywhere)
-  const [searchResult, setSearchResult] = useState([]);
+  const [, setSearchResult] = useState([]);
 
   // UI modal state
   const [showProfile, setShowProfile] = useState(false);
@@ -111,23 +110,6 @@ const Home = () => {
   const sidebarState = useSidebarState({
     enabled: !isChecking && isAuthenticated && Boolean(token),
   });
-
-  const renderLastMessage = (user, currentUserId) => {
-    if (!user.lastMessage)
-      return <span className="text-gray-400 italic">Bắt đầu trò chuyện</span>;
-    const { content, senderId } = user.lastMessage;
-    const isMe = senderId === currentUserId;
-    return (
-      <span
-        className={
-          user.hasUnread ? "text-gray-900 font-semibold" : "text-gray-500"
-        }
-      >
-        {isMe ? "Bạn: " : ""}
-        {content}
-      </span>
-    );
-  };
 
   // upsertGroup
   const upsertGroup = useCallback((incomingGroup) => {
@@ -228,12 +210,6 @@ const Home = () => {
       window.removeEventListener("file-processed", handleFileProcessed);
     };
   }, [currentUser, patchUserEverywhere, sidebarState, socket]);
-
-
-  // Search hook
-  const { searchTerm, setSearchTerm, isSearching, usersToDisplay } = useSearch({
-    API_URL: API_URL_USERS, users, searchResult, setSearchResult,
-  });
 
   // Scroll hook
   const {
@@ -559,17 +535,6 @@ const Home = () => {
     });
   }, []);
 
-  const handleLeaveGroup = useCallback((groupId) => {
-    setGroups((prev) => prev.filter((g) => g._id !== groupId));
-    if (groupId) {
-      sidebarState.removeConversation(groupId);
-    }
-    if (activeChatRef.current?._id === groupId) {
-      setActiveChat(null);
-      setShowConversationPanel(false);
-    }
-  }, [sidebarState]);
-
   const handleDeleteHistory = useCallback((convId) => {
     setMessages([]);
     setActiveChat(null);
@@ -668,7 +633,6 @@ const Home = () => {
               getAvatarUrl={getAvatarUrl}
               checkIsOnline={checkIsOnline}
               handleCall={handleCall}
-              setShowGroupMembers={setShowGroupMembers}
               handleScrollToBottom={handleScrollToBottom}
               onMediaContentLoad={handleMediaContentLoad}
               onScrollPositionChange={handleScrollPositionChange}
@@ -716,7 +680,6 @@ const Home = () => {
           getAvatarUrl={getAvatarUrl}
           conversationId={conversationId}
           onPreferenceChange={handlePreferenceChange}
-          onLeaveGroup={handleLeaveGroup}
           onDeleteHistory={handleDeleteHistory}
           onManageMembers={() => setShowGroupMembers(true)}
           onNavigateToChat={(targetGroupId) => {
