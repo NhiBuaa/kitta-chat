@@ -33,6 +33,15 @@ const IMMUTABLE_EXTERNAL_ACTION =
 const CI_POLICY_WORKFLOW_REFERENCE =
   'NhiBuaa/kitta-chat/.github/workflows/ci-policy-v1.yml@';
 const CI_POLICY_SUPPORT_PATH = '.github/workflows/ci-policy-v1.yml';
+const WORKFLOW_TRIGGER_CONTRACTS = new Map([
+  ...REQUIRED_WORKFLOW_PATHS.map((workflowPath) => [
+    workflowPath,
+    workflowPath.endsWith('security.yml')
+      ? ['pull_request', 'push', 'schedule']
+      : ['pull_request', 'push'],
+  ]),
+  [CI_POLICY_SUPPORT_PATH, ['workflow_call']],
+]);
 const README_BADGES = {
   Tests:
     '[![Tests](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/NhiBuaa/kitta-chat/actions/workflows/tests.yml)',
@@ -221,6 +230,28 @@ function validateExternalActionVersionComments(source, sourcePath, errors) {
   }
 }
 
+function validateWorkflowTriggers(workflow, workflowPath, errors) {
+  const approvedTriggers = WORKFLOW_TRIGGER_CONTRACTS.get(workflowPath);
+
+  if (!approvedTriggers) return;
+
+  const configuredTriggers =
+    workflow?.on && typeof workflow.on === 'object' && !Array.isArray(workflow.on)
+      ? Object.keys(workflow.on)
+      : [];
+  const configuredTriggerSet = new Set(configuredTriggers);
+  const approvedTriggerSet = new Set(approvedTriggers);
+  const hasExactTriggerSet =
+    configuredTriggers.length === approvedTriggers.length &&
+    configuredTriggers.every((trigger) => approvedTriggerSet.has(trigger));
+
+  if (!hasExactTriggerSet || configuredTriggerSet.size !== approvedTriggerSet.size) {
+    errors.push(
+      `${path.basename(workflowPath)} must use only approved triggers: ${approvedTriggers.join(', ')}`,
+    );
+  }
+}
+
 function containsTrueSetting(value, settingName) {
   if (Array.isArray(value)) {
     return value.some((item) => containsTrueSetting(item, settingName));
@@ -364,7 +395,9 @@ function matchesDockerBuildContract(job, contract) {
     buildStep?.with?.push === false &&
     buildStep?.with?.load === false &&
     !steps.some(
-      (step) => step?.uses === './.github/actions/setup-node-env',
+      (step) =>
+        step?.uses === './.github/actions/setup-node-env' ||
+        step?.uses?.startsWith('actions/setup-node@'),
     )
   );
 }
@@ -703,6 +736,7 @@ function validateRepository(repositoryRoot, options = {}) {
     const workflow = parse(workflowSource);
     validateExternalActionReferences(workflow, errors);
     validateExternalActionVersionComments(workflowSource, workflowPath, errors);
+    validateWorkflowTriggers(workflow, workflowPath, errors);
 
     if (
       workflowPath.endsWith('docker.yml') &&
@@ -713,11 +747,8 @@ function validateRepository(repositoryRoot, options = {}) {
       errors.push('docker.yml must not authenticate to a container registry');
     }
 
-    if (
-      workflowPath.endsWith('docker.yml') &&
-      /\$\{\{\s*secrets\./i.test(workflowSource)
-    ) {
-      errors.push('docker.yml must not consume GitHub secrets');
+    if (/\$\{\{\s*secrets\./i.test(workflowSource)) {
+      errors.push(`${path.basename(workflowPath)} must not consume GitHub secrets`);
     }
 
     if (

@@ -1,15 +1,16 @@
-# Session Handoff — Issue #17 Waiting for Scheduled Evidence
+# Session Handoff — K2 CI/CD Complete
 
-The full handoff artifact is stored at:
+The validated Resume Contract is stored at:
 
-`C:\Users\Nhi\AppData\Local\Temp\kitta-chat-session-end-2026-07-28.md`
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\kitta-chat-k2-github-actions-cicd-phase5.json`
 
 Current state:
 
-- Issue #17 is `IN_PROGRESS`; implementation, hosted PR evidence and hosted main evidence are complete.
-- TC-18 is `PENDING` until the real scheduled Security run at Monday `03:00 UTC` is observed.
-- Issue #17 implementation/evidence baseline is `5a3b9dc073703e0985a83455bd08c36d25c361b6`; fetch the latest `github/main` before branching because Session End documentation advances `main`.
-- Local regression is green: CI Contract `79/79`, server `321/321`, client `232/232`, build exit `0`, `ci:validate` exit `0`.
-- Issue #18 is `TODO-NEXT` and may start on a separate branch from the latest `github/main`; do not merge it before TC-18 passes.
+- K2 GitHub Actions CI/CD implementation, hosted verification and Phase 5 quality-gate repair are complete.
+- Issues #17, #18, #19 and #20 are `CLOSED`/`COMPLETED`.
+- The Phase 4 hosted baseline SHA is `522e984fc3a48a6ae2e8c763706724f1c1051e3b`; Phase 5 repair and its final merge SHA are recorded by subsequent Git history. Ruleset `20437452` is Active with exactly seven Required contexts.
+- The PRD moved from `specs/active/github-actions-ci-cd.md` to `specs/done/github-actions-ci-cd.md`; `specs/README.md` is reconciled.
+- Local verification is green: CI Contract 85/85, `ci:validate` exit `0`, server 321/321, client 237/237, lint 0 errors/13 warnings, client build exit `0`.
+- Hosted stale-branch evidence remains valid; Security dependency/license/secret findings remain Advisory.
 
-Next action: start Issue #18 Session Start, create and approve its manual guide, then implement client lint remediation with TDD while preserving the Issue #17 scheduled checkpoint.
+Next action: start a new approved feature/spec, or design K2.1 only when real staging infrastructure and runtime verification are available.

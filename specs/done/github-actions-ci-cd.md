@@ -228,5 +228,13 @@ K2 được coi là hoàn thành khi toàn bộ Required Quality Gates pass và 
 - Client production build currently passes with a known bundle-size warning above 500 kB. This warning is not a build failure in the current scope.
 - Docker Compose remains the source of truth for the complete local runtime, while Docker image build validation is intentionally narrower and stateless.
 - Optional dependency/security scanning should start conservative to avoid making CI permanently red because of pre-existing findings; any blocking threshold must be evidence-based and approved.
-- Client lint baseline on `2026-07-27`: raw `npm run lint` fails with `1662` findings because generated `.vite-cache` is included. Excluding `.vite-cache` leaves `17` real source/test errors across eight files, including two React hook correctness rules; K2 cannot enable Client Lint as Required until this baseline is remediated.
-- The same baseline contains `13` warnings. K2 transparently locks this count rather than forcing risky behavioral changes under gate-enablement pressure; a follow-up issue owns reduction toward zero.
+- The initial client lint baseline on `2026-07-27` contained `1662` findings with generated `.vite-cache` included. Excluding `.vite-cache` left `17` real source/test errors across eight files, including two React hook correctness rules; Issue #18 remediated that baseline before Ruleset activation.
+- The initial baseline contained `13` warnings. K2 transparently locks this count as the current warning budget; future work may reduce it toward zero through a separate behavior-aware slice.
+
+## Completion Record
+
+- K2 implementation and hosted verification completed on `2026-08-05`.
+- Issues #17, #18, #19 and #20 are closed/completed.
+- The Phase 4 hosted baseline main SHA is `522e984fc3a48a6ae2e8c763706724f1c1051e3b`; Phase 5 quality-gate repair is recorded by subsequent repository history.
+- Ruleset `20437452` is Active for `refs/heads/main` with exactly seven Required contexts: `Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)`, `Docker Build (nginx)` and `CI Policy v1`.
+- Local acceptance after the Phase 5 repair slice passed CI Contract `85/85`, `ci:validate`, server/client tests, client lint and client production build. Security baseline findings remain Advisory, and staging/deployment remains deferred under ADR-011.

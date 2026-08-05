@@ -81,7 +81,7 @@ Cơ chế điều phối sự kiện bàn phím phím Escape. Nếu bộ xem ả
 Quy định phân vùng số lượng hiển thị xem trước tài nguyên ở Conversation Panel: tối đa 6 cho Media, 3 cho Files, 3 cho Links, 3 cho Common Groups và 5 cho Members Preview. Nút Xem tất cả kích hoạt Modal phân trang đầy đủ.
 
 **Required Quality Gate**:
-Một deterministic GitHub check được cấu hình làm merge blocker. Trong K2 gồm Server Tests, Client Tests, Client Production Build, Client Lint và Docker Image Build Validation; pull request chỉ được coi là xanh khi tất cả các gate này thành công.
+Một deterministic GitHub check được cấu hình làm merge blocker. K2 hiện yêu cầu đúng bảy check: `Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)`, `Docker Build (nginx)` và `CI Policy v1`; pull request chỉ được coi là xanh khi tất cả các gate này thành công.
 _Avoid_: gọi một check là bắt buộc nếu repository ruleset/branch protection chưa yêu cầu check đó để merge.
 
 **Advisory Check**:
@@ -97,7 +97,7 @@ Trạng thái một GitHub check đã tồn tại, chạy được và có tên 
 _Avoid_: gọi một readiness check là merge blocker trước Ruleset Activation.
 
 **Ruleset Activation**:
-Sự kiện bật chính sách bảo vệ `main` sau khi toàn bộ Required Quality Gate đã đạt Check Readiness; K2 thực hiện một lần cho đầy đủ sáu check.
+Sự kiện bật chính sách bảo vệ `main` sau khi toàn bộ Required Quality Gate đã đạt Check Readiness; K2 đã thực hiện một lần cho đầy đủ bảy check.
 _Avoid_: kích hoạt tăng dần từng check và mô tả `main` là đã được bảo vệ đầy đủ trong trạng thái trung gian.
 
 **Quality Signal**:
