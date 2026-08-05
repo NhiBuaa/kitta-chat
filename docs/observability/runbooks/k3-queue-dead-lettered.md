@@ -4,7 +4,7 @@
 
 This critical alert fires when `poison` or `retry_exhausted` produces at least one dead-letter event in the last five minutes. K3 applies the invariant `expected dead-letter count = 0`, so both reasons are critical today.
 
-The alert intentionally has no `for` clause. A counter increment is a real event; delaying notification is not used as sample-noise filtering. If notification delay is introduced later, it must be documented as a separate notification semantic.
+The alert intentionally has no `for` clause. A counter increment is a real event; delaying notification is not used as sample-noise filtering. If notification delay is introduced later, it must be documented as separate notification semantics.
 
 ## Response
 
