@@ -1,0 +1,20 @@
+groups:
+  - name: kittachat-k3-queue
+    rules:
+      - alert: KittaChatQueueDeadLettered
+        expr: |
+          sum by (queue, job_type, reason) (
+            increase(
+              kittachat_queue_dead_lettered_total{
+                reason=~"poison|retry_exhausted"
+              }[5m]
+            )
+          ) > 0
+        labels:
+          severity: critical
+          service: kittachat
+          component: queue
+        annotations:
+          summary: "KittaChat queue dead-lettered a message"
+          description: "A poison or retry-exhausted message was dead-lettered; expected dead-letter count is zero. Start with queue, job_type, reason, and the five-minute time window, then follow the runbook."
+          runbook_url: "https://github.com/NhiBuaa/kitta-chat/blob/main/docs/observability/runbooks/k3-queue-dead-lettered.md"

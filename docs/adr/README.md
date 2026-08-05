@@ -7,3 +7,4 @@
 | [ADR-009](009-security-scanning-strategy.md) | Security scanning strategy | Accepted |
 | [ADR-010](010-supply-chain-and-permissions.md) | Supply-chain & permissions | Accepted |
 | [ADR-011](011-staging-cd-boundary.md) | Staging/CD boundary (K2 vs K2.1) | Accepted |
+| [ADR-012](012-k3-observability-metrics-boundary.md) | K3 observability metrics boundary | Accepted |
