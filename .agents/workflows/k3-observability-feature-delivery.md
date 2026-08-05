@@ -31,6 +31,10 @@
 
 The K3 specification, Design, `codebase-design`, decomposition, and frontier acceptance preparation are complete. The current frontier is MetricsModule Issue #46 and Structured Logging/Correlation Issue #45. Manual-acceptance guide revision v1 is locked and user-approved for both frontier tickets. The workflow is suspended before implementation at `C:/Users/Nhi/AppData/Local/Temp/agent-handoffs/k3-observability-feature-delivery.json`.
 
+## Implementation Layout Contract
+
+Before implementing any K3 ticket, read the authoritative layout in [`docs/adr/012-k3-observability-metrics-boundary.md`](../../docs/adr/012-k3-observability-metrics-boundary.md), section `Authoritative Repository Layout`. The ADR section is the single source of truth for module placement, ownership seams, test/artifact locations, and the prohibition on parallel metrics or logging stacks. A ticket may add files inside those seams, but must not introduce a competing layout without a new ADR decision.
+
 Spec reference: https://github.com/NhiBuaa/kitta-chat/issues/44
 
 Approved test seams:
