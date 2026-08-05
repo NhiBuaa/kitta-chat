@@ -17,7 +17,7 @@ const mockLocalStorage = {
 };
 globalThis.localStorage = mockLocalStorage;
 
-test("SidebarStateManager handleSocketMessage updates message preview instantly but debounces sorting", async (t) => {
+test("SidebarStateManager handleSocketMessage updates message preview instantly but debounces sorting", async () => {
   mockLocalStorage.clear();
   const initialConversations = [
     {

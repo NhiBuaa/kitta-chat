@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 
-export const belongsToConversation = (message, conversationId, currentUserId) => {
+export const belongsToConversation = (message, conversationId) => {
   if (!message) return false;
 
   // Direct check by conversationId property if present
@@ -51,22 +51,51 @@ export const matchesLink = (message) => {
   return urlRegex.test(text);
 };
 
+const createExplorerFreshnessStore = (scopeKey) => {
+  let hasNewItems = false;
+  const listeners = new Set();
+
+  const publish = (nextValue) => {
+    if (hasNewItems === nextValue) return;
+    hasNewItems = nextValue;
+    for (const listener of listeners) listener();
+  };
+
+  return {
+    clear: () => publish(false),
+    getSnapshot: () => hasNewItems,
+    markNew: () => publish(true),
+    scopeKey,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+};
+
 export const useExplorerFreshness = ({
   conversationId,
   type,
   socket,
-  currentUserId,
 }) => {
-  const [hasNewItems, setHasNewItems] = useState(false);
+  const scopeKey = `${String(conversationId)}:${String(type)}`;
+  const freshnessStore = useMemo(
+    () => createExplorerFreshnessStore(scopeKey),
+    [scopeKey]
+  );
+  const hasNewItems = useSyncExternalStore(
+    freshnessStore.subscribe,
+    freshnessStore.getSnapshot,
+    freshnessStore.getSnapshot
+  );
 
   useEffect(() => {
-    setHasNewItems(false);
     if (!socket || !conversationId || type === "commonGroups") {
       return;
     }
 
     const handleNewMessage = (message) => {
-      if (!belongsToConversation(message, conversationId, currentUserId)) {
+      if (!belongsToConversation(message, conversationId)) {
         return;
       }
 
@@ -80,7 +109,7 @@ export const useExplorerFreshness = ({
       }
 
       if (matches) {
-        setHasNewItems(true);
+        freshnessStore.markNew();
       }
     };
 
@@ -89,10 +118,10 @@ export const useExplorerFreshness = ({
     return () => {
       socket.off("getMessage", handleNewMessage);
     };
-  }, [conversationId, type, socket, currentUserId]);
+  }, [conversationId, freshnessStore, socket, type]);
 
   const refresh = (onRefresh) => {
-    setHasNewItems(false);
+    freshnessStore.clear();
     if (typeof onRefresh === "function") {
       onRefresh();
     }

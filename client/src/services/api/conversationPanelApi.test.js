@@ -8,7 +8,7 @@ test("getPanelResources constructs URL with both scopes and cursor", async () =>
   let requestedUrl = null;
 
   // Stub axiosClient.get
-  axiosClient.get = async (url, config) => {
+  axiosClient.get = async (url) => {
     requestedUrl = url;
     return { data: { success: true } };
   };
@@ -27,7 +27,7 @@ test("getPanelResources handles query string when only cursor is provided", asyn
   let requestedUrl = null;
 
   // Stub axiosClient.get
-  axiosClient.get = async (url, config) => {
+  axiosClient.get = async (url) => {
     requestedUrl = url;
     return { data: { success: true } };
   };

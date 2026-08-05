@@ -27,7 +27,6 @@ class MockIntersectionObserver {
 test("setupInfiniteScrollObserver creates observer and observes sentinel when hasMore is true", () => {
   const sentinel = { id: "sentinel-1" };
   const root = { id: "root-1" };
-  let loadMoreCalled = false;
   const isFetchingRef = { current: false };
 
   const observer = setupInfiniteScrollObserver({
@@ -35,9 +34,7 @@ test("setupInfiniteScrollObserver creates observer and observes sentinel when ha
     root,
     hasMore: true,
     isFetchingRef,
-    onLoadMore: () => {
-      loadMoreCalled = true;
-    },
+    onLoadMore: () => {},
     IntersectionObserverClass: MockIntersectionObserver,
   });
 

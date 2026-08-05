@@ -6,7 +6,7 @@
 - **Slice:** Slice 4 — Truthful Advisory Security Readiness
 - **Nguồn đặc tả:** [`specs/active/github-actions-ci-cd.md`](../../../specs/active/github-actions-ci-cd.md)
 - **GitHub Issue:** https://github.com/NhiBuaa/kitta-chat/issues/17
-- **Trạng thái mới nhất:** PENDING_VERIFICATION
+- **Trạng thái mới nhất:** PASSED
 - **Phê duyệt `[KHÓA]`:** APPROVED — Developer xác nhận TC-01 đến TC-18 ngày `2026-07-27`.
 
 ---
@@ -308,6 +308,7 @@
 | Run #2 (hosted PR) | 2026-07-28 | Agent | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PENDING | **PENDING_VERIFICATION** | PR #29 HEAD `6c7965a6`; Security run `30325303758`: CodeQL job `90169356220` và sanitized upload `90169396094` success; ba audit, ba license và Secret Scan phản ánh baseline failures đúng Advisory contract. Tests run `30325303772`, Build `30325303761`, Docker `30325303785`, `CI Policy v1` job `90169423467` success; Client Lint fail đúng Issue #18. TC-18 còn thiếu hosted `main`, fork (nếu được cho phép) và scheduled-run evidence; không merge hoặc đổi Ruleset/Settings. |
 | Run #3 (hosted main) | 2026-07-28 | Agent | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PENDING | **PENDING_VERIFICATION** | PR #29 merge SHA `539c1270`; Security run `30325871127`: CodeQL job `90171079835` success; ba audit, ba license và Secret Scan phản ánh baseline failures đúng Advisory contract. Tests run `30325871148`, Build `30325871139`, Docker `30325871143`, Quality run `30325871229` và `CI Policy v1` job `90171150858` success; Client Lint fail đúng Issue #18. TC-18 còn chờ scheduled run Monday `03:00 UTC`; fork evidence chỉ thực hiện nếu được cho phép. Ruleset/Settings không thay đổi. |
 | Run #4 (session-end checkpoint) | 2026-07-28 | Agent | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PENDING | **PENDING_VERIFICATION** | Final main SHA `5a3b9dc0`; local CI Contract `79/79`, `ci:validate` exit `0`, server `321/321`, client `232/232`, client build exit `0`; hosted main evidence remains valid with Advisory baseline failures and Required/technical checks as documented in Run #3. TC-18 intentionally remains pending until the real scheduled Security run at Monday `03:00 UTC`; no Ruleset/Settings change. |
+| Run #5 (hosted scheduled Security) | 2026-08-03 | Agent / hosted scheduled verification | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASSED** | Scheduled run [`30790453532`](https://github.com/NhiBuaa/kitta-chat/actions/runs/30790453532), event `schedule`, main SHA `bc3d8ad6`; all eight Advisory jobs completed. CodeQL `91612660497` and sanitizer/upload steps succeeded; audit/license jobs and Secret Scan preserved real baseline finding failures at their scan steps (technical setup/sanitize/upload succeeded). Cron remains `0 3 * * 1`; no Required-name, Ruleset, Settings or workflow semantic changes. |
 
 ---
 
