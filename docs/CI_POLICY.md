@@ -68,7 +68,7 @@ Every Ruleset transition requires a dedicated issue, explicit Developer authoriz
 
 The fixed-SHA reusable workflow protects the baseline implementation from ordinary candidate edits, but its same-repository caller remains candidate-modifiable. In a solo personal repository, this is not an absolute root of trust and does not protect against a malicious maintainer who weakens caller wiring and policy controls together.
 
-Pull requests that change `.github/workflows/**`, `.github/actions/**`, `scripts/ci/**`, CI package scripts, or this governance document require focused manual control-plane review in addition to automated checks.
+Pull requests that change `.github/workflows/**`, `.github/actions/**`, `scripts/ci/**`, CI package scripts, or this governance document require focused manual control-plane review in addition to automated checks and the seven Required checks.
 
 ## Contributor Mode Entry
 
