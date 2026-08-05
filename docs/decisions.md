@@ -360,5 +360,14 @@ Rules:
 
 **References**: `specs/active/github-actions-ci-cd.md`, `.github/workflows/tests.yml`, `.github/workflows/build.yml`, `README.md`.
 
+## 2026-08-05 — Final K2 Ruleset Evidence Correction
+
+- The live K2 Ruleset is `20437452`, Active for `refs/heads/main`, with exactly seven Required contexts: `Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)`, `Docker Build (nginx)` and `CI Policy v1`.
+- The Ruleset uses strict up-to-date checks, zero required approvals, conversation resolution, no Code Owner/stale/most-recent-push approval requirements, an empty bypass list, deletion and non-fast-forward protection, and `merge` as the only allowed merge method.
+- PR #40 provided hosted stale evidence: all seven Required checks passed while the preserved branch was `BEHIND`; after `Update branch`, checks reran on the current head and the stale block cleared. Security findings remained Advisory.
+- Repository `allow_auto_merge` is `false`; no classic branch protection, merge queue, signed-commit enforcement or deployment was added by K2. `Contributor Mode Entry` remains documented in `docs/CI_POLICY.md` and is intentionally deferred until the first non-maintainer merge or second write-capable collaborator.
+- The earlier consensus notes that described six checks are historical pre-`CI Policy v1` wording; this entry records the final seven-check contract and supersedes that wording for current enforcement.
+- The conditional bounded rollback path was not exercised because no Ruleset configuration error occurred; no fault was injected into the active policy.
+
 
 
