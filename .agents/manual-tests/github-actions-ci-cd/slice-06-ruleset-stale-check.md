@@ -6,7 +6,7 @@
 - **Slice:** Slice 6 — Ruleset stale-branch verification (Issue #19/#20)
 - **Nguồn đặc tả:** [`specs/active/github-actions-ci-cd.md`](../../../specs/active/github-actions-ci-cd.md)
 - **GitHub Issue:** https://github.com/NhiBuaa/kitta-chat/issues/19
-- **Trạng thái mới nhất:** PENDING_VERIFICATION
+- **Trạng thái mới nhất:** PASSED
 - **Phê duyệt:** Developer authorized stale-check execution on `2026-08-05`.
 
 ---
@@ -125,6 +125,7 @@
 | Lần chạy | Ngày | Người test | TC-01 | TC-02 | TC-03 | TC-04 | TC-05 | TC-06 | TC-07 | Tổng kết | Ghi chú / Link Log |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- | :--- |
 | Chưa chạy | — | — | — | — | — | — | — | — | — | **PENDING_VERIFICATION** | `[KHÓA]` Guide được tạo trước stale-check execution; chưa chạy acceptance. |
+| Run #1 (hosted Ruleset verification) | 2026-08-05 | Agent / Developer-authorized GitHub verification | PASS | PASS | PASS | PASS | PASS | PASS | PASS | **PASSED** | Preflight main `233bb144`: Tests `30982947811`, Build `30982947809`, Quality `30982947999`, Docker `30982947810` đều success; Security `30982947814` giữ baseline Advisory failures. Readiness marker PR [#39](https://github.com/NhiBuaa/kitta-chat/pull/39) merged as `233bb144`; verification branch starting SHA `6fc434ca` preserved and became `behind_by=2`. Ruleset `20437452` Active với đúng 7 contexts, bypass rỗng, merge method `merge` only. PR [#40](https://github.com/NhiBuaa/kitta-chat/pull/40) initially `BEHIND` at head `dc395099` vs base `233bb144` while all seven Required checks passed; after Update branch, head `61c05f03`, Required reruns `30983300420`/`30983300433`/`30983300475`/`30983300628` passed and merge state became `UNSTABLE` only because Security remained Advisory. Classic branch protection returned `404 Branch not protected`; no deployment or extra Settings change. Issue #19 timing caveat remains recorded as late checkpoint. |
 
 ---
 
