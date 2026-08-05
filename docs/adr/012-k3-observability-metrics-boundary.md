@@ -41,6 +41,72 @@ renderPrometheus(): Promise<{ body: string; contentType: string }>
 
 `prom-client` is confined to a production `PromClientMetricsAdapter` behind the port and custom Registry. Tests for business paths use an in-memory adapter; exporter contract tests use the real Prometheus adapter and custom Registry. HTTP route-template resolution remains in an Express-facing adapter and passes only canonical/sentinel values into the port. Socket lifecycle, Mongo persistence timing, Redis fallback decisions, and RabbitMQ disposition semantics remain in their owning modules; each crosses the same MetricsModule Interface at exactly one observation seam. The endpoint is an Express adapter over `renderPrometheus`, conditional on `METRICS_ENABLED`, and never becomes part of business logic or public API discovery. This concentrates metric definitions and policy in one deep Module while keeping external dependencies and framework details replaceable.
 
+## Authoritative Repository Layout
+
+The following layout is the K3 implementation target. It is part of this ADR: agents must preserve these seams and ownership rules while implementing Issues #46, #45, #49, #48, #50, #51, #47, and #52.
+
+```text
+server/
+├── package.json                         # prom-client: 15.1.3
+├── package-lock.json
+├── .env.example                         # METRICS_ENABLED=false
+├── src/
+│   ├── app.js                           # composition root and dependency wiring
+│   ├── observability/
+│   │   ├── metrics/
+│   │   │   ├── index.js                 # MetricsModule Interface/factory
+│   │   │   ├── metricsModule.js         # policy, validation, best-effort observe
+│   │   │   ├── metricCatalog.js         # names, labels, sentinels, allowlists
+│   │   │   ├── histogramBuckets.js      # approved histogram bucket baselines
+│   │   │   ├── adapters/
+│   │   │   │   ├── promClientMetricsAdapter.js
+│   │   │   │   └── inMemoryMetricsAdapter.js
+│   │   │   └── http/
+│   │   │       ├── metricsRoute.js      # conditional internal GET /metrics
+│   │   │       ├── httpMetricsMiddleware.js
+│   │   │       └── routeTemplateResolver.js
+│   │   └── correlation/
+│   │       ├── asyncContext.js           # AsyncLocalStorage isolation
+│   │       ├── idPolicy.js               # request/correlation ID validation
+│   │       └── carrierPolicy.js          # payload/AMQP/header precedence
+│   ├── middlewares/
+│   │   └── requestLogging.js             # existing logger middleware, extended
+│   ├── utils/
+│   │   ├── logger.js                     # canonical JSON logger; no second stack
+│   │   └── saveMessageInBackground.js    # Mongo persistence metric seam
+│   ├── queues/
+│   │   └── correlation.js                 # thin compatibility adapter
+│   ├── services/
+│   │   └── cacheService.js                # Redis/fallback metric seam
+│   ├── socket/
+│   │   └── index.js                       # accepted socket lifecycle metric seam
+│   └── workers/
+│       └── workerRuntime.js               # queue/DLQ metric and log seam
+└── test/
+    └── observability/                     # runtime and interface contract tests
+```
+
+Operational artifacts are repository-owned under `docs/observability/`:
+
+```text
+docs/observability/
+├── dashboards/k3-observability.json
+├── prometheus/k3-scrape-config.yml
+├── alerts/k3-queue-alerts.yml
+├── runbooks/k3-queue-dead-lettered.md
+└── k3-operator-validation.md
+```
+
+Static nginx, Compose, dashboard, scrape, and alert checks remain separate from application endpoint tests and belong in the repository CI contract suite (`scripts/ci/`).
+
+The layout has these non-negotiable rules:
+
+- `observability/metrics` is the only policy-owning MetricsModule. Business modules call its semantic Interface and never import `prom-client`.
+- Socket, Mongo persistence, Redis, and RabbitMQ instrumentation stays at the existing owner module's lifecycle seam; do not create parallel producer folders under `observability/`.
+- `utils/logger.js` remains the canonical logger and is extended rather than replaced. Correlation policy has one source of truth under `observability/correlation`; `queues/correlation.js` may only adapt existing callers.
+- `app.js` is the composition root for MetricsModule construction, request context, HTTP instrumentation, and conditional `/metrics` registration.
+- There is no client observability module, public `/metrics` documentation, nginx `/metrics` proxy, or public backend port exposure.
+
 ## Considered Options
 
 - Use `prom-client`'s global registry: rejected because global mutable state makes duplicate registration and test isolation harder.
