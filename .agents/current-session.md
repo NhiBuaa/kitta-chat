@@ -2,75 +2,55 @@
 
 ## Status
 
-- Phase 1 PRD: completed.
-- Phase 2 architecture stress-review: completed with Claude/Codex consensus on `2026-07-27`.
-- Phase 3 issue breakdown: approved and rebuilt around seven Required checks.
-- Phase 3 Slice 1 manual guide: regenerated; TC-01 through TC-11 approved and locked on `2026-07-27`.
-- Phase 3: completed.
-- Phase 4 implementation: Slice #14, Slice #15 and Slice #16 completed with manual acceptance `PASSED`; Slice #17 implementation and hosted PR/main evidence completed, scheduled acceptance pending; Slice #18 is next on a separate branch.
+- Phase 1 PRD, Phase 2 architecture stress-review and Phase 3 issue breakdown are complete.
+- Phase 4 implementation and hosted verification are complete for Slices #14 through #20.
+- Issues #17, #18, #19 and #20 are `CLOSED` with completion state on GitHub.
+- Phase 5 quality-gate repair is complete: the merged K2 diff was reviewed, three validator contract gaps were closed with RED→GREEN fixtures, README supply-chain rationale was added, and governance/session state was reconciled.
+- Phase 4 hosted baseline review fixed point: base `0bd62de6697ef7d0477947de7e2bf416c07d3892` through `github/main` at `522e984fc3a48a6ae2e8c763706724f1c1051e3b`; Phase 5 repair is recorded by the subsequent repository history.
+- The active spec is archived at `specs/done/github-actions-ci-cd.md`.
+- Ruleset `20437452` is Active for `refs/heads/main` with exactly seven Required contexts, strict up-to-date checks, no bypass actors and merge-only completion.
+- Phase 5 repair is delivered through the normal pull-request path; the final merge SHA is recorded by Git history and the validated Resume Contract.
 
 ## Sources Of Truth
 
-- PRD: `specs/active/github-actions-ci-cd.md`
-- ADR index: `docs/adr/README.md`
-- ADRs: `docs/adr/007-*.md` through `docs/adr/011-*.md`
-- Slice 1 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md`
-- Slice 2 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-02-quality-readiness.md`
-- Slice 3 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-03-docker-build-readiness.md`
-- Slice 4 manual guide: `.agents/manual-tests/github-actions-ci-cd/slice-04-advisory-security-readiness.md`
+- Archived PRD: `specs/done/github-actions-ci-cd.md`
+- Specs index: `specs/README.md`
+- CI policy: `docs/CI_POLICY.md`
+- Decision log: `docs/decisions.md`
+- ADRs: `docs/adr/007-workflow-governance-and-ruleset-activation.md` through `docs/adr/011-staging-cd-boundary.md`
+- Slice guides: `.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md` through `slice-06-ruleset-stale-check.md`
 
-## Technical Roadmap
+## Final Required Checks
 
-1. **DONE — #14 Establish shared Node setup and Tests/Build readiness**
-   - Blocked by: none.
-   - Delivers shared Node 22 setup, `Server Tests`, `Client Tests`, `Client Build`, initial CI Contract coverage and truthful Tests/Build badges.
-2. **DONE — #15 Establish Quality readiness with Client Lint and Required CI Policy v1**
-   - Blocked by: #14.
-   - Delivers live `Client Lint`, fixed-SHA reusable `CI Policy v1`, versioned policy migration and the explicit same-repository residual-risk boundary.
-   - Manual acceptance: Run #2 `PASSED`; final merge `d0a106f239a4947e4741fec4fc14505d3ff8e26e`.
-3. **DONE — #16 Establish production Docker build readiness**
-   - Blocked by: #14.
-   - Delivers `Docker Build (server)` and `Docker Build (nginx)` with no push/deploy and contract-backed Node drift checks.
-   - Manual acceptance: Run #2 `PASSED`; final merge `130931d4fc9d8baabec0d40f1434d5e26e8a8b8e`.
-4. **IN_PROGRESS — #17 Add truthful Advisory Security workflow**
-   - Blocked by: #14.
-   - Delivers dependency audits, CodeQL, sanitized Gitleaks SARIF and license scans as truthful Advisory checks.
-   - Implementation, hosted PR evidence and hosted main evidence completed.
-   - Remaining: observe the real Monday `03:00 UTC` scheduled Security run and append TC-18 `PASS`.
-5. **TODO-NEXT — #18 Remediate client lint baseline under the live check**
-   - Blocked by: #15.
-   - Delivers `.vite-cache/**` exclusion, fixes 17 real errors with TDD for hook defects and preserves warning budget `13`.
-6. **TODO — #19 Prepare the Ruleset verification branch before final readiness merge**
-   - Blocked by: #14; human-controlled checkpoint immediately before the final readiness merge.
-   - Preserves a recorded behind branch for post-activation behavior verification without changing repository Settings.
-7. **TODO — #20 Atomically activate and verify the seven-check main Ruleset**
-   - Blocked by: #15, #16, #17, #18 and #19.
-   - Performs one direct-Active activation, behind-branch verification and bounded one-correction rollback; human-controlled.
+K2 requires exactly:
 
-## Delivery Order
+1. `Server Tests`
+2. `Client Tests`
+3. `Client Build`
+4. `Client Lint`
+5. `Docker Build (server)`
+6. `Docker Build (nginx)`
+7. `CI Policy v1`
 
-- Complete #14 first.
-- After #14, #15, #16 and #17 may proceed as independent readiness slices; Security remains Advisory.
-- While #17 waits for scheduled evidence, #18 may be developed on a separate branch but must not merge into `main` before TC-18 passes.
-- Complete #18 only after the real `Client Lint` check from #15 exists.
-- Create and preserve #19 at the approved checkpoint immediately before the final readiness merge.
-- Begin #20 only after all seven Required check names have been observed, required readiness is green, lint remediation is verified and the behind branch exists.
+Security dependency, license, CodeQL and secret-scan jobs remain truthful Advisory checks and are excluded from the Required set.
 
-## Required Checks
+## Verification Evidence
 
-`Server Tests`, `Client Tests`, `Client Build`, `Client Lint`, `Docker Build (server)`, `Docker Build (nginx)`, `CI Policy v1`.
+- `npm run test:ci`: 85/85 CI Contract tests passed after the repair slice.
+- `npm run ci:validate`: exit `0`.
+- Server tests: 321/321 passed.
+- Client tests: 237/237 passed.
+- Client lint: 0 errors and 13 warnings under the fixed budget.
+- Client production build: exit `0`.
+- Hosted main SHA `522e984fc3a48a6ae2e8c763706724f1c1051e3b`: Tests, Build, Docker and Quality runs passed; Security retained baseline Advisory failures.
+- Hosted stale-branch evidence: PR #40 was blocked while behind, then Required checks reran successfully after branch update; Security remained Advisory.
 
-## Guardrails
+## Boundaries
 
-- Slice #14 is complete; do not modify its locked acceptance criteria or history except append-only corrections.
-- Slice #15 is complete; do not modify its locked acceptance criteria or history except append-only corrections.
-- Slice #16 is complete; do not modify its locked acceptance criteria or history except append-only corrections.
-- Slice #17 implementation and hosted PR/main evidence are complete; do not mark it DONE until scheduled TC-18 evidence passes.
-- Slice #18 must use a separate branch from current `main` and a newly approved manual guide.
-- Do not merge #18 into `main` before the Issue #17 scheduled Security run is observed.
-- No commit, push, merge, branch creation or Ruleset change without explicit Developer authorization.
-- Security jobs remain Advisory; `CI Policy v1` is Required.
-- No `continue-on-error`, `pull_request_target`, mutable external Action refs, repository write permissions or hidden bypasses.
-- Client lint remediation is separate from Quality readiness and must be verified by the live hosted check.
-- Verification branch preparation is separate from atomic Ruleset activation.
-- Optional staging remains **Deferred Capability — Pending Infrastructure Availability** and outside K2 completion.
+- MongoDB remains the durable source of truth; Redis remains cache/coordination only; RabbitMQ remains background-only.
+- Optional staging/deployment remains **Deferred Capability — Pending Infrastructure Availability** under ADR-011.
+- No production deployment, rollback automation, merge queue, signed-commit enforcement or auto-merge was added.
+
+## Next Session
+
+K2 CI/CD has no active implementation slice. Start a new approved spec for a new feature. Reopen CI/CD only for K2.1 when a real staging target and runtime verification contract are available.

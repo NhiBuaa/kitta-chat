@@ -706,6 +706,31 @@ test('ci contract CLI rejects secret consumption in the Docker workflow', () => 
   }
 });
 
+test('ci contract CLI rejects host Node setup in the Docker workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/docker.yml': pinDockerWorkflowActions(
+      validDockerWorkflow.replace(
+        '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+        '      - uses: actions/setup-node@5555555555555555555555555555555555555555 # v4\n' +
+          '      - uses: docker/setup-buildx-action@3333333333333333333333333333333333333333\n',
+      ),
+    ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(
+      output,
+      /docker\.yml must define the Docker Build \(server\) contract/i,
+    );
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test('ci contract CLI rejects runtime startup in the Docker workflow', () => {
   const fixtureRoot = createValidRepositoryFixture({
     '.github/workflows/docker.yml': pinDockerWorkflowActions(
@@ -883,6 +908,51 @@ test('ci contract CLI rejects a Tests workflow without the main push filter', ()
 
     assert.equal(result.status, 1);
     assert.match(output, /tests\.yml must target main for push/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects unapproved workflow triggers', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/tests.yml': validTestsWorkflow
+      .replaceAll(
+        '2222222222222222222222222222222222222222',
+        '2222222222222222222222222222222222222222 # v4.2.2',
+      )
+      .replace('  push:\n', '  workflow_dispatch:\n  push:\n'),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /tests\.yml must use only approved triggers/i);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test('ci contract CLI rejects secret interpolation in every workflow', () => {
+  const fixtureRoot = createValidRepositoryFixture({
+    '.github/workflows/tests.yml': validTestsWorkflow
+      .replaceAll(
+        '2222222222222222222222222222222222222222',
+        '2222222222222222222222222222222222222222 # v4.2.2',
+      )
+      .replace(
+        'jobs:\n',
+        'env:\n  TEST_TOKEN: ${{ secrets.TEST_TOKEN }}\njobs:\n',
+      ),
+  });
+
+  try {
+    const result = runValidator(fixtureRoot);
+    const output = `${result.stdout}${result.stderr}`;
+
+    assert.equal(result.status, 1);
+    assert.match(output, /tests\.yml must not consume GitHub secrets/i);
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }

@@ -204,6 +204,7 @@ GitHub Actions separates verification by responsibility:
 - [Quality workflow](.github/workflows/quality.yml) exposes the client lint readiness signal and versioned CI policy checks.
 - [Docker workflow](.github/workflows/docker.yml) validates the production server and nginx image builds without pushing or starting stateful services.
 - [Security workflow](.github/workflows/security.yml) runs dependency, license, CodeQL and redacted secret scans as Advisory findings.
+- External GitHub Actions are pinned to immutable full commit SHAs as a supply-chain control; see [CI Policy Governance](docs/CI_POLICY.md) and [ADR-010](docs/adr/010-supply-chain-and-permissions.md) for the update and permission rules.
 
 The badges in the Hero read directly from their workflows; no passing state or test count is maintained manually. Workflow readiness does not activate merge enforcement by itself; see [CI Policy Governance](docs/CI_POLICY.md). Multi-client behavior is additionally checked through the [Docker Compose smoke guide](docs/DEPLOYMENT_AND_SMOKE_TESTS.md).
 

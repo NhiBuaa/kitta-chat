@@ -87,4 +87,4 @@ These controls are not activated by the Quality readiness slice itself.
 
 ## Current Readiness Boundary
 
-`Client Lint` intentionally exposes the existing pre-remediation baseline: 17 errors and 13 warnings after generated `.vite-cache/**` is excluded. Issue #18 owns source remediation. Docker, Security workflows, Ruleset activation, verification branches, staging, deployment, and production release automation remain outside the Quality readiness slice.
+The Issue #18 Client Lint remediation is complete: generated `.vite-cache/**` remains excluded, the live check requires zero errors and allows the fixed warning budget of 13, and hosted evidence confirms the Required gate is green. Docker, Security workflows, Ruleset activation evidence, verification branches, staging, deployment, and production release automation remain separate K2 boundaries; staging and deployment remain deferred under ADR-011.

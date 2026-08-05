@@ -1,59 +1,31 @@
-# Next Session — K2 Slice 5 Client Lint Remediation
+# Next Session — Post-K2 CI/CD
 
-## Completed Slice
+## Current State
 
-Issue #17 — Add truthful Advisory Security workflow.
+K2 GitHub Actions CI/CD is complete. Issues #17, #18, #19 and #20 are closed. The Phase 4 hosted baseline SHA is `522e984fc3a48a6ae2e8c763706724f1c1051e3b`; Phase 5 repair is recorded by the subsequent repository history. Ruleset `20437452` is Active with the exact seven Required checks.
 
-Status: `IN_PROGRESS`; implementation, hosted PR evidence and hosted main evidence are complete. TC-18 remains pending until the real scheduled Security run at Monday `03:00 UTC`.
+## Verification
 
-Current main SHA: `5a3b9dc073703e0985a83455bd08c36d25c361b6`
+- `npm run test:ci`: 85/85 passed.
+- `npm run ci:validate`: exit `0`.
+- Server tests: 321/321 passed.
+- Client tests: 237/237 passed.
+- Client lint: 0 errors and 13 warnings.
+- Client build: exit `0`.
+- Hosted stale-branch verification passed with Required checks green and Security findings Advisory.
 
-Manual guide:
+## No Active K2 Slice
 
-`.agents/manual-tests/github-actions-ci-cd/slice-04-advisory-security-readiness.md`
+Do not repeat scheduled Security acceptance, lint remediation, verification-branch preparation or Ruleset activation. The archived PRD is `specs/done/github-actions-ci-cd.md`.
 
-## Target Slice
+## Valid Next Work
 
-Issue #18 — Remediate client lint baseline under the live check.
-
-Status: `TODO-NEXT`; development may proceed on a separate branch while Issue #17 waits for scheduled evidence.
-
-## Context
-
-- Required `Client Lint` exists from Slice #15 but currently fails on the Issue #18 baseline.
-- Issue #18 is independently unblocked by completed Slice #15.
-- Issue #17 must not be marked `DONE` until scheduled Security evidence is observed.
-- Issue #18 may be developed and opened as a draft PR, but must not merge into `main` before Issue #17 TC-18 passes.
-
-## Objectives
-
-1. Create and obtain approval for the Slice 5 manual guide before coding.
-2. Reproduce the live `Client Lint` baseline.
-3. Preserve the `.vite-cache/**` exclusion contract.
-4. Fix the 17 real lint errors with TDD, especially hook defects.
-5. Preserve the warning budget at exactly `13`.
-6. Run local lint, server/client tests, build and CI Contract validation.
-7. Obtain hosted PR evidence for `Client Lint`.
-8. Do not merge Issue #18 before the Issue #17 scheduled Security run is observed.
-
-## Verification Checklist
-
-Expected manual guide:
-
-`.agents/manual-tests/github-actions-ci-cd/slice-05-client-lint-remediation.md`
-
-- `Client Lint` is green on the hosted PR.
-- `Server Tests`, `Client Tests`, `Client Build`, Docker checks and `CI Policy v1` contracts remain unchanged.
-- CI Contract and full regression are green.
-- Issue #17 scheduled checkpoint remains preserved.
+- Start a new feature only after its approved spec is placed in `specs/active/`.
+- Consider K2.1 staging/CD only after a real target, credentials, protected environment, rollback contract and runtime health verification are approved.
+- Keep Optional Staging Deployment classified as **Deferred Capability — Pending Infrastructure Availability** until those prerequisites exist.
 
 ## Guardrails
 
-- Branch Issue #18 from the latest `github/main`; the Issue #17 implementation/evidence baseline is `5a3b9dc0`.
-- Do not change `security.yml`, Security Advisory semantics, Ruleset or Settings.
-- Do not remediate dependency, license, secret or CodeQL findings.
-- Do not change the seven Required check names.
-- Do not increase or bypass warning budget `13`.
-- Do not use broad lint disables or `continue-on-error`.
-- Do not modify outside the 17 lint errors and `.vite-cache/**` scope.
-- Do not merge into `main` before Issue #17 TC-18 is `PASS`.
+- Do not change the seven Required check names or Ruleset semantics without a dedicated approved governance slice.
+- Keep Security jobs truthful and Advisory; do not hide baseline findings or use failure suppression.
+- Do not commit, push, create branches or change repository Settings without explicit authorization.

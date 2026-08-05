@@ -70,3 +70,4 @@ Người dùng cần ...
 - [Notifications And Email Jobs](./done/notifications-and-email-jobs.md)
 - [Background Workers](./done/background-workers.md)
 - [Operational Health](./done/operational-health.md)
+- [GitHub Actions CI/CD Quality Gates](./done/github-actions-ci-cd.md)
