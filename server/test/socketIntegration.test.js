@@ -3,6 +3,10 @@ const http = require("node:http");
 const test = require("node:test");
 const jwt = require("jsonwebtoken");
 const { io: createClient } = require("socket.io-client");
+const {
+  createInMemoryMetricsAdapter,
+  createMetricsModule,
+} = require("../src/observability/metrics");
 
 const socketIndexPath = require.resolve("../src/socket/index");
 const messageHandlerPath = require.resolve("../src/socket/handlers/messageHandler");
@@ -57,7 +61,24 @@ const clearMocks = () => {
   }
 };
 
-const createSocketServer = async () => {
+const createSocketMetrics = () => {
+  const warnings = [];
+  const logger = {
+    warn(event, fields) {
+      warnings.push({ event, fields });
+    },
+  };
+  const adapter = createInMemoryMetricsAdapter();
+  const metrics = createMetricsModule({ adapter, logger });
+  return { adapter, logger, metrics, warnings };
+};
+
+const getActiveSocketCount = (adapter) => {
+  const observations = adapter.snapshot().kittachat_socket_active_connections || [];
+  return observations.reduce((total, observation) => total + observation.value, 0);
+};
+
+const createSocketServer = async ({ metrics, logger } = {}) => {
   clearMocks();
 
   process.env.JWT_SECRET = "socket-test-secret";
@@ -182,7 +203,12 @@ const createSocketServer = async () => {
     set(key, value) {
       this.values.set(key, value);
     },
+    get(key) {
+      return this.values.get(key);
+    },
   };
+  if (metrics) app.set("metrics", metrics);
+  if (logger) app.set("logger", logger);
   const httpServer = http.createServer();
   const io = await initSocket(httpServer, app);
 
@@ -253,7 +279,8 @@ test.afterEach(() => {
 });
 
 test("socket rejects missing or invalid JWT before connection", async () => {
-  const server = await createSocketServer();
+  const { adapter, logger, metrics } = createSocketMetrics();
+  const server = await createSocketServer({ metrics, logger });
 
   try {
     const missingTokenError = await connectError(server.url);
@@ -261,7 +288,81 @@ test("socket rejects missing or invalid JWT before connection", async () => {
 
     assert.equal(missingTokenError.message, "Authentication required");
     assert.equal(invalidTokenError.message, "Invalid or expired token");
+    assert.equal(getActiveSocketCount(adapter), 0);
   } finally {
+    await server.close();
+  }
+});
+
+test("socket increments the active connection Gauge after authentication succeeds", async () => {
+  const { adapter, logger, metrics } = createSocketMetrics();
+  const server = await createSocketServer({ metrics, logger });
+  const token = jwt.sign({ id: "sender-user" }, process.env.JWT_SECRET);
+  const client = await connectClient(server.url, token);
+
+  try {
+    assert.equal(getActiveSocketCount(adapter), 1);
+  } finally {
+    client.close();
+    await server.close();
+  }
+});
+
+test("socket decrements the active connection Gauge once and counts reconnect as a new lifecycle", async () => {
+  const { adapter, logger, metrics } = createSocketMetrics();
+  const server = await createSocketServer({ metrics, logger });
+  const token = jwt.sign({ id: "sender-user" }, process.env.JWT_SECRET);
+  const client = await connectClient(server.url, token);
+
+  try {
+    assert.equal(getActiveSocketCount(adapter), 1);
+
+    client.close();
+    await waitFor(
+      () => getActiveSocketCount(adapter) === 0,
+      "disconnect should decrement the active connection Gauge once",
+    );
+
+    const reconnect = await connectClient(server.url, token);
+    try {
+      assert.equal(getActiveSocketCount(adapter), 1);
+    } finally {
+      reconnect.close();
+    }
+
+    await waitFor(
+      () => getActiveSocketCount(adapter) === 0,
+      "reconnect lifecycle should clean up independently",
+    );
+  } finally {
+    client.close();
+    await server.close();
+  }
+});
+
+test("socket counts concurrent socket instances independently of user identity", async () => {
+  const { adapter, logger, metrics } = createSocketMetrics();
+  const server = await createSocketServer({ metrics, logger });
+  const senderToken = jwt.sign({ id: "sender-user" }, process.env.JWT_SECRET);
+  const receiverToken = jwt.sign({ id: "receiver-user" }, process.env.JWT_SECRET);
+  const clients = [];
+
+  try {
+    clients.push(await connectClient(server.url, senderToken));
+    clients.push(await connectClient(server.url, senderToken));
+    clients.push(await connectClient(server.url, receiverToken));
+    assert.equal(getActiveSocketCount(adapter), 3);
+
+    clients[0].close();
+    await waitFor(() => getActiveSocketCount(adapter) === 2, "first socket should decrement once");
+
+    clients[1].close();
+    await waitFor(() => getActiveSocketCount(adapter) === 1, "second socket should decrement once");
+
+    clients[2].close();
+    await waitFor(() => getActiveSocketCount(adapter) === 0, "last socket should decrement once");
+  } finally {
+    clients.forEach((client) => client.close());
     await server.close();
   }
 });

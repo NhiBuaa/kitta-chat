@@ -10,6 +10,8 @@ const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
 const { registerCallHandlers } = require("./handlers/call/index");
 const { createCallTimeoutFinalizer } = require("./handlers/call/services/callTimeoutFinalizer");
+const { createSocketConnectionTracker } = require("./connectionMetrics");
+const { logger: defaultLogger } = require("../utils/logger");
 
 const NODE_NAME = process.env.NODE_NAME || "backend";
 const logPrefix = `[Socket][node=${NODE_NAME}]`;
@@ -30,7 +32,13 @@ if (!JWT_SECRET) {
  * @param {import("express").Application} app
  * @returns {Promise<import("socket.io").Server>} io
  */
-const initSocket = async (httpServer, app) => {
+const initSocket = async (httpServer, app, { metrics, logger } = {}) => {
+    const appMetrics = typeof app?.get === "function" ? app.get("metrics") : undefined;
+    const appLogger = typeof app?.get === "function" ? app.get("logger") : undefined;
+    const connectionTracker = createSocketConnectionTracker({
+        logger: logger || appLogger || defaultLogger,
+        metrics: metrics || appMetrics,
+    });
     const io = new Server(httpServer, {
         cors: {
             origin: process.env.URL_FRONTEND,
@@ -67,7 +75,7 @@ const initSocket = async (httpServer, app) => {
 
     // Proof log cho multi-node: backend nào đang giữ socket của receiver
     // sẽ tự in log "received" khi nhận được sự kiện nội bộ này.
-    io.on("proof:message-dispatched", (payload = {}) => {
+        io.on("proof:message-dispatched", (payload = {}) => {
         const {
             messageId,
             senderId,
@@ -124,6 +132,8 @@ const initSocket = async (httpServer, app) => {
     io.on("connection", (socket) => {
         const userId = socket.userId;
         console.log(`${logPrefix} CONNECT user=${userId} socket=${socket.id}`);
+
+        connectionTracker.track(socket);
 
         socket.on("disconnect", (reason) => {
             console.log(`${logPrefix} DISCONNECT user=${socket.userId} socket=${socket.id} reason=${reason}`);

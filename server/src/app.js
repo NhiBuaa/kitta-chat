@@ -32,16 +32,19 @@ const createApp = ({
   authRateLimits,
   metricsEnabled: configuredMetricsEnabled = process.env.METRICS_ENABLED,
   metricsModule: providedMetricsModule,
+  metrics: providedSocketMetrics,
 } = {}) => {
   const app = express();
   const metricsEnabled = isMetricsEnabled(configuredMetricsEnabled);
-  const metricsModule = metricsEnabled
-    ? providedMetricsModule || createMetricsModule({ logger })
-    : null;
+  const metricsModule = providedMetricsModule
+    || providedSocketMetrics
+    || createMetricsModule({ logger });
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
-  if (metricsModule) {
+  app.set("metrics", metricsModule);
+  app.set("logger", logger);
+  if (metricsEnabled) {
     app.set("metricsModule", metricsModule);
     app.use(createHttpMetricsMiddleware({ metricsModule, logger }));
   }
@@ -83,7 +86,7 @@ const createApp = ({
     res.status(200).json(payload);
   });
 
-  if (metricsModule) {
+  if (metricsEnabled) {
     app.get("/metrics", createMetricsRoute({ metricsModule }));
   }
 
