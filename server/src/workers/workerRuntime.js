@@ -2,10 +2,32 @@ const {
   getJobType,
 } = require("../queues/correlation");
 const { resolveWorkerCarrier } = require("../observability/correlation/carrierPolicy");
+const { createMetricsModule } = require("../observability/metrics");
 const { runWithCorrelationContext } = require("../observability/correlation/asyncContext");
 const { logSafely, logger: defaultLogger } = require("../utils/logger");
 
 const getMaxAttempts = () => Number(process.env.RABBITMQ_MAX_ATTEMPTS || 3);
+
+const QUEUE_METRIC_NAMES = Object.freeze({
+  "audit.events": "audit",
+  "image.process": "image",
+  "notification.email": "notification",
+});
+
+const getMetricQueueName = (queueName) => QUEUE_METRIC_NAMES[queueName] || "OTHER";
+
+const observeMetricSafely = ({ logger, metrics, method, payload }) => {
+  if (!metrics || typeof metrics[method] !== "function") return;
+
+  try {
+    metrics[method](payload);
+  } catch (error) {
+    logSafely(logger, "warn", "worker_metrics_observation_failed", {
+      error_type: error?.name || "Error",
+      metric: method,
+    });
+  }
+};
 
 const publishConfirmed = (channel, queueName, payload, options = {}) =>
   new Promise((resolve, reject) => {
@@ -124,6 +146,7 @@ const startQueueWorker = async ({
   reconnectDelayMs = Number(process.env.RABBITMQ_WORKER_RECONNECT_DELAY_MS || 1000),
   maxReconnectDelayMs = Number(process.env.RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS || 30000),
   logger = defaultLogger,
+  metrics = createMetricsModule({ logger }),
 }) => {
   let stopped = false;
   let channel = null;
@@ -136,6 +159,38 @@ const startQueueWorker = async ({
     let job = null;
     let correlationId = null;
     let failureStage = "parse";
+    let queueOutcomeRecorded = false;
+    let deadLetterRecorded = false;
+
+    const recordQueueOutcome = (outcome) => {
+      if (queueOutcomeRecorded) return;
+      queueOutcomeRecorded = true;
+      observeMetricSafely({
+        logger,
+        metrics,
+        method: "observeQueueJob",
+        payload: {
+          jobType: getJobType(job),
+          outcome,
+          queue: getMetricQueueName(queueName),
+        },
+      });
+    };
+
+    const recordDeadLetter = (reason) => {
+      if (deadLetterRecorded) return;
+      deadLetterRecorded = true;
+      observeMetricSafely({
+        logger,
+        metrics,
+        method: "observeQueueDeadLettered",
+        payload: {
+          jobType: getJobType(job),
+          queue: getMetricQueueName(queueName),
+          reason,
+        },
+      });
+    };
 
     try {
       const parsedMessage = parseJobMessage(message);
@@ -154,6 +209,7 @@ const startQueueWorker = async ({
       failureStage = "handler";
       await runWithCorrelationContext({ correlationId }, () => processJob(job, message));
       channel.ack(message);
+      recordQueueOutcome("processed");
       logSafely(logger, "info", "worker_job_processed", buildWorkerLogFields({
         queueName,
         job,
@@ -178,6 +234,8 @@ const startQueueWorker = async ({
           error,
           failureStage,
         });
+        let routeOutcome = "failed";
+        let deadLetterReason = null;
 
         logSafely(logger, "error", poisonMessage ? "worker_job_poison" : "worker_job_failed", failureFields);
 
@@ -208,6 +266,7 @@ const startQueueWorker = async ({
               headers: { attempts: nextAttempts, correlationId },
             },
           );
+          routeOutcome = "retried";
         } else {
           logSafely(
             logger,
@@ -234,11 +293,16 @@ const startQueueWorker = async ({
               headers: { correlationId },
             },
           );
+          deadLetterReason = poisonMessage ? "poison" : "retry_exhausted";
+          recordDeadLetter(deadLetterReason);
         }
 
         channel.ack(message);
+        recordQueueOutcome(routeOutcome);
       } catch (routeError) {
+        recordQueueOutcome("failed");
         logSafely(logger, "error", "worker_failure_routing_publish_failed", {
+          attempt: getAttempts(job, message),
           queue: queueName,
           jobType: getJobType(job),
           correlationId,
