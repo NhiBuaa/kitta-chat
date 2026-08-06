@@ -3,6 +3,63 @@ const { cacheClient } = require("../config/redis");
 const buildConversationId = require("./buildConversationId");
 const { dualWriteConfirmedMessage } = require("../services/conversationDualWriteService");
 
+const NOOP_METRICS_MODULE = Object.freeze({
+    observeMessagePersistence() {},
+});
+
+let configuredMetricsModule = NOOP_METRICS_MODULE;
+
+const configureMetricsModule = (metricsModule) => {
+    configuredMetricsModule = metricsModule
+        && typeof metricsModule.observeMessagePersistence === "function"
+        ? metricsModule
+        : NOOP_METRICS_MODULE;
+    return configuredMetricsModule;
+};
+
+const toDurationSeconds = (startedAt, finishedAt) =>
+    Number(finishedAt - startedAt) / 1_000_000_000;
+
+const toComparableId = (value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "object" && value._id !== undefined) {
+        return toComparableId(value._id);
+    }
+    return String(value);
+};
+
+const toComparableIds = (value) =>
+    (Array.isArray(value) ? value : []).map(toComparableId);
+
+const toComparableLinks = (value) =>
+    (Array.isArray(value) ? value : []).map((link) => ({
+        url: link?.url || null,
+        hostname: link?.hostname || null,
+    }));
+
+const isVerifiedDuplicate = (existingDoc, messageToSave) => {
+    if (
+        !existingDoc
+        || !messageToSave
+        || !toComparableId(messageToSave.sender)
+        || !toComparableId(messageToSave.idempotencyKey)
+    ) return false;
+
+    const persisted = typeof existingDoc.toObject === "function"
+        ? existingDoc.toObject()
+        : existingDoc;
+
+    return toComparableId(persisted.sender) === toComparableId(messageToSave.sender)
+        && toComparableId(persisted.receiver) === toComparableId(messageToSave.receiver)
+        && toComparableId(persisted.conversationId) === toComparableId(messageToSave.conversationId)
+        && (persisted.type || "text") === messageToSave.type
+        && (persisted.text || "") === messageToSave.text
+        && toComparableIds(persisted.attachments).join(",") === toComparableIds(messageToSave.attachments).join(",")
+        && Boolean(persisted.hasLink) === Boolean(messageToSave.hasLink)
+        && JSON.stringify(toComparableLinks(persisted.links)) === JSON.stringify(toComparableLinks(messageToSave.links))
+        && toComparableId(persisted.idempotencyKey) === toComparableId(messageToSave.idempotencyKey);
+};
+
 /**
  * Lưu tin nhắn vào MongoDB và cập nhật Redis cache.
  * Chạy ngầm sau khi socket đã emit cho client.
@@ -14,7 +71,36 @@ const { dualWriteConfirmedMessage } = require("../services/conversationDualWrite
  * @param {Object} data - Dữ liệu tin nhắn từ socket event
  * @returns {Promise<{doc: Document|null, isDuplicate: boolean}>}
  */
-async function saveMessageInBackground(data) {
+async function saveMessageInBackground(data, options = {}) {
+    const metricsModule = options?.metricsModule || configuredMetricsModule;
+    const clock = options?.clock || process.hrtime.bigint;
+    let persistenceStartedAt = null;
+    let persistenceObservationRecorded = false;
+    let messageToSave = null;
+
+    const startPersistenceTimer = () => {
+        try {
+            persistenceStartedAt = clock();
+        } catch (error) {
+            persistenceStartedAt = null;
+            console.warn("[saveMessage] Persistence timing unavailable:", error?.message);
+        }
+    };
+
+    const observePersistence = (outcome) => {
+        if (persistenceObservationRecorded || persistenceStartedAt === null) return;
+        persistenceObservationRecorded = true;
+
+        try {
+            const durationSeconds = toDurationSeconds(persistenceStartedAt, clock());
+            if (Number.isFinite(durationSeconds) && durationSeconds >= 0) {
+                metricsModule.observeMessagePersistence({ outcome, durationSeconds });
+            }
+        } catch (error) {
+            console.warn("[saveMessage] Persistence metric observation failed:", error?.message);
+        }
+    };
+
     try {
         const senderId = data.sender?._id || data.sender;
         const conversationId =
@@ -40,7 +126,7 @@ async function saveMessageInBackground(data) {
             ? Message.extractAndNormalizeLinks(data.content || data.text || "")
             : { hasLink: false, links: [] };
 
-        const messageToSave = {
+        messageToSave = {
             conversationId,
             sender: senderId,
             receiver: data.receiverId || data.receiver,
@@ -58,6 +144,7 @@ async function saveMessageInBackground(data) {
         let isDuplicate = false;
 
         if (data.idempotencyKey && senderId) {
+            startPersistenceTimer();
             /**
              * Upsert: nếu đã có (sender + idempotencyKey) -> trả về doc cũ (isDuplicate = true)
              * Nếu chưa có -> tạo mới (isDuplicate = false)
@@ -79,8 +166,21 @@ async function saveMessageInBackground(data) {
             isDuplicate = Boolean(result?.lastErrorObject?.updatedExisting);
         } else {
             // Không có idempotencyKey -> tạo bình thường (group messages, system messages)
+            startPersistenceTimer();
             savedMessage = await Message.create(messageToSave);
         }
+
+        if (!savedMessage) {
+            observePersistence("failed");
+            return { doc: null, isDuplicate: false };
+        }
+
+        if (isDuplicate && !isVerifiedDuplicate(savedMessage, messageToSave)) {
+            observePersistence("failed");
+            return { doc: null, isDuplicate: false };
+        }
+
+        observePersistence("success");
 
         // Cập nhật Redis Cache – giữ 50 tin nhắn mới nhất
         // Write-Through: cập nhật ZSET danh sách trò chuyện cho tất cả participants
@@ -127,17 +227,26 @@ async function saveMessageInBackground(data) {
                     sender: data.sender?._id || data.sender,
                     idempotencyKey: data.idempotencyKey,
                 });
+                if (!isVerifiedDuplicate(existingDoc, messageToSave)) {
+                    observePersistence("failed");
+                    return { doc: null, isDuplicate: false };
+                }
+                observePersistence("success");
                 return { doc: existingDoc, isDuplicate: true };
             } catch (e2) {
+                observePersistence("failed");
                 console.error("[saveMessage] Lỗi khi fetch doc trùng:", e2);
-                return { doc: null, isDuplicate: true };
+                return { doc: null, isDuplicate: false };
             }
         }
 
+        observePersistence("failed");
         console.error("[saveMessage] Lỗi lưu tin nhắn ngầm:", error);
         return { doc: null, isDuplicate: false };
     }
 }
+
+saveMessageInBackground.configureMetricsModule = configureMetricsModule;
 
 module.exports = saveMessageInBackground;
 

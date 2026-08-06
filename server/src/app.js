@@ -22,6 +22,7 @@ const {
 } = require("./services/healthService");
 const { logSafely, logger: defaultLogger } = require("./utils/logger");
 const { sendError } = require("./utils/apiResponse");
+const saveMessageInBackground = require("./utils/saveMessageInBackground");
 
 const isMetricsEnabled = (value) => String(value).trim().toLowerCase() === "true";
 
@@ -39,6 +40,9 @@ const createApp = ({
   const metricsModule = providedMetricsModule
     || providedSocketMetrics
     || createMetricsModule({ logger });
+
+  app.set("metricsModule", metricsModule);
+  saveMessageInBackground.configureMetricsModule?.(metricsModule);
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");

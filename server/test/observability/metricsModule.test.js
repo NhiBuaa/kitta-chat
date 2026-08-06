@@ -6,6 +6,7 @@ const {
   createInMemoryMetricsAdapter,
   createPromClientMetricsAdapter,
 } = require("../../src/observability/metrics");
+const { METRIC_CATALOG } = require("../../src/observability/metrics/metricCatalog");
 
 const createWarningLogger = () => {
   const warnings = [];
@@ -16,6 +17,23 @@ const createWarningLogger = () => {
     warnings,
   };
 };
+
+test("message persistence histogram has a finite bucket through the configured timeout boundary", () => {
+  assert.deepEqual(METRIC_CATALOG.messagePersistenceDuration.buckets, [
+    0.001,
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1,
+    2.5,
+    5,
+    10,
+  ]);
+});
 
 test("MetricsModule exposes every semantic observation and async Prometheus exposition", async () => {
   const adapter = createPromClientMetricsAdapter();

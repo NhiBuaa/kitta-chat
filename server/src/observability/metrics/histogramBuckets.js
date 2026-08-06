@@ -3,7 +3,7 @@ const HTTP_REQUEST_DURATION_BUCKETS = Object.freeze([
 ]);
 
 const MESSAGE_PERSISTENCE_DURATION_BUCKETS = Object.freeze([
-  0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5,
+  0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10,
 ]);
 
 module.exports = {
