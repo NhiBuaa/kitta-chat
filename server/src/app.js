@@ -23,6 +23,7 @@ const {
 const { logSafely, logger: defaultLogger } = require("./utils/logger");
 const { sendError } = require("./utils/apiResponse");
 const saveMessageInBackground = require("./utils/saveMessageInBackground");
+const { setDefaultMetrics } = require("./observability/metrics/runtime");
 
 const isMetricsEnabled = (value) => String(value).trim().toLowerCase() === "true";
 
@@ -43,6 +44,8 @@ const createApp = ({
 
   app.set("metricsModule", metricsModule);
   saveMessageInBackground.configureMetricsModule?.(metricsModule);
+
+  setDefaultMetrics(metricsModule);
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");

@@ -6,6 +6,10 @@ const mongoose = require("mongoose");
 const Group = require("../models/Group");
 const presenceService = require("./presenceService");
 const { cacheClient } = require("../config/redis");
+const {
+  observeRedisOperation,
+  observeCacheFallback,
+} = require("../observability/metrics/runtime");
 
 /**
  * Tải media (ảnh/video) đã chia sẻ trong cuộc trò chuyện
@@ -385,7 +389,7 @@ async function loadGroupMembers(conversationId, limit = 20, cursor = null, userI
  * @param {string} [userId] - ID người dùng đang yêu cầu
  * @returns {Promise<Object>} { items, hasMore, nextCursor }
  */
-async function loadCommonGroups(conversationId, limit = 6, cursor = null, userId = null) {
+async function loadCommonGroups(conversationId, limit = 6, cursor = null, userId = null, metrics) {
   const parts = conversationId.split("_");
   if (parts.length !== 2) {
     return { items: [], hasMore: false, nextCursor: null };
@@ -397,15 +401,37 @@ async function loadCommonGroups(conversationId, limit = 6, cursor = null, userId
   const sortedIds = [currentUserId, partnerId].sort();
   const cacheKey = `commonGroups:${sortedIds[0]}:${sortedIds[1]}`;
 
+  let fallbackReason = null;
+  let cached = null;
+
   if (!cursor && cacheClient.isOpen) {
     try {
-      const cached = await cacheClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
-      }
+      cached = await cacheClient.get(cacheKey);
+      observeRedisOperation(metrics, { operation: "get", outcome: "success" });
     } catch (err) {
+      observeRedisOperation(metrics, { operation: "get", outcome: "error" });
+      fallbackReason = "redis_error";
       console.error("[ResourceService] Redis get error for common groups:", err);
     }
+
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (err) {
+        fallbackReason = "redis_error";
+        console.error("[ResourceService] Redis get error for common groups:", err);
+      }
+    }
+
+    if (!fallbackReason) {
+      fallbackReason = "miss";
+    }
+  } else if (!cursor) {
+    fallbackReason = "redis_error";
+  }
+
+  if (fallbackReason) {
+    observeCacheFallback(metrics, { reason: fallbackReason });
   }
 
   const query = {
@@ -448,7 +474,9 @@ async function loadCommonGroups(conversationId, limit = 6, cursor = null, userId
       await cacheClient.set(cacheKey, JSON.stringify(result), {
         EX: 300 // 5 phút
       });
+      observeRedisOperation(metrics, { operation: "set", outcome: "success" });
     } catch (err) {
+      observeRedisOperation(metrics, { operation: "set", outcome: "error" });
       console.error("[ResourceService] Redis set error for common groups:", err);
     }
   }
@@ -464,10 +492,10 @@ async function loadCommonGroups(conversationId, limit = 6, cursor = null, userId
  * @param {string} [userId] - ID người dùng yêu cầu
  * @returns {Promise<Object>} Membership API Payload
  */
-async function loadMembership(conversationId, limit = 6, cursor = null, userId = null) {
+async function loadMembership(conversationId, limit = 6, cursor = null, userId = null, metrics) {
   const isDirect = conversationId.includes("_");
   if (isDirect) {
-    const res = await loadCommonGroups(conversationId, limit, cursor, userId);
+    const res = await loadCommonGroups(conversationId, limit, cursor, userId, metrics);
     return {
       commonGroups: res.items,
       membersPreview: [],
