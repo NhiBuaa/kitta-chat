@@ -340,8 +340,10 @@ test("worker bootstrap consumes JSON jobs and acks successful processing", async
     },
     context: { correlationId: "transport-correlation" },
   }]);
-  assert.equal(logs[0][1], "correlation_context_mismatch");
-  assert.deepEqual(logs[1], [
+  const correlationMismatchLog = logs.find(([, event]) => event === "correlation_context_mismatch");
+  assert.ok(correlationMismatchLog, "expected correlation_context_mismatch log entry");
+  const workerProcessedLog = logs.find(([, event]) => event === "worker_job_processed");
+  assert.deepEqual(workerProcessedLog, [
     "info",
     "worker_job_processed",
     {

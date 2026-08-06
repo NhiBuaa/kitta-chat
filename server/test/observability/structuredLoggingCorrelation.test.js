@@ -54,6 +54,11 @@ test("canonical logger emits isolated JSON lines and omits sensitive fields", as
         logger.info("request_a_finished", {
           path: "/public?token=secret-query",
           token: "secret-token",
+          metadata: {
+            authorization: "sensitive-authorization",
+            safeSibling: "keep-me",
+          },
+          nestedArray: [{ cookie: "sensitive-cookie", other: "keep-array-value" }],
         });
       }),
       runWithCorrelationContext({ requestId: "request-b", correlationId: "correlation-b" }, async () => {
@@ -75,6 +80,8 @@ test("canonical logger emits isolated JSON lines and omits sensitive fields", as
   );
   assert.equal(typeof first.timestamp, "string");
   assert.equal(JSON.stringify(first).includes("secret"), false);
+  assert.deepEqual(first.metadata, { safeSibling: "keep-me" });
+  assert.deepEqual(first.nestedArray, [{ other: "keep-array-value" }]);
   assert.equal(second.requestId, "request-b");
   assert.equal(second.correlationId, "correlation-b");
   assert.equal("userId" in first, false);

@@ -11,7 +11,7 @@ const createWarningLogger = () => {
   const warnings = [];
   return {
     logger: {
-      warn: (event) => warnings.push(event),
+      warn: (event, fields) => warnings.push({ event, ...fields }),
     },
     warnings,
   };
@@ -110,6 +110,16 @@ test("observation adapter failures are best-effort and cannot throw into busines
 
   assert.doesNotThrow(() => metrics.observeSocketConnection({ event: "connected" }));
   assert.equal(warnings[0].event, "metrics_observation_failed");
+
+  const failingLoggerMetrics = createMetricsModule({
+    adapter,
+    logger: {
+      warn() {
+        throw new Error("logger unavailable");
+      },
+    },
+  });
+  assert.doesNotThrow(() => failingLoggerMetrics.observeSocketConnection({ event: "connected" }));
 });
 
 test("high-cardinality identifiers are ignored and never become metric labels", () => {

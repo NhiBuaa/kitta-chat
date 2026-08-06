@@ -1,4 +1,5 @@
 const { ALLOWLISTS, METRIC_CATALOG } = require("./metricCatalog");
+const { logSafely } = require("../../utils/logger");
 
 const has = (values, value) => values.includes(value);
 
@@ -14,9 +15,7 @@ class MetricsModule {
   }
 
   warn(event, details) {
-    if (typeof this.logger?.warn === "function") {
-      this.logger.warn({ event, ...details });
-    }
+    logSafely(this.logger, "warn", event, details);
   }
 
   observe(name, labels, value) {
