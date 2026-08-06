@@ -11,6 +11,9 @@ const conversationPanelRoutes = require("./routes/conversationPanel");
 const sidebarRoutes = require("./routes/sidebar");
 const { connectionManager: defaultRabbitConnectionManager } = require("./queues/rabbitmq");
 const { createRequestLoggingMiddleware } = require("./middlewares/requestLogging");
+const { createMetricsModule } = require("./observability/metrics");
+const { createHttpMetricsMiddleware } = require("./observability/metrics/http/httpMetricsMiddleware");
+const { createMetricsRoute } = require("./observability/metrics/http/metricsRoute");
 const {
   buildHealthPayload,
   buildOpsPayload,
@@ -19,23 +22,33 @@ const {
 } = require("./services/healthService");
 const { logSafely, logger: defaultLogger } = require("./utils/logger");
 const { sendError } = require("./utils/apiResponse");
-const { createMetricsModule } = require("./observability/metrics");
 const saveMessageInBackground = require("./utils/saveMessageInBackground");
+
+const isMetricsEnabled = (value) => String(value).trim().toLowerCase() === "true";
 
 const createApp = ({
   rabbitConnectionManager = defaultRabbitConnectionManager,
   healthChecks = createDefaultHealthChecks({ rabbitConnectionManager }),
   logger = defaultLogger,
   authRateLimits,
-  metricsModule = createMetricsModule(),
+  metricsEnabled: configuredMetricsEnabled = process.env.METRICS_ENABLED,
+  metricsModule: providedMetricsModule,
 } = {}) => {
   const app = express();
+  const metricsEnabled = isMetricsEnabled(configuredMetricsEnabled);
+  const metricsModule = metricsEnabled
+    ? providedMetricsModule || createMetricsModule({ logger })
+    : null;
 
   app.set("metricsModule", metricsModule);
   saveMessageInBackground.configureMetricsModule?.(metricsModule);
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
+  if (metricsModule) {
+    app.set("metricsModule", metricsModule);
+    app.use(createHttpMetricsMiddleware({ metricsModule, logger }));
+  }
   app.use(createRequestLoggingMiddleware({ logger }));
   app.use(express.json({ limit: "10kb" }));
 
@@ -73,6 +86,10 @@ const createApp = ({
     });
     res.status(200).json(payload);
   });
+
+  if (metricsModule) {
+    app.get("/metrics", createMetricsRoute({ metricsModule }));
+  }
 
   app.use("/api/auth", authRoutes.createAuthRouter
     ? authRoutes.createAuthRouter({ rateLimits: authRateLimits })
