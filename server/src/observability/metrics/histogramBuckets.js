@@ -1,0 +1,12 @@
+const HTTP_REQUEST_DURATION_BUCKETS = Object.freeze([
+  0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10,
+]);
+
+const MESSAGE_PERSISTENCE_DURATION_BUCKETS = Object.freeze([
+  0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5,
+]);
+
+module.exports = {
+  HTTP_REQUEST_DURATION_BUCKETS,
+  MESSAGE_PERSISTENCE_DURATION_BUCKETS,
+};

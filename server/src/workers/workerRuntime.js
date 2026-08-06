@@ -1,7 +1,9 @@
 const {
-  getCorrelationId,
   getJobType,
 } = require("../queues/correlation");
+const { resolveWorkerCarrier } = require("../observability/correlation/carrierPolicy");
+const { runWithCorrelationContext } = require("../observability/correlation/asyncContext");
+const { logSafely, logger: defaultLogger } = require("../utils/logger");
 
 const getMaxAttempts = () => Number(process.env.RABBITMQ_MAX_ATTEMPTS || 3);
 
@@ -31,7 +33,7 @@ const publishConfirmed = (channel, queueName, payload, options = {}) =>
 
 const buildDeadLetterPayload = ({ job, error, queueName, correlationId }) => ({
   correlationId,
-  job,
+  job: { ...job, correlationId },
   error: {
     message: error.message,
     failedAt: new Date().toISOString(),
@@ -54,8 +56,9 @@ const getAttempts = (job, message) => {
   return 0;
 };
 
-const buildRetryPayload = ({ job, attempts }) => ({
+const buildRetryPayload = ({ job, attempts, correlationId = job?.correlationId }) => ({
   ...job,
+  correlationId,
   attempts,
 });
 
@@ -86,12 +89,14 @@ const buildWorkerLogFields = ({
   correlationId,
   error,
   maxAttempts,
+  failureStage,
 }) => {
   const fields = {
     queue: queueName,
     jobType: getJobType(job),
     attempt: attempts,
     correlationId,
+    failureStage: failureStage || "none",
   };
 
   if (maxAttempts !== undefined) {
@@ -118,7 +123,7 @@ const startQueueWorker = async ({
   maxAttempts = getMaxAttempts(),
   reconnectDelayMs = Number(process.env.RABBITMQ_WORKER_RECONNECT_DELAY_MS || 1000),
   maxReconnectDelayMs = Number(process.env.RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS || 30000),
-  logger = console,
+  logger = defaultLogger,
 }) => {
   let stopped = false;
   let channel = null;
@@ -129,21 +134,41 @@ const startQueueWorker = async ({
     if (!message) return;
 
     let job = null;
+    let correlationId = null;
+    let failureStage = "parse";
 
     try {
       const parsedMessage = parseJobMessage(message);
-      job = parsedMessage.job;
+      const resolvedCarrier = resolveWorkerCarrier({
+        job: parsedMessage.job,
+        message,
+        logger,
+      });
+      job = resolvedCarrier.job;
+      correlationId = resolvedCarrier.correlationId;
 
       if (parsedMessage.parseError) {
         throw parsedMessage.parseError;
       }
 
-      await processJob(job, message);
+      failureStage = "handler";
+      await runWithCorrelationContext({ correlationId }, () => processJob(job, message));
       channel.ack(message);
+      logSafely(logger, "info", "worker_job_processed", buildWorkerLogFields({
+        queueName,
+        job,
+        attempts: getAttempts(job, message),
+        correlationId,
+        failureStage: "none",
+      }));
     } catch (error) {
       try {
         const attempts = getAttempts(job, message);
-        const correlationId = getCorrelationId(job, message);
+        if (!correlationId) {
+          const resolvedCarrier = resolveWorkerCarrier({ job, message, logger });
+          job = resolvedCarrier.job;
+          correlationId = resolvedCarrier.correlationId;
+        }
         const poisonMessage = job?.parseFailed === true;
         const failureFields = buildWorkerLogFields({
           queueName,
@@ -151,13 +176,16 @@ const startQueueWorker = async ({
           attempts,
           correlationId,
           error,
+          failureStage,
         });
 
-        logger.error?.(poisonMessage ? "worker_job_poison" : "worker_job_failed", failureFields);
+        logSafely(logger, "error", poisonMessage ? "worker_job_poison" : "worker_job_failed", failureFields);
 
         if (!poisonMessage && attempts < maxAttempts) {
           const nextAttempts = attempts + 1;
-          logger.warn?.(
+          logSafely(
+            logger,
+            "warn",
             "worker_job_retry",
             buildWorkerLogFields({
               queueName,
@@ -166,20 +194,24 @@ const startQueueWorker = async ({
               correlationId,
               error,
               maxAttempts,
+              failureStage: "retry_publish",
             }),
           );
 
+          failureStage = "retry_publish";
           await publishConfirmed(
             channel,
             `${queueName}.retry`,
-            buildRetryPayload({ job, attempts: nextAttempts }),
+            buildRetryPayload({ job, attempts: nextAttempts, correlationId }),
             {
               correlationId,
               headers: { attempts: nextAttempts, correlationId },
             },
           );
         } else {
-          logger.error?.(
+          logSafely(
+            logger,
+            "error",
             "worker_job_dlq",
             buildWorkerLogFields({
               queueName,
@@ -188,9 +220,11 @@ const startQueueWorker = async ({
               correlationId,
               error,
               maxAttempts,
+              failureStage: "dlq_publish",
             }),
           );
 
+          failureStage = "dlq_publish";
           await publishConfirmed(
             channel,
             `${queueName}.dlq`,
@@ -204,7 +238,13 @@ const startQueueWorker = async ({
 
         channel.ack(message);
       } catch (routeError) {
-        logger.error?.(`[Worker] queue=${queueName} failure routing publish failed:`, routeError);
+        logSafely(logger, "error", "worker_failure_routing_publish_failed", {
+          queue: queueName,
+          jobType: getJobType(job),
+          correlationId,
+          failureStage,
+          reason: routeError?.message,
+        });
       }
     }
   };
@@ -215,20 +255,24 @@ const startQueueWorker = async ({
     connectionManager.reset?.();
 
     while (!stopped) {
-      logger.warn?.(
-        `[Worker] queue=${queueName} RabbitMQ connection lost; reconnecting in ${reconnectDelay}ms`,
-        reason,
-      );
+      logSafely(logger, "warn", "worker_connection_reconnecting", {
+        queue: queueName,
+        reconnectDelayMs: reconnectDelay,
+        reason: reason?.message,
+      });
       await sleep(reconnectDelay);
 
       try {
         await connectAndConsume();
         reconnectDelay = reconnectDelayMs;
         reconnecting = false;
-        logger.log?.(`[Worker] queue=${queueName} consumer re-registered after reconnect`);
+        logSafely(logger, "info", "worker_consumer_reregistered", { queue: queueName });
         return;
       } catch (error) {
-        logger.error?.(`[Worker] queue=${queueName} reconnect failed:`, error);
+        logSafely(logger, "error", "worker_reconnect_failed", {
+          queue: queueName,
+          reason: error?.message,
+        });
         reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelayMs);
         connectionManager.reset?.();
       }

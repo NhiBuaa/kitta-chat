@@ -19,15 +19,15 @@ test("processAuditJob records message.created audit/statistics events", async ()
     },
     {
       logger: {
-        log(message, payload) {
-          logs.push({ message, payload });
+        info(event, fields) {
+          logs.push({ event, fields });
         },
       },
     },
   );
 
   assert.deepEqual(result, { success: true });
-  assert.equal(logs[0].message, "[AuditWorker] message.created");
-  assert.equal(logs[0].payload.messageId, "msg-1");
-  assert.equal(logs[0].payload.conversationId, "user-1_user-2");
+  assert.equal(logs[0].event, "audit_message_created");
+  assert.equal(logs[0].fields.messageId, "msg-1");
+  assert.equal(logs[0].fields.conversationId, "user-1_user-2");
 });

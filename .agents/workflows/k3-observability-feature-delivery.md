@@ -29,7 +29,7 @@
 
 ## Current State
 
-The K3 specification, Design, `codebase-design`, decomposition, and frontier acceptance preparation are complete. The current frontier is MetricsModule Issue #46 and Structured Logging/Correlation Issue #45. Manual-acceptance guide revision v1 is locked and user-approved for both frontier tickets. The workflow is suspended before implementation at `C:/Users/Nhi/AppData/Local/Temp/agent-handoffs/k3-observability-feature-delivery.json`.
+The K3 specification, Design, `codebase-design`, decomposition, and the first implementation frontier are complete. MetricsModule Issue #46 and Structured Logging/Correlation Issue #45 both passed locked manual acceptance with explicit human approval and are closed on GitHub. With both blockers complete, the recomputed frontier is #47, #48, #49, #50, and #51; none of those tickets has started and their acceptance guides still require preparation and approval. The user explicitly authorized a publishing checkpoint for the accepted #46/#45 implementation: commit, push, pull request, merge to `main`, and local synchronization.
 
 ## Implementation Layout Contract
 
@@ -105,6 +105,11 @@ Current frontier: #46 and #45.
 20. Human approval: user approved guide v1 for Issues #46 and #45; implementation and execution intentionally deferred to the next session.
 21. Suspension attempt 1: handoff writer rejected the orchestration-shaped draft because `next_valid_transition` had not yet been mapped to the Resume Contract schema; no artifact was published.
 22. Suspension retry: exact Resume Contract schema was written and validated at `C:/Users/Nhi/AppData/Local/Temp/agent-handoffs/k3-observability-feature-delivery.json`.
+23. Implementation of Issue #46 completed: `prom-client@15.1.3` was pinned; the ADR-authoritative MetricsModule, catalog, buckets, Prometheus adapter, in-memory adapter, and contract tests were added. Focused tests passed 5/5 and the full server suite passed 326/326. Manual acceptance has not yet been executed because the run requires explicit human approval of the observed evaluation.
+24. Manual acceptance for Issue #46 completed on Node `v22.23.2`: MA-46-01 through MA-46-06 passed, the user explicitly approved the observed run, and append-only Evaluation `k3-issue-46-v1-20260806T094326+0700` was recorded in `.agents/manual-tests/k3-observability/metrics-module-v1.evaluations.jsonl`.
+25. Advance and Issue #45 implementation completed: GitHub Issue #46 was closed after its accepted Evaluation; the recomputed frontier is #45, #50, and #51; only #45 had a locked approved guide, so it was implemented through the canonical logger, bounded request context, producer/worker carrier policy, retry/DLQ propagation, and structured worker logging seams. Focused Node 22 tests passed 48/48, the final correlation/HTTP/RabbitMQ subset passed 34/34 after the mounted-path correction, and the full server suite passed 336/336. No #50 or #51 implementation began.
+26. Manual acceptance for Issue #45 completed on Node `v22.23.2`: MA-45-01 through MA-45-06 passed, the user explicitly approved the run, and append-only Evaluation `k3-issue-45-v1-20260806T102203+0700` was recorded in `.agents/manual-tests/k3-observability/structured-logging-correlation-v1.evaluations.jsonl`.
+27. Issue #45 was closed after its accepted Evaluation. Frontier recomputation opened #47, #48, #49, #50, and #51 as unblocked tickets. The user authorized publishing the accepted #46/#45 checkpoint through a commit, push, pull request, merge to `main`, and local fast-forward synchronization.
 
 ## Blockers
 
@@ -112,4 +117,4 @@ Current frontier: #46 and #45.
 
 ## Next Valid Transition
 
-In the next session, resume `feature-delivery`, verify locked guide revision v1, then call `implement` for Issue #46 (MetricsModule) before implementing Issue #45. Do not execute acceptance until each corresponding implementation result is complete.
+After the authorized publishing checkpoint is merged and local `main` is synchronized, prepare locked manual-acceptance guides for frontier Issues #47, #48, #49, #50, and #51 and obtain explicit human approval before implementing any of them.

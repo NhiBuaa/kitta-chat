@@ -13,6 +13,7 @@ const { startQueueWorker } = require("./workerRuntime");
 const { createSocketEmitter } = require("../socket/emitter");
 const { cacheClient, connectCacheRedis } = require("../config/redis");
 const { validateWorkerEnv } = require("../config/env");
+const { logger } = require("../utils/logger");
 
 dotenv.config();
 
@@ -93,7 +94,10 @@ const cleanupSourceObject = async (deps, job) => {
   try {
     await deps.s3Service.deleteObject(job.source.key);
   } catch (error) {
-    console.warn(`[ImageWorker] failed to delete source object ${job.source.key}:`, error.message);
+    logger.warn("image_worker_source_cleanup_failed", {
+      sourceKey: job.source.key,
+      reason: error.message,
+    });
   }
 };
 
@@ -105,7 +109,7 @@ const cleanupObjectKey = async (deps, key) => {
   try {
     await deps.s3Service.deleteObject(key);
   } catch (error) {
-    console.warn(`[ImageWorker] failed to delete object ${key}:`, error.message);
+    logger.warn("image_worker_object_cleanup_failed", { objectKey: key, reason: error.message });
   }
 };
 
@@ -265,10 +269,10 @@ const startImageWorker = async () => {
     processJob: async (job) => {
       await processImageJob(job, { sharp, s3Service, FileModel, UserModel, invalidateUserProfile, httpClient: axios, io });
     },
-    logger: console,
+    logger,
   });
 
-  console.log(`[ImageWorker] consuming queue=${IMAGE_JOB_QUEUE}`);
+  logger.info("image_worker_consuming", { queue: IMAGE_JOB_QUEUE });
   return worker;
 };
 
@@ -279,7 +283,7 @@ if (require.main === module) {
   const shutdown = async (signal) => {
     if (shuttingDown) return;
     shuttingDown = true;
-    console.log(`[ImageWorker] received ${signal}, shutting down...`);
+    logger.info("image_worker_shutdown_started", { signal });
 
     await workerRuntime?.stop?.().catch(() => {});
     await closeRabbitMQ().catch(() => {});
@@ -297,7 +301,7 @@ if (require.main === module) {
   process.on("SIGINT", () => shutdown("SIGINT"));
 
   startImageWorker().catch(async (error) => {
-    console.error("[ImageWorker] fatal:", error);
+    logger.error("image_worker_fatal", { reason: error?.message });
     await closeRabbitMQ().catch(() => {});
     process.exit(1);
   }).then((worker) => {

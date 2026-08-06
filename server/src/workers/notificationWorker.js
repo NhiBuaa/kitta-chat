@@ -5,6 +5,7 @@ const { NOTIFICATION_EMAIL_QUEUE } = require("../queues/notificationJobs");
 const { closeRabbitMQ, connectionManager } = require("../queues/rabbitmq");
 const { startQueueWorker } = require("./workerRuntime");
 const { validateWorkerEnv } = require("../config/env");
+const { logger } = require("../utils/logger");
 
 dotenv.config();
 
@@ -49,10 +50,10 @@ const startNotificationWorker = async () => {
     connectionManager,
     prefetch: workerConfig.workerConcurrency,
     processJob: processNotificationJob,
-    logger: console,
+    logger,
   });
 
-  console.log(`[NotificationWorker] consuming queue=${NOTIFICATION_EMAIL_QUEUE}`);
+  logger.info("notification_worker_consuming", { queue: NOTIFICATION_EMAIL_QUEUE });
   return worker;
 };
 
@@ -63,7 +64,7 @@ if (require.main === module) {
   const shutdown = async (signal) => {
     if (shuttingDown) return;
     shuttingDown = true;
-    console.log(`[NotificationWorker] received ${signal}, shutting down...`);
+    logger.info("notification_worker_shutdown_started", { signal });
     await workerRuntime?.stop?.().catch(() => {});
     await closeRabbitMQ().catch(() => {});
     process.exit(0);
@@ -73,7 +74,7 @@ if (require.main === module) {
   process.on("SIGINT", () => shutdown("SIGINT"));
 
   startNotificationWorker().catch(async (error) => {
-    console.error("[NotificationWorker] fatal:", error);
+    logger.error("notification_worker_fatal", { reason: error?.message });
     await closeRabbitMQ().catch(() => {});
     process.exit(1);
   }).then((worker) => {
