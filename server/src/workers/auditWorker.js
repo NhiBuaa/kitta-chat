@@ -4,12 +4,13 @@ const { AUDIT_EVENTS_QUEUE } = require("../queues/auditJobs");
 const { closeRabbitMQ, connectionManager } = require("../queues/rabbitmq");
 const { startQueueWorker } = require("./workerRuntime");
 const { validateWorkerEnv } = require("../config/env");
+const { logSafely, logger: defaultLogger } = require("../utils/logger");
 
 dotenv.config();
 
-const processAuditJob = async (job, { logger = console } = {}) => {
+const processAuditJob = async (job, { logger = defaultLogger } = {}) => {
   if (job.type === "message.created") {
-    logger.log("[AuditWorker] message.created", {
+    logSafely(logger, "info", "audit_message_created", {
       messageId: job.messageId,
       conversationId: job.conversationId,
       senderId: job.senderId,
@@ -33,10 +34,10 @@ const startAuditWorker = async () => {
     connectionManager,
     prefetch: workerConfig.workerConcurrency,
     processJob: processAuditJob,
-    logger: console,
+    logger: defaultLogger,
   });
 
-  console.log(`[AuditWorker] consuming queue=${AUDIT_EVENTS_QUEUE}`);
+  defaultLogger.info("audit_worker_consuming", { queue: AUDIT_EVENTS_QUEUE });
   return worker;
 };
 
@@ -47,7 +48,7 @@ if (require.main === module) {
   const shutdown = async (signal) => {
     if (shuttingDown) return;
     shuttingDown = true;
-    console.log(`[AuditWorker] received ${signal}, shutting down...`);
+    defaultLogger.info("audit_worker_shutdown_started", { signal });
     await workerRuntime?.stop?.().catch(() => {});
     await closeRabbitMQ().catch(() => {});
     process.exit(0);
@@ -57,7 +58,7 @@ if (require.main === module) {
   process.on("SIGINT", () => shutdown("SIGINT"));
 
   startAuditWorker().catch(async (error) => {
-    console.error("[AuditWorker] fatal:", error);
+    defaultLogger.error("audit_worker_fatal", { reason: error?.message });
     await closeRabbitMQ().catch(() => {});
     process.exit(1);
   }).then((worker) => {

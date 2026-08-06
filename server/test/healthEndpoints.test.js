@@ -3,12 +3,15 @@ const test = require("node:test");
 
 const { createApp } = require("../src/app");
 
-const createServer = async ({ mongoStatus, redisStatus, rabbitmqStatus }) => {
+const createServer = async ({ mongoStatus, redisStatus, rabbitmqStatus, logger }) => {
   const logs = [];
   const app = createApp({
-    logger: {
+    logger: logger || {
       info(event, fields) {
-        logs.push({ event, fields });
+        logs.push({ level: "info", event, fields });
+      },
+      error(event, fields) {
+        logs.push({ level: "error", event, fields });
       },
     },
     healthChecks: {
@@ -36,6 +39,7 @@ const createServer = async ({ mongoStatus, redisStatus, rabbitmqStatus }) => {
       return { response, body: await response.json() };
     },
     async close() {
+      server.closeAllConnections?.();
       await new Promise((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
       });
@@ -184,5 +188,38 @@ test("/ops returns safe operational signals without exposing sensitive config", 
         process.env[key] = value;
       }
     }
+  }
+});
+
+test("request error and completion logs share the canonical ID without raw query data", async () => {
+  const server = await createServer({
+    mongoStatus: { status: "connected" },
+    redisStatus: { status: "connected" },
+    rabbitmqStatus: { status: "connected" },
+  });
+
+  try {
+    const response = await fetch(`${server.baseUrl}/healthz?token=query-secret`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-request-id": "request-error-1",
+      },
+      body: "{bad json",
+    });
+    await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(response.headers.get("x-request-id"), "request-error-1");
+    const errorLog = server.logs.find((entry) => entry.event === "http_request_error");
+    const completionLog = server.logs.find((entry) => entry.event === "http_request");
+    assert.equal(errorLog.fields.requestId, "request-error-1");
+    assert.equal(completionLog.fields.requestId, "request-error-1");
+    assert.equal(errorLog.fields.path, "/healthz");
+    assert.equal(completionLog.fields.path, "/healthz");
+    assert.equal(JSON.stringify(server.logs).includes("query-secret"), false);
+    assert.equal(JSON.stringify(server.logs).includes("{bad json"), false);
+  } finally {
+    await server.close();
   }
 });

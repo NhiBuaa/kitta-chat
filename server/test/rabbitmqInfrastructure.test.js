@@ -8,6 +8,7 @@ const { createProducer } = require("../src/queues/producer");
 const { startQueueWorker } = require("../src/workers/workerRuntime");
 const { getRabbitUrl } = require("../src/queues/connectionManager");
 const { getRetryDelayMs, QUEUE_TOPOLOGY } = require("../src/queues/topology");
+const { getCorrelationContext } = require("../src/observability/correlation/asyncContext");
 
 const createFakeAmqp = () => {
   const calls = {
@@ -183,7 +184,11 @@ test("producer publishes JSON jobs as persistent messages with correlation metad
   });
   const producer = createProducer({ connectionManager: manager });
 
-  await producer.publish(IMAGE_JOB_QUEUE, { type: "chat-image", requestId: "req-1" });
+  await producer.publish(
+    IMAGE_JOB_QUEUE,
+    { type: "chat-image", requestId: "req-1" },
+    { correlationId: "caller-must-not-override", headers: { correlationId: "wrong", source: "api" } },
+  );
 
   assert.deepEqual(amqp.calls.sendToQueue, [
     {
@@ -195,6 +200,7 @@ test("producer publishes JSON jobs as persistent messages with correlation metad
         correlationId: "req-1",
         headers: {
           correlationId: "req-1",
+          source: "api",
         },
       },
     },
@@ -290,6 +296,7 @@ test("image queue publishes image jobs to the image processing queue", async () 
 test("worker bootstrap consumes JSON jobs and acks successful processing", async () => {
   const amqp = createFakeAmqp();
   const processed = [];
+  const logs = [];
   const manager = createRabbitConnectionManager({
     amqp,
     url: "amqp://test",
@@ -301,18 +308,50 @@ test("worker bootstrap consumes JSON jobs and acks successful processing", async
     connectionManager: manager,
     prefetch: 3,
     processJob: async (job) => {
-      processed.push(job);
+      processed.push({ job, context: getCorrelationContext() });
+    },
+    logger: {
+      info: (...args) => logs.push(["info", ...args]),
+      warn: (...args) => logs.push(["warn", ...args]),
+      error: (...args) => logs.push(["error", ...args]),
     },
   });
 
   const message = {
-    content: Buffer.from(JSON.stringify({ type: "chat-image", requestId: "req-1" })),
+    content: Buffer.from(JSON.stringify({
+      type: "chat-image",
+      requestId: "req-1",
+      correlationId: "payload-correlation",
+    })),
+    properties: {
+      correlationId: "transport-correlation",
+      headers: { correlationId: "header-correlation" },
+    },
   };
   await amqp.calls.consume[0].handler(message);
 
   assert.deepEqual(amqp.calls.prefetch, [3]);
   assert.equal(amqp.calls.consume[0].queueName, IMAGE_JOB_QUEUE);
-  assert.deepEqual(processed, [{ type: "chat-image", requestId: "req-1" }]);
+  assert.deepEqual(processed, [{
+    job: {
+      type: "chat-image",
+      requestId: "req-1",
+      correlationId: "transport-correlation",
+    },
+    context: { correlationId: "transport-correlation" },
+  }]);
+  assert.equal(logs[0][1], "correlation_context_mismatch");
+  assert.deepEqual(logs[1], [
+    "info",
+    "worker_job_processed",
+    {
+      queue: IMAGE_JOB_QUEUE,
+      jobType: "chat-image",
+      attempt: 0,
+      correlationId: "transport-correlation",
+      failureStage: "none",
+    },
+  ]);
   assert.deepEqual(amqp.calls.ack, [message]);
   assert.deepEqual(amqp.calls.nack, []);
 });
@@ -343,6 +382,10 @@ test("worker bootstrap publishes failed jobs to the retry queue before max attem
     content: Buffer.from(
       JSON.stringify({ type: "chat-image", requestId: "req-1", correlationId: "corr-1" }),
     ),
+    properties: {
+      correlationId: "transport-corr-1",
+      headers: { correlationId: "header-corr-1" },
+    },
   };
   await amqp.calls.consume[0].handler(message);
 
@@ -350,24 +393,25 @@ test("worker bootstrap publishes failed jobs to the retry queue before max attem
   assert.deepEqual(amqp.calls.sendToQueue[0].payload, {
     type: "chat-image",
     requestId: "req-1",
-    correlationId: "corr-1",
+    correlationId: "transport-corr-1",
     attempts: 1,
   });
   assert.equal(amqp.calls.sendToQueue[0].options.headers.attempts, 1);
-  assert.equal(amqp.calls.sendToQueue[0].options.headers.correlationId, "corr-1");
-  assert.equal(amqp.calls.sendToQueue[0].options.correlationId, "corr-1");
-  assert.deepEqual(logs[0], [
+  assert.equal(amqp.calls.sendToQueue[0].options.headers.correlationId, "transport-corr-1");
+  assert.equal(amqp.calls.sendToQueue[0].options.correlationId, "transport-corr-1");
+  assert.deepEqual(logs.find((entry) => entry[1] === "worker_job_failed"), [
     "error",
     "worker_job_failed",
     {
       queue: IMAGE_JOB_QUEUE,
       jobType: "chat-image",
       attempt: 0,
-      correlationId: "corr-1",
+      correlationId: "transport-corr-1",
+      failureStage: "handler",
       reason: "boom",
     },
   ]);
-  assert.deepEqual(logs[1], [
+  assert.deepEqual(logs.find((entry) => entry[1] === "worker_job_retry"), [
     "warn",
     "worker_job_retry",
     {
@@ -375,7 +419,8 @@ test("worker bootstrap publishes failed jobs to the retry queue before max attem
       jobType: "chat-image",
       attempt: 1,
       maxAttempts: 3,
-      correlationId: "corr-1",
+      correlationId: "transport-corr-1",
+      failureStage: "retry_publish",
       reason: "boom",
     },
   ]);
@@ -414,7 +459,10 @@ test("worker bootstrap publishes failed jobs to DLQ at max attempts", async () =
         attempts: 3,
       }),
     ),
-    properties: { headers: { attempts: 3, correlationId: "corr-1" } },
+    properties: {
+      correlationId: "transport-corr-1",
+      headers: { attempts: 3, correlationId: "header-corr-1" },
+    },
   };
   await amqp.calls.consume[0].handler(message);
 
@@ -422,28 +470,29 @@ test("worker bootstrap publishes failed jobs to DLQ at max attempts", async () =
   assert.deepEqual(amqp.calls.sendToQueue[0].payload.job, {
     type: "chat-image",
     requestId: "req-1",
-    correlationId: "corr-1",
+    correlationId: "transport-corr-1",
     attempts: 3,
   });
-  assert.equal(amqp.calls.sendToQueue[0].payload.correlationId, "corr-1");
-  assert.equal(amqp.calls.sendToQueue[0].payload.error.correlationId, "corr-1");
+  assert.equal(amqp.calls.sendToQueue[0].payload.correlationId, "transport-corr-1");
+  assert.equal(amqp.calls.sendToQueue[0].payload.error.correlationId, "transport-corr-1");
   assert.equal(amqp.calls.sendToQueue[0].payload.error.message, "boom");
   assert.equal(amqp.calls.sendToQueue[0].payload.error.originalQueue, IMAGE_JOB_QUEUE);
   assert.match(amqp.calls.sendToQueue[0].payload.error.failedAt, /^\d{4}-\d{2}-\d{2}T/);
-  assert.equal(amqp.calls.sendToQueue[0].options.headers.correlationId, "corr-1");
-  assert.equal(amqp.calls.sendToQueue[0].options.correlationId, "corr-1");
-  assert.deepEqual(logs[0], [
+  assert.equal(amqp.calls.sendToQueue[0].options.headers.correlationId, "transport-corr-1");
+  assert.equal(amqp.calls.sendToQueue[0].options.correlationId, "transport-corr-1");
+  assert.deepEqual(logs.find((entry) => entry[1] === "worker_job_failed"), [
     "error",
     "worker_job_failed",
     {
       queue: IMAGE_JOB_QUEUE,
       jobType: "chat-image",
       attempt: 3,
-      correlationId: "corr-1",
+      correlationId: "transport-corr-1",
+      failureStage: "handler",
       reason: "boom",
     },
   ]);
-  assert.deepEqual(logs[1], [
+  assert.deepEqual(logs.find((entry) => entry[1] === "worker_job_dlq"), [
     "error",
     "worker_job_dlq",
     {
@@ -451,7 +500,8 @@ test("worker bootstrap publishes failed jobs to DLQ at max attempts", async () =
       jobType: "chat-image",
       attempt: 3,
       maxAttempts: 3,
-      correlationId: "corr-1",
+      correlationId: "transport-corr-1",
+      failureStage: "dlq_publish",
       reason: "boom",
     },
   ]);
@@ -493,12 +543,14 @@ test("worker bootstrap routes malformed JSON poison messages directly to DLQ", a
     type: "poison",
     raw: "{bad json",
     parseFailed: true,
+    correlationId: "corr-poison-1",
   });
   assert.match(amqp.calls.sendToQueue[0].payload.error.message, /JSON/);
   assert.equal(amqp.calls.sendToQueue[0].payload.error.originalQueue, IMAGE_JOB_QUEUE);
   assert.equal(amqp.calls.sendToQueue[0].options.correlationId, "corr-poison-1");
   assert.equal(amqp.calls.sendToQueue[0].options.headers.correlationId, "corr-poison-1");
-  assert.deepEqual(logs[0], [
+  const poisonLog = logs.find((entry) => entry[1] === "worker_job_poison");
+  assert.deepEqual(poisonLog, [
     "error",
     "worker_job_poison",
     {
@@ -506,10 +558,12 @@ test("worker bootstrap routes malformed JSON poison messages directly to DLQ", a
       jobType: "poison",
       attempt: 0,
       correlationId: "corr-poison-1",
-      reason: logs[0][2].reason,
+      failureStage: "parse",
+      reason: poisonLog[2].reason,
     },
   ]);
-  assert.deepEqual(logs[1], [
+  const dlqLog = logs.find((entry) => entry[1] === "worker_job_dlq");
+  assert.deepEqual(dlqLog, [
     "error",
     "worker_job_dlq",
     {
@@ -518,7 +572,8 @@ test("worker bootstrap routes malformed JSON poison messages directly to DLQ", a
       attempt: 0,
       maxAttempts: 3,
       correlationId: "corr-poison-1",
-      reason: logs[1][2].reason,
+      failureStage: "dlq_publish",
+      reason: dlqLog[2].reason,
     },
   ]);
   assert.deepEqual(amqp.calls.ack, [message]);
@@ -623,4 +678,38 @@ test("worker bootstrap re-registers the consumer after channel close", async () 
   assert.equal(amqp.calls.consume[1].queueName, IMAGE_JOB_QUEUE);
 
   await worker.stop();
+});
+
+test("worker logging failures do not change processing or acknowledgement", async () => {
+  const amqp = createFakeAmqp();
+  const processed = [];
+  const manager = createRabbitConnectionManager({
+    amqp,
+    url: "amqp://test",
+    queues: [{ name: IMAGE_JOB_QUEUE, options: { durable: true } }],
+  });
+  const failingLogger = {
+    info() { throw new Error("logger down"); },
+    warn() { throw new Error("logger down"); },
+    error() { throw new Error("logger down"); },
+  };
+
+  await startQueueWorker({
+    queueName: IMAGE_JOB_QUEUE,
+    connectionManager: manager,
+    processJob: async (job) => processed.push(job.correlationId),
+    logger: failingLogger,
+  });
+  const message = {
+    content: Buffer.from(JSON.stringify({
+      type: "chat-image",
+      requestId: "request-id",
+      correlationId: "payload-id",
+    })),
+    properties: { correlationId: "transport-id" },
+  };
+
+  await assert.doesNotReject(amqp.calls.consume[0].handler(message));
+  assert.deepEqual(processed, ["transport-id"]);
+  assert.deepEqual(amqp.calls.ack, [message]);
 });

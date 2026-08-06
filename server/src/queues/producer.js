@@ -1,4 +1,5 @@
-const { createCorrelationId, withCorrelation } = require("./correlation");
+const { createCorrelationId } = require("./correlation");
+const { buildProducerCarrier } = require("../observability/correlation/carrierPolicy");
 
 const createProducer = ({
   connectionManager,
@@ -6,23 +7,20 @@ const createProducer = ({
 }) => ({
   async publish(queueName, payload, options = {}) {
     const channel = await connectionManager.getChannel();
-    const { payload: correlatedPayload, correlationId } = withCorrelation(
-      payload,
-      correlationIdGenerator,
-    );
+    const carrier = buildProducerCarrier({ payload, generator: correlationIdGenerator });
 
     await new Promise((resolve, reject) => {
       channel.sendToQueue(
         queueName,
-        Buffer.from(JSON.stringify(correlatedPayload)),
+        Buffer.from(JSON.stringify(carrier.payload)),
         {
           contentType: "application/json",
           persistent: true,
-          correlationId,
           ...options,
+          correlationId: carrier.correlationId,
           headers: {
             ...(options.headers || {}),
-            correlationId,
+            correlationId: carrier.correlationId,
           },
         },
         (error) => {

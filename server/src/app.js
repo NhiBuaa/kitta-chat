@@ -17,7 +17,7 @@ const {
   buildReadinessPayload,
   createDefaultHealthChecks,
 } = require("./services/healthService");
-const { logger: defaultLogger } = require("./utils/logger");
+const { logSafely, logger: defaultLogger } = require("./utils/logger");
 const { sendError } = require("./utils/apiResponse");
 
 const createApp = ({
@@ -45,7 +45,8 @@ const createApp = ({
       origin: true,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+      exposedHeaders: ["X-Request-ID"],
     }),
   );
 
@@ -87,10 +88,10 @@ const createApp = ({
   });
 
   app.use((err, req, res, next) => {
-    logger.error("http_request_error", {
+    logSafely(logger, "error", "http_request_error", {
       requestId: req.requestId,
       method: req.method,
-      path: req.originalUrl,
+      path: (req.originalUrl || req.url).split("?", 1)[0],
       userId: req.user?.id || req.user?._id,
       reason: err.message,
     });
