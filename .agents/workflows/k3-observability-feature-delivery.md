@@ -4,7 +4,7 @@
 
 - Workflow: `feature-delivery`
 - Action: `start`
-- Commit policy: `none`
+- Commit policy: `final` (explicitly authorized by the user after feature-delivery completion)
 - Requested outcome: deliver K3 observability end to end.
 - Authorized design helpers: `grill-with-docs`, `to-spec`, and `to-tickets` when runtime-reachable.
 
@@ -29,7 +29,7 @@
 
 ## Current State
 
-The K3 specification, Design, `codebase-design`, decomposition, and the first implementation frontier are complete. MetricsModule Issue #46 and Structured Logging/Correlation Issue #45 both passed locked manual acceptance with explicit human approval and are closed on GitHub. With both blockers complete, the recomputed frontier is #47, #48, #49, #50, and #51; none of those tickets has started and their acceptance guides still require preparation and approval. The user explicitly authorized a publishing checkpoint for the accepted #46/#45 implementation: commit, push, pull request, merge to `main`, and local synchronization.
+The K3 specification, Design, `codebase-design`, decomposition, and producer implementation frontier are complete. Issues #45, #46, #47, #48, #49, #50, and #51 passed their locked manual acceptance with explicit human approval, were closed on GitHub, and were merged into `main`. The synchronized base is `a82d012fca350641d1876f901b8f863de3185499`; the current remote `github/main` is `743a37958cebc92d7c0f1bfe259886d3df468748` and its intervening K3 changes are only other tickets' manual-acceptance artifacts. Issue #52 is the only open K3 ticket and is unblocked. This session is isolated on branch `codex/k3-issue-52`; its dashboard/E2E guide v1 was explicitly approved and locked. Issue #52 implementation now contains the repository-owned dashboard, static three-replica scrape contract, operator guide, CI artifact contracts, direct per-replica `/metrics` smoke test, and REST-to-worker/persistence aggregate integration tests. Manual acceptance runs `k3-issue-52-v1-20260806T200827+0700` and `k3-issue-52-v1-remediation-20260806T212434+0700` are append-only evidence. The two prior final-review findings were remediated: the operator guide now documents exact Node 22 fixture commands, replica-role mapping, evidence format, and cleanup, and the smoke harness restores `METRICS_ENABLED` once around the whole test. The approved post-remediation execution of locked guide v1 is green on Node `v22.23.2`: focused checks 14/14 and 4/4, full CI 99/99, server tests 390/390, and `ci:validate` exit 0. Final `code-review` approved the remediated diff with zero Critical and Major findings. The user explicitly authorized the final publication sequence: stage, commit, rebase on current `github/main`, push, create/merge a pull request, synchronize `main`, and close Issue #52.
 
 ## Implementation Layout Contract
 
@@ -56,7 +56,7 @@ Approved test seams:
 - #47 — RabbitMQ queue metrics and critical alert — blocked by #46 and #45; blocks #52.
 - #52 — Grafana dashboard and E2E validation — blocked by #49, #48, #50, #51, and #47.
 
-Current frontier: #46 and #45.
+Current frontier: #52.
 
 ## Completed Transitions
 
@@ -80,6 +80,18 @@ Current frontier: #46 and #45.
 - `to-tickets` completed: Issues #45 through #52 contain the approved eight-ticket graph, real `blocked_by`/`blocks` references, and `ready-for-agent`; readback matched every published body.
 - `manual-acceptance` preparation completed for frontier #46 and #45 using `test-craft` cases; guide revision v1 is locked and user-approved.
 - `session-continuity` suspended the workflow before implementation and published a validated Resume Contract.
+- Issues #47, #48, #49, #50, and #51 were manually accepted, closed, merged, and verified in the synchronized `main` checkout at `a82d012fca350641d1876f901b8f863de3185499`.
+- Issue #52 was re-read from GitHub as `OPEN` with `ready-for-agent`; all five declared blockers are satisfied and no issue comments add constraints.
+- The resumed checkout was switched to the isolated branch `codex/k3-issue-52`.
+- `manual-acceptance`/`test-craft` preparation produced the frozen v1 content at `.agents/manual-tests/k3-observability/grafana-dashboard-e2e-v1.md`; approval was pending at the preparation checkpoint.
+- The user explicitly approved and locked guide v1 at `2026-08-06T19:30:24+07:00`.
+- Issue #52 implementation added the dashboard, scrape contract, operator guide, static dashboard/scrape validation, direct metrics-replica smoke coverage, and correlation/aggregate integration coverage. Focused suites, CI tests (99/99), server tests (390/390), and `ci:validate` are green.
+- Manual acceptance for Issue #52 completed on Node `v22.23.2`: MA-52-01 through MA-52-10 passed, the user explicitly approved the observed run, and append-only Evaluation `k3-issue-52-v1-20260806T200827+0700` was recorded in `.agents/manual-tests/k3-observability/grafana-dashboard-e2e-v1.evaluations.jsonl`.
+- Final Issue #52 code review completed on the pinned worktree diff with `REQUEST_CHANGES`: zero critical, one major (operator guide reproducibility/cleanup gap against MA-52-09), and one minor (nondeterministic `METRICS_ENABLED` restoration in the replica smoke test).
+- The two final-review findings were remediated in the approved Issue #52 slice. Post-remediation focused checks passed 14/14 and 4/4; Node 22 CI passed 99/99; the server suite passed 390/390; `ci:validate` exited 0; and `git diff --check` exited 0.
+- Manual acceptance rerun for Issue #52 completed on Node `v22.23.2`: MA-52-01 through MA-52-10 passed, the user explicitly approved the post-remediation run, and append-only Evaluation `k3-issue-52-v1-remediation-20260806T212434+0700` was recorded in `.agents/manual-tests/k3-observability/grafana-dashboard-e2e-v1.evaluations.jsonl`.
+- Final Issue #52 code review completed on the remediated pinned worktree diff with `APPROVE`: zero Critical, zero Major, and no findings.
+- The user explicitly authorized the final publication sequence, including force-staging the new ignored Evaluation history so the guide's referenced acceptance evidence is versioned.
 
 ## Attempt History
 
@@ -110,11 +122,19 @@ Current frontier: #46 and #45.
 25. Advance and Issue #45 implementation completed: GitHub Issue #46 was closed after its accepted Evaluation; the recomputed frontier is #45, #50, and #51; only #45 had a locked approved guide, so it was implemented through the canonical logger, bounded request context, producer/worker carrier policy, retry/DLQ propagation, and structured worker logging seams. Focused Node 22 tests passed 48/48, the final correlation/HTTP/RabbitMQ subset passed 34/34 after the mounted-path correction, and the full server suite passed 336/336. No #50 or #51 implementation began.
 26. Manual acceptance for Issue #45 completed on Node `v22.23.2`: MA-45-01 through MA-45-06 passed, the user explicitly approved the run, and append-only Evaluation `k3-issue-45-v1-20260806T102203+0700` was recorded in `.agents/manual-tests/k3-observability/structured-logging-correlation-v1.evaluations.jsonl`.
 27. Issue #45 was closed after its accepted Evaluation. Frontier recomputation opened #47, #48, #49, #50, and #51 as unblocked tickets. The user authorized publishing the accepted #46/#45 checkpoint through a commit, push, pull request, merge to `main`, and local fast-forward synchronization.
+28. Issue #52 guide v1 was explicitly approved and locked. Implementation then added `docs/observability/dashboards/k3-observability.json`, `docs/observability/prometheus/k3-scrape-config.yml`, `docs/observability/k3-operator-validation.md`, `scripts/ci/k3ObservabilityDashboard.test.cjs`, `server/test/observability/metricsReplicaSmoke.test.js`, and `server/test/observability/issue52EndToEnd.test.js`. RED evidence: the dashboard CI contract initially failed with `ENOENT` for the three required artifacts; after implementation, focused checks passed, `npm run test:ci` passed 99/99, `npm --prefix server test` passed 390/390, and `npm run ci:validate` exited 0.
+29. Manual acceptance for Issue #52 completed on Node `v22.23.2`: static/boundary/alert contracts passed 14/14; direct replica smoke plus correlation/persistence E2E passed 4/4; the complete CI suite passed 99/99; the server suite passed 390/390; and `ci:validate` exited 0. The user explicitly approved the PASSED Evaluation, which was appended as `k3-issue-52-v1-20260806T200827+0700` with MA-52-01 through MA-52-10 all `PASS`.
+30. Final Issue #52 `code-review` completed against `git diff --no-ext-diff --binary HEAD -- .`: `REQUEST_CHANGES`, zero critical, one major spec finding at `docs/observability/k3-operator-validation.md:45-64` (no exact direct-smoke command or cleanup despite MA-52-09), and one minor standards finding at `server/test/observability/metricsReplicaSmoke.test.js:17-18,33-39,64-67,102` (nondeterministic process-global `METRICS_ENABLED` restoration).
+31. Remediation completed without changing locked Guide v1: `docs/observability/k3-operator-validation.md` now contains exact Node 22 static/direct commands, replica-role mapping, sanitized evidence table, and cleanup; `server/test/observability/metricsReplicaSmoke.test.js` owns the environment mutation once and asserts restoration. RED was observed for both the cleanup assertion and operator-guide contract; GREEN focused and full-suite evidence is recorded above. A new PASSED Evaluation observation is ready but requires explicit human approval before append.
+32. The user explicitly approved the post-remediation Evaluation for locked Guide v1. `record_evaluation.py` appended `k3-issue-52-v1-remediation-20260806T212434+0700` with MA-52-01 through MA-52-10 all `PASS`, `verdict: PASSED`, and `human_approval: approved`.
+33. Final Issue #52 `code-review` completed against `git diff --no-ext-diff --binary HEAD -- .`: `APPROVE`, `pass: true`, zero Critical, zero Major, and no findings on either Standards or Spec axis.
+34. Before publication, `git fetch github --prune` advanced `github/main` from `a82d012f` to `743a3795`. The intervening commits `50cc34fa`, `46677efa`, `8004860e`, and `586c74ef` add only prior K3 manual-acceptance artifacts and do not overlap Issue #52 paths. The user authorized the final commit/push/PR/merge/synchronization/issue-close sequence.
 
 ## Blockers
 
 - Existing spec lifecycle reconciliation remains pending: the completed recruiter-facing README spec is still under `specs/active/`, and `specs/README.md` still points to the archived Conversation Read Model migration as active. This does not gate the approved K3 frontier.
+- No K3 Issue #52 delivery blocker remains. The unrelated historical spec-lifecycle reconciliation note above does not affect this completed workflow.
 
 ## Next Valid Transition
 
-After the authorized publishing checkpoint is merged and local `main` is synchronized, prepare locked manual-acceptance guides for frontier Issues #47, #48, #49, #50, and #51 and obtain explicit human approval before implementing any of them.
+Stage all final Issue #52 artifacts (including the ignored Evaluation history), create the authorized final commit, rebase it on `github/main`, push `codex/k3-issue-52`, create and merge a pull request after required checks pass, synchronize local `main`, and close GitHub Issue #52.
