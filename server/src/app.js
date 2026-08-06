@@ -19,14 +19,20 @@ const {
 } = require("./services/healthService");
 const { logSafely, logger: defaultLogger } = require("./utils/logger");
 const { sendError } = require("./utils/apiResponse");
+const { createMetricsModule } = require("./observability/metrics");
+const saveMessageInBackground = require("./utils/saveMessageInBackground");
 
 const createApp = ({
   rabbitConnectionManager = defaultRabbitConnectionManager,
   healthChecks = createDefaultHealthChecks({ rabbitConnectionManager }),
   logger = defaultLogger,
   authRateLimits,
+  metricsModule = createMetricsModule(),
 } = {}) => {
   const app = express();
+
+  app.set("metricsModule", metricsModule);
+  saveMessageInBackground.configureMetricsModule?.(metricsModule);
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
