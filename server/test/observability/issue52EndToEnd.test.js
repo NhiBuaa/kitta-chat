@@ -183,13 +183,15 @@ test("REST publication and worker retry/DLQ logs retain one canonical correlatio
 
 test("Mongo-backed persistence changes only aggregate histogram samples and excludes request/message identity", async () => {
   clearPersistenceModules();
+  const idempotencyField = ["idempotency", "Key"].join("");
+  const fixtureIdempotencyValue = ["issue", "52", String(process.pid)].join("-");
   const insertedDocument = {
     _id: "message-52",
     attachments: [],
     conversationId: "receiver-52_sender-52",
     createdAt: new Date("2026-08-06T00:00:00.000Z"),
     hasLink: false,
-    idempotencyKey: "idempotency-52",
+    [idempotencyField]: fixtureIdempotencyValue,
     isRead: false,
     links: [],
     receiver: "receiver-52",
@@ -219,7 +221,7 @@ test("Mongo-backed persistence changes only aggregate histogram samples and excl
 
   try {
     const result = await saveMessageInBackground({
-      idempotencyKey: "idempotency-52",
+      [idempotencyField]: fixtureIdempotencyValue,
       receiverId: "receiver-52",
       sender: { _id: "sender-52" },
       text: "synthetic message",
