@@ -167,6 +167,37 @@ Stop the stack with:
 docker compose down
 ```
 
+## K3.1 Local Observability Demo
+
+The opt-in K3.1 demo connects the reviewed metrics contract to a browser-visible local
+dashboard. It publishes Grafana only on `http://127.0.0.1:3001`; backend, Prometheus,
+MongoDB, and Redis remain internal to the Compose network.
+
+Follow the [local observability demo guide](docs/observability/k3-local-demo.md) for the
+four bounded actions:
+
+```bash
+npm run demo:observability -- start
+npm run demo:observability -- traffic
+npm run demo:observability -- verify
+npm run demo:observability -- stop
+```
+
+The guide keeps static validation, runtime smoke, Prometheus target health, metric query data,
+Grafana discovery, browser observation, and safe cleanup as separate claims. The destructive
+reset flow is documented separately and is not part of normal acceptance.
+
+Browser evidence from the provisioned `KittaChat K3 Observability` dashboard:
+
+- [Dashboard overview](docs/assets/readme/k3-observability/dashboard-overview.png)
+- [Total HTTP request rate](docs/assets/readme/k3-observability/dashboard-request-rate.png)
+- [HTTP latency](docs/assets/readme/k3-observability/dashboard-latency.png)
+
+K3.1 ends after the local browser evidence, README handoff, and non-destructive cleanup are
+accepted. K4 may reuse this dashboard during future benchmark work, but benchmark outcomes are
+owned by K4 and are not K3.1 acceptance criteria. K3.1 does not add a second observability
+platform, production deployment, or open-ended dashboard tuning.
+
 ## Demo Accounts
 
 The default seed creates neutral identities under the reserved `.test` namespace:
