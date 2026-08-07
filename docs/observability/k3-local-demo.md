@@ -76,7 +76,12 @@ The stable dashboard identity is:
 - Title: `KittaChat K3 Observability`
 
 Use the `verify` action for the runtime discovery claim. Direct browser observation of non-empty
-panels is reserved for Issue #72.
+panels is reserved for Issue #72. The accepted browser evidence is linked from the project
+[README](../../README.md):
+
+- [Dashboard overview](../assets/readme/k3-observability/dashboard-overview.png)
+- [Total HTTP request rate](../assets/readme/k3-observability/dashboard-request-rate.png)
+- [HTTP latency](../assets/readme/k3-observability/dashboard-latency.png)
 
 ### Safe stop
 
@@ -118,5 +123,7 @@ that has not been explicitly approved for deletion.
 ## Out of scope
 
 K3.1 does not add Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, new application metrics,
-new metric labels/routes, benchmarks, multi-replica discovery, production deployment, browser
-evidence, README handoff, or open-ended dashboard tuning.
+new metric labels/routes, benchmarks, multi-replica discovery, production deployment, or
+open-ended dashboard tuning. K3.1 stops after the local browser evidence, README handoff, and
+safe cleanup are accepted. K4 may reuse this dashboard during future benchmark work, but K4
+owns benchmark outcomes and K3.1 does not accept or publish benchmark results.

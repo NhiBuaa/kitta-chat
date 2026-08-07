@@ -4,9 +4,9 @@
 
 - Workflow: `feature-delivery`
 - Action: `start`
-- Initial commit policy: `none` for implementation. The user later authorized the design-only checkpoint, then explicitly authorized Issue #70 implementation commit, push, PR creation, merge when required checks passed, and Issue #70 closure.
+- Initial commit policy: `none` for implementation. The user later authorized the design-only checkpoint, explicitly authorized Issue #70 implementation commit, push, PR creation, merge when required checks passed, and Issue #70 closure, and then authorized the approved Issue #72 implementation checkpoint to stage, commit, push, and open a PR after final review. Merge, deployment, and issue closure remain unauthorized for Issue #72.
 - Requested outcome: provide time-boxed, browser-visible local demo evidence for the completed K3 observability work.
-- Constraints: local-only; demo evidence rather than a new observability workstream; no backend or Prometheus host port; Grafana on loopback only; no Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, benchmark work, or production deployment. The later publication authorization was limited to the approved Issue #70 implementation.
+- Constraints: local-only; demo evidence rather than a new observability workstream; no backend or Prometheus host port; Grafana on loopback only; no Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, benchmark work, or production deployment. The Issue #72 publication checkpoint is limited to staging, committing, pushing the independent branch, and opening a PR after final review; it does not authorize merge, deployment, or issue closure.
 
 ## Authoritative Specification
 
@@ -29,7 +29,8 @@ The seam has three evidence layers:
 
 ## Current State
 
-Specify, Design, Decompose, and Prepare acceptance for Issue #70 and Issue #71 are complete. Issue #70 Implement is complete on independent branch `codex/k3-1-issue-70-implementation` with green automated verification. Manual acceptance executed all eight cases with PASS observations, and approved Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` is `PASSED`. Final `code-review` completed with verdict `APPROVE`, zero Critical findings, and zero Major findings. The implementation commit is `3169a492`; PR #74 merged it into `main` as `6928b729`, and Issue #70 is closed. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. Issue #71 implementation, review remediation, approved acceptance, and final review are complete on independent branch `codex/k3-1-issue-71-implementation` with green verification; its guide revision `k3-1-issue-71-v1` is explicitly approved and locked. The latest selector-remediation Evaluation `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700` records all nine cases as `PASS` with `verdict=PASSED` and `human_approval=approved`; final review aggregate is `APPROVE` with zero Critical and zero Major findings. The approved design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as unmerged draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Issue #72 remains blocked behind #71.
+Specify, Design, Decompose, and Prepare acceptance for Issue #70 and Issue #71 are complete. Issue #70 Implement is complete on independent branch `codex/k3-1-issue-70-implementation` with green automated verification. Manual acceptance executed all eight cases with PASS observations, and approved Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` is `PASSED`. Final `code-review` completed with verdict `APPROVE`, zero Critical findings, and zero Major findings. The implementation commit is `3169a492`; PR #74 merged it into `main` as `6928b729`, and Issue #70 is closed. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. Issue #71 implementation, review remediation, approved acceptance, final review, publication, and closure are complete at merge commit `811cde8351d8b612dd2816d5b517c18873580f8b` via PR #75; its guide revision `k3-1-issue-71-v1` is explicitly approved and locked. The latest selector-remediation Evaluation `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700` records all nine cases as `PASS` with `verdict=PASSED` and `human_approval=approved`; final review aggregate is `APPROVE` with zero Critical and zero Major findings. The approved design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as unmerged draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73.
+Issue #72 guide revision `k3-1-issue-72-v1` is approved and locked at `.agents/manual-tests/k3-1-local-observability/browser-evidence-handoff-v1.md` with SHA-256 `AEDFEA527EB829016B104A8EC19D78D6772C1F631192ADD245AAB6AD51166747`. Implementation and original approved acceptance are complete on `codex/k3-1-issue-72-implementation`; the latest full-scope Evaluation is `PASSED` with explicit user approval. The initial final review was `APPROVE` with zero Critical/Major findings and one Minor spec finding about JPEG bytes stored under `.png` names. The artifacts are now valid PNGs, remediation Evaluation `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700` is `PASSED` with explicit approval, and updated final review aggregate is `APPROVE` with zero Critical/Major findings and no findings. The authorized publication checkpoint is next.
 
 ## Completed Transitions
 
@@ -71,6 +72,17 @@ Specify, Design, Decompose, and Prepare acceptance for Issue #70 and Issue #71 a
 - Focused remediation verification passed 22/22; root CI contract suite passed 121/121; server suite passed 390/390; syntax and Compose config checks exited 0; the bounded Docker start/traffic/verify/reset-preview/stop flow passed.
 - `manual-acceptance execute` appended Evaluation `k3-1-issue-71-v1-remediation-20260807T131438+0700` with MA-71-01 through MA-71-09 all observed `PASS`; it remains `verdict=BLOCKED` with `human_approval=pending` until explicit user approval.
 - User approved the remediation observations; `manual-acceptance` appended superseding Evaluation `k3-1-issue-71-v1-remediation-approved-20260807T132516+0700` with 9/9 PASS, `verdict=PASSED`, and `human_approval=approved`.
+- Selector-remediation cycle 2 added a total-rate assertion rejecting every `status_class` matcher; the approved Evaluation `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700` recorded 9/9 PASS, and final review returned `APPROVE` with zero Critical/Major findings.
+- Publication checkpoint: commit `4d579e6d` was pushed to `github/codex/k3-1-issue-71-implementation`, PR #75 merged into `main` as `811cde8351d8b612dd2816d5b517c18873580f8b`, and Issue #71 closed automatically.
+- User approved and locked Issue #72 guide revision `k3-1-issue-72-v1` at `2026-08-07T16:20:55.2522697+07:00`; its locked SHA-256 is `AEDFEA527EB829016B104A8EC19D78D6772C1F631192ADD245AAB6AD51166747`.
+- The user-authorized independent branch `codex/k3-1-issue-72-implementation` was created from `main` at `811cde8351d8b612dd2816d5b517c18873580f8b`.
+- Implement #72 changed `README.md` and `docs/observability/k3-local-demo.md`, and added three sanitized dashboard evidence artifacts under `docs/assets/readme/k3-observability/`. Focused K3.1 contract tests passed `23/23`; root CI contract tests passed `122/122`; `git diff --check` passed.
+- Issue #72 runtime/browser acceptance passed all seven cases: start/readiness/provisioning, safe traffic, separate verify claims, browser panel observation, sanitized evidence, README handoff, and safe stop with unchanged volumes. Evaluation `k3-1-issue-72-v1-20260807T163105+0700` was appended with `7/7 PASS`, `verdict=BLOCKED`, and `human_approval=pending`.
+- User approved Evaluation `k3-1-issue-72-v1-20260807T163105+0700`; superseding Evaluation `k3-1-issue-72-v1-approved-20260807T164827+0700` was appended with `7/7 PASS`, `verdict=PASSED`, and `human_approval=approved`.
+- Initial `code-review` on the pinned Issue #72 diff returned `APPROVE` with zero Critical findings, zero Major findings, and one Minor spec finding about the three screenshot files containing JPEG bytes under `.png` names.
+- Remediation converted all three artifacts to valid PNGs and appended Evaluation `k3-1-issue-72-v1-png-remediation-20260807T181742+0700`; the user approved superseding Evaluation `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700` with MA-72-04 and MA-72-05 both `PASS`.
+- The user authorized the Issue #72 publication checkpoint after final review: stage, commit, push the independent branch, and open a PR; merge, deployment, and issue closure remain out of scope.
+- Updated final `code-review` aggregate returned `APPROVE`, `0` Critical, `0` Major, and no findings across Standards and Spec axes.
 
 ## Attempt History
 
@@ -91,12 +103,21 @@ Specify, Design, Decompose, and Prepare acceptance for Issue #70 and Issue #71 a
 ## Published Ticket Graph
 
 1. **#70 — Start, smoke-test, and safely stop the isolated Local Observability Stack** — blocked by none. Owns clean-checkout environment preflight, the Grafana-only resolved host surface, profile/project isolation, supported pinned images, provisioning, static contract automation, and bounded real-runtime start/readiness/provisioning/stop/volume-preservation smoke.
-2. **#71 — Generate live traffic and verify Prometheus/Grafana data** — implementation, review remediation, approved acceptance, and final review are complete on `codex/k3-1-issue-71-implementation`; aggregate verdict is `APPROVE` with zero Critical and zero Major findings. Owns safe successful traffic, the bounded total HTTP request-rate dashboard panel, Prometheus target and query checks, Grafana discovery, and the two-phase reset Interface with post-disclosure target-set confirmation tests.
-3. **#72 — Capture browser evidence and publish the portfolio handoff** — blocked by #71. Owns manual browser acceptance of non-empty total request-rate and latency panels, two or three screenshots or a short video, README evidence links, safe cleanup evidence, and the stop rule.
+2. **#71 — Generate live traffic and verify Prometheus/Grafana data** — complete, merged by PR #75, and closed. Owns safe successful traffic, the bounded total HTTP request-rate dashboard panel, Prometheus target and query checks, Grafana discovery, and the two-phase reset Interface with post-disclosure target-set confirmation tests.
+3. **#72 — Capture browser evidence and publish the portfolio handoff** — implementation, remediation acceptance, and updated final review are complete; the authorized publication checkpoint is pending. Owns manual browser acceptance of non-empty total request-rate and latency panels, two or three screenshots or a short video, README evidence links, safe cleanup evidence, and the stop rule.
 
-Current frontier: #70 and #71 are complete through approved acceptance and final review; #72 remains blocked behind #71 and is outside this delivery.
+Current frontier: #70 and #71 are complete through approved acceptance, final review, publication, and closure. #72 implementation, approved acceptance, and updated final review are complete; the authorized publication checkpoint is next.
 
 ## Acceptance Guide State
+
+- Slice: #72
+- Guide: `.agents/manual-tests/k3-1-local-observability/browser-evidence-handoff-v1.md`
+- Revision: `k3-1-issue-72-v1`
+- Locked SHA-256: `AEDFEA527EB829016B104A8EC19D78D6772C1F631192ADD245AAB6AD51166747`
+- Test Cases: `MA-72-01` through `MA-72-07`
+- Human approval: approved by the user at `2026-08-07T16:20:55.2522697+07:00`
+- Lock status: locked and immutable; semantic changes require a new revision
+- Evaluation history: `.agents/manual-tests/k3-1-local-observability/browser-evidence-handoff-v1.evaluations.jsonl`; latest full-scope run `k3-1-issue-72-v1-approved-20260807T164827+0700` has 7/7 PASS observations, and latest remediation run `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700` has 2/2 PASS observations; both have verdict `PASSED` and human approval `approved`
 
 - Slice: #70
 - Guide: `.agents/manual-tests/k3-1-local-observability/start-smoke-stop-v1.md`
@@ -118,4 +139,4 @@ Current frontier: #70 and #71 are complete through approved acceptance and final
 
 ## Next Valid Transition
 
-Issue #70 is complete, merged, and closed after approved acceptance and final review. Issue #71 implementation, review remediation, approved acceptance, and final `code-review` are complete on `codex/k3-1-issue-71-implementation`; aggregate verdict is `APPROVE` with zero Critical and zero Major findings. Do not merge draft PR #73, start #72, deploy, or perform destructive reset.
+Issue #70 is complete, merged, and closed after approved acceptance and final review. Issue #71 is complete, merged, and closed after approved acceptance and final `code-review`. Issue #72 implementation, remediation acceptance, and updated final review are complete; apply the user-authorized publication checkpoint by staging, committing, pushing the independent branch, and opening a PR. Do not merge draft PR #73, deploy, or close the issue; the checkpoint may not merge, deploy, or close the issue.
