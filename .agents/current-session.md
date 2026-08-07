@@ -17,6 +17,9 @@
 - Metrics boundary: `docs/adr/012-k3-observability-metrics-boundary.md`
 - Local demo seam: `docs/adr/013-k3-1-local-observability-demo-seam.md`
 - Feature ledger: `.agents/workflows/k3-1-local-observability-feature-delivery.md`
+- Issue #71: https://github.com/NhiBuaa/kitta-chat/issues/71
+- Active implementation branch: `codex/k3-1-issue-71-implementation` from `main` at `6928b729`
+- Locked Issue #71 guide: `.agents/manual-tests/k3-1-local-observability/traffic-verify-reset-v1.md`
 - Design checkpoint: branch `codex/k3-1-design-checkpoint`, commit `95f03f74`, draft PR https://github.com/NhiBuaa/kitta-chat/pull/73
 - Existing dashboard: `docs/observability/dashboards/k3-observability.json`
 - Existing K3 operator guide: `docs/observability/k3-operator-validation.md`
@@ -41,10 +44,10 @@ Issue #69 is tracker-owned by the configured `to-spec` workflow. It is the autho
 - K3.1 must not add Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, new application metrics, benchmarks, production deployment, or open-ended dashboard tuning.
 - Safe cleanup must not pass `--volumes`.
 - Reset must display exact project-owned volumes before a separate confirmation tied to the unchanged target set.
-- Implementation commit policy is `none`. Issue #70 implementation is complete on the independent branch `codex/k3-1-issue-70-implementation`; no commit, push, merge, or deployment was performed.
+- Issue #70 implementation was committed as `3169a492`, pushed on `codex/k3-1-issue-70-implementation`, merged by PR #74 as `6928b729`, and the issue is closed. No deployment was performed.
 
 ## Current Frontier
 
-Issue #70 is complete on `codex/k3-1-issue-70-implementation`: all eight locked acceptance cases passed with explicit human approval, and final `code-review` returned `APPROVE` with zero Critical/Major findings. Issue #71 is the next published frontier and Issue #72 remains behind it; neither was started in this bounded delivery. Resume only after an explicit request for the next issue.
+Issue #70 is complete on `codex/k3-1-issue-70-implementation`: all eight locked acceptance cases passed with explicit human approval, and final `code-review` returned `APPROVE` with zero Critical/Major findings. Issue #71 implementation, review remediation, approved manual acceptance, and final review are complete on `codex/k3-1-issue-71-implementation`; its guide remains approved and locked, and the latest selector-remediation Evaluation has 9/9 PASS observations with `verdict=PASSED` and `human_approval=approved`. Final review aggregate is `APPROVE` with zero Critical and zero Major findings; two Minor findings remain recorded in the ledger. Issue #72 remains blocked behind #71 and is outside this approved slice.
 
-Issue #70's bounded delivery is complete on `codex/k3-1-issue-70-implementation` after approved acceptance and final `code-review` `APPROVE`. Implementation remains uncommitted under `commit_policy: none`; no push, merge, or deployment authority is implied. Resume only on an explicit request for the next frontier.
+Issue #70's bounded delivery is complete and merged on `main` after approved acceptance and final `code-review` `APPROVE`. PR #74 is merged as `6928b729`, and Issue #70 is closed. Issue #71 implementation, review remediation, approved bounded runtime acceptance, and final `code-review` are complete on the independent branch. No deployment or destructive reset was performed.

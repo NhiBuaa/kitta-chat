@@ -1,24 +1,26 @@
-# Next Session — K3.1 Issue #70 Complete
+# Next Session — K3.1 Issue #71 Completion Checkpoint
 
 ## Current State
 
-K3.1 Specify, Design, Decompose, and Prepare acceptance for the first frontier are complete.
+K3.1 Specify, Design, Decompose, Prepare acceptance, Issue #71 implementation, review remediation, approved acceptance, and final review are complete. Issue #72 remains blocked and is outside this approved slice.
 
 The published graph is:
 
 1. #70 — start, smoke-test, and safely stop the isolated Local Observability Stack — complete.
-2. #71 — generate live traffic and verify Prometheus/Grafana data — next frontier after explicit authorization.
+2. #71 — generate live traffic and verify Prometheus/Grafana data — implementation, remediation, approved acceptance, and final review complete.
 3. #72 — capture browser evidence and publish the portfolio handoff — blocked by #71.
 
 Guide revision `k3-1-issue-70-v1` is explicitly approved and locked at `.agents/manual-tests/k3-1-local-observability/start-smoke-stop-v1.md`. Its locked SHA-256 is `26055774EDB39EE065890D817291402AB7F778C3F5C978026830B9AD9A14F245`.
 
-Issue #70 implementation is complete on `codex/k3-1-issue-70-implementation`; automated verification is green. Manual acceptance executed all eight cases with PASS observations; approved Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` is recorded as `PASSED`. Final `code-review` is complete with verdict `APPROVE`, zero Critical findings, and zero Major findings.
+Guide revision `k3-1-issue-71-v1` is explicitly approved and locked at `.agents/manual-tests/k3-1-local-observability/traffic-verify-reset-v1.md`. Its locked SHA-256 is `700B706FADCB5F8EC794417E9ED302191BE09609F23BC9DBD86162948385E491`. The guide has nine immutable Test Cases covering static/fake-Adapter contracts, safe traffic, Prometheus query data, Grafana discovery, verification failure boundaries, reset preview/confirmation safety, and safe stop.
 
-The approved design is checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Leave that PR unmerged; implementation remains under `commit_policy: none`.
+Issue #70 implementation is complete on `codex/k3-1-issue-70-implementation` as commit `3169a492`; automated verification is green. Manual acceptance executed all eight cases with PASS observations; approved Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` is recorded as `PASSED`. Final `code-review` is complete with verdict `APPROVE`, zero Critical findings, and zero Major findings. PR #74 merged it into `main` as `6928b729`, and Issue #70 is closed.
+
+The approved design is checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Leave that design PR unmerged; implementation PR #74 is merged.
 
 ## Next Valid Transition
 
-Issue #70's bounded delivery is complete. If resumed, require an explicit request to begin the next published frontier (#71); stop before merge/push/deploy unless separately authorized.
+Issue #70's bounded delivery is complete, merged, and closed. Issue #71 implementation, review remediation, approved acceptance, and final `code-review` are complete on `codex/k3-1-issue-71-implementation`; the latest Evaluation `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700` recorded 9/9 PASS observations with `human_approval=approved`, and the aggregate verdict is `APPROVE` with zero Critical and zero Major findings. Stop before Issue #72 or deployment.
 
 Implementation evidence:
 
@@ -26,9 +28,16 @@ Implementation evidence:
 2. Used CodeGraph before source exploration.
 3. Followed repository TDD policy with a RED test followed by green implementation.
 4. Added the isolated Compose/provisioning/operator seam and static/fake-adapter contract tests without starting #71 traffic/query/reset work or #72 evidence work.
-5. Preserved `commit_policy: none`; no commit, push, merge, or deploy was performed.
+5. User authorized publication: implementation commit `3169a492` was pushed, PR #74 was merged as `6928b729`, and Issue #70 was closed; no deploy was performed.
 6. Verification is green: K3.1 contract tests 9/9, root CI contract tests 108/108, and server tests 390/390 under Node 22.23.2.
 7. Final review aggregate: `APPROVE`, standards axis findings `[]`, spec axis findings `[]`, Critical `0`, Major `0`.
+8. Issue #71 focused contract suite after remediation: 22/22; root CI contract suite: 121/121; server suite: 390/390; syntax and Compose config checks exited 0.
+9. Docker runtime flow passed: start/readiness/provisioning, five safe 2xx traffic requests, verify target/query/Grafana/dashboard claims, reset preview without deletion, and safe stop with unchanged volumes.
+10. Remediation added abortable Docker/fetch operation deadlines, final labeled-volume revalidation before removal, exact traffic/PromQL/dashboard assertions, stale/changed reset tests, and reconciled session state.
+11. Evaluation `k3-1-issue-71-v1-remediation-20260807T131438+0700` appended 9/9 PASS observations with `verdict=BLOCKED` and `human_approval=pending`; no guide changes were made.
+12. User approved the remediation observations; superseding Evaluation `k3-1-issue-71-v1-remediation-approved-20260807T132516+0700` is `PASSED` with `human_approval=approved`.
+13. Selector-remediation cycle 2 added a total-rate assertion that rejects every `status_class` matcher; focused `23/23`, root `122/122`, server `390/390`, syntax, Compose, and runtime acceptance remained green.
+14. User approved Evaluation `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700` with 9/9 PASS observations; final review aggregate returned `APPROVE` with zero Critical/Major and two Minor standards findings.
 
 ## Locked Acceptance Scope
 
@@ -36,6 +45,7 @@ Implementation evidence:
 - All eight cases have executed and passed; the latest Evaluation is approved and PASSED. Do not rewrite the guide.
 - Do not rewrite the guide to match observations; use append-only Evaluation history when execution begins.
 - Do not run destructive reset.
+- Issue #71 Evaluation history is append-only; the earlier approved runs are superseded by latest approved run `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700`; do not rewrite the locked guide.
 
 ## Guardrails
 
@@ -43,9 +53,9 @@ Implementation evidence:
 - Every non-Grafana published port and inherited fixed container name is reset in the K3.1 resolved model.
 - Environment bootstrap never overwrites an existing file or prints secrets.
 - Conversation migration flags remain disabled.
-- Do not start #71 or #72.
-- Implementation commit policy remains `none`. A design-only checkpoint may exist on `codex/k3-1-design-checkpoint`; do not treat it as implementation authorization or merge authority.
+- Do not start #72; Issue #71 is the completed approved slice. Any work on #72 requires a new explicit transition.
+- Issue #70 is merged and closed. A design-only checkpoint remains on `codex/k3-1-design-checkpoint`; do not merge PR #73 or switch away from the current Issue #71 implementation branch.
 
-## Resume Contract
+## Active Execution Context
 
-`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\kitta-chat-k3-1-feature-delivery-issue-70.json`
+`codex/k3-1-issue-71-implementation` at base commit `6928b729`; Issue #71 final review is complete and no new context-boundary Resume Contract has been published.
