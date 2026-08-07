@@ -2,13 +2,13 @@
 
 ## Current State
 
-K3.1 Specify, Design, Decompose, Prepare acceptance, Issue #71 implementation, review remediation, approved acceptance, final review, publication, and Issue closure are complete. Issue #72 guide revision `k3-1-issue-72-v1` is approved and locked, implementation plus browser acceptance are complete on `codex/k3-1-issue-72-implementation`, and the superseding Evaluation is `PASSED` with explicit approval. The initial final review was `APPROVE` with zero Critical/Major findings and a Minor image-signature finding; the artifacts are now valid PNGs, remediation Evaluation `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700` is `PASSED` with explicit approval, and updated final review is `APPROVE` with zero Critical/Major findings and no findings. Publication checkpoint commit `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a` is pushed and PR #76 is open; merge remains unauthorized.
+K3.1 Specify, Design, Decompose, Prepare acceptance, Issue #71 implementation, review remediation, approved acceptance, final review, publication, and Issue closure are complete. Issue #72 guide revision `k3-1-issue-72-v1` is approved and locked, implementation plus browser acceptance are complete on `codex/k3-1-issue-72-implementation`, and the superseding Evaluation is `PASSED` with explicit approval. The initial final review was `APPROVE` with zero Critical/Major findings and a Minor image-signature finding; the artifacts are now valid PNGs, remediation Evaluation `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700` is `PASSED` with explicit approval, and updated final review is `APPROVE` with zero Critical/Major findings and no findings. Publication commit `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a` was merged by PR #76 as `6bc0405cc35c77ec0e82609227c1f44c92b4e252`, and Issue #72 is closed.
 
 The published graph is:
 
 1. #70 — start, smoke-test, and safely stop the isolated Local Observability Stack — complete.
 2. #71 — generate live traffic and verify Prometheus/Grafana data — complete, merged by PR #75, and closed.
-3. #72 — capture browser evidence and publish the portfolio handoff — implementation, approved acceptance, updated final review, and authorized publication checkpoint are complete; PR #76 is open and the issue remains unmerged.
+3. #72 — capture browser evidence and publish the portfolio handoff — implementation, approved acceptance, updated final review, authorized publication, merge, and issue closure are complete.
 
 Guide revision `k3-1-issue-70-v1` is explicitly approved and locked at `.agents/manual-tests/k3-1-local-observability/start-smoke-stop-v1.md`. Its locked SHA-256 is `26055774EDB39EE065890D817291402AB7F778C3F5C978026830B9AD9A14F245`.
 
@@ -20,7 +20,7 @@ The approved design is checkpointed at commit `95f03f74` on branch `codex/k3-1-d
 
 ## Next Valid Transition
 
-Issue #70's bounded delivery is complete, merged, and closed. Issue #71 implementation, review remediation, approved acceptance, final `code-review`, publication, and Issue closure are complete; merge commit is `811cde8351d8b612dd2816d5b517c18873580f8b`. Issue #72 implementation, approved remediation acceptance, updated final `code-review`, and authorized publication checkpoint are complete on `codex/k3-1-issue-72-implementation`; commit `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a` is pushed in PR #76. Do not merge, deploy, close the issue, or run destructive reset.
+Issue #70's bounded delivery is complete, merged, and closed. Issue #71 implementation, review remediation, approved acceptance, final `code-review`, publication, and Issue closure are complete; merge commit is `811cde8351d8b612dd2816d5b517c18873580f8b`. Issue #72 implementation, approved remediation acceptance, updated final `code-review`, authorized publication, merge commit `6bc0405cc35c77ec0e82609227c1f44c92b4e252`, and issue closure are complete. Stop K3.1 here; do not deploy or run destructive reset.
 
 Implementation evidence:
 
@@ -47,7 +47,7 @@ Implementation evidence:
 21. Initial `code-review` on the pinned Issue #72 diff returned `APPROVE`, zero Critical findings, zero Major findings, and one Minor spec finding: the three screenshot files contained JPEG bytes under `.png` names.
 22. Converted the three evidence artifacts to valid PNGs, visually reviewed them, and appended remediation Evaluation `k3-1-issue-72-v1-png-remediation-20260807T181742+0700` with MA-72-04 and MA-72-05 both `PASS`; the user approved superseding Evaluation `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700`.
 23. Updated final `code-review` aggregate returned `APPROVE`, `0` Critical, `0` Major, and no findings across Standards and Spec axes.
-24. User-authorized publication checkpoint completed: commit `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a` was pushed to `github/codex/k3-1-issue-72-implementation`, and PR #76 was opened against `main`; no merge, deployment, or issue closure was performed.
+24. User-authorized publication checkpoint completed: commit `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a` was pushed to `github/codex/k3-1-issue-72-implementation`, PR #76 was merged into `main` as `6bc0405cc35c77ec0e82609227c1f44c92b4e252`, and Issue #72 was closed; no deployment was performed.
 
 ## Locked Acceptance Scope
 
@@ -64,9 +64,9 @@ Implementation evidence:
 - Environment bootstrap never overwrites an existing file or prints secrets.
 - Conversation migration flags remain disabled.
 - Issue #72 guide revision `k3-1-issue-72-v1` is approved and locked; do not rewrite it. Its latest full-scope Evaluation has 7/7 PASS observations, and its latest remediation Evaluation has 2/2 PASS observations; both are approved `PASSED`.
-- The user-authorized Issue #72 checkpoint may stage, commit, push the independent branch, and open a PR after final review; do not merge, deploy, close the issue, or run destructive reset.
+- Issue #72's authorized checkpoint, merge, and closure are complete; stop K3.1 here. Do not deploy or run destructive reset.
 - Issue #70 is merged and closed. A design-only checkpoint remains on `codex/k3-1-design-checkpoint`; do not merge PR #73 or switch away from `codex/k3-1-issue-72-implementation`.
 
 ## Active Execution Context
 
-`codex/k3-1-issue-72-implementation` is based at `811cde8351d8b612dd2816d5b517c18873580f8b` with publication commit `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a`; Issue #72 implementation, remediation acceptance, updated final review, and publication checkpoint are complete. PR #76 is open; merge, deployment, and issue closure remain unauthorized.
+`main` is synchronized at merge commit `6bc0405cc35c77ec0e82609227c1f44c92b4e252`; Issue #72 implementation, remediation acceptance, updated final review, publication, merge, and issue closure are complete. No deployment or destructive reset was performed.
