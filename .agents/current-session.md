@@ -9,6 +9,7 @@
 - A review of the first three-ticket graph returned `REQUEST_CHANGES` with five Major and one Minor finding.
 - Issue #69 and ADR-013 have been remediated for host-port isolation, fresh-clone environment bootstrap, total request-rate evidence, Ticket 1 runtime smoke, two-phase reset confirmation, and supported image pins.
 - Graph v2 is approved. Issues #70–#72 are published with real linear blocking edges and `ready-for-agent`.
+- The design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. The PR is intentionally unmerged.
 
 ## Sources Of Truth
 
@@ -16,6 +17,7 @@
 - Metrics boundary: `docs/adr/012-k3-observability-metrics-boundary.md`
 - Local demo seam: `docs/adr/013-k3-1-local-observability-demo-seam.md`
 - Feature ledger: `.agents/workflows/k3-1-local-observability-feature-delivery.md`
+- Design checkpoint: branch `codex/k3-1-design-checkpoint`, commit `95f03f74`, draft PR https://github.com/NhiBuaa/kitta-chat/pull/73
 - Existing dashboard: `docs/observability/dashboards/k3-observability.json`
 - Existing K3 operator guide: `docs/observability/k3-operator-validation.md`
 
@@ -44,3 +46,5 @@ Issue #69 is tracker-owned by the configured `to-spec` workflow. It is the autho
 ## Current Frontier
 
 The current frontier is Issue #70. Issues #71 and #72 remain blocked. Manual guide revision `k3-1-issue-70-v1` covers Test Cases `MA-70-01` through `MA-70-08` and is human-approved, locked, and immutable. Implementation has not started. The next valid transition is Implement #70 in a new context; manual acceptance execution remains deferred until implementation and automated verification are green.
+
+Resume from the design checkpoint without merging draft PR #73. The checkpoint grants no implementation commit, push, merge, or deployment authority.

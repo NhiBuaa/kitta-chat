@@ -29,7 +29,7 @@ The seam has three evidence layers:
 
 ## Current State
 
-Specify, Design, Decompose, and Prepare acceptance for the first frontier are complete. The current frontier is Issue #70 only. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. Issue #70 implementation has not started because the user requested a context-boundary suspension. The next valid transition is Implement #70 from the approved Issue body, ADR-013, and locked guide; #71 and #72 remain blocked.
+Specify, Design, Decompose, and Prepare acceptance for the first frontier are complete. The current frontier is Issue #70 only. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. The approved design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as unmerged draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Issue #70 implementation has not started because the user requested a context-boundary suspension. The next valid transition is Implement #70 from the approved Issue body, ADR-013, and locked guide; #71 and #72 remain blocked.
 
 ## Completed Transitions
 
@@ -51,6 +51,7 @@ Specify, Design, Decompose, and Prepare acceptance for the first frontier are co
 - The user explicitly approved guide revision `k3-1-issue-70-v1`; it was locked without semantic Test Case changes.
 - No implementation or acceptance execution started in this context.
 - The user explicitly authorized a design-only Git/GitHub checkpoint after suspension; implementation commit policy remains `none`.
+- The design-only checkpoint was committed as `95f03f74`, pushed to `github/codex/k3-1-design-checkpoint`, and published as unmerged draft PR #73.
 
 ## Attempt History
 
@@ -66,6 +67,7 @@ Specify, Design, Decompose, and Prepare acceptance for the first frontier are co
 10. ADR-012/013 and repository session/spec indexes were reconciled with the remediated design.
 11. A full resolved-model probe returned exactly one published service (`grafana`, `127.0.0.1:3001:3000`), zero fixed container names, `METRICS_ENABLED=true`, and all conversation migration flags disabled for the demo backend.
 12. Docker registry manifest checks passed for `prom/prometheus:v3.13.2` and `grafana/grafana:12.4.8`.
+13. The design checkpoint was verified on GitHub as draft PR #73 with head branch `codex/k3-1-design-checkpoint`, base `main`, and artifact commit `95f03f74`.
 
 ## Published Ticket Graph
 
@@ -88,4 +90,4 @@ Current frontier: #70.
 
 ## Next Valid Transition
 
-Resume in a new context and invoke `implement` for Issue #70. Use the approved Issue body, ADR-013, and locked guide revision `k3-1-issue-70-v1`; run tests before production changes where required by the repository TDD policy. Do not execute manual acceptance until implementation and required automated tests are green.
+Resume in a new context and invoke `implement` for Issue #70. Use the approved Issue body, ADR-013, and locked guide revision `k3-1-issue-70-v1`; run tests before production changes where required by the repository TDD policy. Do not merge draft PR #73. Do not execute manual acceptance until implementation and required automated tests are green.

@@ -14,6 +14,8 @@ Guide revision `k3-1-issue-70-v1` is explicitly approved and locked at `.agents/
 
 Issue #70 implementation and acceptance execution have not started.
 
+The approved design is checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Leave that PR unmerged while implementing #70 under `commit_policy: none`.
+
 ## Next Valid Transition
 
 Resume the `feature-delivery` workflow and invoke `implement` once for Issue #70.
