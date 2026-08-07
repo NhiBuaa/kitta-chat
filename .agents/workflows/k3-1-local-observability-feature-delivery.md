@@ -29,7 +29,7 @@ The seam has three evidence layers:
 
 ## Current State
 
-Specify, Design, Decompose, and Prepare acceptance for the first frontier are complete. The current frontier is Issue #70 only. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. The approved design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as unmerged draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Issue #70 implementation has not started because the user requested a context-boundary suspension. The next valid transition is Implement #70 from the approved Issue body, ADR-013, and locked guide; #71 and #72 remain blocked.
+Specify, Design, Decompose, and Prepare acceptance for the first frontier are complete. Issue #70 Implement is complete on independent branch `codex/k3-1-issue-70-implementation` with green automated verification. Manual acceptance executed all eight cases with PASS observations, and approved Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` is `PASSED`. Final `code-review` completed with verdict `APPROVE`, zero Critical findings, and zero Major findings. The bounded Issue #70 delivery is complete. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. The approved design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as unmerged draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Issues #71 and #72 remain outside this delivery and were not started.
 
 ## Completed Transitions
 
@@ -47,9 +47,17 @@ Specify, Design, Decompose, and Prepare acceptance for the first frontier are co
 - The user approved graph v2 with three linear tickets and its blocking edges.
 - `to-tickets` published Issues #70, #71, and #72 in dependency order and read them back successfully.
 - `test-craft` produced eight Issue #70 Test Cases across contract, lifecycle, async ordering, observable Grafana state, and host/resource safety axes.
-- `manual-acceptance` rendered draft guide revision `k3-1-issue-70-v1`; approval is pending.
+- `manual-acceptance` rendered guide revision `k3-1-issue-70-v1`; the user approved and locked it without semantic changes.
 - The user explicitly approved guide revision `k3-1-issue-70-v1`; it was locked without semantic Test Case changes.
-- No implementation or acceptance execution started in this context.
+- Implement #70 completed in this context after a RED-to-GREEN cycle.
+- Implementation evidence: `scripts/ci/k3LocalObservabilityStack.test.cjs` passed 9/9; `node --test scripts/ci/*.test.cjs` passed 108/108; `server` `node --test` passed 390/390; Node syntax checks and `docker compose ... config --quiet` exited `0`.
+- Feature-delivery terminal evaluation returned `{"status":"continue"}` because final review remains pending.
+- Changed scope: `scripts/observabilityDemo.js`, `docker-compose.observability.yml`, local Prometheus/Grafana provisioning, bounded total request-rate dashboard panel, root `demo:observability` script, and K3.1 static/fake-adapter tests.
+- `manual-acceptance execute` ran `k3-1-issue-70-v1-20260807T112048+0700`: MA-70-01 through MA-70-08 all observed `PASS`; the first Evaluation was appended as `BLOCKED` pending approval.
+- The user explicitly approved the observed PASS; `record_evaluation.py` appended superseding Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` with `verdict=PASSED` and `human_approval=approved`.
+- Runtime remediation during acceptance mounted Grafana datasource/dashboard provisioning files into Grafana's required subdirectories and consumed Docker stderr without exposing it; Node 22 regression remained green.
+- Final `code-review` aggregate returned `APPROVE` with zero Critical findings, zero Major findings, and no findings on either the standards or spec axis.
+- Feature-delivery terminal evaluation returned `{"status":"completed"}` for the bounded Issue #70 delivery.
 - The user explicitly authorized a design-only Git/GitHub checkpoint after suspension; implementation commit policy remains `none`.
 - The design-only checkpoint was committed as `95f03f74`, pushed to `github/codex/k3-1-design-checkpoint`, and published as unmerged draft PR #73.
 
@@ -72,10 +80,10 @@ Specify, Design, Decompose, and Prepare acceptance for the first frontier are co
 ## Published Ticket Graph
 
 1. **#70 — Start, smoke-test, and safely stop the isolated Local Observability Stack** — blocked by none. Owns clean-checkout environment preflight, the Grafana-only resolved host surface, profile/project isolation, supported pinned images, provisioning, static contract automation, and bounded real-runtime start/readiness/provisioning/stop/volume-preservation smoke.
-2. **#71 — Generate live traffic and verify Prometheus/Grafana data** — blocked by #70. Owns safe successful traffic, the bounded total HTTP request-rate dashboard panel, Prometheus target and query checks, Grafana discovery, and the two-phase reset Interface with post-disclosure target-set confirmation tests.
+2. **#71 — Generate live traffic and verify Prometheus/Grafana data** — unblocked after #70; not started in this delivery. Owns safe successful traffic, the bounded total HTTP request-rate dashboard panel, Prometheus target and query checks, Grafana discovery, and the two-phase reset Interface with post-disclosure target-set confirmation tests.
 3. **#72 — Capture browser evidence and publish the portfolio handoff** — blocked by #71. Owns manual browser acceptance of non-empty total request-rate and latency panels, two or three screenshots or a short video, README evidence links, safe cleanup evidence, and the stop rule.
 
-Current frontier: #70.
+Current frontier after this bounded delivery: #70 is complete; #71 is the next published ticket, and #72 remains blocked behind it. Neither ticket was started in this delivery.
 
 ## Acceptance Guide State
 
@@ -86,8 +94,8 @@ Current frontier: #70.
 - Test Cases: `MA-70-01` through `MA-70-08`
 - Human approval: approved by the user at `2026-08-07T10:21:07.1180231+07:00`
 - Lock status: locked and immutable; semantic changes require a new revision
-- Evaluation history: not created; execution has not started
+- Evaluation history: `.agents/manual-tests/k3-1-local-observability/start-smoke-stop-v1.evaluations.jsonl`; latest run has 8/8 PASS observations, verdict `PASSED`, and human approval `approved`.
 
 ## Next Valid Transition
 
-Resume in a new context and invoke `implement` for Issue #70. Use the approved Issue body, ADR-013, and locked guide revision `k3-1-issue-70-v1`; run tests before production changes where required by the repository TDD policy. Do not merge draft PR #73. Do not execute manual acceptance until implementation and required automated tests are green.
+The bounded Issue #70 delivery is complete after approved acceptance and final review. If the workflow is resumed, require an explicit request before beginning the next frontier (#71); do not merge draft PR #73, start #71/#72 implicitly, or perform destructive reset.

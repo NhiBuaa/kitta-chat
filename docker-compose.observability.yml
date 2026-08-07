@@ -1,0 +1,80 @@
+name: kittachat-k3-1
+
+services:
+  nginx:
+    container_name: !reset null
+    ports: !reset []
+
+  backend:
+    deploy:
+      replicas: 1
+    environment:
+      - METRICS_ENABLED=true
+      - CONVERSATION_DUAL_WRITE_ENABLED=false
+      - CONVERSATION_SHADOW_COMPARE_ENABLED=false
+      - CONVERSATION_SIDEBAR_READ_MODEL_ENABLED=false
+
+  redis:
+    container_name: !reset null
+    ports: !reset []
+
+  rabbitmq:
+    container_name: !reset null
+    ports: !reset []
+
+  mongo:
+    container_name: !reset null
+    ports: !reset []
+
+  prometheus:
+    image: prom/prometheus:v3.13.2
+    profiles:
+      - observability
+    depends_on:
+      backend:
+        condition: service_healthy
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./docs/observability/local/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - chat-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:12.4.8
+    profiles:
+      - observability
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/k3-observability.json
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    volumes:
+      - ./docs/observability/local/grafana/provisioning/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./docs/observability/local/grafana/provisioning/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./docs/observability/dashboards/k3-observability.json:/var/lib/grafana/dashboards/k3-observability.json:ro
+    networks:
+      - chat-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+volumes:
+  prometheus_data:

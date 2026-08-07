@@ -41,10 +41,10 @@ Issue #69 is tracker-owned by the configured `to-spec` workflow. It is the autho
 - K3.1 must not add Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, new application metrics, benchmarks, production deployment, or open-ended dashboard tuning.
 - Safe cleanup must not pass `--volumes`.
 - Reset must display exact project-owned volumes before a separate confirmation tied to the unchanged target set.
-- Implementation commit policy is `none`. The user authorized one design-only Git/GitHub checkpoint; that exception does not authorize Issue #70 implementation, merge, or deployment.
+- Implementation commit policy is `none`. Issue #70 implementation is complete on the independent branch `codex/k3-1-issue-70-implementation`; no commit, push, merge, or deployment was performed.
 
 ## Current Frontier
 
-The current frontier is Issue #70. Issues #71 and #72 remain blocked. Manual guide revision `k3-1-issue-70-v1` covers Test Cases `MA-70-01` through `MA-70-08` and is human-approved, locked, and immutable. Implementation has not started. The next valid transition is Implement #70 in a new context; manual acceptance execution remains deferred until implementation and automated verification are green.
+Issue #70 is complete on `codex/k3-1-issue-70-implementation`: all eight locked acceptance cases passed with explicit human approval, and final `code-review` returned `APPROVE` with zero Critical/Major findings. Issue #71 is the next published frontier and Issue #72 remains behind it; neither was started in this bounded delivery. Resume only after an explicit request for the next issue.
 
-Resume from the design checkpoint without merging draft PR #73. The checkpoint grants no implementation commit, push, merge, or deployment authority.
+Issue #70's bounded delivery is complete on `codex/k3-1-issue-70-implementation` after approved acceptance and final `code-review` `APPROVE`. Implementation remains uncommitted under `commit_policy: none`; no push, merge, or deployment authority is implied. Resume only on an explicit request for the next frontier.
