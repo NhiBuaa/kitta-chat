@@ -4,9 +4,9 @@
 
 - Workflow: `feature-delivery`
 - Action: `start`
-- Commit policy: `none` for implementation. The user later authorized one design-only Git/GitHub checkpoint containing the K3.1 specification state, ADRs, session state, this ledger, and the locked Issue #70 guide; that checkpoint does not authorize implementation, merge, or deployment.
+- Initial commit policy: `none` for implementation. The user later authorized the design-only checkpoint, then explicitly authorized Issue #70 implementation commit, push, PR creation, merge when required checks passed, and Issue #70 closure.
 - Requested outcome: provide time-boxed, browser-visible local demo evidence for the completed K3 observability work.
-- Constraints: local-only; demo evidence rather than a new observability workstream; no backend or Prometheus host port; Grafana on loopback only; no Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, benchmark work, production deployment, commit, push, or merge.
+- Constraints: local-only; demo evidence rather than a new observability workstream; no backend or Prometheus host port; Grafana on loopback only; no Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, benchmark work, or production deployment. The later publication authorization was limited to the approved Issue #70 implementation.
 
 ## Authoritative Specification
 
@@ -29,7 +29,7 @@ The seam has three evidence layers:
 
 ## Current State
 
-Specify, Design, Decompose, and Prepare acceptance for the first frontier are complete. Issue #70 Implement is complete on independent branch `codex/k3-1-issue-70-implementation` with green automated verification. Manual acceptance executed all eight cases with PASS observations, and approved Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` is `PASSED`. Final `code-review` completed with verdict `APPROVE`, zero Critical findings, and zero Major findings. The bounded Issue #70 delivery is complete. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. The approved design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as unmerged draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Issues #71 and #72 remain outside this delivery and were not started.
+Specify, Design, Decompose, and Prepare acceptance for Issue #70 and Issue #71 are complete. Issue #70 Implement is complete on independent branch `codex/k3-1-issue-70-implementation` with green automated verification. Manual acceptance executed all eight cases with PASS observations, and approved Evaluation `k3-1-issue-70-v1-approved-20260807T112736+0700` is `PASSED`. Final `code-review` completed with verdict `APPROVE`, zero Critical findings, and zero Major findings. The implementation commit is `3169a492`; PR #74 merged it into `main` as `6928b729`, and Issue #70 is closed. Guide revision `k3-1-issue-70-v1` is explicitly human-approved and locked. Issue #71 implementation, review remediation, approved acceptance, and final review are complete on independent branch `codex/k3-1-issue-71-implementation` with green verification; its guide revision `k3-1-issue-71-v1` is explicitly approved and locked. The latest selector-remediation Evaluation `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700` records all nine cases as `PASS` with `verdict=PASSED` and `human_approval=approved`; final review aggregate is `APPROVE` with zero Critical and zero Major findings. The approved design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as unmerged draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. Issue #72 remains blocked behind #71.
 
 ## Completed Transitions
 
@@ -58,8 +58,19 @@ Specify, Design, Decompose, and Prepare acceptance for the first frontier are co
 - Runtime remediation during acceptance mounted Grafana datasource/dashboard provisioning files into Grafana's required subdirectories and consumed Docker stderr without exposing it; Node 22 regression remained green.
 - Final `code-review` aggregate returned `APPROVE` with zero Critical findings, zero Major findings, and no findings on either the standards or spec axis.
 - Feature-delivery terminal evaluation returned `{"status":"completed"}` for the bounded Issue #70 delivery.
+- User-authorized publication completed: commit `3169a492` was pushed, PR #74 merged as `6928b729`, and Issue #70 closed; no deployment was performed.
 - The user explicitly authorized a design-only Git/GitHub checkpoint after suspension; implementation commit policy remains `none`.
 - The design-only checkpoint was committed as `95f03f74`, pushed to `github/codex/k3-1-design-checkpoint`, and published as unmerged draft PR #73.
+- `session-continuity` validated the Issue #70 Resume Contract and restored the `feature-delivery` workflow at its Issue #71 frontier.
+- `test-craft` and `manual-acceptance` prepared the nine-case Issue #71 guide from Issue #71, ADR-012, and ADR-013; the user approved and locked revision `k3-1-issue-71-v1` at `2026-08-07T12:03:45.4203149+07:00` with SHA-256 `700B706FADCB5F8EC794417E9ED302191BE09609F23BC9DBD86162948385E491`.
+- The user-authorized independent branch `codex/k3-1-issue-71-implementation` was created from `main` at `6928b729`; implementation and acceptance execution proceeded on that branch.
+- Implement #71 completed through TDD on `codex/k3-1-issue-71-implementation`; the focused suite passed 18/18, root CI passed 117/117, server tests passed 390/390, syntax and Compose config checks exited 0, and the bounded Docker runtime start/traffic/verify/reset-preview/stop flow passed.
+- `manual-acceptance execute` appended Evaluation `k3-1-issue-71-v1-20260807T122915+0700` with MA-71-01 through MA-71-09 all observed `PASS`; after explicit user approval, superseding Evaluation `k3-1-issue-71-v1-approved-20260807T124107+0700` was appended with `verdict=PASSED` and `human_approval=approved`.
+- Final `code-review` of the pinned Issue #71 worktree diff returned `REQUEST_CHANGES` with zero Critical, four Major, and three Minor findings across standards/spec axes.
+- Implement remediation completed in the same approved Issue #71 slice: exact traffic/PromQL/dashboard contract assertions, abortable Docker/fetch operation deadlines, final labeled-volume revalidation before removal, stale/changed reset coverage, and reconciled session-state instructions.
+- Focused remediation verification passed 22/22; root CI contract suite passed 121/121; server suite passed 390/390; syntax and Compose config checks exited 0; the bounded Docker start/traffic/verify/reset-preview/stop flow passed.
+- `manual-acceptance execute` appended Evaluation `k3-1-issue-71-v1-remediation-20260807T131438+0700` with MA-71-01 through MA-71-09 all observed `PASS`; it remains `verdict=BLOCKED` with `human_approval=pending` until explicit user approval.
+- User approved the remediation observations; `manual-acceptance` appended superseding Evaluation `k3-1-issue-71-v1-remediation-approved-20260807T132516+0700` with 9/9 PASS, `verdict=PASSED`, and `human_approval=approved`.
 
 ## Attempt History
 
@@ -80,10 +91,10 @@ Specify, Design, Decompose, and Prepare acceptance for the first frontier are co
 ## Published Ticket Graph
 
 1. **#70 — Start, smoke-test, and safely stop the isolated Local Observability Stack** — blocked by none. Owns clean-checkout environment preflight, the Grafana-only resolved host surface, profile/project isolation, supported pinned images, provisioning, static contract automation, and bounded real-runtime start/readiness/provisioning/stop/volume-preservation smoke.
-2. **#71 — Generate live traffic and verify Prometheus/Grafana data** — unblocked after #70; not started in this delivery. Owns safe successful traffic, the bounded total HTTP request-rate dashboard panel, Prometheus target and query checks, Grafana discovery, and the two-phase reset Interface with post-disclosure target-set confirmation tests.
+2. **#71 — Generate live traffic and verify Prometheus/Grafana data** — implementation, review remediation, approved acceptance, and final review are complete on `codex/k3-1-issue-71-implementation`; aggregate verdict is `APPROVE` with zero Critical and zero Major findings. Owns safe successful traffic, the bounded total HTTP request-rate dashboard panel, Prometheus target and query checks, Grafana discovery, and the two-phase reset Interface with post-disclosure target-set confirmation tests.
 3. **#72 — Capture browser evidence and publish the portfolio handoff** — blocked by #71. Owns manual browser acceptance of non-empty total request-rate and latency panels, two or three screenshots or a short video, README evidence links, safe cleanup evidence, and the stop rule.
 
-Current frontier after this bounded delivery: #70 is complete; #71 is the next published ticket, and #72 remains blocked behind it. Neither ticket was started in this delivery.
+Current frontier: #70 and #71 are complete through approved acceptance and final review; #72 remains blocked behind #71 and is outside this delivery.
 
 ## Acceptance Guide State
 
@@ -95,7 +106,16 @@ Current frontier after this bounded delivery: #70 is complete; #71 is the next p
 - Human approval: approved by the user at `2026-08-07T10:21:07.1180231+07:00`
 - Lock status: locked and immutable; semantic changes require a new revision
 - Evaluation history: `.agents/manual-tests/k3-1-local-observability/start-smoke-stop-v1.evaluations.jsonl`; latest run has 8/8 PASS observations, verdict `PASSED`, and human approval `approved`.
+- Slice: #71
+- Guide: `.agents/manual-tests/k3-1-local-observability/traffic-verify-reset-v1.md`
+- Revision: `k3-1-issue-71-v1`
+- Locked SHA-256: `700B706FADCB5F8EC794417E9ED302191BE09609F23BC9DBD86162948385E491`
+- Test Cases: `MA-71-01` through `MA-71-09`
+- Human approval: approved by the user at `2026-08-07T12:03:45.4203149+07:00`
+- Lock status: locked and immutable; semantic changes require a new revision
+- Evaluation history: `.agents/manual-tests/k3-1-local-observability/traffic-verify-reset-v1.evaluations.jsonl`; the latest run is `k3-1-issue-71-v1-selector-remediation-approved-20260807T153854+0700`.
+- Latest run has 9/9 PASS observations, verdict `PASSED`, and human approval `approved`; all earlier observations remain immutable history.
 
 ## Next Valid Transition
 
-The bounded Issue #70 delivery is complete after approved acceptance and final review. If the workflow is resumed, require an explicit request before beginning the next frontier (#71); do not merge draft PR #73, start #71/#72 implicitly, or perform destructive reset.
+Issue #70 is complete, merged, and closed after approved acceptance and final review. Issue #71 implementation, review remediation, approved acceptance, and final `code-review` are complete on `codex/k3-1-issue-71-implementation`; aggregate verdict is `APPROVE` with zero Critical and zero Major findings. Do not merge draft PR #73, start #72, deploy, or perform destructive reset.
