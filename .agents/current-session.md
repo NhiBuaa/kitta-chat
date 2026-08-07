@@ -1,56 +1,50 @@
-# K2 GitHub Actions CI/CD — Current Session
+# K3.1 Local Observability Demo — Current Session
 
 ## Status
 
-- Phase 1 PRD, Phase 2 architecture stress-review and Phase 3 issue breakdown are complete.
-- Phase 4 implementation and hosted verification are complete for Slices #14 through #20.
-- Issues #17, #18, #19 and #20 are `CLOSED` with completion state on GitHub.
-- Phase 5 quality-gate repair is complete: the merged K2 diff was reviewed, three validator contract gaps were closed with RED→GREEN fixtures, README supply-chain rationale was added, and governance/session state was reconciled.
-- Phase 4 hosted baseline review fixed point: base `0bd62de6697ef7d0477947de7e2bf416c07d3892` through `github/main` at `522e984fc3a48a6ae2e8c763706724f1c1051e3b`; Phase 5 repair is recorded by the subsequent repository history.
-- The active spec is archived at `specs/done/github-actions-ci-cd.md`.
-- Ruleset `20437452` is Active for `refs/heads/main` with exactly seven Required contexts, strict up-to-date checks, no bypass actors and merge-only completion.
-- Phase 5 repair is delivered through the normal pull-request path; the final merge SHA is recorded by Git history and the validated Resume Contract.
+- K2 GitHub Actions CI/CD and K3 Observability are complete.
+- K3.1 is the active time-boxed feature-delivery workflow.
+- The authoritative active specification is GitHub Issue #69, which is `OPEN` and labeled `ready-for-agent`.
+- ADR-013 defines the accepted `LocalObservabilityDemo` Module and Local Observability Stack seam.
+- A review of the first three-ticket graph returned `REQUEST_CHANGES` with five Major and one Minor finding.
+- Issue #69 and ADR-013 have been remediated for host-port isolation, fresh-clone environment bootstrap, total request-rate evidence, Ticket 1 runtime smoke, two-phase reset confirmation, and supported image pins.
+- Graph v2 is approved. Issues #70–#72 are published with real linear blocking edges and `ready-for-agent`.
+- The design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. The PR is intentionally unmerged.
 
 ## Sources Of Truth
 
-- Archived PRD: `specs/done/github-actions-ci-cd.md`
-- Specs index: `specs/README.md`
-- CI policy: `docs/CI_POLICY.md`
-- Decision log: `docs/decisions.md`
-- ADRs: `docs/adr/007-workflow-governance-and-ruleset-activation.md` through `docs/adr/011-staging-cd-boundary.md`
-- Slice guides: `.agents/manual-tests/github-actions-ci-cd/slice-01-ci-contract-and-readme-badges.md` through `slice-06-ruleset-stale-check.md`
+- Active specification: https://github.com/NhiBuaa/kitta-chat/issues/69
+- Metrics boundary: `docs/adr/012-k3-observability-metrics-boundary.md`
+- Local demo seam: `docs/adr/013-k3-1-local-observability-demo-seam.md`
+- Feature ledger: `.agents/workflows/k3-1-local-observability-feature-delivery.md`
+- Design checkpoint: branch `codex/k3-1-design-checkpoint`, commit `95f03f74`, draft PR https://github.com/NhiBuaa/kitta-chat/pull/73
+- Existing dashboard: `docs/observability/dashboards/k3-observability.json`
+- Existing K3 operator guide: `docs/observability/k3-operator-validation.md`
 
-## Final Required Checks
+Issue #69 is tracker-owned by the configured `to-spec` workflow. It is the authoritative K3.1 active spec. `specs/README.md` links to it; no duplicate file belongs under `specs/active/`.
 
-K2 requires exactly:
+## Approved Scope
 
-1. `Server Tests`
-2. `Client Tests`
-3. `Client Build`
-4. `Client Lint`
-5. `Docker Build (server)`
-6. `Docker Build (nginx)`
-7. `CI Policy v1`
+- Add an opt-in, local-only Prometheus and Grafana demo stack.
+- Publish only Grafana at `127.0.0.1:3001`.
+- Keep every non-Grafana service port unpublished in the resolved K3.1 model.
+- Reuse K3 metrics and dashboard; permit only one bounded total HTTP request-rate panel.
+- Provide one deep operator Interface with `start`, `traffic`, `verify`, `stop`, and two-phase `reset` actions.
+- Capture browser evidence and link it from the README.
+- Stop after the accepted evidence is complete.
 
-Security dependency, license, CodeQL and secret-scan jobs remain truthful Advisory checks and are excluded from the Required set.
+## Guardrails
 
-## Verification Evidence
+- MongoDB remains the durable source of truth. Redis remains cache/coordination only. RabbitMQ remains background-only.
+- Metrics remain disabled in the default runtime.
+- nginx must not proxy `/metrics`.
+- K3.1 must not add Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, new application metrics, benchmarks, production deployment, or open-ended dashboard tuning.
+- Safe cleanup must not pass `--volumes`.
+- Reset must display exact project-owned volumes before a separate confirmation tied to the unchanged target set.
+- Implementation commit policy is `none`. Issue #70 implementation is complete on the independent branch `codex/k3-1-issue-70-implementation`; no commit, push, merge, or deployment was performed.
 
-- `npm run test:ci`: 85/85 CI Contract tests passed after the repair slice.
-- `npm run ci:validate`: exit `0`.
-- Server tests: 321/321 passed.
-- Client tests: 237/237 passed.
-- Client lint: 0 errors and 13 warnings under the fixed budget.
-- Client production build: exit `0`.
-- Hosted main SHA `522e984fc3a48a6ae2e8c763706724f1c1051e3b`: Tests, Build, Docker and Quality runs passed; Security retained baseline Advisory failures.
-- Hosted stale-branch evidence: PR #40 was blocked while behind, then Required checks reran successfully after branch update; Security remained Advisory.
+## Current Frontier
 
-## Boundaries
+Issue #70 is complete on `codex/k3-1-issue-70-implementation`: all eight locked acceptance cases passed with explicit human approval, and final `code-review` returned `APPROVE` with zero Critical/Major findings. Issue #71 is the next published frontier and Issue #72 remains behind it; neither was started in this bounded delivery. Resume only after an explicit request for the next issue.
 
-- MongoDB remains the durable source of truth; Redis remains cache/coordination only; RabbitMQ remains background-only.
-- Optional staging/deployment remains **Deferred Capability — Pending Infrastructure Availability** under ADR-011.
-- No production deployment, rollback automation, merge queue, signed-commit enforcement or auto-merge was added.
-
-## Next Session
-
-K2 CI/CD has no active implementation slice. Start a new approved spec for a new feature. Reopen CI/CD only for K2.1 when a real staging target and runtime verification contract are available.
+Issue #70's bounded delivery is complete on `codex/k3-1-issue-70-implementation` after approved acceptance and final `code-review` `APPROVE`. Implementation remains uncommitted under `commit_policy: none`; no push, merge, or deployment authority is implied. Resume only on an explicit request for the next frontier.
