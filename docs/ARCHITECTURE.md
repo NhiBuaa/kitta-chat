@@ -75,6 +75,21 @@ Use targeted tests first, then broader regression:
 
 For multi-replica behavior, use Docker Compose and nginx manual smoke tests.
 
+## Observability
+
+The server-owned `MetricsModule` exposes bounded Prometheus counters, gauges and histograms for
+HTTP, persistence, Redis, RabbitMQ and Socket.IO behavior. Metrics are aggregate evidence; use
+structured logs and correlation IDs to follow one request or job.
+
+The internal `/metrics` endpoint is disabled by default. A monitoring fixture must set
+`METRICS_ENABLED=true`; nginx does not proxy the endpoint. K3 owns the dashboard, scrape contract,
+queue alert/runbook, correlation contract and their validation tests.
+
+K3.1 adds an isolated local Prometheus/Grafana stack through `npm run demo:observability`. It uses
+the fixed Compose project `kittachat-k3-1`, keeps backend and Prometheus ports internal, and
+publishes only Grafana at `127.0.0.1:3001`. The normal application stack and `npm run demo` remain
+separate; they do not need to run at the same time. See `docs/observability/README.md`.
+
 ## API Reference
 
 See `docs/API.md` for the current REST endpoint surface, auth requirements, request/response examples, request ID behavior, and honest limitations.

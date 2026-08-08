@@ -310,7 +310,8 @@ Lesson:
 
 ## What Was Intentionally Not Implemented
 
-- Full Prometheus metrics: `/ops` is lightweight JSON only.
+- Hosted production monitoring: K3 provides bounded Prometheus metrics and a Grafana dashboard,
+  while `/ops` remains a separate lightweight JSON endpoint.
 - Distributed rate limiting: Express limiter is in-memory per backend replica.
 - Full OpenAPI generation: current API docs are hand-written and honest.
 - Full TypeScript backend migration: backend remains JavaScript.
@@ -322,7 +323,8 @@ Lesson:
 ## What I Would Improve Next In Production
 
 1. Replace in-memory Express rate limits with Redis-backed distributed rate limiting.
-2. Add a real metrics/exporter path for Prometheus or another monitoring system.
+2. Host the existing metrics/dashboard stack and connect outbound alert delivery, centralized
+   logs and tracing where production requirements justify them.
 3. Standardize remaining legacy controller error shapes.
 4. Add security baseline hardening: Helmet review, stricter CORS documentation/config, upload limits, and input validation pass.
 5. Add frontend tests to CI and consider Docker image build checks once stable.
@@ -362,7 +364,10 @@ Use the `correlationId` from the HTTP request or job payload. Worker logs includ
 
 ### Is this production-ready observability?
 
-No. It is a practical local/debug baseline. Production would need real metrics, dashboards, alerting, log aggregation, and possibly distributed tracing.
+No. It is a practical, accepted local baseline with real bounded Prometheus metrics, a Grafana
+dashboard, scrape and queue-alert contracts, and correlation-aware logs. Production would still
+need hosted monitoring, outbound alert delivery, centralized log aggregation and, where useful,
+distributed tracing.
 
 ### Is the rate limiting production-grade?
 

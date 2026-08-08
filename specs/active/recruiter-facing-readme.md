@@ -297,7 +297,7 @@ Các limitation đã chốt:
 1. **No hosted public environment** — The product demo is currently provided through a recorded walkthrough and a reproducible local Docker Compose setup.
 2. **Deployment focuses on local reproducibility** — The project demonstrates horizontal scaling with Docker Compose. Production orchestration, for example Kubernetes, is intentionally outside the current scope.
 3. **Optional providers require configuration** — AWS S3/CloudFront, SMTP and Firebase integrations require reviewer-provided credentials to run end-to-end.
-4. **Production observability has a focused scope** — The current stack provides health, readiness and operational endpoints plus application logs; a full metrics and distributed tracing stack is a future extension.
+4. **Production observability has a focused scope** — K3 provides bounded Prometheus metrics, a Grafana dashboard, scrape and queue-alert contracts, and correlation-aware logs. K3.1 makes the dashboard reproducible locally. Hosted monitoring, outbound alert delivery, centralized logs and distributed tracing remain outside the current scope.
 5. **Verification is layered but not browser-E2E automated** — Current verification focuses on unit tests, integration tests, production builds and multi-client manual smoke testing. Automated browser E2E testing is planned for a future iteration.
 
 ## Completion Criteria

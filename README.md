@@ -16,6 +16,19 @@ KittaChat is a full-stack realtime communication platform for direct messaging, 
 
 Built as a production-oriented engineering project focused on scalable realtime systems, event-driven architecture, and distributed backend design.
 
+## Contents
+
+- [Watch the Demo](#watch-the-demo)
+- [Product Tour](#product-tour)
+- [Engineering Highlights](#engineering-highlights)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [K3.1 Local Observability Demo](#k31-local-observability-demo)
+- [Demo Accounts](#demo-accounts)
+- [Testing](#testing)
+- [Known Limitations](#known-limitations)
+- [Technical Documentation](#technical-documentation)
+
 ## Watch the Demo
 
 <p align="center">
@@ -174,7 +187,7 @@ dashboard. It publishes Grafana only on `http://127.0.0.1:3001`; backend, Promet
 MongoDB, and Redis remain internal to the Compose network.
 
 Follow the [local observability demo guide](docs/observability/k3-local-demo.md) for the
-four bounded actions:
+four normal actions:
 
 ```bash
 npm run demo:observability -- start
@@ -183,9 +196,10 @@ npm run demo:observability -- verify
 npm run demo:observability -- stop
 ```
 
-The guide keeps static validation, runtime smoke, Prometheus target health, metric query data,
-Grafana discovery, browser observation, and safe cleanup as separate claims. The destructive
-reset flow is documented separately and is not part of normal acceptance.
+The fifth action, `reset`, is a separate destructive two-phase flow. It is documented in the
+guide and is not part of normal acceptance. The guide keeps static validation, runtime smoke,
+Prometheus target health, metric query data, Grafana discovery, browser observation, and safe
+cleanup as separate claims.
 
 Browser evidence from the provisioned `KittaChat K3 Observability` dashboard:
 
@@ -193,7 +207,7 @@ Browser evidence from the provisioned `KittaChat K3 Observability` dashboard:
 - [Total HTTP request rate](docs/assets/readme/k3-observability/dashboard-request-rate.png)
 - [HTTP latency](docs/assets/readme/k3-observability/dashboard-latency.png)
 
-K3.1 ends after the local browser evidence, README handoff, and non-destructive cleanup are
+K3.1 is complete: the local browser evidence, README handoff, and non-destructive cleanup were
 accepted. K4 may reuse this dashboard during future benchmark work, but benchmark outcomes are
 owned by K4 and are not K3.1 acceptance criteria. K3.1 does not add a second observability
 platform, production deployment, or open-ended dashboard tuning.
@@ -214,6 +228,13 @@ See [Demo Dataset Source](server/src/demo/demoDataset.js), [Seed Safety](server/
 ## Testing
 
 Run the same source-of-truth commands used by CI:
+
+```bash
+npm ci
+npm run test:ci
+```
+
+Run the application suites directly when working in one package:
 
 ```bash
 cd server
@@ -244,7 +265,7 @@ The badges in the Hero read directly from their workflows; no passing state or t
 1. **No hosted public environment** — The recorded walkthrough above provides the fastest product tour; the complete product is available through the reproducible local Docker Compose setup.
 2. **Deployment focuses on local reproducibility** — The project demonstrates horizontal scaling with Docker Compose. Production orchestration, for example Kubernetes, is intentionally outside the current scope.
 3. **Optional providers require configuration** — AWS S3/CloudFront, SMTP and Firebase integrations require reviewer-provided credentials to run end-to-end.
-4. **Production observability has a focused scope** — The current stack provides health, readiness and operational endpoints plus application logs; a full metrics and distributed tracing stack is a future extension.
+4. **Production observability has a focused scope** — K3 provides bounded Prometheus metrics, a Grafana dashboard, scrape and queue-alert contracts, and correlation-aware logs. K3.1 makes the dashboard reproducible locally. Hosted monitoring, outbound alert delivery, centralized logs and distributed tracing remain outside the current scope.
 5. **Verification is layered but not browser-E2E automated** — Current verification focuses on unit tests, integration tests, production builds and multi-client manual smoke testing. Automated browser E2E testing is planned for a future iteration.
 
 ## Technical Documentation
@@ -252,6 +273,9 @@ The badges in the Hero read directly from their workflows; no passing state or t
 - [Architecture Decision Records](docs/adr/README.md) — stable index for architectural decisions and their lifecycle status.
 - [CI Policy Governance](docs/CI_POLICY.md) — Required check names, policy upgrades, trust boundaries and contributor-mode controls.
 - [Architecture Overview](docs/ARCHITECTURE.md) — ownership boundaries for MongoDB, Redis, RabbitMQ and Socket.IO.
+- [K3/K3.1 Observability](docs/observability/README.md) — metrics, dashboard, alerts, operator validation, local demo and accepted browser evidence.
+- [ADR-012: K3 Observability Metrics Boundary](docs/adr/012-k3-observability-metrics-boundary.md) — application metrics ownership, labels and failure semantics.
+- [ADR-013: K3.1 Local Observability Demo Seam](docs/adr/013-k3-1-local-observability-demo-seam.md) — isolated Prometheus/Grafana operation and evidence boundaries.
 - [REST API Reference](docs/API.md) — authentication, request contracts and endpoint examples.
 - [Socket.IO Multi-Replica Scaling](docs/SOCKET_IO_SCALING.md) — rooms, Redis Adapter fan-out, reconnect behavior and operational proof.
 - [RabbitMQ Worker Flows](docs/RABBITMQ_WORKER_FLOWS.md) — queue topology, retry, DLQ, poison-message and correlation behavior.

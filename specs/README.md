@@ -53,8 +53,7 @@ Người dùng cần ...
 
 ## Active Specs
 
-- [Conversation Read Model Migration](./active/conversation-read-model-migration.md)
-- [K3.1 Local Observability Demo](https://github.com/NhiBuaa/kitta-chat/issues/69) — tracker-owned authoritative spec; không có local duplicate.
+- [Recruiter-Facing README](./active/recruiter-facing-readme.md)
 
 ## Done Specs
 
@@ -74,3 +73,6 @@ Người dùng cần ...
 - [Background Workers](./done/background-workers.md)
 - [Operational Health](./done/operational-health.md)
 - [GitHub Actions CI/CD Quality Gates](./done/github-actions-ci-cd.md)
+- [Conversation Read Model Migration](./done/conversation-read-model-migration.md)
+- [K3 Observability](https://github.com/NhiBuaa/kitta-chat/issues/44) — tracker-owned specification; delivery complete and Issue closed.
+- [K3.1 Local Observability Demo](https://github.com/NhiBuaa/kitta-chat/issues/69) — tracker-owned specification; delivery Issues #70–#72 complete, while parent Issue #69 remains open for tracker history.
