@@ -34,7 +34,7 @@ accepted.
 The normal application stack keeps metrics disabled by default. K3.1 is opt-in and uses the fixed
 Compose project `kittachat-k3-1`. Grafana is its only published host surface at
 `http://127.0.0.1:3001`; backend, Prometheus, MongoDB and Redis remain internal. The normal
-`shot-chat`/application stack does not need to run at the same time.
+KittaChat application stack does not need to run at the same time.
 
 Hosted Prometheus/Grafana, outbound alert delivery, centralized logs, tracing, benchmarks and
 production deployment remain outside K3/K3.1. They require a new approved issue or specification.
