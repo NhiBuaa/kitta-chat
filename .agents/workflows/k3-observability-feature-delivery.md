@@ -29,7 +29,7 @@
 
 ## Current State
 
-K3 Observability is terminally complete. The approved specification in Issue #44 was delivered through Issues #45–#52; every slice passed its locked manual acceptance with explicit human approval, and the final Issue #52 `code-review` returned `APPROVE` with zero Critical and Major findings. Publication is complete through PRs #55–#67: PR #67 merged at `0b28b9ad5d15df388d0752d40aa0dcdb3c6468be`, automatically closed Issue #52, and local `main` is synchronized with `github/main` at that same commit. The delivered scope includes structured correlation logging, bounded Prometheus metrics, REST/Socket.IO/persistence/Redis/RabbitMQ instrumentation, the repository-owned Grafana dashboard and scrape contract, severe-failure alert/runbook artifacts, operator validation guidance, and accepted end-to-end coverage. No K3 implementation, acceptance, review, publication, or delivery blocker remains.
+K3 Observability is terminally complete. The approved specification in Issue #44 is closed and was delivered through Issues #45–#52; every slice passed its locked manual acceptance with explicit human approval, and the final Issue #52 `code-review` returned `APPROVE` with zero Critical and Major findings. Publication completed through PRs #55–#67; PR #67 merged at the historical K3 checkpoint `0b28b9ad5d15df388d0752d40aa0dcdb3c6468be`. The delivered scope includes structured correlation logging, bounded Prometheus metrics, REST/Socket.IO/persistence/Redis/RabbitMQ instrumentation, the repository-owned Grafana dashboard and scrape contract, severe-failure alert/runbook artifacts, operator validation guidance, and accepted end-to-end coverage. No K3 implementation, acceptance, review, publication, or delivery blocker remains.
 
 ## Implementation Layout Contract
 
@@ -56,7 +56,7 @@ Approved test seams:
 - #47 — RabbitMQ queue metrics and critical alert — blocked by #46 and #45; blocks #52.
 - #52 — Grafana dashboard and E2E validation — blocked by #49, #48, #50, #51, and #47.
 
-Current frontier: #52.
+Terminal state: Issues #45–#52 and parent Issue #44 are closed. There is no K3 frontier.
 
 ## Completed Transitions
 

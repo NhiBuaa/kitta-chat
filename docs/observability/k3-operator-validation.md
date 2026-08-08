@@ -24,10 +24,12 @@ Prometheus exposition at the observed time.
 - Queue runbook: `docs/observability/runbooks/k3-queue-dead-lettered.md`
 - Correlation contract: `docs/observability/k3-correlation-contract.md`
 
-The dashboard targets Grafana 11.x schema version 39. It has one Prometheus datasource variable
-named `DS_PROMETHEUS`, aggregates all replicas by default, and lets an operator filter on the
-Prometheus `instance` infrastructure label. The dashboard's HTTP, persistence, Redis, queue, and
-socket panels use aggregate PromQL only.
+The dashboard was originally designed with Grafana 11.x schema version 39. K3.1 runtime
+acceptance also proved that the same dashboard and datasource provisioning work on the supported
+and pinned Grafana `12.4.8` runtime. It has one Prometheus datasource variable named
+`DS_PROMETHEUS`, aggregates all replicas by default, and lets an operator filter on the Prometheus
+`instance` infrastructure label. The dashboard's HTTP, persistence, Redis, queue, and socket
+panels use aggregate PromQL only.
 
 ## Static validation
 

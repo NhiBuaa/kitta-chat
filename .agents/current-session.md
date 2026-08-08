@@ -1,55 +1,43 @@
-# K3.1 Local Observability Demo — Current Session
+# K3 and K3.1 — Completion Checkpoint
 
 ## Status
 
-- K2 GitHub Actions CI/CD and K3 Observability are complete.
-- K3.1 is the active time-boxed feature-delivery workflow.
-- The authoritative active specification is GitHub Issue #69, which is `OPEN` and labeled `ready-for-agent`.
-- ADR-013 defines the accepted `LocalObservabilityDemo` Module and Local Observability Stack seam.
-- A review of the first three-ticket graph returned `REQUEST_CHANGES` with five Major and one Minor finding.
-- Issue #69 and ADR-013 have been remediated for host-port isolation, fresh-clone environment bootstrap, total request-rate evidence, Ticket 1 runtime smoke, two-phase reset confirmation, and supported image pins.
-- Graph v2 is approved. Issues #70–#72 are published with real linear blocking edges and `ready-for-agent`.
-- The design artifacts are checkpointed at commit `95f03f74` on branch `codex/k3-1-design-checkpoint` and published as draft PR #73: https://github.com/NhiBuaa/kitta-chat/pull/73. The PR is intentionally unmerged.
+- K3 Observability is complete. Issue #44 and implementation Issues #45–#52 are closed.
+- K3.1 Local Observability Demo is complete. Implementation Issues #70–#72 are closed.
+- The K3.1 parent specification, Issue #69, remains open for tracker history. It is not an implementation frontier.
+- Local `main` and `github/main` are synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98` after PR #77.
+- No deployment or destructive K3.1 reset was performed.
 
-## Sources Of Truth
+## Delivered Outcome
 
-- Active specification: https://github.com/NhiBuaa/kitta-chat/issues/69
-- Metrics boundary: `docs/adr/012-k3-observability-metrics-boundary.md`
-- Local demo seam: `docs/adr/013-k3-1-local-observability-demo-seam.md`
-- Feature ledger: `.agents/workflows/k3-1-local-observability-feature-delivery.md`
-- Issue #71: https://github.com/NhiBuaa/kitta-chat/issues/71 (closed by merged PR #75)
-- Issue #72: https://github.com/NhiBuaa/kitta-chat/issues/72
-- Current base: local `main` and `github/main` at merge commit `811cde8351d8b612dd2816d5b517c18873580f8b`
-- Locked Issue #71 guide: `.agents/manual-tests/k3-1-local-observability/traffic-verify-reset-v1.md`
-- Locked Issue #72 guide: `.agents/manual-tests/k3-1-local-observability/browser-evidence-handoff-v1.md` (revision `k3-1-issue-72-v1`, SHA-256 `AEDFEA527EB829016B104A8EC19D78D6772C1F631192ADD245AAB6AD51166747`)
-- Issue #72 Evaluation history: `.agents/manual-tests/k3-1-local-observability/browser-evidence-handoff-v1.evaluations.jsonl` (latest full-scope run `k3-1-issue-72-v1-approved-20260807T164827+0700`, 7/7 PASS; latest remediation run `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700`, 2/2 PASS, approved)
-- Design checkpoint: branch `codex/k3-1-design-checkpoint`, commit `95f03f74`, draft PR https://github.com/NhiBuaa/kitta-chat/pull/73
-- Existing dashboard: `docs/observability/dashboards/k3-observability.json`
-- Existing K3 operator guide: `docs/observability/k3-operator-validation.md`
+- K3 provides bounded Prometheus application metrics, structured correlation logging, a repository-owned Grafana dashboard and scrape contract, queue alert/runbook artifacts, and operator validation guidance.
+- Metrics remain disabled by default. `/metrics` stays internal and is not proxied through nginx.
+- K3.1 provides an opt-in local Prometheus/Grafana stack through `npm run demo:observability`.
+- Grafana is the only published K3.1 host surface at `http://127.0.0.1:3001`.
+- Browser evidence, automated checks, locked manual guides, and append-only Evaluation histories are accepted.
+- The K3.1 stop rule has been reached. Any new observability scope requires a new approved issue or specification.
 
-Issue #69 is tracker-owned by the configured `to-spec` workflow. It is the authoritative K3.1 active spec. `specs/README.md` links to it; no duplicate file belongs under `specs/active/`.
+## Sources of Truth
 
-## Approved Scope
+- K3 specification: https://github.com/NhiBuaa/kitta-chat/issues/44
+- K3.1 parent specification: https://github.com/NhiBuaa/kitta-chat/issues/69
+- K3 metrics boundary: `docs/adr/012-k3-observability-metrics-boundary.md`
+- K3.1 local demo seam: `docs/adr/013-k3-1-local-observability-demo-seam.md`
+- Observability documentation index: `docs/observability/README.md`
+- K3 delivery ledger: `.agents/workflows/k3-observability-feature-delivery.md`
+- K3.1 delivery ledger: `.agents/workflows/k3-1-local-observability-feature-delivery.md`
+- Locked acceptance guides and Evaluation histories: `.agents/manual-tests/k3-observability/` and `.agents/manual-tests/k3-1-local-observability/`
 
-- Add an opt-in, local-only Prometheus and Grafana demo stack.
-- Publish only Grafana at `127.0.0.1:3001`.
-- Keep every non-Grafana service port unpublished in the resolved K3.1 model.
-- Reuse K3 metrics and dashboard; permit only one bounded total HTTP request-rate panel.
-- Provide one deep operator Interface with `start`, `traffic`, `verify`, `stop`, and two-phase `reset` actions.
-- Capture browser evidence and link it from the README.
-- Stop after the accepted evidence is complete.
+## Publication History
+
+- K3 terminal publication: PR #67, merge commit `0b28b9ad`.
+- K3.1 design checkpoint: PR #73, merged after the implementation absorbed the approved design.
+- K3.1 implementations: PR #74 for Issue #70, PR #75 for Issue #71, and PR #76 for Issue #72.
+- K3.1 closure-ledger synchronization: PR #77, merge commit `0cb0dc2a`.
 
 ## Guardrails
 
 - MongoDB remains the durable source of truth. Redis remains cache/coordination only. RabbitMQ remains background-only.
-- Metrics remain disabled in the default runtime.
-- nginx must not proxy `/metrics`.
-- K3.1 must not add Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, new application metrics, benchmarks, production deployment, or open-ended dashboard tuning.
-- Safe cleanup must not pass `--volumes`.
-- Reset must display exact project-owned volumes before a separate confirmation tied to the unchanged target set.
-- Issue #70 implementation was committed as `3169a492`, pushed on `codex/k3-1-issue-70-implementation`, merged by PR #74 as `6928b729`, and the issue is closed. Issue #71 implementation was committed as `4d579e6d`, pushed on `codex/k3-1-issue-71-implementation`, merged by PR #75 as `811cde8351d8b612dd2816d5b517c18873580f8b`, and the issue is closed. Issue #72 publication checkpoint was committed as `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a`, pushed on `codex/k3-1-issue-72-implementation`, merged by PR #76 as `6bc0405cc35c77ec0e82609227c1f44c92b4e252`, and Issue #72 is closed. No deployment was performed.
-
-## Current Frontier
-
-Issue #70 is complete on `codex/k3-1-issue-70-implementation`: all eight locked acceptance cases passed with explicit human approval, and final `code-review` returned `APPROVE` with zero Critical/Major findings. Issue #71 implementation, review remediation, approved manual acceptance, final review, publication, and closure are complete via merged PR #75; its guide remains approved and locked, and the latest selector-remediation Evaluation has 9/9 PASS observations with `verdict=PASSED` and `human_approval=approved`. Final review aggregate is `APPROVE` with zero Critical and zero Major findings; two Minor findings remain recorded in the ledger. Issue #72 implementation and approved browser acceptance are complete on `codex/k3-1-issue-72-implementation`. All seven locked cases passed; the superseding Evaluation `k3-1-issue-72-v1-approved-20260807T164827+0700` is `PASSED` with explicit user approval. The initial final review returned `APPROVE` with zero Critical/Major findings and a Minor finding about JPEG bytes stored under `.png` names; the artifacts are now valid PNGs, remediation Evaluation `k3-1-issue-72-v1-png-remediation-approved-20260807T182331+0700` is `PASSED` with explicit approval, and updated final review aggregate is `APPROVE` with zero Critical/Major findings and no findings. Publication checkpoint commit `bd0f63eaf8ea860e0ff9e1283badfc6b3231c96a` was pushed and merged by PR #76 as `6bc0405cc35c77ec0e82609227c1f44c92b4e252`; Issue #72 is closed. No deployment was performed.
-Issue #70's bounded delivery is complete and merged on `main` after approved acceptance and final `code-review` `APPROVE`. PR #74 is merged as `6928b729`, and Issue #70 is closed. Issue #71 is merged as PR #75 at `811cde8351d8b612dd2816d5b517c18873580f8b`, and Issue #71 is closed. Issue #72 implementation, browser evidence, README handoff, approved acceptance, updated final review, authorized publication, PR #76 merge, and Issue closure are complete on `main` at `6bc0405cc35c77ec0e82609227c1f44c92b4e252`. No deployment or destructive reset was performed.
+- Do not rewrite locked manual guides or append-only Evaluation histories.
+- Do not add Alertmanager, cAdvisor, Loki, Tempo, OpenTelemetry, hosted monitoring, production deployment, benchmarks, or open-ended dashboard tuning under the completed K3/K3.1 scope.
+- Safe stop must not pass `--volumes`. Destructive reset requires the separate two-phase confirmation flow and explicit approval.

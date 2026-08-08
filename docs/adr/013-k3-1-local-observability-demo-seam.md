@@ -51,7 +51,7 @@ The in-process Interface accepts an action and injected process, fetch, clock, a
 
 ## Evidence seam
 
-The approved `Local Observability Stack seam` has three evidence layers:
+The approved `Local Observability Stack seam` has four evidence layers:
 
 1. Static automation validates the resolved Compose model, profile gating, Grafana-only loopback binding, no published port on any other service, no inherited fixed container name, pinned images, project isolation, datasource/dashboard provisioning, static scrape target, total request-rate query, and metrics-disabled default.
 2. Ticket 1 bounded runtime smoke validates missing-env and existing-env preflight, starts the isolated project, waits for required readiness, confirms Grafana provisioning is reachable, records K3.1 volume identities, runs safe stop, and confirms the same volumes remain.
@@ -99,6 +99,17 @@ K3.1 ends after all of these outcomes pass acceptance:
 6. The project README links to the demo evidence.
 
 After that checkpoint, do not add cAdvisor, Loki, Tempo, OpenTelemetry, Alertmanager, new metrics, benchmark requirements, multi-replica discovery, or open-ended dashboard tuning without a new approved issue.
+
+## Implementation outcome
+
+K3.1 reached this stop rule through Issues #70–#72. The isolated stack, safe traffic and
+verification actions, provisioned dashboard, browser acceptance, README handoff, and
+non-destructive cleanup all passed their locked acceptance guides with explicit human approval.
+The accepted browser artifacts are stored in `docs/assets/readme/k3-observability/`.
+
+Grafana `12.4.8` successfully provisioned and rendered the schema-39 dashboard. PRs #74–#76
+delivered the three implementation slices, and PR #77 synchronized the final closure ledger.
+No production deployment or destructive reset was performed.
 
 ## Rejected alternatives
 

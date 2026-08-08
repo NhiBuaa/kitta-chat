@@ -13,7 +13,7 @@ cleanup so one successful command cannot be mistaken for a different claim.
 - The demo traffic calls only the safe successful health route from inside the backend container;
   it does not create users, messages, calls, files, or other business data.
 - Do not print `server/.env`, credentials, tokens, connection strings, or generated secret values.
-- Browser screenshots/video and README evidence belong to Issue #72, not this slice.
+- Browser screenshots and README evidence were accepted as the final K3.1 delivery slice.
 
 ## Evidence layers
 
@@ -76,7 +76,7 @@ The stable dashboard identity is:
 - Title: `KittaChat K3 Observability`
 
 Use the `verify` action for the runtime discovery claim. Direct browser observation of non-empty
-panels is reserved for Issue #72. The accepted browser evidence is linked from the project
+panels was accepted for Issue #72. The accepted browser evidence is linked from the project
 [README](../../README.md):
 
 - [Dashboard overview](../assets/readme/k3-observability/dashboard-overview.png)
@@ -127,3 +127,6 @@ new metric labels/routes, benchmarks, multi-replica discovery, production deploy
 open-ended dashboard tuning. K3.1 stops after the local browser evidence, README handoff, and
 safe cleanup are accepted. K4 may reuse this dashboard during future benchmark work, but K4
 owns benchmark outcomes and K3.1 does not accept or publish benchmark results.
+
+The stop rule has been reached. All three browser artifacts, the README handoff, safe cleanup,
+and the locked manual acceptance were approved. New scope requires a separate approved issue.
