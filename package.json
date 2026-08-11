@@ -14,9 +14,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "express": "^5.2.1",
-    "lucide-react": "^1.7.0",
-    "sharp": "^0.34.5"
+    "lucide-react": "^1.7.0"
   },
   "devDependencies": {
     "license-checker-rseidelsohn": "4.4.2",

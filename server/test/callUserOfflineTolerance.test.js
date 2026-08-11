@@ -61,6 +61,11 @@ test("callUser attempts realtime ringing even when receiver has no local room", 
       },
     };
     const io = {
+      rateLimiter: {
+        async admitLogicalCall() {
+          return { allowed: true, kind: "charged" };
+        },
+      },
       sockets: {
         adapter: {
           rooms: new Map(),

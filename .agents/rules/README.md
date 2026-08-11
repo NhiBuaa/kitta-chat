@@ -29,4 +29,5 @@ Phân biệt nhanh:
 - [Conversation Read Model Migration](./conversation-read-model-migration.md)
 - [Realtime State](./realtime-state.md)
 - [Auth Session](./auth-session.md)
+- [Security Finding Disposition](./security-findings.md)
 - [Calls](./calls.md)

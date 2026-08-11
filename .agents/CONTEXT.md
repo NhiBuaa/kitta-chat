@@ -88,6 +88,34 @@ _Avoid_: gọi một check là bắt buộc nếu repository ruleset/branch prot
 Một GitHub check cung cấp quality signal cho reviewer nhưng không chặn merge trong K2, gồm dependency vulnerability, security/SAST, secret và license scans nếu được triển khai.
 _Avoid_: trình bày Advisory Check như bằng chứng rằng repository không có vulnerability.
 
+**Allowed Browser Origin**:
+Một tuple scheme, host và port được cấu hình tường minh để credentialed REST và Socket.IO chấp nhận cùng một browser origin; policy đầy đủ nằm trong `.agents/rules/security-findings.md` và ADR-014.
+_Avoid_: wildcard, phản chiếu origin của request, alias ngầm hoặc dùng Public App URL như một allowlist.
+
+**Public App URL**:
+Frontend base URL duy nhất dùng để tạo user-facing link như password-reset link, tách biệt với tập Allowed Browser Origin.
+_Avoid_: giả định một public URL có thể đại diện cho mọi origin được phép trong development, Docker và deployment.
+
+**Edge Rate Limit**:
+Defense-in-depth tại nginx dựa trên network identity như client IP và state trong nginx shared memory; nó bảo vệ ingress trước khi request đến backend.
+_Avoid_: gọi Edge Rate Limit là Redis-shared quota hoặc distributed backend enforcement.
+
+**Distributed Application Rate Limit**:
+Quota theo application identity và operation class, dùng Redis coordination để mọi backend replica nhìn thấy cùng counter và failure semantics.
+_Avoid_: dùng replica-local counter, nginx shared-memory zone hoặc raw forwarded header làm bằng chứng về quota toàn cụm.
+
+**Rate-Limit Actor Bucket**:
+Bucket bắt buộc theo canonical verified actor trong phạm vi một rate-limit policy class; mọi protected operation thuộc cùng class phải tham gia bucket này.
+_Avoid_: tạo actor bucket từ caller-supplied identity hoặc đưa resource/route vào key theo cách cho phép né actor-wide quota.
+
+**Actor-Scoped Secondary Rate-Limit Bucket**:
+Bucket bổ sung bind canonical actor với một route, resource, conversation hoặc callee cụ thể để giới hạn actor đó trên target; actor khác không consume cùng bucket.
+_Avoid_: bỏ actor khỏi key rồi vẫn mô tả bucket là actor-scoped.
+
+**Target-Wide Protection Bucket**:
+Bucket aggregate cố ý gom traffic từ nhiều actors tới cùng account, resource hoặc target theo một threat model và fairness policy đã được duyệt.
+_Avoid_: tạo target-wide bucket vô tình, hoặc dùng nó thay thế Rate-Limit Actor Bucket.
+
 **Merge Blocker**:
 Một Required Quality Gate được GitHub repository ruleset hoặc branch protection yêu cầu thành công trước khi merge.
 _Avoid_: dùng thuật ngữ này cho workflow chỉ tồn tại trong repository nhưng chưa được cấu hình làm required check.

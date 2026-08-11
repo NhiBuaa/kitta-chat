@@ -4,6 +4,7 @@ const ConversationParticipant = require("../models/ConversationParticipant");
 const { buildMessageVisibilityFilter } = require("../services/conversationVisibilityHelpers");
 const { sendError } = require("../utils/apiResponse");
 const { dualWriteConfirmedMessage } = require("../services/conversationDualWriteService");
+const { logger } = require("../utils/logger");
 
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
@@ -61,8 +62,12 @@ exports.createMessage = async (req, res) => {
     console.log("Đã lưu thành công:", savedMessage);
     res.status(200).json(savedMessage);
   } catch (err) {
-    console.error("Create Message Error:", err);
-    res.status(500).json(err);
+    logger.error("message_create_failed", { errorName: err?.name || "Error" });
+    return sendError(res, {
+      status: 500,
+      code: "INTERNAL_ERROR",
+      message: "Unable to create message",
+    });
   }
 };
 
@@ -120,8 +125,12 @@ exports.getMessages = async (req, res) => {
       hasMore: hasMore
     });
   } catch (err) {
-    console.error("Lỗi getMessages:", err);
-    res.status(500).json(err);
+    logger.error("message_read_failed", { errorName: err?.name || "Error" });
+    return sendError(res, {
+      status: 500,
+      code: "INTERNAL_ERROR",
+      message: "Unable to retrieve messages",
+    });
   }
 };
 

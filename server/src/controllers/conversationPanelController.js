@@ -3,6 +3,7 @@ const { sendError } = require("../utils/apiResponse");
 const permissionService = require("../services/permissionService");
 const overviewService = require("../services/overviewService");
 const preferenceService = require("../services/preferenceService");
+const { resolveCanonicalDirectConversationResource } = require("../validation/directConversationResource");
 const crypto = require("crypto");
 
 const Group = require("../models/Group");
@@ -43,7 +44,19 @@ exports.getMetadata = async (req, res) => {
     }
 
     const userId = req.user?.id || req.user?._id;
-    const conversationId = req.params.id;
+    let conversationId = req.params.id;
+
+    if (conversationId.includes("_")) {
+      const directResource = resolveCanonicalDirectConversationResource(conversationId, userId);
+      if (!directResource) {
+        return sendError(res, {
+          status: 403,
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền truy cập cuộc hội thoại này",
+        });
+      }
+      conversationId = directResource.conversationId;
+    }
 
     // Set API Version header
     res.setHeader("X-Panel-Version", "1");

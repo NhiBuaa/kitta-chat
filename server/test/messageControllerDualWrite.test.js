@@ -38,7 +38,12 @@ const createResponse = () => ({
   },
 });
 
-const loadMessageController = ({ dualWriteEnabled = false, readModelError = null } = {}) => {
+const loadMessageController = ({
+  dualWriteEnabled = false,
+  readModelError = null,
+  saveError = null,
+  findError = null,
+} = {}) => {
   clearControllerCache();
   const calls = [];
 
@@ -50,6 +55,7 @@ const loadMessageController = ({ dualWriteEnabled = false, readModelError = null
     }
 
     async save() {
+      if (saveError) throw saveError;
       calls.push(["Message.save", this]);
       return this;
     }
@@ -57,6 +63,17 @@ const loadMessageController = ({ dualWriteEnabled = false, readModelError = null
     async populate(path) {
       calls.push(["Message.populate", path]);
       return this;
+    }
+
+    static find() {
+      return {
+        sort() { return this; },
+        limit() { return this; },
+        populate() { return this; },
+        then(resolve, reject) {
+          return Promise.reject(findError).then(resolve, reject);
+        },
+      };
     }
   }
 
@@ -151,4 +168,45 @@ test("createSystemMessage dual-writes group lifecycle messages when enabled", as
     ["Message.save", "ensureConversationForConfirmedMessage"],
   );
   assert.equal(calls[1][1], message);
+});
+
+test("createMessage returns a fixed safe error response when persistence fails", async () => {
+  const { controller } = loadMessageController({
+    saveError: new Error("internal path C:\\private\\module.js with secret detail"),
+  });
+  const res = createResponse();
+
+  await controller.createMessage({
+    body: { sender: "sender", receiver: "receiver", text: "hello" },
+  }, res);
+
+  assert.equal(res.statusCode, 500);
+  assert.deepEqual(res.body, {
+    success: false,
+    error: { code: "INTERNAL_ERROR", message: "Unable to create message" },
+    message: "Unable to create message",
+    requestId: undefined,
+  });
+  assert.equal(JSON.stringify(res.body).includes("private\\module"), false);
+});
+
+test("getMessages returns a fixed safe error response when querying fails", async () => {
+  const { controller } = loadMessageController({
+    findError: new Error("internal path C:\\private\\query.js with secret detail"),
+  });
+  const res = createResponse();
+
+  await controller.getMessages({
+    params: { userId1: "sender", userId2: "receiver" },
+    query: {},
+  }, res);
+
+  assert.equal(res.statusCode, 500);
+  assert.deepEqual(res.body, {
+    success: false,
+    error: { code: "INTERNAL_ERROR", message: "Unable to retrieve messages" },
+    message: "Unable to retrieve messages",
+    requestId: undefined,
+  });
+  assert.equal(JSON.stringify(res.body).includes("private\\query"), false);
 });

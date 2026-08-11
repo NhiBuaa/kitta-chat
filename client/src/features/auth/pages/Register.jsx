@@ -6,6 +6,7 @@ import { register as registerAPI } from "@/services/api/authApi.js";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUser, FaEnvelope, FaLock, FaPassport } from "react-icons/fa";
+import { displayNamePattern } from "../validation/displayName.js";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -75,7 +76,7 @@ const Register = () => {
                     message: "Tên hiển thị không được vượt quá 30 ký tự",
                   },
                   pattern: {
-                    value: /^[A-Za-zÀ-ỹà-ỹ\s]+$/,
+                    value: displayNamePattern,
                     message:
                       "Tên hiển thị chỉ được chứa chữ cái và khoảng trắng",
                   },

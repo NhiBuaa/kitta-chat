@@ -12,6 +12,8 @@ const { registerCallHandlers } = require("./handlers/call/index");
 const { createCallTimeoutFinalizer } = require("./handlers/call/services/callTimeoutFinalizer");
 const { createSocketConnectionTracker } = require("./connectionMetrics");
 const { logger: defaultLogger } = require("../utils/logger");
+const { createIssue61AggregateMeasurementModule } = require("../observability/issue61");
+const { createBrowserOriginPolicy } = require("../config/browserOriginPolicy");
 
 const NODE_NAME = process.env.NODE_NAME || "backend";
 const logPrefix = `[Socket][node=${NODE_NAME}]`;
@@ -32,17 +34,27 @@ if (!JWT_SECRET) {
  * @param {import("express").Application} app
  * @returns {Promise<import("socket.io").Server>} io
  */
-const initSocket = async (httpServer, app, { metrics, logger } = {}) => {
+const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement } = {}) => {
     const appMetrics = typeof app?.get === "function" ? app.get("metrics") : undefined;
     const appLogger = typeof app?.get === "function" ? app.get("logger") : undefined;
+    const browserOriginPolicy = typeof app?.get === "function"
+        ? app.get("browserOriginPolicy") || createBrowserOriginPolicy([])
+        : createBrowserOriginPolicy([]);
     const connectionTracker = createSocketConnectionTracker({
         logger: logger || appLogger || defaultLogger,
         metrics: metrics || appMetrics,
     });
+    const callMeasurement = issue61Measurement || createIssue61AggregateMeasurementModule();
     const io = new Server(httpServer, {
         cors: {
-            origin: process.env.URL_FRONTEND,
+            origin(origin, callback) {
+                callback(null, browserOriginPolicy.isAllowedBrowserOrigin(origin));
+            },
+            credentials: true,
             methods: ["GET", "POST"],
+        },
+        allowRequest(request, callback) {
+            callback(null, browserOriginPolicy.isRequestOriginAllowed(request.headers.origin));
         },
         pingTimeout: 20000,
         pingInterval: 25000,
@@ -70,6 +82,7 @@ const initSocket = async (httpServer, app, { metrics, logger } = {}) => {
     app.set("socketio", io);
     app.set("redisClient", pubClient);
     io.redisClient = pubClient;
+    io.rateLimiter = typeof app?.get === "function" ? app.get("rateLimiter") : undefined;
     io.callTimeoutFinalizer = createCallTimeoutFinalizer({ io, redisClient: pubClient });
     io.callTimeoutFinalizer.start();
 
@@ -145,7 +158,7 @@ const initSocket = async (httpServer, app, { metrics, logger } = {}) => {
         registerMessageHandlers(socket, io);
         registerFriendHandlers(socket, io);
         registerTypingHandlers(socket, io);
-        registerCallHandlers(socket, io);
+        registerCallHandlers(socket, io, { measurement: callMeasurement });
     });
 
     return io;

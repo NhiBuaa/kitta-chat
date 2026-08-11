@@ -6,39 +6,36 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test src/utils/avatarUrl.test.js src/features/calls/utils/callDuration.test.js src/features/calls/context/callStorage.test.js src/features/calls/context/callLifecycleState.test.js src/services/socket/socketAuthState.test.js src/services/api/axiosClientAuthRetry.test.js src/services/auth/authBootstrap.test.js src/services/auth/authSession.test.js src/services/auth/AuthProvider.test.js src/features/auth/pages/Login.test.js src/features/profile/components/UserProfileSidebar.test.js src/features/profile/components/userProfileModalState.test.js src/features/chat/socket/messageSocketState.test.js src/features/calls/pages/callPageState.test.js src/features/calls/components/callHistoryState.test.js src/features/calls/context/callHistoryBadgeState.test.js src/features/calls/context/callMediaState.test.js src/features/profile/hooks/presenceState.test.js src/features/friends/socket/friendshipState.test.js src/features/friends/socket/useFriendSocket.test.js src/features/friends/actions/removeFriendAction.test.js src/features/friends/actions/removeFriendModalState.test.js src/services/api/conversationPanelApi.test.js src/features/chat/actions/downloadChatFile.test.js src/features/chat/hooks/useInfiniteScroll.test.js test/features/chat/hooks/useInfiniteScroll.test.js src/features/chat/hooks/scrollFollowState.test.js src/features/chat/hooks/useChatMessages.test.js src/features/chat/hooks/useExplorerFreshness.test.js test/features/chat/hooks/useExplorerFreshness.test.js src/features/chat/components/ViewAllModalShell.test.js src/features/chat/components/MediaLightbox.test.js src/features/chat/components/MediaExplorer.test.js src/features/chat/components/FilesExplorer.test.js src/features/chat/components/LinksExplorer.test.js src/features/chat/components/CommonGroupsExplorer.test.js src/features/chat/components/ConversationPanel.test.js src/features/chat/components/ChatWindow.test.js src/features/chat/components/conversationPanelRealtimeState.test.js src/features/chat/pages/ChatPage.test.js src/features/chat/hooks/useSidebarState.test.js src/features/chat/hooks/useSidebarRealtime.test.js src/components/layout/Sidebar.test.js",
+    "test": "node --test src/utils/avatarUrl.test.js src/features/calls/utils/callDuration.test.js src/features/calls/context/callStorage.test.js src/features/calls/context/callLifecycleState.test.js src/services/socket/socketAuthState.test.js src/services/api/axiosClientAuthRetry.test.js src/services/auth/authBootstrap.test.js src/services/auth/authSession.test.js src/services/auth/AuthProvider.test.js src/features/auth/pages/Login.test.js src/features/auth/validation/displayName.test.js src/features/profile/components/UserProfileSidebar.test.js src/features/profile/components/userProfileModalState.test.js src/features/chat/socket/messageSocketState.test.js src/features/calls/pages/callPageState.test.js src/features/calls/components/callHistoryState.test.js src/features/calls/context/callHistoryBadgeState.test.js src/features/calls/context/callMediaState.test.js src/features/profile/hooks/presenceState.test.js src/features/friends/socket/friendshipState.test.js src/features/friends/socket/useFriendSocket.test.js src/features/friends/actions/removeFriendAction.test.js src/features/friends/actions/removeFriendModalState.test.js src/services/api/conversationPanelApi.test.js src/features/chat/actions/downloadChatFile.test.js src/features/chat/hooks/useInfiniteScroll.test.js test/features/chat/hooks/useInfiniteScroll.test.js src/features/chat/hooks/scrollFollowState.test.js src/features/chat/hooks/useChatMessages.test.js src/features/chat/hooks/useExplorerFreshness.test.js test/features/chat/hooks/useExplorerFreshness.test.js src/features/chat/components/ViewAllModalShell.test.js src/features/chat/components/MediaLightbox.test.js src/features/chat/components/MediaExplorer.test.js src/features/chat/components/FilesExplorer.test.js src/features/chat/components/LinksExplorer.test.js src/features/chat/components/CommonGroupsExplorer.test.js src/features/chat/components/ConversationPanel.test.js src/features/chat/components/ChatWindow.test.js src/features/chat/components/conversationPanelRealtimeState.test.js src/features/chat/pages/ChatPage.test.js src/features/chat/hooks/useSidebarState.test.js src/features/chat/hooks/useSidebarRealtime.test.js src/components/layout/Sidebar.test.js",
     "lint": "eslint .",
     "lint:ci": "eslint . --ignore-pattern .vite-cache/** --max-warnings=13",
     "license:check": "license-checker-rseidelsohn --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD\" --summary",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.18",
-    "axios": "^1.13.2",
+    "axios": "^1.18.0",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "emoji-picker-react": "^4.16.1",
-    "express": "^5.2.1",
     "firebase": "^12.11.0",
     "moment": "^2.30.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.68.0",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.10.1",
+    "react-router-dom": "^7.12.0",
     "react-toastify": "^11.0.5",
-    "sharp": "^0.34.5",
     "simple-peer": "^9.11.1",
-    "socket.io-client": "^4.8.1",
+    "socket.io-client": "^4.8.3",
     "spark-md5": "^3.0.2",
     "stream-browserify": "^3.0.0",
     "styled-components": "^6.3.12",
     "util": "^0.12.5",
-    "uuid": "^13.0.0",
-    "vite-plugin-node-polyfills": "^0.25.0"
+    "uuid": "^13.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
@@ -49,9 +46,10 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "license-checker-rseidelsohn": "4.4.2",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.26",
     "react-test-renderer": "^19.2.0",
     "tailwindcss": "^4.1.18",
-    "vite": "^7.2.4"
+    "vite": "7.3.5",
+    "vite-plugin-node-polyfills": "^0.25.0"
   }
 }

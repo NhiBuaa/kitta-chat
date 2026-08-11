@@ -24,6 +24,7 @@ const { logSafely, logger: defaultLogger } = require("./utils/logger");
 const { sendError } = require("./utils/apiResponse");
 const saveMessageInBackground = require("./utils/saveMessageInBackground");
 const { setDefaultMetrics } = require("./observability/metrics/runtime");
+const { createBrowserOriginPolicy } = require("./config/browserOriginPolicy");
 
 const isMetricsEnabled = (value) => String(value).trim().toLowerCase() === "true";
 
@@ -32,9 +33,11 @@ const createApp = ({
   healthChecks = createDefaultHealthChecks({ rabbitConnectionManager }),
   logger = defaultLogger,
   authRateLimits,
+  rateLimiter = null,
   metricsEnabled: configuredMetricsEnabled = process.env.METRICS_ENABLED,
   metricsModule: providedMetricsModule,
   metrics: providedSocketMetrics,
+  browserOriginPolicy = createBrowserOriginPolicy([]),
 } = {}) => {
   const app = express();
   const metricsEnabled = isMetricsEnabled(configuredMetricsEnabled);
@@ -51,6 +54,8 @@ const createApp = ({
   app.disable("x-powered-by");
   app.set("metrics", metricsModule);
   app.set("logger", logger);
+  app.set("browserOriginPolicy", browserOriginPolicy);
+  app.set("rateLimiter", rateLimiter);
   if (metricsEnabled) {
     app.set("metricsModule", metricsModule);
     app.use(createHttpMetricsMiddleware({ metricsModule, logger }));
@@ -58,16 +63,11 @@ const createApp = ({
   app.use(createRequestLoggingMiddleware({ logger }));
   app.use(express.json({ limit: "10kb" }));
 
-  app.use((req, res, next) => {
-    if (req.headers.accept && !req.headers.origin) {
-      req.headers.origin = req.headers.accept;
-    }
-    next();
-  });
-
   app.use(
     cors({
-      origin: true,
+      origin(origin, callback) {
+        callback(null, browserOriginPolicy.isAllowedBrowserOrigin(origin));
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],

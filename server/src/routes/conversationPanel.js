@@ -1,45 +1,36 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middlewares/auth");
-const { createRateLimiter } = require("../middlewares/rateLimit");
+const { createHttpRateLimitMiddleware } = require("../rateLimit/httpAdmissionMiddleware");
 const panelController = require("../controllers/conversationPanelController");
-const { validateServerEnv } = require("../config/env");
 
-// Lấy config panel rate limit
-let rateLimitMax = 30;
-try {
-  const config = validateServerEnv(process.env);
-  rateLimitMax = config.conversationPanelRateLimit || 30;
-} catch (err) {
-  rateLimitMax = parseInt(process.env.CONVERSATION_PANEL_RATE_LIMIT, 10) || 30;
-}
-
-// Rate Limiter cho resources
-const resourcesRateLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 phút
-  max: rateLimitMax,
-  code: "PANEL_RATE_LIMITED",
-  message: "Too many resource requests. Please try again later.",
-  keyGenerator: (req) => {
-    const userId = req.user?.id || req.user?._id || "anonymous";
-    const conversationId = req.params.id || "global";
-    return `${userId}:${conversationId}`;
-  },
+const panelReadLimiter = createHttpRateLimitMiddleware({
+  policyIds: ["read_expensive.aggregate", "read_expensive.conversation_panel"],
+});
+const panelResourceLimiter = createHttpRateLimitMiddleware({
+  policyIds: [
+    "read_expensive.aggregate",
+    "read_expensive.conversation_panel",
+    "read_expensive.panel_resources",
+  ],
+});
+const panelMutationLimiter = createHttpRateLimitMiddleware({
+  policyIds: ["state_mutation.aggregate", "state_mutation.conversation_panel"],
 });
 
 // Route Metadata (Giai đoạn 1)
-router.get("/:id/panel/metadata", verifyToken, panelController.getMetadata);
+router.get("/:id/panel/metadata", verifyToken, panelReadLimiter, panelController.getMetadata);
 
 // Route Cập nhật Preference
-router.patch("/:id/panel/preference", verifyToken, panelController.updatePreference);
+router.patch("/:id/panel/preference", verifyToken, panelMutationLimiter, panelController.updatePreference);
 
 // Route Resources (Giai đoạn 2)
-router.get("/:id/panel/resources", verifyToken, resourcesRateLimiter, panelController.getResources);
+router.get("/:id/panel/resources", verifyToken, panelResourceLimiter, panelController.getResources);
 
 // Route Rời nhóm (Slice 6)
-router.post("/:id/panel/leave", verifyToken, panelController.leaveGroup);
+router.post("/:id/panel/leave", verifyToken, panelMutationLimiter, panelController.leaveGroup);
 
 // Route Xóa lịch sử trò chuyện (Slice 6)
-router.post("/:id/panel/delete", verifyToken, panelController.deleteHistory);
+router.post("/:id/panel/delete", verifyToken, panelMutationLimiter, panelController.deleteHistory);
 
 module.exports = router;

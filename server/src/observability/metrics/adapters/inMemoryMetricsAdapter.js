@@ -20,6 +20,11 @@ class InMemoryMetricsAdapter {
     this.observations.get(name).push({ labels: clone(labels), value });
   }
 
+  set(name, labels, value) {
+    if (!this.observations.has(name)) this.observations.set(name, []);
+    this.observations.get(name).push({ labels: clone(labels), value });
+  }
+
   async render() {
     return { body: "", contentType: "text/plain; version=0.0.4; charset=utf-8" };
   }

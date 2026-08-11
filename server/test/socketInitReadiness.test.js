@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { parseBrowserOriginPolicy } = require("../src/config/browserOriginPolicy");
 
 const socketIndexPath = require.resolve("../src/socket/index");
 const socketIoPath = require.resolve("socket.io");
@@ -53,9 +54,11 @@ test("initSocket resolves only after the Redis adapter is connected and attached
   const pubConnect = createDeferred();
   const subConnect = createDeferred();
   let adapterAttached = false;
+  let socketOptions;
 
   class FakeServer {
-    constructor() {
+    constructor(_httpServer, options) {
+      socketOptions = options;
       this.redisClient = null;
     }
 
@@ -92,7 +95,14 @@ test("initSocket resolves only after the Redis adapter is connected and attached
 
   const { initSocket } = require(socketIndexPath);
   const appValues = new Map();
-  const app = { set: (key, value) => appValues.set(key, value) };
+  const browserOriginPolicy = parseBrowserOriginPolicy({
+    rawOrigins: "https://allowed.example.test",
+    environment: "test",
+  });
+  const app = {
+    get: (key) => (key === "browserOriginPolicy" ? browserOriginPolicy : undefined),
+    set: (key, value) => appValues.set(key, value),
+  };
 
   let resolved = false;
   const initPromise = initSocket({}, app).then((io) => {
@@ -117,6 +127,23 @@ test("initSocket resolves only after the Redis adapter is connected and attached
   assert.equal(appValues.get("socketio"), io);
   assert.equal(appValues.get("redisClient"), pubClient);
   assert.equal(io.redisClient, pubClient);
+
+  const corsAllowed = await new Promise((resolve) => {
+    socketOptions.cors.origin("https://allowed.example.test", (_error, allowed) => resolve(allowed));
+  });
+  const corsRejected = await new Promise((resolve) => {
+    socketOptions.cors.origin("https://allowed.example.test.evil.test", (_error, allowed) => resolve(allowed));
+  });
+  const socketRejected = await new Promise((resolve) => {
+    socketOptions.allowRequest(
+      { headers: { origin: "https://allowed.example.test.evil.test" } },
+      (_error, allowed) => resolve(allowed),
+    );
+  });
+
+  assert.equal(corsAllowed, true);
+  assert.equal(corsRejected, false);
+  assert.equal(socketRejected, false);
 });
 
 test("initSocket rejects when the Redis adapter cannot connect", async () => {

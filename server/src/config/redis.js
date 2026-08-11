@@ -23,8 +23,13 @@ const connectCacheRedis = async () => {
 
 const redisClient = cacheClient;
 
+const createRateLimitRedisClient = (env = process.env) => (
+  require("../rateLimit/distributedRateLimiter").getRateLimitRedisClient(env)
+);
+
 module.exports = {
   cacheClient,
+  createRateLimitRedisClient,
   redisClient,
   connectCacheRedis,
 };

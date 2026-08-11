@@ -9,3 +9,4 @@
 | [ADR-011](011-staging-cd-boundary.md) | Staging/CD boundary (K2 vs K2.1) | Accepted |
 | [ADR-012](012-k3-observability-metrics-boundary.md) | K3 observability metrics boundary | Accepted |
 | [ADR-013](013-k3-1-local-observability-demo-seam.md) | K3.1 local observability demo seam | Accepted |
+| [ADR-014](014-browser-origin-security-boundary.md) | Shared fail-closed browser origin boundary | Accepted |

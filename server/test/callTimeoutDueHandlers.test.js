@@ -55,6 +55,11 @@ const createSocketIo = ({ redisClient = createRedisClient(), userId = callerId }
   };
   const io = {
     redisClient,
+    rateLimiter: {
+      async admitLogicalCall() {
+        return { allowed: true, kind: "charged" };
+      },
+    },
     emitted,
     in() {
       return { allSockets: async () => new Set(["receiver-socket"]) };

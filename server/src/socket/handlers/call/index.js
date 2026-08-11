@@ -19,9 +19,9 @@ const { finalizeCallFromDisconnect } = require("./disconnect");
  * @param {import("socket.io").Socket} socket
  * @param {import("socket.io").Server} io
  */
-const registerCallHandlers = (socket, io) => {
-    registerInitCall(socket, io);
-    registerCallUser(socket, io);
+const registerCallHandlers = (socket, io, { measurement, rateLimiter = io.rateLimiter } = {}) => {
+    registerInitCall(socket, io, { measurement, rateLimiter });
+    registerCallUser(socket, io, { measurement, rateLimiter });
     registerAnswerCall(socket, io);
     registerEndCall(socket, io);
     registerRejectCall(socket, io);
