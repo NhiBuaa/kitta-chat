@@ -4,6 +4,8 @@ const test = require("node:test");
 const { buildDownloadObjectInput } = require("../src/services/s3.service");
 const { createFileController } = require("../src/controllers/fileController");
 
+const validMessageId = "507f1f77bcf86cd799439011";
+
 const createResponseRecorder = () => ({
   statusCode: 200,
   body: null,
@@ -81,7 +83,7 @@ test("authorized attachment download returns a signed URL using the stored origi
     {
       user: { id: "user-1" },
       params: { fileId: "file-1" },
-      body: { messageId: "message-1" },
+      body: { messageId: validMessageId },
     },
     response,
   );
@@ -151,7 +153,7 @@ test("authorized local demo attachment download returns its same-origin URL with
     {
       user: { id: "user-1" },
       params: { fileId: "file-demo" },
-      body: { messageId: "message-demo" },
+      body: { messageId: validMessageId },
     },
     response,
   );
@@ -235,7 +237,7 @@ test("download rejects an attachment outside the participant message visibility 
     {
       user: { id: "user-1" },
       params: { fileId: "file-1" },
-      body: { messageId: "message-1" },
+      body: { messageId: validMessageId },
     },
     response,
   );
@@ -298,7 +300,7 @@ test("download rejects users without conversation read permission", async () => 
     {
       user: { id: "user-3" },
       params: { fileId: "file-1" },
-      body: { messageId: "message-1" },
+      body: { messageId: validMessageId },
     },
     response,
   );
@@ -336,10 +338,61 @@ test("download rejects a file that is not attached to the requested message", as
     {
       user: { id: "user-1" },
       params: { fileId: "file-1" },
-      body: { messageId: "message-1" },
+      body: { messageId: validMessageId },
     },
     response,
   );
 
   assert.equal(response.statusCode, 404);
+});
+
+test("download rejects non-canonical messageId shapes before file or message queries", async () => {
+  const invalidMessageIds = [
+    undefined,
+    null,
+    "short-id",
+    "z".repeat(24),
+    { $eq: "507f1f77bcf86cd799439011" },
+    { $ne: null },
+    ["507f1f77bcf86cd799439011"],
+    { identifier: { value: "507f1f77bcf86cd799439011" } },
+    42,
+  ];
+
+  for (const messageId of invalidMessageIds) {
+    const calls = { fileFindById: 0, messageFindOne: 0, messageExists: 0 };
+    const controller = createFileController({
+      fileModel: {
+        findById() {
+          calls.fileFindById += 1;
+          return { lean: async () => null };
+        },
+      },
+      messageModel: {
+        findOne() {
+          calls.messageFindOne += 1;
+          return { select: () => ({ lean: async () => null }) };
+        },
+        async exists() {
+          calls.messageExists += 1;
+          return null;
+        },
+      },
+    });
+    const response = createResponseRecorder();
+
+    await controller.createDownloadUrl(
+      {
+        user: { id: "user-1" },
+        params: { fileId: "file-1" },
+        body: { messageId },
+      },
+      response,
+    );
+
+    assert.equal(response.statusCode, 400);
+    assert.equal(calls.fileFindById, 0);
+    assert.equal(calls.messageFindOne, 0);
+    assert.equal(calls.messageExists, 0);
+  }
 });

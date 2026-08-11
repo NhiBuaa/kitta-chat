@@ -109,6 +109,19 @@ const validateServerEnv = (env = process.env) => {
     30,
     issues,
   );
+  let browserOriginPolicy = createBrowserOriginPolicy([]);
+  try {
+    browserOriginPolicy = parseBrowserOriginPolicy({
+      rawOrigins: env.CORS_ALLOWED_ORIGINS,
+      environment: env.NODE_ENV || (env === process.env ? process.env.NODE_ENV : "test"),
+    });
+  } catch (error) {
+    if (error instanceof BrowserOriginConfigError) {
+      issues.push(error.message);
+    } else {
+      throw error;
+    }
+  }
 
   throwIfInvalid("server", issues);
 
@@ -124,6 +137,7 @@ const validateServerEnv = (env = process.env) => {
     conversationPanelEnabled,
     conversationPanelResourcesEnabled,
     conversationPanelRateLimit,
+    browserOriginPolicy,
   };
 };
 
@@ -203,3 +217,8 @@ module.exports = {
 };
 
 
+const {
+  BrowserOriginConfigError,
+  createBrowserOriginPolicy,
+  parseBrowserOriginPolicy,
+} = require("./browserOriginPolicy");

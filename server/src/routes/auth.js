@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { createRateLimiter } = require("../middlewares/rateLimit");
+const { createHttpRateLimitMiddleware } = require("../rateLimit/httpAdmissionMiddleware");
 const {
   register,
   login,
@@ -17,33 +17,36 @@ const defaultAuthRateLimits = {
   forgotPassword: { windowMs: 60 * 60 * 1000, max: 5 },
 };
 
-const createAuthRouter = ({ rateLimits = defaultAuthRateLimits } = {}) => {
+const createAuthRouter = () => {
   const router = Router();
 
-  const loginLimiter = createRateLimiter({
-    ...defaultAuthRateLimits.login,
-    ...(rateLimits.login || {}),
-    message: "Too many login attempts. Please try again later.",
+  const loginLimiter = createHttpRateLimitMiddleware({
+    policyIds: ["auth_entry.aggregate", "auth_entry.login"],
   });
-  const registerLimiter = createRateLimiter({
-    ...defaultAuthRateLimits.register,
-    ...(rateLimits.register || {}),
-    message: "Too many registration attempts. Please try again later.",
+  const registerLimiter = createHttpRateLimitMiddleware({
+    policyIds: ["auth_entry.aggregate", "auth_entry.register"],
   });
-  const forgotPasswordLimiter = createRateLimiter({
-    ...defaultAuthRateLimits.forgotPassword,
-    ...(rateLimits.forgotPassword || {}),
-    message: "Too many password reset attempts. Please try again later.",
+  const googleLimiter = createHttpRateLimitMiddleware({
+    policyIds: ["auth_entry.aggregate", "auth_entry.google"],
+  });
+  const forgotPasswordLimiter = createHttpRateLimitMiddleware({
+    policyIds: ["auth_recovery_request"],
+  });
+  const resetPasswordLimiter = createHttpRateLimitMiddleware({
+    policyIds: ["auth_recovery_complete"],
+  });
+  const refreshStageALimiter = createHttpRateLimitMiddleware({
+    policyIds: ["auth_refresh.stage_a"],
   });
 
   router.post("/register", registerLimiter, register);
   router.post("/login", loginLimiter, login);
-  router.post("/google", googleLogin);
+  router.post("/google", googleLimiter, googleLogin);
   router.get("/session", session);
-  router.post("/refresh", refresh);
+  router.post("/refresh", refreshStageALimiter, refresh);
   router.post("/logout", logout);
   router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
-  router.post("/reset-password/:id/:token", resetPassword);
+  router.post("/reset-password/:id/:token", resetPasswordLimiter, resetPassword);
 
   return router;
 };

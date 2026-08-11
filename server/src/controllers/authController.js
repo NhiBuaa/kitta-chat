@@ -12,12 +12,10 @@ const {
   issueAuthSession,
   verifyRefreshToken,
 } = require("../services/authSessionService");
+const { isValidEmailFormat } = require("../validation/emailFormat");
+const { canonicalRefreshSubjectActor } = require("../rateLimit/requestIdentity");
 // Hàm helper để validate email
-const validateEmail = (email) => {
-  return String(email)
-    .toLowerCase()
-    .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-};
+const validateEmail = isValidEmailFormat;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
 // dang ky----------------------------------------
@@ -266,7 +264,7 @@ exports.googleLogin = async (req, res) => {
 };
 
 
-const findSessionUser = async (req, res) => {
+const findSessionUser = async (req, res, { enforceRefreshSubjectLimit = false } = {}) => {
   const refreshToken = getRefreshTokenFromRequest(req);
 
   if (!refreshToken) {
@@ -297,6 +295,43 @@ const findSessionUser = async (req, res) => {
       message: "Authentication session is invalid or expired",
     });
     return null;
+  }
+
+  if (enforceRefreshSubjectLimit) {
+    const rateLimiter = req.app?.get?.("rateLimiter");
+    const actor = canonicalRefreshSubjectActor(decoded.id);
+    let result;
+    try {
+      result = rateLimiter?.admit
+        ? await rateLimiter.admit({
+          policyIds: ["auth_refresh.stage_b"],
+          actor,
+        })
+        : { unavailable: true };
+    } catch {
+      result = { unavailable: true };
+    }
+
+    if (result?.unavailable) {
+      sendError(res, {
+        status: 503,
+        code: "RATE_LIMIT_UNAVAILABLE",
+        message: "Rate-limit service is unavailable",
+      });
+      return null;
+    }
+
+    if (!result?.allowed) {
+      if (result?.retryAfterMs) {
+        res.setHeader("Retry-After", String(Math.max(1, Math.ceil(result.retryAfterMs / 1000))));
+      }
+      sendError(res, {
+        status: 429,
+        code: "RATE_LIMITED",
+        message: "Too many requests. Please try again later.",
+      });
+      return null;
+    }
   }
 
   const user = await User.findById(decoded.id);
@@ -334,7 +369,7 @@ exports.session = async (req, res) => {
 
 exports.refresh = async (req, res) => {
   try {
-    const user = await findSessionUser(req, res);
+    const user = await findSessionUser(req, res, { enforceRefreshSubjectLimit: true });
     if (!user) return;
 
     const authSession = issueAuthSession(res, user);

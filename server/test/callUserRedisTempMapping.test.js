@@ -42,6 +42,11 @@ const createIo = (redisClient) => {
 
   return {
     redisClient,
+    rateLimiter: {
+      async admitLogicalCall() {
+        return { allowed: true, kind: "charged" };
+      },
+    },
     emissions,
     sockets: {
       adapter: {

@@ -1,5 +1,3 @@
 const CALL_TIMEOUT_MS = 45_000;
-const RATE_LIMIT_CALLS = 10;
-const RATE_LIMIT_WINDOW_MS = 60_000;
 
-module.exports = { CALL_TIMEOUT_MS, RATE_LIMIT_CALLS, RATE_LIMIT_WINDOW_MS };
+module.exports = { CALL_TIMEOUT_MS };

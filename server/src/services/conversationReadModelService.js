@@ -4,6 +4,7 @@ const Conversation = require("../models/Conversation");
 const ConversationParticipant = require("../models/ConversationParticipant");
 const Group = require("../models/Group");
 const { cacheClient } = require("../config/redis");
+const { logger } = require("../utils/logger");
 
 const toIdString = (value) => value?._id?.toString?.() || value?.toString?.() || String(value);
 
@@ -312,7 +313,11 @@ async function syncGroupLifecycle(groupId, action, data = {}) {
       }
     }
   } catch (error) {
-    console.error(`[ReadModel] syncGroupLifecycle failed for action=${action} groupId=${groupId}:`, error);
+    logger.error("conversation_read_model_sync_group_lifecycle_failed", {
+      action,
+      groupId: toIdString(groupId),
+      errorName: error?.name || "Error",
+    });
   }
 }
 

@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
+const { randomUUID } = require("node:crypto");
 const CallHistory = require("../../../../models/CallHistory");
 const User = require("../../../../models/User");
 const buildConversationId = require("../../../../utils/buildConversationId");
 const { activeTimeouts, tempIdToDbId, bindSocketToCall } = require("../state");
 const { CALL_TIMEOUT_MS } = require("../constants");
-const { checkRateLimit } = require("../rateLimit");
 const { emitCallLogMessage } = require("../callLog");
 const { emitCallHistorySync } = require("../emitters");
 const {
@@ -20,6 +20,17 @@ const {
     storeSocketCallBinding,
     storeUserActiveCall,
 } = require("../services/callSocketBindingStore");
+const {
+    CALL_OUTCOME,
+    CALL_PHASE,
+    CALL_STAGE,
+} = require("../../../../observability/issue61");
+const { createCallLogicalAttemptAdmission } = require("../../../../rateLimit/callLogicalAttemptAdmission");
+const {
+    abandonCallMeasurement,
+    beginCallMeasurement,
+    finishCallMeasurement,
+} = require("../measurement");
 
 /**
  * "callUser" — sends the WebRTC offer to the callee.
@@ -28,29 +39,105 @@ const {
  * @param {import("socket.io").Socket} socket
  * @param {import("socket.io").Server} io
  */
-const registerCallUser = (socket, io) => {
+const registerCallUser = (socket, io, { measurement, rateLimiter = io.rateLimiter } = {}) => {
     const userId = socket.userId;
+    const admitLogicalCall = createCallLogicalAttemptAdmission({ rateLimiter });
 
     socket.on("callUser", async ({
         userToCall, signalData, from, name, mediaStatus, typeCall, avatar, callId,
     }) => {
-        console.log(`[callUser] ${userId} -> ${userToCall} (${typeCall}), clientCallId: ${callId}`);
-
-        if (!callId) {
-            console.warn("[callUser] received WITHOUT callId!");
-        }
-
-        if (!checkRateLimit(userId)) {
-            socket.emit("callRejected", { reason: "Too many calls. Please wait." });
-            return;
-        }
-
-        if (!userToCall || !typeCall) {
-            socket.emit("callRejected", { reason: "Invalid call parameters" });
-            return;
-        }
-
+        const handlerMeasurement = beginCallMeasurement(
+            measurement,
+            CALL_PHASE.CALL_USER,
+            CALL_STAGE.HANDLER_ENTRY,
+        );
+        let handlerMeasurementFinished = false;
+        let localLimitMeasurement;
+        let localLimitMeasurementFinished = false;
+        let validationMeasurement;
+        let validationMeasurementFinished = false;
+        let workMeasurement;
+        let workMeasurementFinished = false;
+        let signallingMeasurement;
+        let signallingMeasurementFinished = false;
         try {
+            console.log(`[callUser] ${userId} -> ${userToCall} (${typeCall}), clientCallId: ${callId}`);
+
+            if (!callId) {
+                console.warn("[callUser] received WITHOUT callId!");
+            }
+
+            validationMeasurement = beginCallMeasurement(
+                measurement,
+                CALL_PHASE.CALL_USER,
+                CALL_STAGE.SYNTACTIC_VALIDATION,
+            );
+            if (!userToCall || !typeCall) {
+                socket.emit("callRejected", { reason: "Invalid call parameters" });
+                finishCallMeasurement(validationMeasurement, CALL_OUTCOME.STOPPED);
+                validationMeasurementFinished = true;
+                finishCallMeasurement(handlerMeasurement, CALL_OUTCOME.STOPPED);
+                handlerMeasurementFinished = true;
+                return;
+            }
+            finishCallMeasurement(validationMeasurement, CALL_OUTCOME.CONTINUED);
+            validationMeasurementFinished = true;
+
+            localLimitMeasurement = beginCallMeasurement(
+                measurement,
+                CALL_PHASE.CALL_USER,
+                CALL_STAGE.CURRENT_LOCAL_LIMIT,
+            );
+            const effectiveCallId = callId || `temp_unmatched_${randomUUID()}`;
+            let admission;
+            try {
+                admission = await admitLogicalCall({
+                    caller: userId,
+                    callee: String(userToCall),
+                    clientCallId: effectiveCallId,
+                    phase: "call_user_consumed",
+                });
+            } catch {
+                admission = { unavailable: true };
+            }
+
+            if (admission?.unavailable) {
+                socket.emit("RATE_LIMIT_UNAVAILABLE", { code: "RATE_LIMIT_UNAVAILABLE" });
+                finishCallMeasurement(localLimitMeasurement, CALL_OUTCOME.SUPPRESSED);
+                localLimitMeasurementFinished = true;
+                finishCallMeasurement(handlerMeasurement, CALL_OUTCOME.SUPPRESSED);
+                handlerMeasurementFinished = true;
+                return;
+            }
+
+            if (!admission?.allowed) {
+                socket.emit("RATE_LIMITED", {
+                    code: "RATE_LIMITED",
+                    retryAfterSeconds: Math.max(1, Math.ceil((admission.retryAfterMs || 0) / 1000)),
+                });
+                finishCallMeasurement(localLimitMeasurement, CALL_OUTCOME.SUPPRESSED);
+                localLimitMeasurementFinished = true;
+                finishCallMeasurement(handlerMeasurement, CALL_OUTCOME.SUPPRESSED);
+                handlerMeasurementFinished = true;
+                return;
+            }
+
+            if (admission.kind === "replay") {
+                finishCallMeasurement(localLimitMeasurement, CALL_OUTCOME.SUPPRESSED);
+                localLimitMeasurementFinished = true;
+                finishCallMeasurement(handlerMeasurement, CALL_OUTCOME.SUPPRESSED);
+                handlerMeasurementFinished = true;
+                return;
+            }
+
+            finishCallMeasurement(localLimitMeasurement, CALL_OUTCOME.CONTINUED);
+            localLimitMeasurementFinished = true;
+
+            workMeasurement = beginCallMeasurement(
+                measurement,
+                CALL_PHASE.CALL_USER,
+                CALL_STAGE.DB_REDIS_WORK,
+            );
             const conversationId = buildConversationId(userId, userToCall);
 
             // ── Resolve / create CallHistory record ──────────────────────────────
@@ -116,14 +203,33 @@ const registerCallUser = (socket, io) => {
             }).lean();
 
             if (reverseCall) {
+                finishCallMeasurement(workMeasurement, CALL_OUTCOME.CONTINUED);
+                workMeasurementFinished = true;
+                signallingMeasurement = beginCallMeasurement(
+                    measurement,
+                    CALL_PHASE.CALL_USER,
+                    CALL_STAGE.SIGNALLING,
+                );
                 await _resolveGlare({
                     io, socket, userId, userToCall,
                     callRecordId, reverseCall,
                     from, name, avatar, mediaStatus, typeCall, signalData,
                     callerInfo, conversationId,
                 });
+                finishCallMeasurement(signallingMeasurement, CALL_OUTCOME.SUPPRESSED);
+                signallingMeasurementFinished = true;
+                finishCallMeasurement(handlerMeasurement, CALL_OUTCOME.SUPPRESSED);
+                handlerMeasurementFinished = true;
                 return;
             }
+
+            finishCallMeasurement(workMeasurement, CALL_OUTCOME.CONTINUED);
+            workMeasurementFinished = true;
+            signallingMeasurement = beginCallMeasurement(
+                measurement,
+                CALL_PHASE.CALL_USER,
+                CALL_STAGE.SIGNALLING,
+            );
 
             // ── Normal call ───────────────────────────────────────────────────────
             const targetRoom = String(userToCall);
@@ -141,9 +247,35 @@ const registerCallUser = (socket, io) => {
             await storeUserActiveCall(userToCall, callRecordId, io.redisClient);
 
             await _startTimeout({ io, callRecordId, userId, userToCall });
+            finishCallMeasurement(signallingMeasurement, CALL_OUTCOME.CONTINUED);
+            signallingMeasurementFinished = true;
+            finishCallMeasurement(handlerMeasurement, CALL_OUTCOME.CONTINUED);
+            handlerMeasurementFinished = true;
         } catch (err) {
+            if (signallingMeasurement && !signallingMeasurementFinished) {
+                finishCallMeasurement(signallingMeasurement, CALL_OUTCOME.ERROR);
+            }
+            if (!workMeasurementFinished) {
+                finishCallMeasurement(workMeasurement, CALL_OUTCOME.ERROR);
+            }
+            finishCallMeasurement(handlerMeasurement, CALL_OUTCOME.ERROR);
+            handlerMeasurementFinished = true;
             console.error("[callUser] error:", err);
             socket.emit("callRejected", { reason: "Server error" });
+        } finally {
+            if (localLimitMeasurement && !localLimitMeasurementFinished) {
+                abandonCallMeasurement(localLimitMeasurement);
+            }
+            if (validationMeasurement && !validationMeasurementFinished) {
+                abandonCallMeasurement(validationMeasurement);
+            }
+            if (workMeasurement && !workMeasurementFinished) {
+                abandonCallMeasurement(workMeasurement);
+            }
+            if (signallingMeasurement && !signallingMeasurementFinished) {
+                abandonCallMeasurement(signallingMeasurement);
+            }
+            if (!handlerMeasurementFinished) abandonCallMeasurement(handlerMeasurement);
         }
     });
 };

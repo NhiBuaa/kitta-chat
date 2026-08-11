@@ -2,6 +2,7 @@ const User = require("../models/User");
 const ConversationParticipant = require("../models/ConversationParticipant");
 const Message = require("../models/Message");
 const mongoose = require("mongoose");
+const { isValidExternalObjectId } = require("../validation/externalObjectId");
 const getSafeUserName = require("../utils/getSafeUserName");
 const { queueProfileAvatarProcessing } = require("../services/profileAvatarQueueService");
 const { invalidateUserProfile, getCachedUserProfile } = require("../services/cacheService");
@@ -603,6 +604,13 @@ const sendFriendRequest = async (req, res) => {
     const senderId = req.user.id;
     const io = req.app.get("socketio");
 
+    if (!isValidExternalObjectId(receiverId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã người dùng không hợp lệ",
+      });
+    }
+
     // Kiểm tra các lỗi cơ bản
     if (receiverId === senderId) {
       return res.status(400).json({
@@ -685,6 +693,13 @@ const removeFriend = async (req, res) => {
 
     if (!friendId) {
       return res.status(400).json({ success: false, message: "Thiếu friendId" });
+    }
+
+    if (!isValidExternalObjectId(friendId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã người dùng không hợp lệ",
+      });
     }
 
     if (toComparableId(friendId) === toComparableId(currentUserId)) {

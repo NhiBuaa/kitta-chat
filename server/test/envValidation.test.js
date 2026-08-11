@@ -38,6 +38,31 @@ test("validateServerEnv accepts Docker-compatible server configuration", () => {
   assert.equal(config.port, 3000);
 });
 
+test("validateServerEnv fails closed for missing or malformed production CORS allowlists", () => {
+  const baseEnv = {
+    MONGO_URI: "mongodb://mongo:27017/shot-chat",
+    JWT_SECRET: "replace-with-a-real-secret",
+    URL_FRONTEND: "http://localhost:5173",
+    REDIS_URL: "redis://redis:6379",
+    NODE_ENV: "production",
+  };
+
+  assert.throws(
+    () => validateServerEnv(baseEnv),
+    (error) => error.name === "ConfigValidationError" && /CORS_ALLOWED_ORIGINS/.test(error.message),
+  );
+  assert.throws(
+    () => validateServerEnv({ ...baseEnv, CORS_ALLOWED_ORIGINS: "https://app.example.test/path" }),
+    (error) => error.name === "ConfigValidationError" && /CORS_ALLOWED_ORIGINS/.test(error.message),
+  );
+
+  const config = validateServerEnv({
+    ...baseEnv,
+    CORS_ALLOWED_ORIGINS: "https://app.example.test,http://localhost:5173",
+  });
+  assert.equal(config.browserOriginPolicy.isAllowedBrowserOrigin("https://app.example.test"), true);
+});
+
 test("validateServerEnv accepts Redis host and port fallback", () => {
   const config = validateServerEnv({
     MONGO_URI: "mongodb://localhost:27017/shot-chat",

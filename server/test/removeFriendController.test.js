@@ -75,6 +75,8 @@ const loadController = ({
 } = {}) => {
   clearModules();
   const calls = {
+    findById: [],
+    findByIdAndUpdate: [],
     removeFriendWriteThrough: [],
     messageDeleteMany: [],
     callHistoryDeleteMany: [],
@@ -82,9 +84,13 @@ const loadController = ({
 
   mockModule(userPath, {
     async findById(id) {
+      calls.findById.push(id);
       if (String(id) === currentUserId) return currentUser;
       if (String(id) === friendId) return targetUser;
       return null;
+    },
+    async findByIdAndUpdate(id, update) {
+      calls.findByIdAndUpdate.push([id, update]);
     },
   });
   mockModule(messagePath, {
@@ -141,6 +147,85 @@ test("removeFriend rejects self-remove", async () => {
 
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.success, false);
+});
+
+test("sendFriendRequest rejects non-canonical receiverId shapes before MongoDB", async () => {
+  const invalidReceiverIds = [
+    undefined,
+    null,
+    "short-id",
+    "z".repeat(24),
+    { $eq: friendId },
+    { $ne: null },
+    [friendId],
+    { identifier: { value: friendId } },
+    42,
+  ];
+
+  for (const receiverId of invalidReceiverIds) {
+    const { controller, calls } = loadController();
+    const res = createRes();
+
+    await controller.sendFriendRequest({
+      user: { id: currentUserId },
+      body: { receiverId },
+      app: { get: () => createIo() },
+    }, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.success, false);
+    assert.deepEqual(calls.findById, []);
+    assert.deepEqual(calls.findByIdAndUpdate, []);
+  }
+});
+
+test("sendFriendRequest preserves valid receiver business behavior", async () => {
+  const { controller, calls } = loadController({
+    targetUser: { _id: friendId, friends: [], friendRequests: [] },
+  });
+  const res = createRes();
+
+  await controller.sendFriendRequest({
+    user: { id: currentUserId },
+    body: { receiverId: friendId },
+    app: { get: () => createIo() },
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.deepEqual(calls.findById, [friendId, currentUserId]);
+  assert.deepEqual(calls.findByIdAndUpdate, [
+    [friendId, { $push: { friendRequests: currentUserId } }],
+  ]);
+});
+
+test("removeFriend rejects non-canonical friendId shapes before MongoDB", async () => {
+  const invalidFriendIds = [
+    undefined,
+    null,
+    "short-id",
+    "z".repeat(24),
+    { $eq: friendId },
+    { $ne: null },
+    [friendId],
+    { identifier: { value: friendId } },
+    42,
+  ];
+
+  for (const invalidFriendId of invalidFriendIds) {
+    const { controller, calls } = loadController();
+    const res = createRes();
+
+    await controller.removeFriend({
+      user: { id: currentUserId },
+      body: { friendId: invalidFriendId },
+      app: { get: () => createIo() },
+    }, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.success, false);
+    assert.deepEqual(calls.findById, []);
+  }
 });
 
 test("removeFriend returns 404 for missing target user", async () => {

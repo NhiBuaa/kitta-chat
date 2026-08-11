@@ -9,12 +9,15 @@ const { validateServerEnv } = require("./src/config/env");
 const serverConfig = validateServerEnv();
 const { createApp } = require("./src/app");
 const { initSocket } = require("./src/socket");
-const { connectCacheRedis } = require("./src/config/redis");
+const { connectCacheRedis, createRateLimitRedisClient } = require("./src/config/redis");
+const { createRedisAdmission } = require("./src/rateLimit/redisAdmission");
+
+const rateLimitRedisClient = createRateLimitRedisClient();
 
 // =========================================================
 // EXPRESS APP SETUP
 // =========================================================
-const app = createApp();
+const app = createApp({ browserOriginPolicy: serverConfig.browserOriginPolicy });
 
 // =========================================================
 // HTTP SERVER
@@ -45,6 +48,10 @@ const gracefulShutdown = async (signal, err = null) => {
       global.io.close(() => {
         console.log("[Socket.IO] Adapter closed");
       });
+    }
+
+    if (rateLimitRedisClient.isOpen) {
+      await rateLimitRedisClient.quit();
     }
 
     // Close MongoDB
@@ -90,6 +97,10 @@ mongoose
 
     // Kết nối Redis Cache trước khi khởi tạo Socket
     await connectCacheRedis();
+    await rateLimitRedisClient.connect();
+    app.set("rateLimiter", createRedisAdmission({
+      redisClient: rateLimitRedisClient,
+    }));
 
     // Init Socket.IO sau khi DB + Cache ready
     const io = await initSocket(server, app);

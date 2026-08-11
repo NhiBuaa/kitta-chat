@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Group = require("../models/Group");
 const presenceService = require("./presenceService");
+const { logger } = require("../utils/logger");
 
 /**
  * Lấy thông tin Overview của cuộc hội thoại
@@ -29,7 +30,10 @@ async function getOverview(userId, conversationId) {
       const presence = await presenceService.getUserPresence(otherUserId);
       isOnline = presence && presence.status !== "offline";
     } catch (err) {
-      console.error(`[OverviewService] Error fetching presence for user ${otherUserId}:`, err.message);
+      logger.error("conversation_overview_presence_lookup_failed", {
+        userId: otherUserId,
+        errorName: err?.name || "Error",
+      });
       isOnline = false; // Fallback to offline
     }
 

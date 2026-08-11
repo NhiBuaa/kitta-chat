@@ -14,9 +14,6 @@ const activeSocketCalls = new Map();
 /** temp client callId -> real CallHistory _id */
 const tempIdToDbId = new Map();
 
-/** userId -> { count, windowStart } for rate-limiting */
-const callRateLimit = new Map();
-
 // Socket call binding helpers
 const bindSocketToCall = (socketId, callId) => {
     if (!socketId || !callId) return;
@@ -38,7 +35,6 @@ module.exports = {
     activeTimeouts,
     activeSocketCalls,
     tempIdToDbId,
-    callRateLimit,
     bindSocketToCall,
     unbindSocketFromCall,
 };

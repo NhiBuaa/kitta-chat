@@ -22,6 +22,7 @@
 
 const { cacheClient } = require("../config/redis");
 const User = require("../models/User");
+const { logger } = require("../utils/logger");
 
 const PRESENCE_PREFIX = "presence:";
 const PRESENCE_TTL    = 30;   // 30 giây — heartbeat interval 20s -> margin 10s
@@ -130,7 +131,10 @@ const getUserPresence = async (userId) => {
             lastSeen: presence.lastSeen ? parseInt(presence.lastSeen, 10) : null,
         };
     } catch (err) {
-        console.warn(`[Presence] HGETALL error for ${key}:`, err.message);
+        logger.warn("presence_redis_hgetall_failed", {
+            key,
+            errorName: err?.name || "Error",
+        });
         const user = await User.findById(userId).select("activityStatus").lean();
         return {
             status: user?.activityStatus?.state || "offline",

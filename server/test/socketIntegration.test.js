@@ -78,7 +78,12 @@ const getActiveSocketCount = (adapter) => {
   return observations.reduce((total, observation) => total + observation.value, 0);
 };
 
-const createSocketServer = async ({ metrics, logger } = {}) => {
+const createSocketServer = async ({
+  metrics,
+  logger,
+  issue61Measurement,
+  registerCallHandlers: providedRegisterCallHandlers,
+} = {}) => {
   clearMocks();
 
   process.env.JWT_SECRET = "socket-test-secret";
@@ -187,7 +192,7 @@ const createSocketServer = async ({ metrics, logger } = {}) => {
     registerTypingHandlers() {},
   });
   mockModule(callHandlerPath, {
-    registerCallHandlers() {},
+    registerCallHandlers: providedRegisterCallHandlers || (() => {}),
   });
   mockModule(callTimeoutFinalizerPath, {
     createCallTimeoutFinalizer() {
@@ -210,7 +215,7 @@ const createSocketServer = async ({ metrics, logger } = {}) => {
   if (metrics) app.set("metrics", metrics);
   if (logger) app.set("logger", logger);
   const httpServer = http.createServer();
-  const io = await initSocket(httpServer, app);
+  const io = await initSocket(httpServer, app, { issue61Measurement });
 
   await new Promise((resolve) => httpServer.listen(0, "127.0.0.1", resolve));
   const { port } = httpServer.address();
@@ -385,6 +390,71 @@ test("socket accepts valid JWT and joins authenticated user room", async () => {
   } finally {
     sender.close();
     await server.close();
+  }
+});
+
+test("socket injects call-only measurement only after JWT authentication succeeds", async () => {
+  const callMeasurement = {
+    beginCallStage() {
+      return { finish() {}, abandon() {} };
+    },
+  };
+  const registrations = [];
+  const server = await createSocketServer({
+    issue61Measurement: callMeasurement,
+    registerCallHandlers(socket, io, options) {
+      registrations.push({ socket, io, options });
+    },
+  });
+  const token = jwt.sign({ id: "sender-user" }, process.env.JWT_SECRET);
+
+  try {
+    const rejected = await connectError(server.url);
+    assert.equal(rejected.message, "Authentication required");
+    assert.deepEqual(registrations, []);
+
+    const client = await connectClient(server.url, token);
+    try {
+      assert.equal(registrations.length, 1);
+      assert.equal(registrations[0].options.measurement, callMeasurement);
+    } finally {
+      client.close();
+    }
+  } finally {
+    await server.close();
+  }
+});
+
+test("generic metrics enablement does not implicitly enable the default-disabled Issue61 catalog", async () => {
+  const previousMetricsEnabled = process.env.METRICS_ENABLED;
+  const { adapter, logger, metrics } = createSocketMetrics();
+  const registrations = [];
+  process.env.METRICS_ENABLED = "true";
+  const server = await createSocketServer({
+    metrics,
+    logger,
+    registerCallHandlers(socket, io, options) {
+      registrations.push({ socket, io, options });
+    },
+  });
+  const token = jwt.sign({ id: "sender-user" }, process.env.JWT_SECRET);
+
+  try {
+    const client = await connectClient(server.url, token);
+    try {
+      assert.equal(registrations.length, 1);
+      assert.equal(registrations[0].options.measurement.enabled, false);
+      assert.equal(
+        Object.keys(adapter.snapshot()).some((name) => name.startsWith("kittachat_issue61_")),
+        false,
+      );
+    } finally {
+      client.close();
+    }
+  } finally {
+    await server.close();
+    if (previousMetricsEnabled === undefined) delete process.env.METRICS_ENABLED;
+    else process.env.METRICS_ENABLED = previousMetricsEnabled;
   }
 });
 

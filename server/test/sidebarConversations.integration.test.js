@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const jwt = require("jsonwebtoken");
+const { createTestRateLimiter } = require("./rateLimit/testRateLimiter");
 
 const JWT_SECRET = "sidebar-test-secret-key";
 process.env.JWT_SECRET = JWT_SECRET;
@@ -210,7 +211,8 @@ const createTestServer = async () => {
   // Clear require cache for server.js / app.js dependencies
   const { createApp } = require("../src/app");
   const app = createApp({
-    rabbitConnectionManager: { checkStatus: async () => "mocked" }
+    rabbitConnectionManager: { checkStatus: async () => "mocked" },
+    rateLimiter: createTestRateLimiter(),
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));

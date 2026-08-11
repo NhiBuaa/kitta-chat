@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const jwt = require("jsonwebtoken");
+const { createTestRateLimiter } = require("./rateLimit/testRateLimiter");
 
 const JWT_SECRET = "test-secret-key-for-panel-tests";
 process.env.JWT_SECRET = JWT_SECRET;
@@ -11,6 +12,10 @@ process.env.REDIS_URL = "redis://localhost:6379";
 const generateToken = (userId) => {
   return jwt.sign({ id: userId, username: "testuser" }, JWT_SECRET);
 };
+
+const DIRECT_REQUESTER_ID = "111111111111111111111111";
+const DIRECT_TARGET_ID = "222222222222222222222222";
+const CANONICAL_DIRECT_CONVERSATION_ID = `${DIRECT_REQUESTER_ID}_${DIRECT_TARGET_ID}`;
 
 const permissionServicePath = require.resolve("../src/services/permissionService");
 const overviewServicePath = require.resolve("../src/services/overviewService");
@@ -49,8 +54,14 @@ const createTestServer = async (envOverrides = {}) => {
   clearModuleCache();
 
   // Mock PermissionService
+  const metadataCalls = {
+    permission: [],
+    overview: [],
+    preference: [],
+  };
   const permissionServiceMock = {
     getPermissions: async (userId, conversationId) => {
+      metadataCalls.permission.push([userId, conversationId]);
       if (conversationId === "forbidden-conv") {
         return {
           canRead: false,
@@ -95,6 +106,7 @@ const createTestServer = async (envOverrides = {}) => {
   let mockOnlineStatus = true;
   const overviewServiceMock = {
     getOverview: async (userId, conversationId) => {
+      metadataCalls.overview.push([userId, conversationId]);
       return {
         kind: conversationId.includes("_") ? "direct" : "group",
         name: "Test Conversation Name",
@@ -123,6 +135,7 @@ const createTestServer = async (envOverrides = {}) => {
   };
   const preferenceServiceMock = {
     getPreferences: async (userId, conversationId) => {
+      metadataCalls.preference.push([userId, conversationId]);
       return mockPreferences;
     },
     updatePreferences: async (userId, conversationId, updates) => {
@@ -360,6 +373,7 @@ const createTestServer = async (envOverrides = {}) => {
       info() {},
       error() {},
     },
+    rateLimiter: createTestRateLimiter(),
   });
 
   const server = app.listen(0);
@@ -372,6 +386,7 @@ const createTestServer = async (envOverrides = {}) => {
     baseUrl,
     overviewMock: overviewServiceMock,
     preferenceMock: preferenceServiceMock,
+    metadataCalls,
     resourceMock: resourceServiceMock,
     groupMock: groupModelMock,
     participantMock: participantModelMock,
@@ -586,7 +601,7 @@ test("Resources API rate limits requests based on CONVERSATION_PANEL_RATE_LIMIT 
     assert.equal(res4.response.status, 429);
     assert.equal(res4.response.headers.get("Retry-After"), "60"); // 1 phút window
     assert.equal(res4.body.success, false);
-    assert.equal(res4.body.error.code, "PANEL_RATE_LIMITED");
+    assert.equal(res4.body.error.code, "RATE_LIMITED");
 
     // Request từ user-1 cho conversation khác (conv-456) -> vẫn 200 vì rate limit theo cặp (user, conversation)
     const resDifferentConv = await server.get("/api/conversations/conv-456/panel/resources", token);
@@ -625,8 +640,8 @@ test("Metadata API returns real Overview and Preference mock data from services"
   });
 
   try {
-    const token = generateToken("user-1");
-    const { response, body } = await server.get("/api/conversations/user-1_user-2/panel/metadata", token);
+    const token = generateToken(DIRECT_REQUESTER_ID);
+    const { response, body } = await server.get(`/api/conversations/${CANONICAL_DIRECT_CONVERSATION_ID}/panel/metadata`, token);
 
     assert.equal(response.status, 200);
     assert.equal(body.overview.name, "Test Conversation Name");
@@ -635,8 +650,44 @@ test("Metadata API returns real Overview and Preference mock data from services"
     assert.equal(body.overview.memberCount, 2);
     assert.equal(body.preference.isPinned, false);
     assert.equal(body.preference.isMuted, false);
+    assert.deepEqual(server.metadataCalls.permission, [[DIRECT_REQUESTER_ID, CANONICAL_DIRECT_CONVERSATION_ID]]);
+    assert.deepEqual(server.metadataCalls.overview, [[DIRECT_REQUESTER_ID, CANONICAL_DIRECT_CONVERSATION_ID]]);
+    assert.deepEqual(server.metadataCalls.preference, [[DIRECT_REQUESTER_ID, CANONICAL_DIRECT_CONVERSATION_ID]]);
   } finally {
     await server.close();
+  }
+});
+
+test("Metadata API rejects invalid direct resource identifiers before panel services", async () => {
+  const invalidIdentifiers = [
+    ["reversed pair", `${DIRECT_TARGET_ID}_${DIRECT_REQUESTER_ID}`],
+    ["three-segment pair", `${DIRECT_REQUESTER_ID}_${DIRECT_TARGET_ID}_333333333333333333333333`],
+    ["duplicate requester pair", `${DIRECT_REQUESTER_ID}_${DIRECT_REQUESTER_ID}`],
+    ["malformed left identifier", `not-an-object-id_${DIRECT_TARGET_ID}`],
+    ["malformed right identifier", `${DIRECT_REQUESTER_ID}_not-an-object-id`],
+    ["non-hex 24-character participant", `${DIRECT_REQUESTER_ID}_zzzzzzzzzzzzzzzzzzzzzzzz`],
+    ["requester absent from pair", "333333333333333333333333_444444444444444444444444"],
+    ["extra requester-containing segment", `${DIRECT_REQUESTER_ID}_333333333333333333333333_444444444444444444444444`],
+  ];
+
+  for (const [label, conversationId] of invalidIdentifiers) {
+    const server = await createTestServer({
+      CONVERSATION_PANEL_ENABLED: "true",
+    });
+
+    try {
+      const token = generateToken(DIRECT_REQUESTER_ID);
+      const { response, body } = await server.get(`/api/conversations/${conversationId}/panel/metadata`, token);
+
+      assert.equal(response.status, 403, label);
+      assert.equal(body.success, false, label);
+      assert.equal(body.error.code, "FORBIDDEN", label);
+      assert.deepEqual(server.metadataCalls.permission, [], label);
+      assert.deepEqual(server.metadataCalls.overview, [], label);
+      assert.deepEqual(server.metadataCalls.preference, [], label);
+    } finally {
+      await server.close();
+    }
   }
 });
 
@@ -646,13 +697,13 @@ test("Metadata API ETag caching: returns 304 Not Modified when ETag matches, and
   });
 
   try {
-    const token = generateToken("user-1");
-    const res1 = await server.get("/api/conversations/user-1_user-2/panel/metadata", token);
+    const token = generateToken(DIRECT_REQUESTER_ID);
+    const res1 = await server.get(`/api/conversations/${CANONICAL_DIRECT_CONVERSATION_ID}/panel/metadata`, token);
     const etag = res1.response.headers.get("ETag");
     assert.ok(etag);
 
     // Gửi lại với If-None-Match
-    const res2 = await server.get("/api/conversations/user-1_user-2/panel/metadata", token, {
+    const res2 = await server.get(`/api/conversations/${CANONICAL_DIRECT_CONVERSATION_ID}/panel/metadata`, token, {
       "If-None-Match": etag,
     });
     assert.equal(res2.response.status, 304);
@@ -661,7 +712,7 @@ test("Metadata API ETag caching: returns 304 Not Modified when ETag matches, and
     server.overviewMock.setMockOnlineStatus(false);
 
     // Gửi lại, ETag vẫn phải khớp và trả về 304 vì Presence không tham gia tính toán ETag
-    const res3 = await server.get("/api/conversations/user-1_user-2/panel/metadata", token, {
+    const res3 = await server.get(`/api/conversations/${CANONICAL_DIRECT_CONVERSATION_ID}/panel/metadata`, token, {
       "If-None-Match": etag,
     });
     assert.equal(res3.response.status, 304);
@@ -957,7 +1008,7 @@ test("Resources API - passes specific preview limits to loaders (media: 6, files
   });
 
   try {
-    const token = generateToken("user-1");
+    const token = generateToken(DIRECT_REQUESTER_ID);
 
     const limitsCaptured = {};
     server.resourceMock.loadMedia = async (conversationId, limit, cursor, userId) => {
@@ -978,7 +1029,7 @@ test("Resources API - passes specific preview limits to loaders (media: 6, files
     };
 
     // Call for direct chat
-    await server.get("/api/conversations/user-1_user-2/panel/resources", token);
+    await server.get(`/api/conversations/${CANONICAL_DIRECT_CONVERSATION_ID}/panel/resources`, token);
 
     assert.equal(limitsCaptured.media, 6);
     assert.equal(limitsCaptured.files, 3);

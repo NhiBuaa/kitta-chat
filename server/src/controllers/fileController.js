@@ -9,6 +9,7 @@ const {
 const { buildChatImageJob } = require("../queues/imageJobs");
 const { imageQueue: defaultImageQueue } = require("../queues/imageQueue");
 const { buildQueueFailureResponse } = require("../utils/queueApiSemantics");
+const { isValidExternalObjectId } = require("../validation/externalObjectId");
 
 const getLocalDemoDownloadUrl = (file) => {
   if (
@@ -99,6 +100,10 @@ const createFileController = ({
 
       if (!userId || !fileId || !messageId) {
         return res.status(400).json({ message: "Thiếu thông tin tải tài liệu." });
+      }
+
+      if (!isValidExternalObjectId(messageId)) {
+        return res.status(400).json({ message: "Mã tin nhắn không hợp lệ." });
       }
 
       const [file, message] = await Promise.all([

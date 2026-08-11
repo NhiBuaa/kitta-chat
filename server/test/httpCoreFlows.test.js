@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const jwt = require("jsonwebtoken");
+const { parseBrowserOriginPolicy } = require("../src/config/browserOriginPolicy");
+const { createTestRateLimiter } = require("./rateLimit/testRateLimiter");
 
 const appPath = require.resolve("../src/app");
 const authRoutesPath = require.resolve("../src/routes/auth");
@@ -154,7 +156,7 @@ const createInMemoryModels = () => {
   return { User, Message, Group, users, messages };
 };
 
-const createTestServer = async ({ authRateLimits } = {}) => {
+const createTestServer = async ({ authRateLimits, browserOriginPolicy } = {}) => {
   clearAppCache();
 
   const models = createInMemoryModels();
@@ -206,11 +208,14 @@ const createTestServer = async ({ authRateLimits } = {}) => {
   process.env.NODE_ENV = "test";
 
   const { createApp } = require(appPath);
+  const rateLimiter = createTestRateLimiter({ authRateLimits });
   const app = createApp({
     rabbitConnectionManager: {
       checkStatus: async () => "mocked",
     },
     authRateLimits,
+    rateLimiter,
+    browserOriginPolicy,
   });
   const server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
@@ -220,6 +225,7 @@ const createTestServer = async ({ authRateLimits } = {}) => {
   return {
     baseUrl,
     models,
+    rateLimiter,
     async request(path, options = {}) {
       const response = await fetch(`${baseUrl}${path}`, {
         ...options,
@@ -254,6 +260,37 @@ const createTestServer = async ({ authRateLimits } = {}) => {
     },
   };
 };
+
+test("HTTP CORS grants credentials only to configured exact browser origins", async () => {
+  const testServer = await createTestServer({
+    browserOriginPolicy: parseBrowserOriginPolicy({
+      rawOrigins: "http://allowed.example.test,https://second.example.test",
+      environment: "test",
+    }),
+  });
+
+  try {
+    const allowed = await fetch(`${testServer.baseUrl}/healthz`, {
+      headers: { Origin: "http://allowed.example.test" },
+    });
+    assert.equal(allowed.status, 503);
+    assert.equal(allowed.headers.get("access-control-allow-origin"), "http://allowed.example.test");
+    assert.equal(allowed.headers.get("access-control-allow-credentials"), "true");
+
+    const rejected = await fetch(`${testServer.baseUrl}/healthz`, {
+      headers: { Origin: "http://allowed.example.test.evil.test" },
+    });
+    assert.equal(rejected.status, 503);
+    assert.equal(rejected.headers.get("access-control-allow-origin"), null);
+    assert.equal(rejected.headers.get("access-control-allow-credentials"), null);
+
+    const noOrigin = await fetch(`${testServer.baseUrl}/healthz`);
+    assert.equal(noOrigin.status, 503);
+    assert.equal(noOrigin.headers.get("access-control-allow-origin"), null);
+  } finally {
+    await testServer.close();
+  }
+});
 
 test("auth register and login work through the Express HTTP API", async () => {
   const testServer = await createTestServer();
@@ -481,9 +518,9 @@ test("auth rate limiter returns standardized 429 after repeated login attempts",
     assert.equal(limitedResult.body.success, false);
     assert.deepEqual(limitedResult.body.error, {
       code: "RATE_LIMITED",
-      message: "Too many login attempts. Please try again later.",
+      message: "Too many requests. Please try again later.",
     });
-    assert.equal(limitedResult.body.message, "Too many login attempts. Please try again later.");
+    assert.equal(limitedResult.body.message, "Too many requests. Please try again later.");
     assert.equal(limitedResult.body.requestId, "req-rate-limit-login");
   } finally {
     await testServer.close();
@@ -620,6 +657,55 @@ test("refresh with valid cookie returns a new access token and user", async () =
     assert.equal(refreshResult.body.success, true);
     assert.equal(typeof refreshResult.body.token, "string");
     assert.equal(refreshResult.body.user.email, "alice@example.com");
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("refresh admission keeps Stage A before verification and Stage B before user lookup", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Alice",
+        email: "alice@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const loginResult = await testServer.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "alice@example.com", password: "Password1!" }),
+    });
+    const cookie = getCookieHeader(loginResult.response, "kittachat_refresh");
+    const order = [];
+    const originalAdmit = testServer.rateLimiter.admit;
+    const originalFindById = testServer.models.User.findById;
+    testServer.rateLimiter.admit = async (input) => {
+      order.push(input.policyIds[0]);
+      return originalAdmit(input);
+    };
+    testServer.models.User.findById = async (...args) => {
+      order.push("user_lookup");
+      return originalFindById(...args);
+    };
+
+    const refreshResult = await testServer.request("/api/auth/refresh", {
+      method: "POST",
+      headers: { cookie },
+    });
+    assert.equal(refreshResult.response.status, 200);
+    assert.deepEqual(order, ["auth_refresh.stage_a", "auth_refresh.stage_b", "user_lookup"]);
+
+    order.length = 0;
+    const invalidResult = await testServer.request("/api/auth/refresh", {
+      method: "POST",
+      headers: { cookie: "kittachat_refresh=invalid" },
+    });
+    assert.equal(invalidResult.response.status, 401);
+    assert.deepEqual(order, ["auth_refresh.stage_a"]);
   } finally {
     await testServer.close();
   }
