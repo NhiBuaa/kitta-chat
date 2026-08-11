@@ -67,7 +67,7 @@ const ROOT_LINT_COMMANDS = {
 const CLIENT_LINT_COMMAND =
   'eslint . --ignore-pattern .vite-cache/** --max-warnings=13';
 const LICENSE_CHECK_COMMAND =
-  'license-checker-rseidelsohn --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD" --summary';
+  "node -e \"const p=require('path'),f=require('fs'),c=require('child_process'),r=f.existsSync('docs/security/issue-61-license-policy.json')?'.':'..',s=r==='.'?'root':p.basename(process.cwd());process.exit(c.spawnSync(process.execPath,[p.join(r,'scripts/ci/verifyLicensePolicy.cjs'),'--surface',s],{stdio:'inherit'}).status||0)\"";
 const LICENSE_CHECKER_VERSION = '4.4.2';
 const GITLEAKS_COMMAND =
   'docker run --rm -v "$PWD:/repo:ro" -v "$PWD:/out" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --redact=100 --report-format sarif --report-path /out/gitleaks-results.sarif --exit-code 1 --no-banner --no-color --log-level warn';

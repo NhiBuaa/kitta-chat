@@ -7,7 +7,7 @@ const test = require('node:test');
 
 const validatorPath = path.resolve(__dirname, 'validateCiContract.cjs');
 const licenseCheckCommand =
-  'license-checker-rseidelsohn --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD" --summary';
+  "node -e \"const p=require('path'),f=require('fs'),c=require('child_process'),r=f.existsSync('docs/security/issue-61-license-policy.json')?'.':'..',s=r==='.'?'root':p.basename(process.cwd());process.exit(c.spawnSync(process.execPath,[p.join(r,'scripts/ci/verifyLicensePolicy.cjs'),'--surface',s],{stdio:'inherit'}).status||0)\"";
 const validWorkflowHeader =
   "on:\n  pull_request:\n    branches: [main]\n  push:\n    branches: [main]\npermissions:\n  contents: read\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\n";
 const validSharedSetup =
