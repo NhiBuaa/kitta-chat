@@ -55,6 +55,15 @@ class PromClientMetricsAdapter {
     }
   }
 
+  set(name, labels, value) {
+    const metric = this.metrics.get(name);
+    if (!metric) throw new Error(`Metric is not registered: ${name}`);
+    if (metric.type !== "gauge") {
+      throw new Error(`Metric is not a gauge: ${name}`);
+    }
+    metric.set(labels, value);
+  }
+
   async render() {
     return {
       body: await this.registry.metrics(),
