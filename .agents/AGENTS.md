@@ -98,6 +98,7 @@ Use this mapping:
 - Conversation Read Model, backfill, dual-write, shadow compare, sidebar migration: read `.agents/rules/conversation-read-model-migration.md`.
 - Socket.IO events, presence, typing indicators, realtime ephemeral state: read `.agents/rules/realtime-state.md`.
 - Auth, session, tokens, cookies, login/logout/register: read `.agents/rules/auth-session.md`.
+- Security findings, credential disposition, scanner exceptions, alert dismissal, or risk acceptance: read `.agents/rules/security-findings.md`.
 - Audio/video calls, call history, call logs: read `.agents/rules/calls.md`.
 
 If a requested change violates a rule:

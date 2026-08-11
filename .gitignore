@@ -102,3 +102,8 @@ nginx/ssl/*.pfx
 /.gemini
 skills-lock.json
 /.agents
+!/.agents/
+/.agents/*
+!/.agents/rules/
+/.agents/rules/*
+!/.agents/rules/security-findings.md
