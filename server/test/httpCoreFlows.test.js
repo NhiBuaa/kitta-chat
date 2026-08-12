@@ -592,6 +592,52 @@ test("message REST routes reject requests without bearer authentication", async 
   }
 });
 
+test("message routes admit exactly once using only the authenticated principal", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const registerResult = await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Rate limited message user",
+        email: "rate-limited-message-user@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const admissions = [];
+    const originalAdmit = testServer.rateLimiter.admit;
+    testServer.rateLimiter.admit = async (input) => {
+      admissions.push(input);
+      return originalAdmit(input);
+    };
+    const authorization = `Bearer ${registerResult.body.token}`;
+
+    const write = await testServer.request("/api/messages", {
+      method: "POST",
+      headers: { authorization },
+      body: JSON.stringify({ receiver: "user-2", text: "bounded write" }),
+    });
+    const history = await testServer.request("/api/messages/user-1/user-2", {
+      headers: { authorization },
+    });
+
+    assert.equal(write.response.status, 200);
+    assert.equal(history.response.status, 200);
+    assert.deepEqual(admissions.map((entry) => entry.policyIds), [
+      ["state_mutation.aggregate", "state_mutation.message_write"],
+      ["read_expensive.aggregate", "read_expensive.message_history"],
+    ]);
+    assert.deepEqual(admissions.map((entry) => entry.actor), [
+      { kind: "user", value: "user-1" },
+      { kind: "user", value: "user-1" },
+    ]);
+    assert.equal(admissions.every((entry) => entry.conversationId === undefined), true);
+  } finally {
+    await testServer.close();
+  }
+});
+
 
 test("auth rate limiter returns standardized 429 after repeated login attempts", async () => {
   const testServer = await createTestServer({

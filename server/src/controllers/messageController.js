@@ -1,5 +1,6 @@
 const Message = require("../models/Message");
 const Group = require("../models/Group");
+const mongoose = require("mongoose");
 const ConversationParticipant = require("../models/ConversationParticipant");
 const { buildMessageVisibilityFilter } = require("../services/conversationVisibilityHelpers");
 const { sendError } = require("../utils/apiResponse");
@@ -26,6 +27,10 @@ const parseMessageLimit = (value, fallback = 20) => {
   return Math.min(Math.max(parsed, 1), MAX_MESSAGE_LIMIT);
 };
 
+const isCanonicalObjectId = (value) => typeof value === "string"
+  && /^[a-f\d]{24}$/i.test(value)
+  && mongoose.Types.ObjectId.isValid(value);
+
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
   try {
@@ -46,6 +51,13 @@ exports.createMessage = async (req, res) => {
     const isGroupChat = isGroup === true || isGroup === "true";
 
     if (isGroupChat) {
+      if (!isCanonicalObjectId(receiver)) {
+        return sendError(res, {
+          status: 400,
+          code: "MESSAGE_GROUP_RECIPIENT_INVALID",
+          message: "Group recipient is invalid",
+        });
+      }
       if (!receiver || !(await isGroupMember(receiver, principalId))) return rejectForbidden(res);
       conversationId = receiver;
     } else {

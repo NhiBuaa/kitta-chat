@@ -57,22 +57,38 @@ test("M1 derives direct sender from authenticated principal", async () => {
 test("M1 rejects public system messages and former group members before save", async () => {
   const system = load();
   const systemRes = response();
-  await system.controller.createMessage({ user: { id: "principal" }, body: { receiver: "group-1", isGroup: true, type: "system" } }, systemRes);
+  await system.controller.createMessage({ user: { id: "principal" }, body: { receiver: "507f1f77bcf86cd799439011", isGroup: true, type: "system" } }, systemRes);
   assert.equal(systemRes.statusCode, 400);
   assert.equal(system.calls.includes("save"), false);
 
   const group = load({
     groupMember: false,
     participant: {
-      legacyConversationId: "group-1",
+      legacyConversationId: "507f1f77bcf86cd799439011",
       userId: "principal",
       leftAt: new Date("2026-01-01T00:00:00.000Z"),
     },
   });
   const groupRes = response();
-  await group.controller.createMessage({ user: { id: "principal" }, body: { receiver: "group-1", isGroup: true, text: "x" } }, groupRes);
+  await group.controller.createMessage({ user: { id: "principal" }, body: { receiver: "507f1f77bcf86cd799439011", isGroup: true, text: "x" } }, groupRes);
   assert.equal(groupRes.statusCode, 403);
   assert.equal(group.calls.includes("save"), false);
+});
+
+test("Q3 rejects malformed and operator-shaped group receivers before membership query or save", async () => {
+  for (const receiver of ["not-an-object-id", { $ne: null }]) {
+    const { controller, calls } = load();
+    const res = response();
+
+    await controller.createMessage({
+      user: { id: "principal" },
+      body: { receiver, isGroup: true, text: "x" },
+    }, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(calls.some((call) => Array.isArray(call) && call[0] === "group"), false);
+    assert.equal(calls.includes("save"), false);
+  }
 });
 
 test("M2 rejects a direct caller outside the pair and caps public limit", async () => {
