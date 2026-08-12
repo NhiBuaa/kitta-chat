@@ -148,6 +148,31 @@ test("Conversation unique groupId index only applies to group conversations with
   assert.equal(groupIdIndex.sparse, undefined);
 });
 
+test("legacy partial indexes use Mongo-supported type predicates while preserving their unique scopes", () => {
+  const User = require("../src/models/User");
+  const File = require("../src/models/File");
+  const Message = require("../src/models/Message");
+  const avatarRequestIndex = indexOptionsByFields(User, { avatarRequestId: 1 });
+  const fileRequestIndex = indexOptionsByFields(File, { requestId: 1 });
+  const idempotencyIndex = indexOptionsByFields(Message, { sender: 1, idempotencyKey: 1 });
+  const callHistoryIndex = indexOptionsByFields(Message, { "callData.callHistoryId": 1 });
+
+  assert.deepEqual(avatarRequestIndex.partialFilterExpression, { avatarRequestId: { $type: "string" } });
+  assert.equal(avatarRequestIndex.sparse, undefined);
+  assert.equal(fileRequestIndex.unique, true);
+  assert.deepEqual(fileRequestIndex.partialFilterExpression, { requestId: { $type: "string" } });
+  assert.equal(fileRequestIndex.sparse, undefined);
+  assert.equal(idempotencyIndex.unique, true);
+  assert.deepEqual(idempotencyIndex.partialFilterExpression, { idempotencyKey: { $type: "string" } });
+  assert.equal(idempotencyIndex.sparse, undefined);
+  assert.equal(callHistoryIndex.unique, true);
+  assert.deepEqual(callHistoryIndex.partialFilterExpression, {
+    type: "call_log",
+    "callData.callHistoryId": { $type: "objectId" },
+  });
+  assert.equal(callHistoryIndex.sparse, undefined);
+});
+
 test("Conversation direct documents omit groupId and group documents omit directKey by default", () => {
   const direct = new Conversation({
     kind: "direct",

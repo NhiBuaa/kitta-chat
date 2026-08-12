@@ -49,8 +49,7 @@ userSchema.index({ displayName: 1 });
 userSchema.index(
   { avatarRequestId: 1 },
   {
-    sparse: true,
-    partialFilterExpression: { avatarRequestId: { $exists: true, $ne: null } },
+    partialFilterExpression: { avatarRequestId: { $type: "string" } },
   },
 );
 

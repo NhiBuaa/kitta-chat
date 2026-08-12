@@ -37,6 +37,7 @@ function imageSetEnvironment(imageSetId) {
     K4_IMAGE_SET_ID: normalizedImageSetId,
     K4_NGINX_IMAGE: `${IMAGE_SET_PREFIX}-nginx:${normalizedImageSetId}`,
     K4_BACKEND_IMAGE: `${IMAGE_SET_PREFIX}-backend:${normalizedImageSetId}`,
+    K4_RUNNER_IMAGE: `${IMAGE_SET_PREFIX}-runner:${normalizedImageSetId}`,
   };
 }
 
@@ -56,6 +57,7 @@ function createRunPlan({ runId, profile }) {
   const labels = ownershipLabels(normalizedRunId);
   return {
     projectName: `${PROJECT_MARKER}-${normalizedRunId}`,
+    composeFile: COMPOSE_FILE,
     runId: normalizedRunId,
     profile,
     backendReplicaCount: topology.replicaCount,
@@ -586,8 +588,8 @@ function buildImageSet(imageSetId, options = {}) {
     K4_RESULT_DIR: buildPlan.resultDirectory,
     K4_JWT_SECRET: options.jwtSecret || crypto.randomBytes(48).toString("hex"),
   };
-  docker(composeArgs(buildPlan, ["build", "nginx", "backend"]), { ...options, env: environment });
-  const imageIdentities = Object.fromEntries(["nginx", "backend"].map((service) => {
+  docker(composeArgs(buildPlan, ["build", "nginx", "backend", "runner"]), { ...options, env: environment });
+  const imageIdentities = Object.fromEntries(["nginx", "backend", "runner"].map((service) => {
     const image = imageEnvironment[`K4_${service.toUpperCase()}_IMAGE`];
     const identity = String(docker(["image", "inspect", "--format", "{{.Id}}", image], options)).trim();
     assertImmutableImageIdentity(identity, service);

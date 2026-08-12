@@ -90,8 +90,7 @@ messageSchema.index(
   { sender: 1, idempotencyKey: 1 },
   {
     unique: true,
-    sparse: true,
-    partialFilterExpression: { idempotencyKey: { $exists: true, $ne: null } },
+    partialFilterExpression: { idempotencyKey: { $type: "string" } },
   }
 );
 
@@ -99,10 +98,9 @@ messageSchema.index(
   { "callData.callHistoryId": 1 },
   {
     unique: true,
-    sparse: true,
     partialFilterExpression: {
       type: "call_log",
-      "callData.callHistoryId": { $exists: true, $ne: null },
+      "callData.callHistoryId": { $type: "objectId" },
     },
   }
 );

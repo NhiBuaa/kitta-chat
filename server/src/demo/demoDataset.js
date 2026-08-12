@@ -196,6 +196,13 @@ function buildDemoDataset({ passwordHash, userIdsByEmail = {} }) {
       idempotencyKey: `${DEMO_NAMESPACE}:${conversationKey}:${String(messageIndex).padStart(3, "0")}`,
       hasLink: links.length > 0,
       links,
+      callData: {
+        callHistoryId: null,
+        type: "video",
+        status: "completed",
+        startedAt: null,
+        duration: null,
+      },
       createdAt,
       updatedAt: createdAt,
     };

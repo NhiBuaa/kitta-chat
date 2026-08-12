@@ -1,0 +1,8 @@
+{
+  "name": "kittachat-k4-runner",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "socket.io-client": "4.8.3"
+  }
+}
