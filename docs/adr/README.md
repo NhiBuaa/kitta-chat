@@ -10,3 +10,4 @@
 | [ADR-012](012-k3-observability-metrics-boundary.md) | K3 observability metrics boundary | Accepted |
 | [ADR-013](013-k3-1-local-observability-demo-seam.md) | K3.1 local observability demo seam | Accepted |
 | [ADR-014](014-browser-origin-security-boundary.md) | Shared fail-closed browser origin boundary | Accepted |
+| [ADR-015](015-k4-performance-evidence-boundary.md) | K4 performance evidence boundary | Accepted |
