@@ -37,7 +37,8 @@ export const changePassword = (data) =>
 export const forgotPassword = (data) =>
   axiosInstance.post("/forgot-password", data);
 export const resetPassword = (id, token, newPassword) => {
-  return axiosInstance.post(`/reset-password/${id}/${token}`, {
+  return axiosInstance.post(`/reset-password/${id}`, {
+    token,
     newPassword,
     confirmPassword: newPassword,
   });

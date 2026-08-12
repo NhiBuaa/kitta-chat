@@ -1,24 +1,67 @@
 const Message = require("../models/Message");
 const Group = require("../models/Group");
+const mongoose = require("mongoose");
 const ConversationParticipant = require("../models/ConversationParticipant");
 const { buildMessageVisibilityFilter } = require("../services/conversationVisibilityHelpers");
 const { sendError } = require("../utils/apiResponse");
 const { dualWriteConfirmedMessage } = require("../services/conversationDualWriteService");
 const { logger } = require("../utils/logger");
 
+const MAX_MESSAGE_LIMIT = 200;
+
+const getPrincipalId = (req) => req.user?.id || req.user?._id;
+
+const rejectForbidden = (res) => sendError(res, {
+  status: 403,
+  code: "MESSAGE_ACCESS_DENIED",
+  message: "Message access denied",
+});
+
+const isGroupMember = async (groupId, userId) => Boolean(
+  await Group.findOne({ _id: groupId, members: userId }).lean(),
+);
+
+const parseMessageLimit = (value, fallback = 20) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, 1), MAX_MESSAGE_LIMIT);
+};
+
+const isCanonicalObjectId = (value) => typeof value === "string"
+  && /^[a-f\d]{24}$/i.test(value)
+  && mongoose.Types.ObjectId.isValid(value);
+
 // [POST] /api/messages
 exports.createMessage = async (req, res) => {
   try {
-    const { sender, receiver, text, attachments, isGroup, type } = req.body;
-    console.log("Dữ liệu nhận từ FE:", req.body);
+    const { sender: suppliedSender, receiver, text, attachments, isGroup, type } = req.body;
+    const principalId = getPrincipalId(req)?.toString();
+    if (!principalId) return rejectForbidden(res);
+    if (suppliedSender && suppliedSender.toString() !== principalId) return rejectForbidden(res);
+    if (type === "system") {
+      return sendError(res, {
+        status: 400,
+        code: "PUBLIC_SYSTEM_MESSAGE_FORBIDDEN",
+        message: "System messages cannot be created through this endpoint",
+      });
+    }
+    const sender = principalId;
 
     let conversationId;
     const isGroupChat = isGroup === true || isGroup === "true";
 
     if (isGroupChat) {
+      if (!isCanonicalObjectId(receiver)) {
+        return sendError(res, {
+          status: 400,
+          code: "MESSAGE_GROUP_RECIPIENT_INVALID",
+          message: "Group recipient is invalid",
+        });
+      }
+      if (!receiver || !(await isGroupMember(receiver, principalId))) return rejectForbidden(res);
       conversationId = receiver;
     } else {
-      if (!sender || !receiver) {
+      if (!receiver) {
         return sendError(res, {
           status: 400,
           code: "MESSAGE_RECIPIENT_REQUIRED",
@@ -26,20 +69,6 @@ exports.createMessage = async (req, res) => {
         });
       }
       conversationId = [sender, receiver].sort().join("_");
-    }
-
-    // NẾU LÀ SYSTEM MESSAGE
-    if (type === "system") {
-      const savedSystemMsg = await exports.createSystemMessage(
-        conversationId,
-        text,
-      );
-
-      if (savedSystemMsg) {
-        return res.status(200).json(savedSystemMsg);
-      } else {
-        return res.status(500).json({ message: "Lỗi tạo tin nhắn hệ thống" });
-      }
     }
 
     // NẾU LÀ TIN NHẮN THƯỜNG / TIN NHẮN FILE
@@ -59,7 +88,6 @@ exports.createMessage = async (req, res) => {
     // Dùng populate để trả về thông tin file đầy đủ ngay sau khi tạo
     await savedMessage.populate("attachments");
 
-    console.log("Đã lưu thành công:", savedMessage);
     res.status(200).json(savedMessage);
   } catch (err) {
     logger.error("message_create_failed", { errorName: err?.name || "Error" });
@@ -75,18 +103,21 @@ exports.createMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
-    const { isGroup, cursor, limit = 20 } = req.query;
+    const { isGroup, cursor, limit } = req.query;
+    const requestUserId = getPrincipalId(req)?.toString();
+    if (!requestUserId) return rejectForbidden(res);
     let conversationId;
 
     // Lấy conversationId;
     if (isGroup === "true") {
+      if (!(await isGroupMember(userId2, requestUserId))) return rejectForbidden(res);
       conversationId = userId2;
     } else {
+      if (requestUserId !== userId1 && requestUserId !== userId2) return rejectForbidden(res);
       conversationId = [userId1, userId2].sort().join("_");
     }
 
     let visibilityFilter = {};
-    const requestUserId = req.user?.id || userId1;
     if (requestUserId) {
       try {
         const participant = await ConversationParticipant.findOne({
@@ -109,14 +140,15 @@ exports.getMessages = async (req, res) => {
     }
 
     // Truy vấn DB
+    const parsedLimit = parseMessageLimit(limit);
     let messages = await Message.find(query)
       .sort({ _id: -1 }) // Lấy từ mới nhất lùi về quá khứ
-      .limit(parseInt(limit, 10)) // Giới hạn lại số lượng
+      .limit(parsedLimit) // Giới hạn lại số lượng
       .populate("sender", "displayName avatar username")
       .populate("attachments");
 
     // Kiểm tra xem còn tin nhắn nào mới hơn không
-    const hasMore = messages.length === parseInt(limit, 10);
+    const hasMore = messages.length === parsedLimit;
     messages = messages.reverse();
 
     res.status(200).json({

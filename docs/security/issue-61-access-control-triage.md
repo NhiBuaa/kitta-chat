@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted high-confidence source-level observations. M1 and M2 are assigned by maintainer decision to one combined dedicated message-access-control security follow-up. Status: `dedicated message-access-control follow-up required / identifier pending`. They remain independent of rate-limit classification and do not authorize remediation, alert dismissal, issue publication, temporary network limiting or runtime changes. Runtime exploitation has not been reproduced or claimed. The recorded decisions are in [issue-61-message-access-control-human-scope-gate.md](issue-61-message-access-control-human-scope-gate.md).
+Historical pre-remediation triage. Issue #61 closed with M1 and M2 `MESSAGE ACCESS-CONTROL REMEDIATED / VERIFIED BY SOURCE-AUTHORIZATION-TEST EVIDENCE`. Current behavior requires authenticated-principal authority, authorizes direct/group access, validates group ObjectId receivers, bounds history queries, and applies route-specific Redis admission. The original observations below remain evidence of the former source state; they are not current behavior. See [issue-61-final-remaining-risk-record.md](issue-61-final-remaining-risk-record.md).
 
 ## Message Creation Trusts Caller Identity
 

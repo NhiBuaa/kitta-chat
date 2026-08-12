@@ -20,25 +20,23 @@ Các rule này bảo đảm finding bảo mật được xử lý theo bằng ch
 
 ## Issue #61 Deferred-Finding And Evidence Accounting
 
-- Reset-token logging exposure giữ disposition: `source-confirmed credential-in-URL/log-exposure finding — remediation deferred to dedicated security follow-up; historical occurrence unverified`.
-- Tách finding sang dedicated follow-up không phải remediation, không cho phép đánh dấu resolved và không loại finding khỏi Issue #61 security-baseline accounting.
-- Issue #61 phải giữ finding, current risk status, lý do tách remediation, blocking follow-up-linkage requirement và trạng thái finding là completion blocker hay explicitly blocked remaining risk theo quyết định maintainer. Cho tới khi authorized creation/publication tạo stable identifier, trạng thái phải là `blocking follow-up linkage required / identifier pending` và không được mô tả placeholder như một actual cross-reference; agent không được tự tạo hoặc publish issue.
+- Issue #61 is closed. Reset-token source/config exposure is `RESET-TOKEN URL/LOGGING EXPOSURE REMEDIATED / VERIFIED BY FRAGMENT-TRANSPORT-LOGGING-TEST EVIDENCE`.
+- Historical occurrence, retention and access were not inspected. Do not claim that a historic reset credential was retained or accessed.
+- Reopen this disposition only for new scanner or regression evidence. The final accounting is in `docs/security/issue-61-final-remaining-risk-record.md`.
 - Không được suy diễn hoặc tuyên bố historical leakage khi chưa có evidence. Historical retained logs không được inspect theo authorization hiện tại, và reset credentials không được rotate hoặc invalidate trong planning này.
 - Retained compatibility evidence hiện dừng tại `B = 0`: không provenance audit #3, không xin `read:packages` riêng để tiếp tục chain, không dò hosting/logging/metrics provider theo suy đoán và không mở raw auth/recovery logs.
 - Raw auth/recovery logs giữ trạng thái `restricted/quarantined for measurement use`; chúng không phải nguồn behavioral measurement được phép dùng.
 - Retained-evidence strategy chỉ được mở lại khi maintainer cung cấp actual hosting/deployment/observability provider hoặc concrete secret-safe metadata source có khả năng tạo deployed-runtime/revision binding. Mọi future provider/source access cần một authorization gate mới; quyết định dừng hiện tại không tự cấp quyền truy cập sau này.
 - Numeric approval gates của Issue #61 không đổi khi retained evidence dừng. Static reasoning không được thay measurement hoặc tự downgrade `measurement required` thành intentional hardening; privacy-safe measurement/instrumentation cần một slice được approve riêng trước khi thiết kế hoặc thực thi.
 
-### Issue #61 Message Access-Control Follow-Up
+### Issue #61 Message Access-Control Closure
 
-- M1 `POST /api/messages` giữ disposition: `source-confirmed message write-integrity/access-control finding — remediation assigned to dedicated security follow-up; runtime exploitability not yet reproduced`.
-- M2 `GET /api/messages/:userId1/:userId2` giữ disposition: `source-confirmed horizontal-authorization/data-disclosure and resource-amplification finding — remediation assigned to dedicated security follow-up; runtime exploitability not yet reproduced`.
-- M1 và M2 được tổ chức trong một combined message-access-control follow-up ở cấp planning. Cho tới khi authorized creation/publication tạo stable identifier, trạng thái là `dedicated message-access-control follow-up required / identifier pending`; không được mô tả placeholder như actual issue/cross-reference.
-- Tách scope không remediate, resolve, dismiss, duplicate hoặc làm false-positive hai findings. Issue #61 phải giữ classification, source evidence, current risk, split rationale, follow-up status và final blocking/remaining-risk accounting cho từng finding. B/B scope decision không tự quyết định Issue #61 closure: cho tới khi có closure decision riêng, M1/M2 là unresolved remaining risks và block final actor/key implementation cho hai routes tương ứng.
-- `message_boundary_pending` chỉ là planning label, không phải stable Redis class ID. Current network actor chỉ planning-safe; route-specific distributed application limiter implementation mặc định blocked cho tới khi follow-up giải quyết verified-principal/authz contract.
+- M1 and M2 are `MESSAGE ACCESS-CONTROL REMEDIATED / VERIFIED BY SOURCE-AUTHORIZATION-TEST EVIDENCE`.
+- Public message routes use authenticated-principal authority, direct/group authorization, group ObjectId boundaries, bounded history reads, and approved route-specific Redis admission.
+- `message_boundary_pending` is retired for Issue #61. It must not be reused as a live policy namespace.
 - Caller-controlled sender, receiver, `userId1`, `userId2`, conversation, group, type hoặc attachment values không bao giờ là authenticated actor identity.
 - Temporary network-only application limiter không được approve bởi scope decision B/B. Mọi đề xuất sau này cần quyết định riêng về purpose, temporary actor/key semantics, migration/removal contract và cách chứng minh nó không phải final authenticated quota enforcement. Nginx edge defense vẫn là control độc lập.
-- Scope gate M1/M2 đã đóng nên có thể mở một authorization gate riêng để cân nhắc measurement/instrumentation design cho các class không liên quan. Chưa có design nào được authorize; M1/M2 phải bị exclude khỏi actor-level measurement/key design cho tới khi follow-up giải quyết actor model, và current unauthenticated behavior không được dùng làm workload evidence cho final authenticated quota policy.
+- Any future change to message authorization or rate-limit policy requires a separate approval and must preserve the authenticated-principal actor boundary.
 
 ### Measurement Identity Purpose Separation
 

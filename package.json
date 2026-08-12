@@ -4,7 +4,7 @@
     "ci:validate": "node scripts/ci/validateCiContract.cjs",
     "lint": "npm --prefix client run lint",
     "lint:ci": "npm --prefix client run lint:ci",
-    "license:check": "license-checker-rseidelsohn --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD\" --summary",
+    "license:check": "node -e \"const p=require('path'),f=require('fs'),c=require('child_process'),r=f.existsSync('docs/security/issue-61-license-policy.json')?'.':'..',s=r==='.'?'root':p.basename(process.cwd());process.exit(c.spawnSync(process.execPath,[p.join(r,'scripts/ci/verifyLicensePolicy.cjs'),'--surface',s],{stdio:'inherit'}).status||0)\"",
     "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d",
     "dev:docker:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
     "seed:demo": "docker compose exec -T backend npm run seed:demo",

@@ -1,0 +1,41 @@
+# Issue #61 L2.1 — License-Decision Primary-Source Evidence
+
+## Question
+
+For the 23 third-party package/expression groups already enumerated in the L2 matrix, what obligations are stated by the governing primary license texts, and which groups need actual legal-counsel review rather than a maintainer policy decision? This is evidence for L2.1 only. It neither accepts nor rejects a license, changes a checker/allowlist, nor selects an `OR` branch or reduces an `AND` expression.
+
+## Primary sources
+
+- [SPDX License Expressions, Annex D](https://spdx.github.io/spdx-spec/v2.3/SPDX-license-expressions/) — `AND` means all listed licenses apply; `OR` means a choice is available. The expression itself must therefore remain intact in the decision record.
+- SPDX’s official license-text pages: [BlueOak-1.0.0](https://spdx.org/licenses/BlueOak-1.0.0.html), [CC-BY-3.0](https://spdx.org/licenses/CC-BY-3.0.html), [CC0-1.0](https://spdx.org/licenses/CC0-1.0.html), [Python-2.0](https://spdx.org/licenses/Python-2.0.html), [CC-BY-4.0](https://spdx.org/licenses/CC-BY-4.0.html), [MPL-2.0](https://spdx.org/licenses/MPL-2.0.html), [MIT](https://spdx.org/licenses/MIT.html), [Zlib](https://spdx.org/licenses/Zlib.html), [BSD-3-Clause](https://spdx.org/licenses/BSD-3-Clause.html), [WTFPL](https://spdx.org/licenses/WTFPL.html), [Apache-2.0](https://spdx.org/licenses/Apache-2.0.html), [LGPL-3.0-or-later](https://spdx.org/licenses/LGPL-3.0-or-later.html), and [MIT-0](https://spdx.org/licenses/MIT-0.html).
+
+## Findings
+
+`Maintainer-policy candidate` below is not a legal conclusion or an acceptance. It means the primary text states a conventional notice/retention obligation that a maintainer can normally compare with an already-approved repository distribution-notice policy. `Legal-counsel required` means the exact expression, copyleft terms, attribution terms, or an unmade `OR` election prevents a safe policy decision from this evidence alone.
+
+| Exact SPDX expression and L2 package group(s) | Declared reachability (from L2) | Primary-text obligation relevant to policy | Evidence conclusion |
+| --- | --- | --- | --- |
+| `BlueOak-1.0.0` — root tooling group; client tooling group; server `lru-cache@11.5.2`; server `minimatch@10.2.3`; server tooling/optional-Firebase group | Four dev/build-only groups; `lru-cache` is server runtime-reachable when Firebase Admin Auth is used. | A recipient of a copy must receive the license text or a link; the text also includes a patent grant and a 30-day notice cure. | **Maintainer-policy candidate** if the policy has a distribution-notice mechanism. Runtime reachability does not remove that notice question. |
+| `CC-BY-3.0` — root, client and server `spdx-exceptions@2.5.0` groups | Dev-only tooling; not shipped. | Distribution/public performance requires retention of license/warranty notices and attribution information supplied by the licensor. | **Legal-counsel required**: whether data/package material is distributed and how attribution is satisfied is jurisdiction- and artifact-specific. |
+| `CC0-1.0` — root, client and server `spdx-license-ids@3.0.23` groups | Dev-only tooling; not shipped. | The text is a public-domain dedication with a fallback broad license and an as-is/no-warranty statement. | **Maintainer-policy candidate**; preserve the reported identifier and confirm policy treatment of CC0 material. |
+| `(MIT AND CC-BY-3.0)` — root, client and server `spdx-ranges@2.1.1` groups | Dev-only tooling; not shipped. | `AND` requires compliance with both MIT’s notice retention and CC-BY-3.0’s attribution/notice conditions. | **Legal-counsel required**: the full compound expression must be assessed; no component may be discarded. |
+| `Python-2.0` — client `argparse@2.0.1` | Dev-only ESLint chain; not shipped. | The Python License 2.0 text requires retention of copyright, license, disclaimer and acknowledgement in redistributions. | **Maintainer-policy candidate** if a notice-retention policy covers the tooling distribution scenario. |
+| `CC-BY-4.0` — client `caniuse-lite@1.0.30001760` | Build-only Autoprefixer/Babel path; not shipped as a runtime module. | The license requires attribution information, a license link/text reference, indication of modifications where applicable, and no extra restrictions on licensed material. | **Legal-counsel required**: output/distribution and attribution treatment need a specific policy determination. |
+| `MPL-2.0` — client `lightningcss@1.30.2`, `lightningcss-win32-x64-msvc@1.30.2` | Build-only; Windows binary optional and not a production artifact. | Distribution of covered software/source triggers notice, license-copy, source-code availability, and modification-notice rules for covered files. | **Legal-counsel required** if any artifact is redistributed; exclusion from the stated production target is evidence for reachability, not a replacement for license analysis. |
+| `(MIT AND Zlib)` — client `pako@1.0.11` | D10 development/build chain; absent from production bundle. | `AND` retains MIT notice requirements plus Zlib’s origin/misrepresentation/altered-source conditions. | **Maintainer-policy candidate** only if the policy demonstrably covers both components; expression remains compound. |
+| `(MIT AND BSD-3-Clause)` — client `sha.js@2.4.12` | D10 development/build chain; absent from production bundle. | `AND` retains MIT notice requirements plus BSD-3-Clause copyright/conditions/disclaimer retention and no-endorsement term. | **Maintainer-policy candidate** only if the policy demonstrably covers both components; expression remains compound. |
+| `(WTFPL OR MIT)` — client `spark-md5@3.0.2` | Direct browser runtime dependency; shipped/reachable. | SPDX says `OR` is a license choice; MIT requires notice retention while WTFPL has materially different text. | **Legal-counsel required**: a compliance basis cannot be selected or inferred in L2.1; the full expression stays verbatim. |
+| `(Apache-2.0 AND LGPL-3.0-or-later AND MIT)` — server `@img/sharp-wasm32@0.35.3` | Optional artifact; not selected by the Linux-musl production target. | `AND` retains Apache notice/patent/NOTICE obligations, LGPL source/corresponding-source and relinking-related terms, and MIT notice obligations. | **Legal-counsel required**: LGPL and three-part compound obligations cannot be dispositioned from reachability alone. |
+| `(Apache-2.0 AND LGPL-3.0-or-later)` — server `@img/sharp-win32-x64@0.35.3` | Optional Windows artifact; not selected by production target. | `AND` retains Apache notice/patent/NOTICE obligations and LGPL source/corresponding-source and relinking-related terms. | **Legal-counsel required** for the same copyleft/distribution reason. |
+| `MIT-0` — server `nodemailer@9.0.5` | Direct server runtime dependency. | MIT-0 grants broad permissions and expressly has no attribution requirement in its text. | **Maintainer-policy candidate**, subject to verifying that package license material matches the reported SPDX identifier. |
+
+## Uncertainties and required evidence before a final decision
+
+- This artifact does not inspect each package tarball, bundled notice, copyright holder, modification state, or eventual deployment/distribution channel. SPDX identifiers are the scanner’s reported expressions, not proof that every upstream package’s declared material is complete or accurate.
+- “Not shipped” and optional-platform facts come from the approved L2 reachability inventory. A future bundle, platform target, container, or redistribution change must trigger reconsideration.
+- This is technical license-text evidence, not legal advice. Any row labelled **Legal-counsel required** must remain `NEEDS LEGAL REVIEW` until a legal/policy owner records a decision. A maintainer-policy candidate may be changed only by an authorized policy owner who can point to the applicable repository notice/distribution policy.
+- `client@0.0.0 — UNLICENSED` is deliberately absent: it is project metadata rather than a third-party license finding.
+
+## Failure state
+
+No package, scanner output, or policy configuration was mutated. If the owner cannot supply a repository distribution-notice policy or complete package-license material, every affected row must stay `NEEDS LEGAL REVIEW`; do not create an allowlist exception or infer an `ACCEPT` decision.

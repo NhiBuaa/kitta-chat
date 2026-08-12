@@ -46,6 +46,9 @@ function loadController({ participant = null, findCalls = [], participants = [],
     },
   });
   mockModule(groupPath, {
+    findOne(query) {
+      return { lean: async () => groups.some((group) => String(group._id) === String(query._id)) ? { _id: query._id } : null };
+    },
     find() {
       return {
         select: async () => groups,
@@ -182,8 +185,9 @@ test("getMessages applies leftAt visibility filter for group conversation", asyn
   const findCalls = [];
   const controller = loadController({
     findCalls,
+    groups: [{ _id: "507f1f77bcf86cd799439011" }],
     participant: {
-      legacyConversationId: "group-1",
+      legacyConversationId: "507f1f77bcf86cd799439011",
       userId: "user-a",
       leftAt,
     },
@@ -192,7 +196,7 @@ test("getMessages applies leftAt visibility filter for group conversation", asyn
 
   await controller.getMessages(
     {
-      params: { userId1: "user-a", userId2: "group-1" },
+      params: { userId1: "user-a", userId2: "507f1f77bcf86cd799439011" },
       query: { isGroup: "true" },
       user: { id: "user-a" },
     },
@@ -201,7 +205,7 @@ test("getMessages applies leftAt visibility filter for group conversation", asyn
 
   assert.equal(res.statusCode, 200);
   assert.equal(findCalls.length, 1);
-  assert.equal(findCalls[0].conversationId, "group-1");
+  assert.equal(findCalls[0].conversationId, "507f1f77bcf86cd799439011");
   assert.deepEqual(findCalls[0].createdAt, { $lte: leftAt });
 });
 

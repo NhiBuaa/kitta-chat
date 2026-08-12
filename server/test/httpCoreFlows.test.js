@@ -419,8 +419,20 @@ test("message create and fetch work through the Express HTTP API", async () => {
   const testServer = await createTestServer();
 
   try {
+    const registerResult = await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Message user",
+        email: "message-user@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const authorization = `Bearer ${registerResult.body.token}`;
+
     const createResult = await testServer.request("/api/messages", {
       method: "POST",
+      headers: { authorization },
       body: JSON.stringify({
         sender: "user-1",
         receiver: "user-2",
@@ -432,7 +444,9 @@ test("message create and fetch work through the Express HTTP API", async () => {
     assert.equal(createResult.body.conversationId, "user-1_user-2");
     assert.equal(createResult.body.text, "hello from integration test");
 
-    const fetchResult = await testServer.request("/api/messages/user-1/user-2");
+    const fetchResult = await testServer.request("/api/messages/user-1/user-2", {
+      headers: { authorization },
+    });
 
     assert.equal(fetchResult.response.status, 200);
     assert.equal(fetchResult.body.success, true);
@@ -447,9 +461,19 @@ test("message create returns a standardized validation error when receiver is mi
   const testServer = await createTestServer();
 
   try {
+    const registerResult = await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Validation user",
+        email: "validation-user@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
     const createResult = await testServer.request("/api/messages", {
       method: "POST",
       headers: {
+        authorization: `Bearer ${registerResult.body.token}`,
         "x-request-id": "req-message-validation",
       },
       body: JSON.stringify({
@@ -466,6 +490,149 @@ test("message create returns a standardized validation error when receiver is mi
     });
     assert.equal(createResult.body.message, "Thiếu thông tin người gửi/nhận");
     assert.equal(createResult.body.requestId, "req-message-validation");
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("reset password accepts its credential in the body and rejects the retired token path", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const registerResult = await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Reset user",
+        email: "reset-user@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const user = testServer.models.users[0];
+    const resetToken = jwt.sign(
+      { id: user._id, email: user.email },
+      `${process.env.JWT_SECRET}${user.password}`,
+      { expiresIn: "15m" },
+    );
+
+    const success = await testServer.request(`/api/auth/reset-password/${user._id}`, {
+      method: "POST",
+      body: JSON.stringify({
+        token: resetToken,
+        newPassword: "NewPassword1!",
+        confirmPassword: "NewPassword1!",
+      }),
+    });
+    const retiredPath = await testServer.request(
+      `/api/auth/reset-password/${user._id}/${resetToken}`,
+      { method: "POST", body: JSON.stringify({}) },
+    );
+
+    assert.equal(registerResult.response.status, 201);
+    assert.equal(success.response.status, 200);
+    assert.equal(success.body.success, true);
+    assert.equal(retiredPath.response.status, 404);
+    assert.equal(JSON.stringify(retiredPath.body).includes(resetToken), false);
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("reset password rejects invalid and expired body credentials without echoing them", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const registerResult = await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Expired reset user",
+        email: "expired-reset-user@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const user = testServer.models.users[0];
+    const expiredToken = jwt.sign(
+      { id: user._id, email: user.email },
+      `${process.env.JWT_SECRET}${user.password}`,
+      { expiresIn: -1 },
+    );
+    const result = await testServer.request(`/api/auth/reset-password/${user._id}`, {
+      method: "POST",
+      body: JSON.stringify({
+        token: expiredToken,
+        newPassword: "NewPassword1!",
+        confirmPassword: "NewPassword1!",
+      }),
+    });
+
+    assert.equal(registerResult.response.status, 201);
+    assert.equal(result.response.status, 400);
+    assert.match(result.body.message, /hết hạn|không hợp lệ/);
+    assert.equal(JSON.stringify(result.body).includes(expiredToken), false);
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("message REST routes reject requests without bearer authentication", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const createResult = await testServer.request("/api/messages", {
+      method: "POST",
+      body: JSON.stringify({ receiver: "user-2", text: "unauthenticated" }),
+    });
+    const readResult = await testServer.request("/api/messages/user-1/user-2");
+
+    assert.equal(createResult.response.status, 401);
+    assert.equal(readResult.response.status, 401);
+  } finally {
+    await testServer.close();
+  }
+});
+
+test("message routes admit exactly once using only the authenticated principal", async () => {
+  const testServer = await createTestServer();
+
+  try {
+    const registerResult = await testServer.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        displayName: "Rate limited message user",
+        email: "rate-limited-message-user@example.com",
+        password: "Password1!",
+        confirmPassword: "Password1!",
+      }),
+    });
+    const admissions = [];
+    const originalAdmit = testServer.rateLimiter.admit;
+    testServer.rateLimiter.admit = async (input) => {
+      admissions.push(input);
+      return originalAdmit(input);
+    };
+    const authorization = `Bearer ${registerResult.body.token}`;
+
+    const write = await testServer.request("/api/messages", {
+      method: "POST",
+      headers: { authorization },
+      body: JSON.stringify({ receiver: "user-2", text: "bounded write" }),
+    });
+    const history = await testServer.request("/api/messages/user-1/user-2", {
+      headers: { authorization },
+    });
+
+    assert.equal(write.response.status, 200);
+    assert.equal(history.response.status, 200);
+    assert.deepEqual(admissions.map((entry) => entry.policyIds), [
+      ["state_mutation.aggregate", "state_mutation.message_write"],
+      ["read_expensive.aggregate", "read_expensive.message_history"],
+    ]);
+    assert.deepEqual(admissions.map((entry) => entry.actor), [
+      { kind: "user", value: "user-1" },
+      { kind: "user", value: "user-1" },
+    ]);
+    assert.equal(admissions.every((entry) => entry.conversationId === undefined), true);
   } finally {
     await testServer.close();
   }

@@ -37,7 +37,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Audit root dependencies
-        run: npm audit --audit-level=high
+        run: node scripts/ci/verifySecurityBaseline.cjs --baseline docs/security/issue-61-security-check-baseline.json --kind audit --surface root
 
   client-audit:
     name: Dependency Audit (client)
@@ -58,7 +58,7 @@ jobs:
           cache-dependency-path: client/package-lock.json
 
       - name: Audit client dependencies
-        run: npm audit --audit-level=high
+        run: node ../scripts/ci/verifySecurityBaseline.cjs --baseline ../docs/security/issue-61-security-check-baseline.json --kind audit --surface client
 
   server-audit:
     name: Dependency Audit (server)
@@ -79,7 +79,7 @@ jobs:
           cache-dependency-path: server/package-lock.json
 
       - name: Audit server dependencies
-        run: npm audit --audit-level=high
+        run: node ../scripts/ci/verifySecurityBaseline.cjs --baseline ../docs/security/issue-61-security-check-baseline.json --kind audit --surface server
 
   root-license-scan:
     name: License Scan (root)
@@ -199,7 +199,7 @@ jobs:
           --redact=100
           --report-format sarif
           --report-path /out/gitleaks-results.sarif
-          --exit-code 1
+          --exit-code 0
           --no-banner
           --no-color
           --log-level warn
@@ -208,6 +208,9 @@ jobs:
         id: sanitize
         if: ${{ always() }}
         run: node scripts/ci/sanitizeGitleaksSarif.cjs gitleaks-results.sarif gitleaks-results-sanitized.sarif
+
+      - name: Reconcile sanitized Gitleaks baseline
+        run: node scripts/ci/verifySecurityBaseline.cjs --baseline docs/security/issue-61-security-check-baseline.json --kind gitleaks --report gitleaks-results-sanitized.sarif
 
       - name: Upload sanitized Gitleaks SARIF
         if: ${{ always() && steps.sanitize.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}

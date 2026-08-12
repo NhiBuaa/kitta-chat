@@ -5,8 +5,10 @@ import { toast } from "react-toastify";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaLock, FaEye, FaEyeSlash, FaKey, FaArrowLeft } from "react-icons/fa";
 import { FiCheck, FiX } from "react-icons/fi";
+import { takeResetTokenFromFragment } from "../resetTokenFragment.js";
 const ResetPassword = () => {
-  const { id, token } = useParams();
+  const { id } = useParams();
+  const [resetToken] = useState(() => takeResetTokenFromFragment(window));
   const navigate = useNavigate();
   const {
     register,
@@ -36,7 +38,7 @@ const ResetPassword = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      await resetPassword(id, token, data.newPassword);
+      await resetPassword(id, resetToken, data.newPassword);
       toast.success("Đổi mật khẩu thành công! Hãy đăng nhập.");
 
       // Chờ 1 chút để user đọc thông báo rồi chuyển trang

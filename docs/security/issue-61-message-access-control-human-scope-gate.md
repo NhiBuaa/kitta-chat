@@ -2,7 +2,7 @@
 
 ## Status
 
-Both per-finding scope decisions are recorded. This gate is closed at the M1/M2 decision-recorded state. It does not authorize issue creation/publication, authentication or authorization remediation, a temporary network limiter, runtime/config changes, reproduction against a deployed system, instrumentation design, measurement, numeric tuning or alert dismissal.
+**Historical / superseded gate.** This record captures the original B scope decision. Issue #61 later authorized and completed F2-A/R3: M1/M2 are `MESSAGE ACCESS-CONTROL REMEDIATED / VERIFIED BY SOURCE-AUTHORIZATION-TEST EVIDENCE`, and `message_boundary_pending` is retired. This document remains decision history; it does not authorize further changes.
 
 Runtime exploitation has not been reproduced or claimed. The evidence below is limited to current repository route wiring and controller behavior.
 

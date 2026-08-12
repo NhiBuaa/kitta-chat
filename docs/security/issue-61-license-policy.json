@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "baselineAllowedExpressions": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "0BSD"],
+  "surfaces": {
+    "root": { "findings": [
+      { "packages": ["jackspeak@3.4.3", "minipass@7.1.3", "package-json-from-dist@1.0.1", "path-scurry@1.11.1"], "expression": "BlueOak-1.0.0", "disposition": "ACCEPT" },
+      { "package": "spdx-exceptions@2.5.0", "expression": "CC-BY-3.0", "disposition": "ACCEPT", "reopenTrigger": "redistribution" },
+      { "package": "spdx-license-ids@3.0.23", "expression": "CC0-1.0", "disposition": "ACCEPT" },
+      { "package": "spdx-ranges@2.1.1", "expression": "(MIT AND CC-BY-3.0)", "disposition": "ACCEPT", "reopenTrigger": "redistribution" }
+    ] },
+    "client": { "findings": [
+      { "package": "argparse@2.0.1", "expression": "Python-2.0", "disposition": "ACCEPT" },
+      { "package": "caniuse-lite@1.0.30001760", "expression": "CC-BY-4.0", "disposition": "ACCEPT", "reopenTrigger": "redistribution of licensed Caniuse material" },
+      { "package": "client@0.0.0", "expression": "UNLICENSED", "disposition": "ACCEPT", "kind": "project-metadata", "reopenTrigger": "package publication or project license change" },
+      { "packages": ["jackspeak@3.4.3", "minipass@7.1.3", "package-json-from-dist@1.0.1", "path-scurry@1.11.1"], "expression": "BlueOak-1.0.0", "disposition": "ACCEPT" },
+      { "package": "lightningcss@1.30.2", "expression": "MPL-2.0", "disposition": "ACCEPT", "reopenTriggerRequired": true, "reopenTrigger": "pre-distribution compliance review before distribution of any LightningCSS code or binary; retain applicable MPL-2.0 notices and source/license-compliance provenance" },
+      { "packages": ["lightningcss-linux-x64-gnu@1.30.2", "lightningcss-linux-x64-musl@1.30.2", "lightningcss-win32-x64-msvc@1.30.2"], "expression": "MPL-2.0", "disposition": "ACCEPT", "platformArtifact": true, "reopenTriggerRequired": true, "reopenTrigger": "pre-distribution compliance review before distribution of any LightningCSS code or binary; retain applicable MPL-2.0 notices and source/license-compliance provenance" },
+      { "package": "pako@1.0.11", "expression": "(MIT AND Zlib)", "disposition": "ACCEPT" },
+      { "package": "sha.js@2.4.12", "expression": "(MIT AND BSD-3-Clause)", "disposition": "ACCEPT" },
+      { "package": "spark-md5@3.0.2", "expression": "(WTFPL OR MIT)", "disposition": "ACCEPT", "complianceBasis": "MIT", "reopenTrigger": "license expression or distribution-model change" },
+      { "package": "spdx-exceptions@2.5.0", "expression": "CC-BY-3.0", "disposition": "ACCEPT", "reopenTrigger": "redistribution" },
+      { "package": "spdx-license-ids@3.0.23", "expression": "CC0-1.0", "disposition": "ACCEPT" },
+      { "package": "spdx-ranges@2.1.1", "expression": "(MIT AND CC-BY-3.0)", "disposition": "ACCEPT", "reopenTrigger": "redistribution" }
+    ] },
+    "server": { "findings": [
+      { "package": "@img/sharp-wasm32@0.35.3", "expression": "Apache-2.0 AND LGPL-3.0-or-later AND MIT", "disposition": "ACCEPT", "platformArtifact": true, "reopenTriggerRequired": true, "reopenTrigger": "pre-distribution compliance review before first WASM distribution; retain applicable third-party notices and source/license-compliance provenance" },
+      { "package": "@img/sharp-win32-x64@0.35.3", "expression": "Apache-2.0 AND LGPL-3.0-or-later", "disposition": "ACCEPT", "platformArtifact": true, "reopenTriggerRequired": true, "reopenTrigger": "pre-distribution compliance review before first Windows distribution; retain applicable third-party notices and source/license-compliance provenance" },
+      { "packages": ["@img/sharp-libvips-linux-x64@1.3.2", "@img/sharp-libvips-linuxmusl-x64@1.3.2"], "expression": "LGPL-3.0-or-later", "disposition": "ACCEPT WITH CONDITION", "platformArtifact": true, "reopenTriggerRequired": true, "reopenTrigger": "pre-distribution compliance review before distribution of a Linux artifact containing libvips; retain applicable third-party notices and source/license-compliance provenance" },
+      { "packages": ["jackspeak@3.4.3", "lru-cache@11.5.2", "minimatch@10.2.3", "minipass@7.1.3", "package-json-from-dist@1.0.1", "path-scurry@1.11.1"], "expression": "BlueOak-1.0.0", "disposition": "ACCEPT" },
+      { "package": "nodemailer@9.0.5", "expression": "MIT-0", "disposition": "ACCEPT" },
+      { "package": "spdx-exceptions@2.5.0", "expression": "CC-BY-3.0", "disposition": "ACCEPT", "reopenTrigger": "redistribution" },
+      { "package": "spdx-license-ids@3.0.23", "expression": "CC0-1.0", "disposition": "ACCEPT" },
+      { "package": "spdx-ranges@2.1.1", "expression": "(MIT AND CC-BY-3.0)", "disposition": "ACCEPT", "reopenTrigger": "redistribution" }
+    ] }
+  }
+}

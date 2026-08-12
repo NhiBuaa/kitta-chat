@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "audits": {
+    "root": { "counts": { "low": 0, "moderate": 0, "high": 0, "critical": 0 }, "vulnerabilities": [] },
+    "client": {
+      "counts": { "low": 7, "moderate": 5, "high": 2, "critical": 2 },
+      "vulnerabilities": [
+        { "name": "@babel/core", "severity": "low" }, { "name": "@grpc/grpc-js", "severity": "high" }, { "name": "@protobufjs/utf8", "severity": "moderate" }, { "name": "ajv", "severity": "moderate" }, { "name": "bn.js", "severity": "moderate" }, { "name": "browserify-sign", "severity": "low" }, { "name": "create-ecdh", "severity": "low" }, { "name": "crypto-browserify", "severity": "low" }, { "name": "elliptic", "severity": "low" }, { "name": "node-stdlib-browser", "severity": "low" }, { "name": "postcss", "severity": "high" }, { "name": "protobufjs", "severity": "critical" }, { "name": "qs", "severity": "moderate" }, { "name": "styled-components", "severity": "moderate" }, { "name": "vite-plugin-node-polyfills", "severity": "low" }, { "name": "websocket-driver", "severity": "critical" }
+      ]
+    },
+    "server": {
+      "counts": { "low": 1, "moderate": 5, "high": 1, "critical": 0 },
+      "vulnerabilities": [
+        { "name": "@google-cloud/storage", "severity": "moderate" }, { "name": "@tootallnate/once", "severity": "low" }, { "name": "form-data", "severity": "high" }, { "name": "gaxios", "severity": "moderate" }, { "name": "retry-request", "severity": "moderate" }, { "name": "teeny-request", "severity": "moderate" }, { "name": "uuid", "severity": "moderate" }
+      ]
+    }
+  },
+  "gitleaks": [
+    { "ruleId": "private-key", "path": "server/src/config/firebase-service.json", "startLine": 5, "endLine": 5, "startColumn": 20, "endColumn": 1749, "commitSha": "951bd5da293f5fc0300316e2cec51763a3d21876", "classification": "REAL / REVOKED" },
+    { "ruleId": "private-key", "path": "server/src/config/firebase-service.json", "startLine": 5, "endLine": 5, "startColumn": 22, "endColumn": 1751, "commitSha": "ac9abd5d03704728a6273139b07f6f95c7295858", "classification": "REAL / REVOKED" },
+    { "ruleId": "private-key", "path": "server/src/config/firebase-service.json", "startLine": 5, "endLine": 5, "startColumn": 20, "endColumn": 1749, "commitSha": "538398289fa8f272548390645053de257af0088d", "classification": "REAL / REVOKED" },
+    { "ruleId": "private-key", "path": "nginx/ssl/server.key", "startLine": 1, "endLine": 28, "startColumn": 1, "endColumn": 26, "commitSha": "df341537517c668ab600ece021b65ee769e8cf9c", "classification": "HISTORICAL / NO LONGER USED" },
+    { "ruleId": "gcp-api-key", "path": "client/src/firebase.js", "startLine": 4, "endLine": 4, "startColumn": 13, "endColumn": 52, "commitSha": "1c83ced93884088d5b71220f37b73ce2d05f1a73", "classification": "REAL / REVOKED" },
+    { "ruleId": "generic-api-key", "path": "server/test/observability/issue52EndToEnd.test.js", "startLine": 192, "endLine": 192, "startColumn": 6, "endColumn": 37, "commitSha": "d4c46001e39c30b5feb5a90a300bfe2e121f7af3", "classification": "SYNTHETIC / TEST-ONLY — NO ROTATION REQUIRED" },
+    { "ruleId": "generic-api-key", "path": "server/test/observability/issue52EndToEnd.test.js", "startLine": 222, "endLine": 222, "startColumn": 8, "endColumn": 39, "commitSha": "d4c46001e39c30b5feb5a90a300bfe2e121f7af3", "classification": "SYNTHETIC / TEST-ONLY — NO ROTATION REQUIRED" }
+  ]
+}

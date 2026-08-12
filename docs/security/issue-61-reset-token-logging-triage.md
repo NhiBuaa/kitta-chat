@@ -2,8 +2,10 @@
 
 ## Status
 
-- Issue #61 disposition: **source-confirmed credential-in-URL/log-exposure finding — remediation deferred to dedicated security follow-up; historical occurrence unverified**.
-- Follow-up status: `blocking follow-up linkage required / identifier pending`.
+- Historical pre-remediation triage. Issue #61 closed with `RESET-TOKEN URL/LOGGING EXPOSURE REMEDIATED / VERIFIED BY FRAGMENT-TRANSPORT-LOGGING-TEST EVIDENCE`.
+- Current email URL shape is `<URL_FRONTEND>/reset-password/<USER_ID>#<RESET_TOKEN>`; the client immediately scrubs the fragment from browser history and retains the token only in memory.
+- Current backend route is `POST /api/auth/reset-password/:id`; the token is JSON-body only.
+- Current nginx/application logging protects reset paths and uses `Referrer-Policy: no-referrer`.
 - Confidence: high for the source/config exposure model.
 - Historical occurrence: not inspected and not claimed.
 - Historical secret incident: not established.
@@ -12,7 +14,7 @@
 - Measurement safety: raw auth/recovery request logs are `restricted/quarantined for measurement use`.
 - Scope decision: recorded as Decision 1 B in `docs/security/issue-61-human-decision-gate.md`.
 
-## Source-confirmed observation
+## Historical source-confirmed observation
 
 The password-reset design places the reset credential in both the emailed frontend URL and the backend API URL. Normal reset-link use can therefore reach multiple configured logging sinks without requiring a backend reset error.
 
