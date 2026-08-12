@@ -519,8 +519,8 @@ test("current effective snapshots render Compose with the started run secret and
       Image: service === "nginx" ? "kittachat-k4-nginx:fixed-source-a" : service === "backend" ? "kittachat-k4-backend:fixed-source-a" : `${service}:pinned`,
       Labels: { "com.docker.compose.service": service },
       Env: service === "backend"
-        ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret"]
-        : [],
+        ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret", "DEMO_SEED_PASSWORD=runtime-only-test-password"]
+        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : [],
     },
     NetworkSettings: {
       Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"])
@@ -530,7 +530,9 @@ test("current effective snapshots render Compose with the started run secret and
   }));
   const renderedCompose = { services: Object.fromEntries(["runner", "nginx", "backend", "mongo", "redis", "rabbitmq"].map((service) => [service, {
     image: `${service}:pinned`,
-    environment: service === "backend" ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret" } : {},
+    environment: service === "backend"
+      ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret", DEMO_SEED_PASSWORD: "runtime-only-test-password" }
+      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : {},
     networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"],
   }])), networks: {}, volumes: {} };
   const dockerCommand = (args, options) => {
@@ -549,6 +551,8 @@ test("current effective snapshots render Compose with the started run secret and
 
   assert.equal(configCommands.length, 2);
   assert.equal(configCommands.every(({ env }) => env.K4_JWT_SECRET === "runtime-only-test-secret"), true);
+  assert.equal(configCommands.every(({ env }) => env.K4_BENCHMARK_PASSWORD === "runtime-only-test-password"), true);
+  assert.equal(JSON.stringify(left).includes("runtime-only-test-password"), false);
   assert.deepEqual(compareEffectiveTopologySnapshots(left, right), {
     status: "COMPARABLE",
     allowedDifferences: ["backend_replica_count", "backend_upstream_membership"],
@@ -704,7 +708,9 @@ function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest 
     Config: {
       Image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : `${service}:pinned`,
       Labels: { "com.docker.compose.service": service },
-      Env: service === "backend" ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret"] : [],
+      Env: service === "backend"
+        ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret", "DEMO_SEED_PASSWORD=runtime-only-test-password"]
+        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : [],
     },
     NetworkSettings: {
       Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"])
@@ -714,7 +720,9 @@ function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest 
   })));
   const renderedCompose = { services: Object.fromEntries(services.map((service) => [service, {
     image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : `${service}:pinned`,
-    environment: service === "backend" ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret" } : {},
+    environment: service === "backend"
+      ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret", DEMO_SEED_PASSWORD: "runtime-only-test-password" }
+      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : {},
     networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"],
   }])), networks: {}, volumes: {} };
   const dockerCommand = (args) => {
@@ -828,11 +836,21 @@ test("K4 Compose structurally isolates runner ingress from backend and dependenc
   assert.equal(compose.networks["k4-backend"].internal, true);
 });
 
+test("K4 Compose supplies the disposable benchmark credential to seeding without exposing it in runner artifacts", () => {
+  const compose = parse(fs.readFileSync(path.resolve(__dirname, "../../../docker-compose.k4.yml"), "utf8"));
+  const rendered = JSON.stringify(compose);
+
+  assert.match(compose.services.backend.environment.DEMO_SEED_PASSWORD, /^\$\{K4_BENCHMARK_PASSWORD:\?/);
+  assert.match(compose.services.runner.environment.K4_BENCHMARK_PASSWORD, /^\$\{K4_BENCHMARK_PASSWORD:\?/);
+  assert.equal(compose.services.runner.environment.K4_WORKLOAD_URL, "http://nginx");
+  assert.equal(rendered.includes("K4_BENCHMARK_PASSWORD="), false);
+});
+
 test("K4 Compose health-gates Redis and RabbitMQ with service-native probes", () => {
   const compose = fs.readFileSync(path.resolve(__dirname, "../../../docker-compose.k4.yml"), "utf8");
 
-  assert.match(compose, /redis:\n[\s\S]*?healthcheck:\n\s+test: \["CMD", "redis-cli", "ping"\]/);
-  assert.match(compose, /rabbitmq:\n[\s\S]*?healthcheck:\n\s+test: \["CMD", "rabbitmq-diagnostics", "-q", "ping"\]/);
+  assert.match(compose, /redis:\r?\n[\s\S]*?healthcheck:\r?\n\s+test: \["CMD", "redis-cli", "ping"\]/);
+  assert.match(compose, /rabbitmq:\r?\n[\s\S]*?healthcheck:\r?\n\s+test: \["CMD", "rabbitmq-diagnostics", "-q", "ping"\]/);
 });
 
 test("cleanup preview inspects networks and volumes with their Docker inspect subcommands", () => {
