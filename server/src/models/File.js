@@ -20,8 +20,7 @@ fileSchema.index(
     { requestId: 1 },
     {
         unique: true,
-        sparse: true,
-        partialFilterExpression: { requestId: { $exists: true, $ne: null } },
+        partialFilterExpression: { requestId: { $type: 'string' } },
     },
 );
 

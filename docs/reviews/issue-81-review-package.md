@@ -67,4 +67,4 @@ The seam keeps K4 lifecycle concerns inside one cohesive module and presents a s
 
 Machine verdict: `APPROVE` (`critical: 0`, `major: 0`). Standards and Spec axes found no remaining deviations from Issue #80, Issue #81, ADR-015, or locked r4.
 
-Issue #81 remains open and Issue #82 remains blocked pending explicit tracker-state actions. No TC-81-05 execution is required.
+PR #91 merged at `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`; Issue #81 is closed. Issue #82 remains open and `blocked`. No TC-81-05 execution is required.

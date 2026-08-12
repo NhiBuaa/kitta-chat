@@ -7,6 +7,7 @@ const {
   DEMO_PASSWORD_HASH,
   runDemoSeed,
 } = require("../src/demo/demoSeedService");
+const { canonicalDatasetFingerprint, canonicalizeCollections } = require("../src/demo/k4DatasetContract");
 
 test("demo credentials use a stable bcrypt hash for idempotent upserts", async () => {
   assert.equal(await bcrypt.compare(DEMO_PASSWORD, DEMO_PASSWORD_HASH), true);
@@ -43,7 +44,7 @@ test("runDemoSeed hydrates existing ids, applies the dataset, and disconnects sa
       },
     },
     hashPassword: async (password) => {
-      calls.push(["hash", password.length]);
+      calls.push(["hash", password === undefined ? "default" : password.length]);
       return "hashed-demo-password";
     },
     repositoryFactory: () => ({
@@ -75,6 +76,79 @@ test("runDemoSeed hydrates existing ids, applies the dataset, and disconnects sa
       type === "log" && /KittaChatDemo|hashed-demo-password|mongodb:\/\//.test(value),
     ),
     false,
+  );
+});
+
+test("runDemoSeed preserves the fixed demo hash when no credential is supplied", async () => {
+  let persistedUsers;
+
+  await runDemoSeed({
+    mongoUri: "mongodb://mongo:27017/shot-chat",
+    models: { User: { find: () => ({ select() { return this; }, async lean() { return []; } }) } },
+    mongooseClient: { async connect() {}, async disconnect() {} },
+    repositoryFactory: () => ({
+      async apply(dataset) {
+        persistedUsers = dataset.users;
+        return { users: dataset.users.length, conversations: dataset.conversations.length };
+      },
+    }),
+    logger: { log() {} },
+  });
+
+  assert.equal(persistedUsers[0].password, DEMO_PASSWORD_HASH);
+});
+
+test("runDemoSeed persists a supplied disposable credential through the repository without logging it", async () => {
+  const password = "K4Disposable!2026";
+  let persistedUsers;
+  const logs = [];
+
+  await runDemoSeed({
+    mongoUri: "mongodb://mongo:27017/shot-chat",
+    models: { User: { find: () => ({ select() { return this; }, async lean() { return []; } }) } },
+    mongooseClient: { async connect() {}, async disconnect() {} },
+    repositoryFactory: () => ({
+      async apply(dataset) {
+        persistedUsers = dataset.users.map((user) => ({ ...user }));
+        return { users: dataset.users.length, conversations: dataset.conversations.length };
+      },
+    }),
+    password,
+    logger: { log(message) { logs.push(message); } },
+  });
+
+  assert.equal(await bcrypt.compare(password, persistedUsers[0].password), true);
+  assert.notEqual(persistedUsers[0].password, DEMO_PASSWORD_HASH);
+  assert.equal(logs.some((message) => message.includes(password)), false);
+});
+
+test("canonical K4 content fingerprint is stable across distinct supplied credential hashes", async () => {
+  const datasets = [];
+  const repositoryFactory = () => ({
+    async apply(dataset) {
+      datasets.push(dataset);
+      return { users: dataset.users.length, conversations: dataset.conversations.length };
+    },
+  });
+  const options = {
+    mongoUri: "mongodb://mongo:27017/shot-chat",
+    models: { User: { find: () => ({ select() { return this; }, async lean() { return []; } }) } },
+    mongooseClient: { async connect() {}, async disconnect() {} },
+    repositoryFactory,
+    logger: { log() {} },
+  };
+
+  await runDemoSeed({ ...options, password: "K4Disposable!2026" });
+  await runDemoSeed({ ...options, password: "K4Disposable!2027" });
+
+  assert.notEqual(datasets[0].users[0].password, datasets[1].users[0].password);
+  const collectionNames = ["users", "groups", "files", "messages", "conversations", "participants"];
+  const fingerprintFor = (dataset) => canonicalDatasetFingerprint(canonicalizeCollections(
+    Object.fromEntries(collectionNames.map((name) => [name, dataset[name]])),
+  ));
+  assert.equal(
+    fingerprintFor(datasets[0]),
+    fingerprintFor(datasets[1]),
   );
 });
 

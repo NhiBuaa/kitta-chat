@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const { parse } = require("yaml");
+const { resolveBenchmarkPassword, runSetupPreflight } = require("../../k4/cli");
 
 const {
   attestRuntimeTopology,
@@ -20,10 +21,30 @@ const {
   imageSetEnvironment,
   startArgs,
 } = require("../../k4/lifecycle");
+const {
+  K4_DATASET_DECLARATION,
+  assertFreshRunTargets,
+  canonicalDatasetFingerprint,
+  classifySetupFailure,
+  compareDatasetVerificationRecords,
+  scanRetainedEvidence,
+  scanRetainedEvidenceDirectory,
+  validateOwnershipDiscovery,
+  verifyDatasetContract,
+  setupPreflightCommands,
+} = require("../../k4/preflight");
 
 function immutableDigest(label) {
   return `sha256:${crypto.createHash("sha256").update(label).digest("hex")}`;
 }
+
+test("K4 default benchmark password satisfies the existing public registration policy without replacing an explicit value", () => {
+  const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+  const generated = resolveBenchmarkPassword({}, () => Buffer.alloc(24, 0));
+
+  assert.match(generated, passwordPolicy);
+  assert.equal(resolveBenchmarkPassword({ K4_BENCHMARK_PASSWORD: "provided-password" }), "provided-password");
+});
 
 function bakedConfigArtifact(content, imageIdentity = immutableDigest("nginx")) {
   return {
@@ -93,6 +114,129 @@ function effectiveCaptureEvidence({ services = {}, secret = "runtime-only-test-s
     runnerTool: { name: "node", version: "v22.14.0" },
     effectiveTopology: { backendReplicaCount: 1, backendUpstreamMembership: ["backend-1"] },
   };
+}
+
+test("K4 dataset declaration has a mandatory canonical content fingerprint", () => {
+  const content = {
+    users: [{ email: "actor-a@kittachat.test", password: "redacted" }],
+    messages: [{ idempotencyKey: "fixture:one", conversationId: "legacy-one" }],
+  };
+
+  assert.match(K4_DATASET_DECLARATION.generatorVersion, /^k4-/);
+  assert.match(canonicalDatasetFingerprint(content), /^sha256:[a-f0-9]{64}$/);
+  assert.notEqual(canonicalDatasetFingerprint(content), canonicalDatasetFingerprint({ ...content, runId: "run-a" }));
+});
+
+test("K4 setup verification rejects missing or mismatched declared content before warm-up", () => {
+  const observed = { ...K4_DATASET_DECLARATION, fingerprint: "sha256:wrong", cardinalities: { ...K4_DATASET_DECLARATION.cardinalities } };
+  assert.deepEqual(verifyDatasetContract(K4_DATASET_DECLARATION, observed), {
+    status: "FAILED_SETUP",
+    reason: "dataset fingerprint does not match the declared contract",
+  });
+  assert.deepEqual(classifySetupFailure("auth preflight"), { status: "FAILED_SETUP", phase: "setup/preflight" });
+});
+
+test("K4 cross-run equivalence is acceptance-only and never creates a lifecycle transition", () => {
+  const record = { declared: K4_DATASET_DECLARATION, observed: K4_DATASET_DECLARATION, verification: { status: "VERIFIED" } };
+  assert.deepEqual(compareDatasetVerificationRecords(record, record), { status: "EQUIVALENT" });
+  assert.deepEqual(compareDatasetVerificationRecords(record, {
+    declared: K4_DATASET_DECLARATION,
+    observed: { ...K4_DATASET_DECLARATION, fingerprint: "sha256:different" },
+    verification: { status: "VERIFIED" },
+  }), { status: "ACCEPTANCE_FAILED", reason: "canonical dataset fingerprints differ" });
+});
+
+test("K4 preflight ownership rejects discovered foreign resources without an arbitrary-resource API", () => {
+  const owned = { labels: { "io.kittachat.k4.project": "kittachat-k4", "io.kittachat.k4.run_id": "current-run" } };
+  const foreign = { labels: { "io.kittachat.k4.project": "kittachat-k4", "io.kittachat.k4.run_id": "prior-run" } };
+  assert.deepEqual(validateOwnershipDiscovery([owned], "current-run", (resource, runId) => resource.labels["io.kittachat.k4.run_id"] === runId), { status: "CLEAN" });
+  assert.deepEqual(validateOwnershipDiscovery([owned, foreign], "current-run", (resource, runId) => resource.labels["io.kittachat.k4.run_id"] === runId), {
+    status: "FAILED_SETUP",
+    reason: "production discovery found a resource not owned by the active K4 run",
+  });
+});
+
+test("K4 retained-evidence scan covers the complete inventory without exposing canary values", () => {
+  const evidence = new Map([["manifest.json", "safe manifest"], ["runner.log", "safe log"]]);
+  assert.deepEqual(scanRetainedEvidence([...evidence.keys()], ["canary-value"], (artifact) => evidence.get(artifact)), {
+    status: "CLEAR", scannedArtifacts: 2, matches: 0,
+  });
+  evidence.set("runner.log", "contains canary-value");
+  assert.deepEqual(scanRetainedEvidence([...evidence.keys()], ["canary-value"], (artifact) => evidence.get(artifact)), {
+    status: "ACCEPTANCE_FAILED", scannedArtifacts: 2, matches: 1,
+  });
+});
+
+test("K4 retained-evidence directory scanner inventories every retained file", () => {
+  const root = fs.mkdtempSync(path.join(process.env.TEMP || process.cwd(), "k4-evidence-scan-"));
+  try {
+    fs.mkdirSync(path.join(root, "nested"));
+    fs.writeFileSync(path.join(root, "manifest.json"), "safe");
+    fs.writeFileSync(path.join(root, "nested", "runner.log"), "safe");
+    const result = scanRetainedEvidenceDirectory(root, ["canary"]);
+    assert.deepEqual({ status: result.status, scannedArtifacts: result.scannedArtifacts, matches: result.matches }, { status: "CLEAR", scannedArtifacts: 2, matches: 0 });
+    assert.match(result.inventoryFingerprint, /^sha256:[a-f0-9]{64}$/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("K4 setup/preflight has no FAILED_SETUP authority after warm-up admission", () => {
+  assert.throws(() => classifySetupFailure("late failure", { warmupAdmitted: true }), /cannot emit FAILED_SETUP after warm-up admission/);
+});
+
+test("K4 setup rejects an existing current-run resource set instead of reusing dirty inputs", () => {
+  assert.deepEqual(assertFreshRunTargets({ targets: { containers: [], networks: [], volumes: [], resultDirectory: [] } }), { status: "FRESH" });
+  assert.throws(() => assertFreshRunTargets({ targets: { containers: [], networks: [], volumes: [{ id: "existing" }], resultDirectory: [] } }), /cannot be reused/);
+});
+
+test("K4 preflight runs setup in order and authenticates only through nginx", () => {
+  const plan = createRunPlan({ runId: "preflight-run", profile: "single-replica" });
+  const steps = setupPreflightCommands(plan);
+  assert.deepEqual(steps.map(({ prerequisite }) => prerequisite), ["create", "migrate", "seed", "verification", "health", "login", "socket-auth"]);
+  assert.equal(steps.every(({ args }) => !args.join(" ").includes("backend:3000")), true);
+  assert.match(steps.at(-2).args.at(-1), /http:\/\/nginx\/api\/auth\/login/);
+  assert.match(steps.at(-1).args.at(-1), /io\('http:\/\/nginx'/);
+});
+
+test("K4 dataset verification invokes its JSON-only verifier directly", () => {
+  const plan = createRunPlan({ runId: "json-verifier-run", profile: "single-replica" });
+  const verification = setupPreflightCommands(plan).find(({ prerequisite }) => prerequisite === "verification");
+
+  assert.deepEqual(verification.args.slice(-2), ["node", "scripts/k4VerifyDataset.js"]);
+  assert.equal(verification.args.includes("npm"), false);
+});
+
+for (const prerequisite of ["migrate", "seed"]) {
+  test(`K4 ${prerequisite} command failure propagates as FAILED_SETUP without admission or measurement artifacts`, () => {
+    const plan = createRunPlan({ runId: `failed-${prerequisite}-run`, profile: "single-replica" });
+    const attempted = [];
+    const retainedArtifacts = [];
+    const result = runSetupPreflight({
+      plan,
+      environment: { K4_BENCHMARK_TOKEN: undefined },
+      cleanupPreviewFn: () => ({ targets: { containers: [], networks: [], volumes: [], resultDirectory: [] } }),
+      createResultDirectoryFn: () => retainedArtifacts.push(".k4-owner.json"),
+      writeFileSyncFn: (artifactPath) => retainedArtifacts.push(path.basename(artifactPath)),
+      dockerCommand(args) {
+        attempted.push(args);
+        if (args.includes("migrate:k4") && prerequisite === "migrate") throw new Error("real migrate command exited non-zero");
+        if (args.includes("seed:demo") && prerequisite === "seed") throw new Error("real seed command exited non-zero");
+        return prerequisite === "seed" && args.includes("migrate:k4") ? "" : "";
+      },
+    });
+
+    assert.deepEqual(result, {
+      action: "setup-preflight",
+      prerequisite,
+      status: "FAILED_SETUP",
+      phase: "setup/preflight",
+      reason: `setup/preflight prerequisite failed: ${prerequisite}`,
+    });
+    assert.equal(attempted.some((args) => prerequisite === "migrate" && args.includes("migrate:k4")), prerequisite === "migrate");
+    assert.equal(attempted.some((args) => prerequisite === "seed" && args.includes("seed:demo")), prerequisite === "seed");
+    assert.deepEqual(retainedArtifacts, [".k4-owner.json"]);
+  });
 }
 
 test("run plan gives every K4 resource exact project and run ownership labels", () => {
@@ -375,8 +519,8 @@ test("current effective snapshots render Compose with the started run secret and
       Image: service === "nginx" ? "kittachat-k4-nginx:fixed-source-a" : service === "backend" ? "kittachat-k4-backend:fixed-source-a" : `${service}:pinned`,
       Labels: { "com.docker.compose.service": service },
       Env: service === "backend"
-        ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret"]
-        : [],
+        ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret", "DEMO_SEED_PASSWORD=runtime-only-test-password"]
+        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : [],
     },
     NetworkSettings: {
       Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"])
@@ -386,7 +530,9 @@ test("current effective snapshots render Compose with the started run secret and
   }));
   const renderedCompose = { services: Object.fromEntries(["runner", "nginx", "backend", "mongo", "redis", "rabbitmq"].map((service) => [service, {
     image: `${service}:pinned`,
-    environment: service === "backend" ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret" } : {},
+    environment: service === "backend"
+      ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret", DEMO_SEED_PASSWORD: "runtime-only-test-password" }
+      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : {},
     networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"],
   }])), networks: {}, volumes: {} };
   const dockerCommand = (args, options) => {
@@ -405,6 +551,8 @@ test("current effective snapshots render Compose with the started run secret and
 
   assert.equal(configCommands.length, 2);
   assert.equal(configCommands.every(({ env }) => env.K4_JWT_SECRET === "runtime-only-test-secret"), true);
+  assert.equal(configCommands.every(({ env }) => env.K4_BENCHMARK_PASSWORD === "runtime-only-test-password"), true);
+  assert.equal(JSON.stringify(left).includes("runtime-only-test-password"), false);
   assert.deepEqual(compareEffectiveTopologySnapshots(left, right), {
     status: "COMPARABLE",
     allowedDifferences: ["backend_replica_count", "backend_upstream_membership"],
@@ -449,11 +597,12 @@ test("shared image-set starts use immutable tagged images and never rebuild per 
     K4_IMAGE_SET_ID: "fixed-source-a",
     K4_NGINX_IMAGE: "kittachat-k4-nginx:fixed-source-a",
     K4_BACKEND_IMAGE: "kittachat-k4-backend:fixed-source-a",
+    K4_RUNNER_IMAGE: "kittachat-k4-runner:fixed-source-a",
   });
   assert.equal(startArgs(plan).includes("--build"), false);
 });
 
-test("building an image set resolves nginx and backend immutable identities once before any run starts", () => {
+test("building an image set resolves nginx, backend, and runner immutable identities once before any run starts", () => {
   const commands = [];
   const imageSetManifestRoot = path.join(process.env.TEMP || process.cwd(), "k4-image-set-test-manifests");
   const built = buildImageSet("fixed-source-a", {
@@ -464,6 +613,7 @@ test("building an image set resolves nginx and backend immutable identities once
       if (args[0] === "compose") return "built\n";
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-nginx:fixed-source-a") return `${immutableDigest("nginx-fixed-source-a")}\n`;
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-backend:fixed-source-a") return `${immutableDigest("backend-fixed-source-a")}\n`;
+      if (args[0] === "image" && args.at(-1) === "kittachat-k4-runner:fixed-source-a") return `${immutableDigest("runner-fixed-source-a")}\n`;
       if (args[0] === "container" && args[1] === "create") return "temporary-nginx-container\n";
       if (args[0] === "container" && args[1] === "inspect") return `${immutableDigest("nginx-fixed-source-a")}\n`;
       if (args[0] === "cp") {
@@ -475,18 +625,20 @@ test("building an image set resolves nginx and backend immutable identities once
     },
   });
 
-  assert.deepEqual(commands[0].args.slice(-3), ["build", "nginx", "backend"]);
+  assert.deepEqual(commands[0].args.slice(-4), ["build", "nginx", "backend", "runner"]);
   assert.equal(commands[0].env.K4_NGINX_IMAGE, "kittachat-k4-nginx:fixed-source-a");
   assert.deepEqual({
     K4_IMAGE_SET_ID: built.K4_IMAGE_SET_ID,
     K4_NGINX_IMAGE: built.K4_NGINX_IMAGE,
     K4_BACKEND_IMAGE: built.K4_BACKEND_IMAGE,
+    K4_RUNNER_IMAGE: built.K4_RUNNER_IMAGE,
     imageIdentities: built.imageIdentities,
   }, {
     K4_IMAGE_SET_ID: "fixed-source-a",
     K4_NGINX_IMAGE: "kittachat-k4-nginx:fixed-source-a",
     K4_BACKEND_IMAGE: "kittachat-k4-backend:fixed-source-a",
-    imageIdentities: { nginx: immutableDigest("nginx-fixed-source-a"), backend: immutableDigest("backend-fixed-source-a") },
+    K4_RUNNER_IMAGE: "kittachat-k4-runner:fixed-source-a",
+    imageIdentities: { nginx: immutableDigest("nginx-fixed-source-a"), backend: immutableDigest("backend-fixed-source-a"), runner: immutableDigest("runner-fixed-source-a") },
   });
   assert.equal(built.configArtifacts.nginx.provenance.imageIdentity, immutableDigest("nginx-fixed-source-a"));
   const manifest = JSON.parse(fs.readFileSync(path.join(imageSetManifestRoot, "fixed-source-a.json"), "utf8"));
@@ -506,6 +658,7 @@ test("image-set baked config provenance uses bytes copied from the exact immutab
       if (args[0] === "compose") return "built\n";
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-nginx:effective-artifact-a") return `${immutableDigest("nginx-effective-artifact-a")}\n`;
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-backend:effective-artifact-a") return `${immutableDigest("backend-effective-artifact-a")}\n`;
+      if (args[0] === "image" && args.at(-1) === "kittachat-k4-runner:effective-artifact-a") return `${immutableDigest("runner-effective-artifact-a")}\n`;
       if (args[0] === "container" && args[1] === "create") return "temporary-nginx-container\n";
       if (args[0] === "container" && args[1] === "inspect") return `${immutableDigest("nginx-effective-artifact-a")}\n`;
       if (args[0] === "cp") {
@@ -555,7 +708,9 @@ function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest 
     Config: {
       Image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : `${service}:pinned`,
       Labels: { "com.docker.compose.service": service },
-      Env: service === "backend" ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret"] : [],
+      Env: service === "backend"
+        ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret", "DEMO_SEED_PASSWORD=runtime-only-test-password"]
+        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : [],
     },
     NetworkSettings: {
       Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"])
@@ -565,7 +720,9 @@ function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest 
   })));
   const renderedCompose = { services: Object.fromEntries(services.map((service) => [service, {
     image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : `${service}:pinned`,
-    environment: service === "backend" ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret" } : {},
+    environment: service === "backend"
+      ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret", DEMO_SEED_PASSWORD: "runtime-only-test-password" }
+      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : {},
     networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"],
   }])), networks: {}, volumes: {} };
   const dockerCommand = (args) => {
@@ -679,11 +836,21 @@ test("K4 Compose structurally isolates runner ingress from backend and dependenc
   assert.equal(compose.networks["k4-backend"].internal, true);
 });
 
+test("K4 Compose supplies the disposable benchmark credential to seeding without exposing it in runner artifacts", () => {
+  const compose = parse(fs.readFileSync(path.resolve(__dirname, "../../../docker-compose.k4.yml"), "utf8"));
+  const rendered = JSON.stringify(compose);
+
+  assert.match(compose.services.backend.environment.DEMO_SEED_PASSWORD, /^\$\{K4_BENCHMARK_PASSWORD:\?/);
+  assert.match(compose.services.runner.environment.K4_BENCHMARK_PASSWORD, /^\$\{K4_BENCHMARK_PASSWORD:\?/);
+  assert.equal(compose.services.runner.environment.K4_WORKLOAD_URL, "http://nginx");
+  assert.equal(rendered.includes("K4_BENCHMARK_PASSWORD="), false);
+});
+
 test("K4 Compose health-gates Redis and RabbitMQ with service-native probes", () => {
   const compose = fs.readFileSync(path.resolve(__dirname, "../../../docker-compose.k4.yml"), "utf8");
 
-  assert.match(compose, /redis:\n[\s\S]*?healthcheck:\n\s+test: \["CMD", "redis-cli", "ping"\]/);
-  assert.match(compose, /rabbitmq:\n[\s\S]*?healthcheck:\n\s+test: \["CMD", "rabbitmq-diagnostics", "-q", "ping"\]/);
+  assert.match(compose, /redis:\r?\n[\s\S]*?healthcheck:\r?\n\s+test: \["CMD", "redis-cli", "ping"\]/);
+  assert.match(compose, /rabbitmq:\r?\n[\s\S]*?healthcheck:\r?\n\s+test: \["CMD", "rabbitmq-diagnostics", "-q", "ping"\]/);
 });
 
 test("cleanup preview inspects networks and volumes with their Docker inspect subcommands", () => {

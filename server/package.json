@@ -28,6 +28,8 @@
     "worker:audit": "node src/workers/auditWorker.js",
     "worker:notification": "node src/workers/notificationWorker.js",
     "seed:demo": "node scripts/seedDemo.js",
+    "migrate:k4": "node scripts/k4Migrate.js",
+    "verify:k4-dataset": "node scripts/k4VerifyDataset.js",
     "test:rate-limit:acceptance": "node scripts/runRateLimitAcceptance.js",
     "license:check": "node -e \"const p=require('path'),f=require('fs'),c=require('child_process'),r=f.existsSync('docs/security/issue-61-license-policy.json')?'.':'..',s=r==='.'?'root':p.basename(process.cwd());process.exit(c.spawnSync(process.execPath,[p.join(r,'scripts/ci/verifyLicensePolicy.cjs'),'--surface',s],{stdio:'inherit'}).status||0)\"",
     "test": "node --test"

@@ -37,6 +37,7 @@ function imageSetEnvironment(imageSetId) {
     K4_IMAGE_SET_ID: normalizedImageSetId,
     K4_NGINX_IMAGE: `${IMAGE_SET_PREFIX}-nginx:${normalizedImageSetId}`,
     K4_BACKEND_IMAGE: `${IMAGE_SET_PREFIX}-backend:${normalizedImageSetId}`,
+    K4_RUNNER_IMAGE: `${IMAGE_SET_PREFIX}-runner:${normalizedImageSetId}`,
   };
 }
 
@@ -56,6 +57,7 @@ function createRunPlan({ runId, profile }) {
   const labels = ownershipLabels(normalizedRunId);
   return {
     projectName: `${PROJECT_MARKER}-${normalizedRunId}`,
+    composeFile: COMPOSE_FILE,
     runId: normalizedRunId,
     profile,
     backendReplicaCount: topology.replicaCount,
@@ -340,11 +342,16 @@ function runtimeEnvironment(container) {
   }));
 }
 
-function runtimeComposeEnvironment(plan, options, backendContainer) {
+function runtimeComposeEnvironment(plan, options, backendContainer, runnerContainer) {
   const backendEnvironment = runtimeEnvironment(backendContainer);
+  const runnerEnvironment = runtimeEnvironment(runnerContainer);
   const jwtSecret = backendEnvironment.JWT_SECRET;
   if (!jwtSecret || backendEnvironment.REFRESH_TOKEN_SECRET !== jwtSecret) {
     throw new Error("required runtime evidence is missing: K4 Compose secret cannot be recovered from the active backend.");
+  }
+  const benchmarkPassword = backendEnvironment.DEMO_SEED_PASSWORD;
+  if (!benchmarkPassword || runnerEnvironment.K4_BENCHMARK_PASSWORD !== benchmarkPassword) {
+    throw new Error("required runtime evidence is missing: K4 benchmark credential wiring cannot be recovered from the active backend and runner.");
   }
   const nginxImage = options.nginxImage;
   const backendImage = options.backendImage || backendContainer?.Config?.Image;
@@ -358,6 +365,7 @@ function runtimeComposeEnvironment(plan, options, backendContainer) {
     K4_RUN_ID: plan.runId,
     K4_RESULT_DIR: plan.resultDirectory,
     K4_JWT_SECRET: jwtSecret,
+    K4_BENCHMARK_PASSWORD: benchmarkPassword,
     K4_NGINX_IMAGE: nginxImage,
     K4_BACKEND_IMAGE: backendImage,
   };
@@ -422,7 +430,7 @@ function currentEffectiveTopologySnapshot(plan, options = {}) {
   const composeEnvironment = runtimeComposeEnvironment(plan, {
     ...options,
     nginxImage: nginxImageReference,
-  }, backendContainers[0]);
+  }, backendContainers[0], selectedService("runner"));
   const nginxImageSetId = imageSetIdFromReference(nginxImageReference);
   if (imageSetIdFromReference(backendImageReference) !== nginxImageSetId) {
     throw new Error("required runtime evidence is missing: nginx and backend image sets differ.");
@@ -586,8 +594,8 @@ function buildImageSet(imageSetId, options = {}) {
     K4_RESULT_DIR: buildPlan.resultDirectory,
     K4_JWT_SECRET: options.jwtSecret || crypto.randomBytes(48).toString("hex"),
   };
-  docker(composeArgs(buildPlan, ["build", "nginx", "backend"]), { ...options, env: environment });
-  const imageIdentities = Object.fromEntries(["nginx", "backend"].map((service) => {
+  docker(composeArgs(buildPlan, ["build", "nginx", "backend", "runner"]), { ...options, env: environment });
+  const imageIdentities = Object.fromEntries(["nginx", "backend", "runner"].map((service) => {
     const image = imageEnvironment[`K4_${service.toUpperCase()}_IMAGE`];
     const identity = String(docker(["image", "inspect", "--format", "{{.Id}}", image], options)).trim();
     assertImmutableImageIdentity(identity, service);

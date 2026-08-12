@@ -23,6 +23,7 @@ function buildUpsertOperations(documents, getFilter) {
           $setOnInsert: { _id },
         },
         upsert: true,
+        timestamps: false,
       },
     };
   });
@@ -71,6 +72,7 @@ function createMongoDemoRepository(models) {
         if (documents.length > 0) {
           await model.bulkWrite(buildUpsertOperations(documents, getFilter), {
             ordered: true,
+            timestamps: false,
           });
         }
         summary[name] = documents.length;
