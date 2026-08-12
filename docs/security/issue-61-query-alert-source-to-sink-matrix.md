@@ -1,5 +1,9 @@
 # Issue #61 Query/Input Alert Source-to-Sink Matrix
 
+## Current closure note
+
+Historical source-to-sink matrix. Query alerts are scanner-confirmed under the Issue #61 final CodeQL reconciliation. The historical `SCANNER CONFIRMATION PENDING` wording below describes the state at the time of each triage step, not the current closure state. See `issue-61-final-remaining-risk-record.md`.
+
 ## Scope and method
 
 Read-only Q1 disposition review of the sixteen open `js/sql-injection`-named CodeQL alerts (#10–#25). The rule name does not establish SQL semantics: the sinks are Mongoose/MongoDB queries or Redis key/value operations. No source was patched, no alert was dismissed, no database or Redis connection was made, and no runtime exploit was reproduced.

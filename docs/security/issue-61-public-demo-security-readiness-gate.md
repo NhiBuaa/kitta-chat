@@ -2,7 +2,7 @@
 
 ## Status
 
-`D1 public-demo compatibility reviewed / S1 security readiness pending`.
+Historical gate. Issue #61 resolved the M1, M2, reset-token, browser-origin and `/ops` blocker observations. Any public-demo deployment still requires a new deployment authorization; this document does not authorize it.
 
 This gate is for an Internet-accessible `public-demo` on Railway, intended for `portfolio / recruiter evaluation`. It is not a production-hardening gate, does not authorize deployment or collection, and does not turn demo traffic into representative production workload or Issue #61 quota evidence. `B = 0` remains unchanged.
 

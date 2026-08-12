@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implementation-authorized and source-remediated; scanner confirmation pending.** Focused tests, full server/client suites, client lint CI, and client build pass. Local CodeQL is unavailable, so none of the eight alerts is manually dismissed or marked scanner-verified. This narrow static-security tranche excludes operational-endpoint exposure, query/input alerts, Gitleaks/credential rotation, dependency/license changes, rate-limit enforcement, M1/M2, reset-token remediation, and Level 2A/2B work.
+**Historical authorization record.** At this gate the tranche was implementation-authorized and source-remediated with scanner confirmation pending. Final CodeQL reconciliation subsequently confirmed the eight alerts absent under `MERGE-REF ANALYSIS / RELEVANT-BLOB EQUIVALENT`; no alert was manually dismissed. The scope boundaries below are retained as historical authorization evidence.
 
 ## TDD evidence classification
 

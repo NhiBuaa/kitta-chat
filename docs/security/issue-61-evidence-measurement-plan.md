@@ -4,6 +4,8 @@
 
 Approval-gate and evidence-readiness architecture are finalized at planning level. Two read-only provenance audits are approved and complete: the retained-source inventory and the available control-plane metadata audit. Both are limited to metadata, schema, retention, revision/config/topology provenance, temporal-window feasibility and revision binding. Behavioral value extraction, numeric tuning, instrumentation, benchmarks and production measurement remain unapproved.
 
+Historical status addendum: the reset-token and M1/M2 follow-ups described below were completed in Issue #61 before closure. Current route behavior uses fragment-to-body reset transport and authenticated-principal message authorization/admission. `B = 0`, disabled/inert measurement status, and the separate deployment authorization boundary remain unchanged.
+
 Recorded human decisions:
 
 - Decision 1 B: reset-token remediation is deferred to a dedicated security follow-up. Status is `blocking follow-up linkage required / identifier pending`; Issue #61 retains the finding and remaining-risk accounting, but no actual cross-reference exists yet.

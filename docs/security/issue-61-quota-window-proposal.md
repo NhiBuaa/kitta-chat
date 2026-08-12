@@ -10,6 +10,8 @@ The approval-gate architecture is finalized. Evidence acquisition and measuremen
 
 Maintainer Decision 2 is recorded as `B — stop retained-evidence pursuit`: retained compatibility evidence remains `B = 0`, there will be no provenance audit #3, and raw auth/recovery logs remain `restricted/quarantined for measurement use`. Every measurement-dependent numeric candidate therefore remains pending. Static reasoning cannot substitute for the missing measurement or silently reclassify `measurement required` as intentional hardening. Numeric approval can advance only through a separately approved privacy-safe measurement/instrumentation slice, or through a later explicit maintainer decision that changes the applicable approval gate; this document neither designs nor authorizes that slice.
 
+Historical status addendum: the M1/M2 planning label below is superseded. Final Issue #61 enforcement uses `state_mutation.message_write` for message creation and `read_expensive.message_history` for message history, both keyed only by authenticated principal under the approved R3 numeric contracts. `message_boundary_pending` is retired.
+
 ## Algorithm Semantics
 
 - Low-volume authentication and recovery buckets use rolling/sliding-window semantics so a fixed-window boundary cannot double the effective allowance. Burst is not separate from the window quota.
@@ -70,7 +72,7 @@ Actor-resource dimensions below these domains remain optional unless this docume
 
 - `operational_probe` remains outside the Redis-backed application quota. External `/backend-healthz`, `/readyz` and `/ops` exposure still requires independent edge/network review; `/metrics` remains conditional and internal under current evidence.
 - `auth_session_maintenance` remains outside the distributed quota under the approved `GET /api/auth/session` and `POST /api/auth/logout` fail-open/exempt candidate disposition.
-- `message_boundary_pending` receives no numeric policy. M1 and M2 are assigned to `dedicated message-access-control follow-up required / identifier pending`. The two unauthenticated routes cannot use a caller-supplied sender, path user, receiver, group or conversation as an authenticated actor. A canonical network actor is planning-safe only and must not become a stable Redis contract merely because auth is currently missing. Route-specific distributed application limiter implementation is blocked by default until the follow-up produces verified-principal/authorization semantics; temporary network-only application limiting is not approved.
+- Historical only: `message_boundary_pending` received no numeric policy because M1/M2 were then unresolved. It is retired. The current message routes use the approved `state_mutation.message_write` and `read_expensive.message_history` policies with authenticated-principal-only actor keys; caller-supplied sender, path user, receiver, group or conversation values are never actor identity.
 - `read_bounded` remains a candidate enforcement label only, with no Redis-backed application counter until separately approved.
 
 ## Target-Wide Account Lockout Analysis

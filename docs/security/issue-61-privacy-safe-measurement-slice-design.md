@@ -4,6 +4,8 @@
 
 Maintainer choice A authorizes this bounded **Level 1 design only**. This document is not approval for Level 2A aggregate-only instrumentation, Level 2B telemetry identity/linkage design + implementation, telemetry identities or secrets, provider selection, deployment, production access, behavioral collection, benchmarks/load tests, analysis, quota tuning or alert dismissal. Level 2A approval would not imply Level 2B approval.
 
+Historical status addendum: Issue #61 later resolved its M1/M2, reset-token, browser-origin and `/ops` closure blockers. That does not authorize D1/D2 deployment or measurement collection; `B = 0` remains and public-demo deployment needs a separate authorization.
+
 Every numeric value below is copied unchanged from the pending quota proposal. No value is approved by this design.
 
 Retained evidence remains `B = 0`. Raw auth/recovery logs remain `restricted/quarantined for measurement use` and are not an input source.
@@ -639,4 +641,4 @@ The maintainer selected A in [issue-61-level-2a-call-instrumentation-authorizati
 
 ## Terminal State
 
-Refined Level 1 design is complete. The maintainer selected A for bounded call-only Level 2A code/test implementation, and the resulting implementation is approved in `docs/security/issue-61-level-2a-call-instrumentation-authorization-gate.md`. D1 has been reopened for the supplied Railway `public-demo` target and is target-ready for S1 consideration. Terminal state is `D1 public-demo compatibility reviewed / S1 security readiness pending / B = 0`. This approval remains code/test-only: Level 2B linkage, deployment, enablement, behavioral collection, production analysis and numeric policy remain on hold.
+Historical terminal state: Refined Level 1 design is complete. The maintainer selected A for bounded call-only Level 2A code/test implementation, and the resulting implementation is approved in `docs/security/issue-61-level-2a-call-instrumentation-authorization-gate.md`. D1 was target-ready for S1 consideration. Issue #61 subsequently resolved the S1 security blockers, but this did not grant D2. Current state remains `B = 0`; Level 2B linkage, deployment, enablement, behavioral collection, production analysis and numeric policy remain on hold pending a separate authorization.
