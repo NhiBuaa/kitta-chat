@@ -4,9 +4,9 @@
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89. Issue #81 is complete and closed. Issue #82 is open and unblocked because its
-only blocker, Issue #81, is complete. Issues #83–#89 remain visibly `blocked` and must not start
-before their listed dependencies are complete.
+Issues #81–#89. Issues #81 and #82 are complete and closed. Issue #83 is now the next frontier
+because its sole blocker, #82, is complete. Issues #84–#89 remain visibly `blocked` and must not
+start before their listed dependencies are complete.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
 delegation, evidence, and issue state; it does not implement an issue itself.
@@ -23,14 +23,14 @@ admitted, nginx-mediated login and Socket.IO auth pass, and the retained-evidenc
 TC-82-03 and TC-82-05 are complete under r4. The append-only Evaluation
 `issue-82-dataset-actors-preflight-r4.evaluations.jsonl` contains PASSED run
 `tc82r4-acceptance-20260812` with explicit human approval; all completed disposable runs were
-cleaned to empty K4 target inventories.
+cleaned to empty K4 target inventories. Issue #82 was delivered by PR #92, merge commit
+`af9daaacd1ec6c347f0c7fef74603c908e652608`, and is closed after final review APPROVE.
 
 ## Next Valid Transition
 
-1. Preserve the approved Issue #81 implementation, immutable guide revisions, and append-only Evaluation history; no further Issue #81 scope is active.
-2. Preserve locked Issue #82 guide `k4-issue-82-r4` and its append-only PASSED Evaluation; do not rewrite either artifact.
-3. Final review is APPROVE with zero Critical/Major findings. Preserve locked r4 and its PASSED Evaluation; obtain an explicit tracker-state instruction before closing Issue #82 or unblocking dependent issue(s).
-4. Do not execute TC-81-05 unless upstream authority explicitly permits concurrent/stale real K4 runs.
+1. Preserve accepted Issue #81/#82 implementations, immutable guide revisions, and append-only Evaluation histories; neither issue has further scope.
+2. Reconcile the Issue #83 tracker frontier and prepare its manual-acceptance guide from locked Issue #80/ADR-015 before implementation.
+3. Do not execute TC-81-05 unless upstream authority explicitly permits concurrent/stale real K4 runs.
 
 ## K4 Authorities
 
