@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const {
   APPROVED_ENFORCEMENT_POINT_COUNT,
+  APPROVED_POLICY_IDS,
   POLICIES,
 } = require("../../src/rateLimit/closureMinimumPolicyCatalog");
 const {
@@ -12,9 +13,42 @@ const {
   extractHashTag,
 } = require("../../src/rateLimit/keyBuilder");
 
-test("closure-minimum catalog contains exactly the approved 27 policies", () => {
-  assert.equal(APPROVED_ENFORCEMENT_POINT_COUNT, 27);
-  assert.equal(Object.keys(POLICIES).length, 27);
+test("closure-minimum catalog contains exactly the approved 29 policy IDs", () => {
+  const expectedPolicyIds = [
+    "auth_entry.aggregate",
+    "auth_entry.login",
+    "auth_entry.register",
+    "auth_entry.google",
+    "auth_recovery_request",
+    "auth_recovery_complete",
+    "auth_refresh.stage_a",
+    "auth_refresh.stage_b",
+    "state_mutation.aggregate",
+    "state_mutation.profile",
+    "state_mutation.friendship",
+    "state_mutation.group_admin",
+    "state_mutation.conversation_panel",
+    "state_mutation.call_history",
+    "state_mutation.message_write",
+    "file_resource.aggregate",
+    "file_resource.upload_control",
+    "file_resource.part_presign",
+    "file_resource.download_signing",
+    "read_expensive.aggregate",
+    "read_expensive.user_directory",
+    "read_expensive.message_sync",
+    "read_expensive.message_history",
+    "read_expensive.call_history",
+    "read_expensive.groups",
+    "read_expensive.conversation_panel",
+    "read_expensive.panel_resources",
+    "read_expensive.sidebar",
+    "call_initiation",
+  ];
+
+  assert.deepEqual(APPROVED_POLICY_IDS, expectedPolicyIds);
+  assert.deepEqual(Object.keys(POLICIES), expectedPolicyIds);
+  assert.equal(APPROVED_ENFORCEMENT_POINT_COUNT, expectedPolicyIds.length);
   assert.equal(POLICIES["auth_refresh.stage_a"].capacity, 10);
   assert.equal(POLICIES["auth_refresh.stage_b"].capacity, 5);
   assert.equal(POLICIES["read_expensive.message_sync"].limit, 12);
