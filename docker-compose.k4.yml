@@ -1,0 +1,117 @@
+name: ${K4_PROJECT_NAME:?run through the K4 lifecycle CLI}
+
+x-k4-labels: &k4-labels
+  io.kittachat.k4.project: kittachat-k4
+  io.kittachat.k4.run_id: ${K4_RUN_ID:?run through the K4 lifecycle CLI}
+
+services:
+  nginx:
+    image: ${K4_NGINX_IMAGE:?build or start through the K4 lifecycle CLI with an image set}
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    labels: *k4-labels
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [k4-workload, k4-backend]
+
+  backend:
+    image: ${K4_BACKEND_IMAGE:?build or start through the K4 lifecycle CLI with an image set}
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+    labels: *k4-labels
+    environment:
+      NODE_NAME: k4-backend
+      PORT: 3000
+      MONGO_URI: mongodb://mongo:27017/kittachat_k4
+      REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: ${K4_JWT_SECRET:?run through the K4 lifecycle CLI}
+      REFRESH_TOKEN_SECRET: ${K4_JWT_SECRET:?run through the K4 lifecycle CLI}
+      AUTH_COOKIE_SECURE: "false"
+      URL_FRONTEND: http://localhost
+      CORS_ALLOWED_ORIGINS: http://localhost
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks: [k4-backend]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  mongo:
+    image: mongo:7
+    labels: *k4-labels
+    volumes: [mongo_data:/data/db]
+    networks: [k4-backend]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:alpine
+    labels: *k4-labels
+    volumes: [redis_data:/data]
+    networks: [k4-backend]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    labels: *k4-labels
+    volumes: [rabbitmq_data:/var/lib/rabbitmq]
+    networks: [k4-backend]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  runner:
+    image: node:22.14.0-bookworm-slim
+    labels: *k4-labels
+    command: ["node", "-e", "setInterval(() => {}, 2147483647)"]
+    environment:
+      K4_WORKLOAD_URL: http://nginx
+    working_dir: /results
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ${K4_RESULT_DIR:?run through the K4 lifecycle CLI}:/results
+    networks: [k4-workload]
+    depends_on:
+      nginx:
+        condition: service_started
+
+networks:
+  k4-workload:
+    internal: true
+    labels: *k4-labels
+  k4-backend:
+    internal: true
+    labels: *k4-labels
+
+volumes:
+  mongo_data:
+    labels: *k4-labels
+  redis_data:
+    labels: *k4-labels
+  rabbitmq_data:
+    labels: *k4-labels

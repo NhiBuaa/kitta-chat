@@ -10,6 +10,7 @@
     "seed:demo": "docker compose exec -T backend npm run seed:demo",
     "demo": "node scripts/demo.js",
     "demo:observability": "node scripts/observabilityDemo.js",
+    "k4": "node scripts/k4/cli.js",
     "prod:docker": "docker compose up --build"
   },
   "dependencies": {
