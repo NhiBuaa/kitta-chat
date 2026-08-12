@@ -5,13 +5,13 @@
 - K3 Observability is complete. Issue #44 and implementation Issues #45–#52 are closed.
 - K3.1 Local Observability Demo is complete. Implementation Issues #70–#72 are closed.
 - The K3.1 parent specification, Issue #69, remains open for tracker history. It is not an implementation frontier.
-- Local `main` and `github/main` are synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98` after PR #77.
+- Local `main` and `github/main` were previously synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98`; K4 Issue #81 was published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
 - No deployment or destructive K3.1 reset was performed.
 - K4 Reproducible Performance Evidence is active under locked specification Issue #80 and ADR-015.
-- Issues #81–#89 are published. Issue #81 is the only current frontier; #82–#89 remain visibly `blocked` until their real dependencies complete.
+- Issues #81–#89 are published. Issue #81 is closed; #82–#89 remain visibly `blocked` until their real dependencies complete.
 - K4 is leader-coordinated: the leader does not implement issues. Guide revisions `k4-issue-81-r1` through `k4-issue-81-r3` remain immutable; `k4-issue-81-r4` is locked and approved. Issue #81 implementation and mandatory acceptance TC-81-01 through TC-81-04 are complete and accepted; TC-81-05 was not run because it remains conditional.
 - Issue #81 final remediation fixed point has append-only Evaluation `tc81digest-v1`; mandatory TC-81-01 through TC-81-04 pass, TC-81-05 remains conditional/non-blocking.
-- Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 remains open and Issue #82 remains blocked by explicit workflow guardrail; no tracker state change was requested.
+- Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 is closed; Issue #82 remains open and blocked by its dependency guardrail.
 
 ## Delivered Outcome
 
@@ -36,7 +36,7 @@
 - K4 issue graph: https://github.com/NhiBuaa/kitta-chat/issues/81 through https://github.com/NhiBuaa/kitta-chat/issues/89
 - K4 architecture authority: `docs/adr/015-k4-performance-evidence-boundary.md`
 - K4 current acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.md` (locked; r1 through r3 remain immutable)
-- K4 Issue #81 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.evaluations.jsonl` (PASSED run `tc81r4-20260811-a`)
+- K4 Issue #81 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.evaluations.jsonl` (latest PASSED run `tc81digest-v1`)
 
 ## Publication History
 

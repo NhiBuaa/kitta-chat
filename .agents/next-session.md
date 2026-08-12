@@ -2,9 +2,9 @@
 
 ## Current State
 
-K4 Reproducible Performance Evidence is active under locked specification
+K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89. Issue #81 is the only frontier. Issues #82–#89 have the visible `blocked`
+Issues #81–#89. Issue #81 is complete and closed. Issues #82–#89 have the visible `blocked`
 label and must not start before their listed dependencies are complete.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
@@ -20,7 +20,7 @@ TC-81-05 remains conditional/non-blocking and was not executed.
 
 1. Preserve the approved implementation, immutable guide revisions, and append-only Evaluation history; no further Issue #81 scope is active.
 2. Do not execute TC-81-05 unless upstream authority explicitly permits concurrent/stale real K4 runs.
-3. Do not close #81 or remove `blocked` from Issue #82 without an explicit tracker-state instruction.
+3. Do not remove `blocked` from Issue #82 until its dependency is complete and the tracker workflow authorizes it.
 
 ## K4 Authorities
 
