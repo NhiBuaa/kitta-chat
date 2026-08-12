@@ -21,7 +21,7 @@ States are: `DONE`, `FOLLOW-UP`, `FOLLOW-UP REQUIRED`, `BLOCKED`, and `UNRESOLVE
 | 11 | Tainted log formats | DONE | REQUIRED FOR ISSUE #61 CLOSURE | CodeQL #7–#9 are absent from exhaustive merge-ref analysis under `MERGE-REF ANALYSIS / RELEVANT-BLOB EQUIVALENT`; structured-logger test evidence remains retained. | Reopen only for new scanner or regression evidence. | No | No |
 | 12 | Stack/error exposure | DONE | REQUIRED FOR ISSUE #61 CLOSURE | CodeQL #27–#28 are absent from exhaustive merge-ref analysis under `MERGE-REF ANALYSIS / RELEVANT-BLOB EQUIVALENT`; safe-boundary test evidence remains retained. | Reopen only for new scanner or regression evidence. | No | No |
 | 13 | CORS origin policy | DONE | REQUIRED FOR ISSUE #61 CLOSURE | CodeQL #6 is absent from exhaustive merge-ref analysis under `MERGE-REF ANALYSIS / RELEVANT-BLOB EQUIVALENT`; exact-origin test evidence remains retained. | Reopen only for new scanner or regression evidence. | No | No |
-| 14 | GitHub Dependabot advisory source | UNRESOLVED — source unavailable / not applicable under current authorization | OPTIONAL / FUTURE HARDENING | Endpoint reports disabled/insufficient access; npm audit remains applicable | Do not request access; use package-manager evidence | No | **No** |
+| 14 | GitHub Dependabot advisory source | DONE — NOT APPLICABLE UNDER CURRENT AUTHORIZATION | OPTIONAL / FUTURE HARDENING | Endpoint reports disabled/insufficient access; npm audit remains applicable evidence | Do not request access; use package-manager evidence | No | **No** |
 | 15 | Dependency vulnerability baseline | DONE | REQUIRED FOR ISSUE #61 CLOSURE | D2/D4/D5/D6/D8 remediations remain verified; D9 Firebase Admin Auth is accepted; D11 Picomatch and D13 Vite/esbuild are remediation-verified; D10/D7/Firebase non-Auth and D14 provide the final accepted reachability/risk dispositions. Fresh audit accounting is root `0`; client `16` (`2 critical`, `2 high`, `5 moderate`, `7 low`); server full and `--omit=dev` `7` (`1 high`, `5 moderate`, `1 low`). | Preserve the evidence and re-account any future audit finding; D14 Babel/Ajv risk acceptance must be reviewed by `2026-11-11`. | No | No |
 | 16 | License baseline | DONE | REQUIRED FOR ISSUE #61 CLOSURE | L3 package-specific JSON policy reconciles fresh scanner findings exactly: root `7`, client `15` (including separate `client@0.0.0 — UNLICENSED` metadata), server `12`; the verifier rejects new/missing/version/expression drift and retains compound expressions, Spark MD5 MIT compliance basis, and scoped Sharp/LightningCSS reopen triggers. Isolated server `npm ci --omit=dev` production graph passed without mutating workspace dependencies. Fresh normal-tooling server install and serial full suite passed `451/451` executed tests (`5` skipped); durable output: `docs/security/issue-61-l3-server-full-suite-rerun.log`. | Preserve L3 policy evidence and reopen only if scanner, package, expression, reachability, or declared distribution target changes. | No | No |
 | 17 | Query/input validation alerts | DONE | REQUIRED FOR ISSUE #61 CLOSURE | Q2-A/Q2-D remediated #10–#11, #18–#20 and #24–#25; accepted no-remediation #12–#17 and #21–#23; all are absent from exhaustive merge-ref analysis under `MERGE-REF ANALYSIS / RELEVANT-BLOB EQUIVALENT`. | Reopen only for new scanner or regression evidence. | No | No |
@@ -38,25 +38,25 @@ States are: `DONE`, `FOLLOW-UP`, `FOLLOW-UP REQUIRED`, `BLOCKED`, and `UNRESOLVE
 | 28 | Final scanner/dependency/license verification | DONE | REQUIRED FOR ISSUE #61 CLOSURE | Immutable-head CodeQL run passed and analysis `1605443353` was indexed at merge `5e4f881…` / `refs/pull/90/merge`; evidence class: `MERGE-REF ANALYSIS / HEAD-SOURCE SUBSET WITH ADDITIVE MERGE-ONLY K4 DELTA`. Exhaustive CodeQL inventory reports exactly five results: #173 `SAFE BOUNDARY / NO-REMEDIATION — EXISTING CANONICAL RATE LIMIT`; #174–#177 `SAFE BOUNDARY / NO-REMEDIATION — CODEQL CUSTOM-MIDDLEWARE VISIBILITY LIMITATION`. Dependency audits remain root `0`, client `16`, server `7` with accepted accounting; license policy reconciles root `7`, client `15`, server `12`; sanitized current-source Gitleaks scan is `0`. | Reopen only for new scanner, dependency, license, or regression evidence. | No | No |
 | 29 | Final remaining-risk/closure record | DONE | REQUIRED FOR ISSUE #61 CLOSURE | Approved final record: `docs/security/issue-61-final-remaining-risk-record.md`; it confirms no remaining mandatory blocker, records accepted residuals/dispositions and retains scanner/test/tool limitations without dismissing alerts. Final CodeQL-covered source SHA: `54e902fcb6666c4ed03eb818fdff3ab10d4715e5`. | Reopen only for new scanner, dependency, license, or regression evidence. | No | No |
 
-Counts: **DONE 24; FOLLOW-UP 0; FOLLOW-UP REQUIRED 0; BLOCKED 3; UNRESOLVED 2; total 29.**
+Counts: **DONE 26; FOLLOW-UP 0; FOLLOW-UP REQUIRED 0; BLOCKED 3; UNRESOLVED 0; total 29.** The three blocked rows are explicitly optional future-hardening work, not Issue #61 closure blockers.
 
 ## Tranche 1 remediation overlay
 
-The five Tranche 1 rows (#9–#13) cover eight CodeQL alerts and are **remediation complete at source/test level; scanner confirmation pending**. They remain `UNRESOLVED` in the primary 29-row state count because the required per-alert CodeQL disposition is not yet scanner-confirmed. This overlay is not a sixth primary state and does not increase `DONE`.
+Historical overlay: the five Tranche 1 rows (#9–#13) covered eight CodeQL alerts that were initially remediation-complete at source/test level with scanner confirmation pending. Final CodeQL reconciliation is complete: the eight alerts are absent from exhaustive merge-ref analysis under `MERGE-REF ANALYSIS / RELEVANT-BLOB EQUIVALENT`. This historical overlay does not alter the primary table.
 
 - Source/test remediation complete: **5 finding groups / 8 alerts**.
-- CodeQL-confirmed final dispositions: **0 of those 8 alerts**.
-- `/ops`, M1/M2/reset, query alerts, Gitleaks, dependency/license, rate-limit minimum and all other closure rows are unchanged.
+- CodeQL-confirmed final dispositions: **8 of those 8 alerts**.
+- `/ops`, M1/M2/reset, query alerts, Gitleaks, dependency/license, rate-limit minimum and all other closure rows are recorded in the final table.
 
 ## Dependabot clarification
 
-Issue #61 requires dependency inventory from root/client/server package surfaces; it does not name GitHub Dependabot as the required source. Package-manager audits and lockfile review are applicable evidence. Therefore row 14 is `UNRESOLVED — source unavailable / not applicable under current authorization`, not a closure blocker. This does not establish that dependencies are safe: row 15 remains unresolved.
+Issue #61 requires dependency inventory from root/client/server package surfaces; it does not name GitHub Dependabot as the required source. Package-manager audits and lockfile review are applicable evidence. Therefore Row 14 is `DONE — NOT APPLICABLE UNDER CURRENT AUTHORIZATION`; this does not claim Dependabot is enabled or independently establish dependency safety. Row 15's completed audit/reachability accounting is the applicable evidence.
 
 ## Mandatory versus future boundary
 
 - Required closure work: evidence-backed alert dispositions; credential triage; high-confidence CodeQL remediation; dependency/license disposition; query matrix; approved closure-minimum rate-limit implementation (now source/test complete); operational endpoint disposition; final verification/risk record.
 - Optional/future work: Level 2A collection, Level 2B, target-wide buckets, actor-callee controls, optional reset-subject control and measurement-dependent tuning.
-- Conditional work: rotation only after credential triage; M1/M2/reset closure outcome only after an A/B/C maintainer decision. The R1 numeric baseline is no longer conditional; implementation is separately gated.
+- Historical conditional work: credential triage and M1/M2/reset decisions were completed before closure. The R1 numeric baseline is no longer conditional; implementation is separately gated.
 
 `measurement-required in a planning proposal != automatically required for Issue #61 closure`. A maintainer may approve intentional baseline hardening with known compatibility risk, or remove optional candidates from closure scope; neither action is made by this inventory.
 
@@ -65,7 +65,7 @@ Issue #61 requires dependency inventory from root/client/server package surfaces
 - Client `uuid@13.0.2`: `REMEDIATED / VERIFIED BY SOURCE-TEST-AUDIT EVIDENCE`.
 - Server `mongoose@9.7.2`: `REMEDIATED / VERIFIED BY SOURCE-TEST-AUDIT EVIDENCE`.
 - Server `sharp@0.35.3`: `REMEDIATED / VERIFIED BY NATIVE-SOURCE-TEST-AUDIT EVIDENCE`. Native worker-contract tests decode representative PNG/JPEG fixtures, retain the chat `width: 1920` / `withoutEnlargement: true` behavior, retain avatar `256x256` / `fit: cover`, validate real WebP output/metadata, and reject malformed input before output upload. The production `node:22-alpine` image fresh-installs Sharp and its `@img/sharp-linuxmusl-x64@0.35.3` prebuilt dependency.
-- This overlay does not grant a license disposition. Row 16 remains `UNRESOLVED`.
+- This historical overlay did not grant a license disposition at the time. Row 16 is now `DONE` under the L3 package-specific policy record.
 - The Sharp conclusion covers repository-represented server and image-worker containers only. External worker deployments not represented by repository evidence remain outside it.
 
 ## D4 accepted Nodemailer remediation overlay
@@ -73,7 +73,7 @@ Issue #61 requires dependency inventory from root/client/server package surfaces
 - `nodemailer@9.0.5`: `REMEDIATED / VERIFIED BY SOURCE-TEST-AUDIT EVIDENCE`. The service-based transport, basic user/password configuration, reset-email `sendMail({ from, to, subject, html })` payload, success result, failure propagation, queue behavior and full server regression are covered without sending real SMTP mail.
 - Runtime-owner fact: there are currently no deployed environments; the project runs locally only. Therefore the prior blocker is `DEPLOYED SMTP TLS CONTRACT — NOT APPLICABLE / NO DEPLOYED ENVIRONMENT`. This is not evidence that any future production SMTP TLS contract is valid.
 - Before the first deployment that can send email, the deployment owner must verify the SMTP endpoint/port/TLS certificate and confirm there is no invalid, self-signed, expired, hostname-mismatched TLS dependency or verification bypass.
-- This overlay does not grant a license disposition. Row 16 remains `UNRESOLVED`.
+- This historical overlay did not grant a license disposition at the time. Row 16 is now `DONE` under the L3 package-specific policy record.
 
 ## D5 accepted dev/build remediation overlay
 

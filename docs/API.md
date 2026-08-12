@@ -450,14 +450,18 @@ Common errors:
 - `429` too many password reset email attempts
 - `500` server error
 
-### `POST /api/auth/reset-password/:id/:token`
+### `POST /api/auth/reset-password/:id`
 
-Auth: reset token in URL.
+Auth: reset credential in the JSON request body. The email link carries the
+credential in its URL fragment; the client removes that fragment from browser
+history before submitting this request. The credential is intentionally absent
+from the route path.
 
 Request body:
 
 ```json
 {
+  "token": "<reset-token>",
   "password": "NewPassword1!",
   "confirmPassword": "NewPassword1!"
 }

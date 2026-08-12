@@ -2,7 +2,7 @@
 
 ## Status
 
-Policy-class taxonomy architecture is approved for quota/window planning. This is not implementation approval and does not approve Redis keys, middleware changes, HMAC material, nginx changes, access-control remediation, or alert disposition.
+Historical planning taxonomy. Issue #61 closed with the implemented closure-minimum policy catalog. Current closure state and residual limitations are recorded in `issue-61-final-remaining-risk-record.md`.
 
 ## View A — Unique Operation Inventory
 
@@ -21,7 +21,7 @@ Each operation appears exactly once in this completeness view. Inventory labels 
 | 9 | `POST /api/auth/refresh` | Staged network then cryptographically verified refresh-token-subject flow |
 | 10 | `POST /api/auth/logout` | Approved fail-open/exempt cookie-clear candidate |
 | 11 | `POST /api/auth/forgot-password` | Recovery request/email queue surface |
-| 12 | `POST /api/auth/reset-password/:id/:token` | Recovery completion surface |
+| 12 | `POST /api/auth/reset-password/:id` | Recovery completion surface; reset token is JSON-body only |
 | 13 | `GET /api/users/online-friends` | Authenticated expensive read |
 | 14 | `GET /api/users/profile` | Authenticated bounded-read candidate |
 | 15 | `PUT /api/users/profile` | Authenticated mutation; optional multipart/avatar mode |
@@ -35,8 +35,8 @@ Each operation appears exactly once in this completeness view. Inventory labels 
 | 23 | `GET /api/users/search` | Authenticated expensive full-user search |
 | 24 | `GET /api/users/:id` | Authenticated bounded-read candidate |
 | 25 | `GET /api/users` | Authenticated expensive unbounded/N+1 read |
-| 26 | `POST /api/messages` | Missing-auth finding; actor model unresolved |
-| 27 | `GET /api/messages/:userId1/:userId2` | Missing-auth finding; caller-controlled visibility identity |
+| 26 | `POST /api/messages` | Authenticated message write; `state_mutation.message_write` admission |
+| 27 | `GET /api/messages/:userId1/:userId2` | Authenticated message history; `read_expensive.message_history` admission |
 | 28 | `GET /api/messages/sync` | Authenticated expensive read/fan-out |
 | 29 | `GET /api/calls/history` | Authenticated expensive aggregate read |
 | 30 | `GET /api/calls/missed` | Authenticated count/preview read |
@@ -84,7 +84,7 @@ Membership count is intentionally not reconciled to 51. An operation may partici
 | `auth_session_maintenance` — non-enforcement label | Session and logout | No distributed application membership under approved fail-open/exempt disposition | None | None | Fail open/outside quota | Redis outage must not block bounded session introspection or cookie clearing. Existing nginx auth limiting remains edge-only. |
 | `state_mutation` | **Every** profile update; 4 friendship mutations; 2 call-history mutations; 6 group mutations; 3 panel mutations | Mandatory verified-user aggregate bucket | Actor-scoped domains: `profile`, `friendship`, `call_history`, `group_admin`, `conversation_panel` | No target-wide bucket approved | Fail closed | Aggregate bucket prevents cross-domain mutation/fan-out rotation. Domain secondaries can prevent heavy group work starving low-cost preference/friendship actions without abandoning aggregate protection. |
 | `file_resource` | Five file routes; **additionally** profile update when cheap boundary metadata indicates multipart/avatar mode | Mandatory verified-user aggregate bucket; profile decision must occur before Multer buffering | Actor-scoped `multipart`, `upload`, `download-signing`, file/upload scope candidates | No target-wide file bucket approved | Fail closed | Prevents rotation across file lifecycle and avatar upload. Multipart profile requests also remain in `state_mutation`; memberships are intentionally overlapping. |
-| `message_boundary_pending` — planning-only, not a stable Redis ID | Unauthenticated message POST and history GET; both assigned to dedicated security follow-up | Canonical network actor is planning-safe only; it is not an approved stable contract | No caller-supplied sender, user, receiver, group or conversation actor; secondary design pending | None approved | Route-specific distributed application limiter implementation blocked by default | Missing auth prevents verified-user semantics. Reclassify after the combined follow-up produces verified-principal/authz semantics; do not fossilize the vulnerability in a stable namespace. Temporary network-only application limiting is not approved. |
+| `message_boundary_pending` — retired Issue #61 planning label | None | Not a live policy | Do not reuse | None | Not applicable | Replaced by authenticated-principal message route policies. |
 | `read_bounded` — candidate enforcement; no distributed application bucket until explicitly approved | User profile GET and user-by-id GET | No distributed application bucket | If enforcement is later approved: verified-user aggregate plus optional actor-scoped `self_profile` or target-user dimensions | None | Not applicable until approved; fail-open candidate if enforced | Do not create a counter for taxonomy symmetry. Runtime measurement must first show that application enforcement adds value beyond edge protection. |
 | `read_expensive` | 14 authenticated expensive/fan-out reads from users, message sync, calls, groups, panel and sidebar | Mandatory verified-user aggregate bucket | Actor-scoped domains: `user_directory`, `message_sync`, `call_history`, `groups`, `conversation_panel`, `sidebar` | No target-wide bucket approved | Fail closed | Aggregate class prevents rotating across expensive UI/data paths. Domain secondaries preserve cost/fairness differences and reduce cross-screen starvation without class-per-route quotas. |
 | `call_initiation` | `initCall`, `callUser` | Mandatory handshake-verified user aggregate bucket | Actor-scoped callee dimension | Target-wide callee anti-storm bucket remains unapproved | Fail closed with structured Socket error | Shared actor bucket blocks event-path rotation. Callee secondary limits one caller→callee pair; a callee-wide bucket has separate harassment/fairness risks. |
@@ -156,7 +156,7 @@ These IDs are symbolic planning IDs. Their approval would not select numeric pol
 
 ## Planning-Only Or Provisional Labels
 
-- `message_boundary_pending` — M1/M2 assigned to `dedicated message-access-control follow-up required / identifier pending`; route-specific limiter implementation blocked; not a Redis namespace.
+- `message_boundary_pending` — retired Issue #61 historical planning label; not a Redis namespace.
 - `auth_recovery_aggregate` — optional aggregate candidate, not approved.
 - `auth_session_maintenance` — non-enforcement inventory label.
 - `operational_probe` — non-enforcement inventory label.
