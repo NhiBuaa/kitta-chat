@@ -1,5 +1,8 @@
 const crypto = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
 const { attestRuntimeTopology, buildImageSet, compareEffectiveTopologySnapshots, createRunPlan, createResultDirectory, cleanup, cleanupPreview, currentEffectiveTopologySnapshot, docker, imageSetEnvironment, runnerDiagnosticArgs, startArgs, validateCleanupTarget } = require("./lifecycle");
+const { K4_DATASET_DECLARATION, assertFreshRunTargets, classifySetupFailure, scanRetainedEvidenceDirectory, setupPreflightCommands, verifyDatasetContract } = require("./preflight");
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -12,6 +15,50 @@ function print(value) {
 
 function planFromArguments() {
   return createRunPlan({ runId: argument("--run-id"), profile: argument("--profile") });
+}
+
+function resolveBenchmarkPassword(environment = process.env, randomBytes = crypto.randomBytes) {
+  return environment.K4_BENCHMARK_PASSWORD || `K4a!${randomBytes(24).toString("base64url")}`;
+}
+
+function runSetupPreflight({
+  plan,
+  environment,
+  dockerCommand = docker,
+  cleanupPreviewFn = cleanupPreview,
+  createResultDirectoryFn = createResultDirectory,
+  writeFileSyncFn = fs.writeFileSync,
+}) {
+  try {
+    assertFreshRunTargets(cleanupPreviewFn(plan.runId));
+    createResultDirectoryFn(plan);
+  } catch (error) {
+    return { action: "setup-preflight", prerequisite: "create", ...classifySetupFailure("create"), reason: "fresh K4 run resources are required before setup" };
+  }
+  let observedDeclaration;
+  let benchmarkToken;
+  for (const step of setupPreflightCommands(plan)) {
+    try {
+      const output = dockerCommand(step.args, { env: { ...environment, K4_BENCHMARK_TOKEN: benchmarkToken } });
+      if (step.prerequisite === "verification") observedDeclaration = JSON.parse(String(output));
+      if (step.prerequisite === "login") benchmarkToken = JSON.parse(String(output)).token;
+    } catch (error) {
+      return { action: "setup-preflight", prerequisite: step.prerequisite, ...classifySetupFailure(step.prerequisite), reason: `setup/preflight prerequisite failed: ${step.prerequisite}` };
+    }
+  }
+  const verification = verifyDatasetContract(K4_DATASET_DECLARATION, observedDeclaration);
+  if (verification.status !== "VERIFIED") return { action: "setup-preflight", verification, warmupAdmission: "NOT_ADMITTED" };
+  const phaseRecordPath = path.join(plan.resultDirectory, "setup-preflight.json");
+  writeFileSyncFn(phaseRecordPath, `${JSON.stringify({
+    runId: plan.runId,
+    declaredDataset: K4_DATASET_DECLARATION,
+    observedDataset: observedDeclaration,
+    verification,
+    warmupAdmission: "WARMUP_ADMITTED",
+    authentication: { ingress: "http://nginx", login: "passed", socketIo: "passed" },
+  })}\n`, { flag: "wx" });
+  const evidenceScan = scanRetainedEvidenceDirectory(plan.resultDirectory, [environment.K4_BENCHMARK_PASSWORD, benchmarkToken]);
+  return { action: "setup-preflight", verification, warmupAdmission: "WARMUP_ADMITTED", evidenceScan };
 }
 
 function main() {
@@ -38,6 +85,7 @@ function main() {
   if (action === "start") {
     const plan = planFromArguments();
     const imageSet = imageSetEnvironment(argument("--image-set-id"));
+    const benchmarkPassword = resolveBenchmarkPassword();
     createResultDirectory(plan);
     docker(startArgs(plan), {
       env: {
@@ -47,9 +95,28 @@ function main() {
         K4_RUN_ID: plan.runId,
         K4_RESULT_DIR: plan.resultDirectory,
         K4_JWT_SECRET: process.env.K4_JWT_SECRET || crypto.randomBytes(48).toString("hex"),
+        K4_BENCHMARK_EMAIL: process.env.K4_BENCHMARK_EMAIL || "alice@kittachat.test",
+        K4_BENCHMARK_PASSWORD: benchmarkPassword,
       },
     });
     return print({ action, plan });
+  }
+  if (action === "setup-preflight") {
+    const plan = planFromArguments();
+    const imageSet = imageSetEnvironment(argument("--image-set-id"));
+    const benchmarkPassword = resolveBenchmarkPassword();
+    const environment = {
+      ...process.env,
+      ...imageSet,
+      K4_PROJECT_NAME: plan.projectName,
+      K4_RUN_ID: plan.runId,
+      K4_RESULT_DIR: plan.resultDirectory,
+      K4_JWT_SECRET: process.env.K4_JWT_SECRET || crypto.randomBytes(48).toString("hex"),
+      K4_BENCHMARK_EMAIL: process.env.K4_BENCHMARK_EMAIL || "alice@kittachat.test",
+      K4_BENCHMARK_PASSWORD: benchmarkPassword,
+      DEMO_SEED_PASSWORD: benchmarkPassword,
+    };
+    return print(runSetupPreflight({ plan, environment }));
   }
   if (action === "cleanup-preview") return print(cleanupPreview(argument("--run-id")));
   if (action === "validate-cleanup-target") {
@@ -58,7 +125,11 @@ function main() {
     return print(validateCleanupTarget(argument("--class"), target, argument("--run-id")));
   }
   if (action === "cleanup") return print(cleanup(argument("--run-id"), argument("--confirm-digest")));
-  throw new Error("usage: k4 <resolve|compare|diagnose-runner|build-image-set|start|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
+  throw new Error("usage: k4 <resolve|compare|diagnose-runner|build-image-set|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
 }
 
-try { main(); } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1; }
+if (require.main === module) {
+  try { main(); } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1; }
+}
+
+module.exports = { resolveBenchmarkPassword, runSetupPreflight };

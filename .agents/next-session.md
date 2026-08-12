@@ -4,8 +4,9 @@
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89. Issue #81 is complete and closed. Issues #82–#89 have the visible `blocked`
-label and must not start before their listed dependencies are complete.
+Issues #81–#89. Issue #81 is complete and closed. Issue #82 is open and unblocked because its
+only blocker, Issue #81, is complete. Issues #83–#89 remain visibly `blocked` and must not start
+before their listed dependencies are complete.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
 delegation, evidence, and issue state; it does not implement an issue itself.
@@ -14,13 +15,22 @@ Manual-acceptance guide revision `k4-issue-81-r4` is locked at
 `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.md`; r1 through r3
 remain immutable. Issue #81 implementation and mandatory TC-81-01 through TC-81-04 passed and
 were recorded in `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.evaluations.jsonl`.
-TC-81-05 remains conditional/non-blocking and was not executed.
+TC-81-05 remains conditional/non-blocking and was not executed. Issue #82 manual-acceptance
+guide `k4-issue-82-r4` is locked and explicitly human-approved; r1 through r3 remain immutable.
+Its timestamp and credential remediations are verified by fresh disposable setup/preflight: the
+observed canonical Mongo fingerprint equals the declared deterministic fingerprint, warm-up is
+admitted, nginx-mediated login and Socket.IO auth pass, and the retained-evidence scan is clear.
+TC-82-03 and TC-82-05 are complete under r4. The append-only Evaluation
+`issue-82-dataset-actors-preflight-r4.evaluations.jsonl` contains PASSED run
+`tc82r4-acceptance-20260812` with explicit human approval; all completed disposable runs were
+cleaned to empty K4 target inventories.
 
 ## Next Valid Transition
 
-1. Preserve the approved implementation, immutable guide revisions, and append-only Evaluation history; no further Issue #81 scope is active.
-2. Do not execute TC-81-05 unless upstream authority explicitly permits concurrent/stale real K4 runs.
-3. Do not remove `blocked` from Issue #82 until its dependency is complete and the tracker workflow authorizes it.
+1. Preserve the approved Issue #81 implementation, immutable guide revisions, and append-only Evaluation history; no further Issue #81 scope is active.
+2. Preserve locked Issue #82 guide `k4-issue-82-r4` and its append-only PASSED Evaluation; do not rewrite either artifact.
+3. Final review is APPROVE with zero Critical/Major findings. Preserve locked r4 and its PASSED Evaluation; obtain an explicit tracker-state instruction before closing Issue #82 or unblocking dependent issue(s).
+4. Do not execute TC-81-05 unless upstream authority explicitly permits concurrent/stale real K4 runs.
 
 ## K4 Authorities
 
@@ -28,6 +38,8 @@ TC-81-05 remains conditional/non-blocking and was not executed.
 - Ticket graph: https://github.com/NhiBuaa/kitta-chat/issues/81 through
   https://github.com/NhiBuaa/kitta-chat/issues/89
 - Architecture boundary: `docs/adr/015-k4-performance-evidence-boundary.md`
+- Locked Issue #82 guide: `.agents/manual-tests/k4-performance-evidence/issue-82-dataset-actors-preflight-r4.md`
+- Issue #82 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-82-dataset-actors-preflight-r4.evaluations.jsonl`
 - Current World Model: `.agents/CONTEXT.md`
 - Resume Contract: `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-feature-delivery-leader.json`
 

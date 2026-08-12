@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const Conversation = require("../models/Conversation");
 const ConversationParticipant = require("../models/ConversationParticipant");
 const File = require("../models/File");
@@ -14,6 +15,13 @@ const { assertDemoSeedTarget } = require("./demoSeedSafety");
 
 const DEMO_PASSWORD = "KittaChatDemo!2026";
 const DEMO_PASSWORD_HASH = "$2b$10$wVBixSGimcqxJxNv30sItOZxBwkEWtZI3GTuH.OAODRtemzerygMO";
+
+async function hashDemoPassword(password) {
+  if (password === undefined) {
+    return DEMO_PASSWORD_HASH;
+  }
+  return bcrypt.hash(password, 10);
+}
 
 const defaultModels = {
   Conversation,
@@ -39,7 +47,8 @@ async function runDemoSeed({
   allowRemote = false,
   models = defaultModels,
   mongooseClient = mongoose,
-  hashPassword = async () => DEMO_PASSWORD_HASH,
+  hashPassword = hashDemoPassword,
+  password,
   repositoryFactory = createMongoDemoRepository,
   logger = console,
 } = {}) {
@@ -48,7 +57,7 @@ async function runDemoSeed({
 
   try {
     const userIdsByEmail = await loadExistingUserIds(models.User);
-    const passwordHash = await hashPassword(DEMO_PASSWORD);
+    const passwordHash = await hashPassword(password);
     const dataset = buildDemoDataset({ passwordHash, userIdsByEmail });
     const repository = repositoryFactory(models);
     const summary = await repository.apply(dataset);
@@ -64,6 +73,7 @@ async function runDemoSeed({
 module.exports = {
   DEMO_PASSWORD,
   DEMO_PASSWORD_HASH,
+  hashDemoPassword,
   loadExistingUserIds,
   runDemoSeed,
 };

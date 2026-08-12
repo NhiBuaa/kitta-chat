@@ -3,6 +3,11 @@ const test = require("node:test");
 
 const { buildDemoDataset } = require("../src/demo/demoDataset");
 const { createMongoDemoRepository } = require("../src/demo/demoSeedRepository");
+const {
+  canonicalDatasetFingerprint,
+  canonicalizeCollections,
+  datasetContent,
+} = require("../src/demo/k4DatasetContract");
 
 function matches(document, filter) {
   return Object.entries(filter).every(([key, value]) => document[key] === value);
@@ -31,6 +36,45 @@ function createMemoryModel(initialDocuments = []) {
       return { acknowledged: true };
     },
   };
+}
+
+function createTimestampMaterializingMemoryModel(initialDocuments = []) {
+  const model = createMemoryModel(initialDocuments);
+  const bulkWrite = model.bulkWrite;
+  model.bulkWrite = async (batch, options) => {
+    const materializedBatch = structuredClone(batch);
+    for (const operation of materializedBatch) {
+      const update = operation.updateOne;
+      if (options.timestamps !== false && update.timestamps !== false) {
+        update.update.$set.createdAt = new Date("2030-01-01T00:00:00.000Z");
+        update.update.$set.updatedAt = new Date("2030-01-01T00:00:00.000Z");
+      }
+    }
+    return bulkWrite(materializedBatch, options);
+  };
+  return model;
+}
+
+function createTimestampMaterializingModels() {
+  return {
+    User: createTimestampMaterializingMemoryModel(),
+    Group: createTimestampMaterializingMemoryModel(),
+    File: createTimestampMaterializingMemoryModel(),
+    Message: createTimestampMaterializingMemoryModel(),
+    Conversation: createTimestampMaterializingMemoryModel(),
+    ConversationParticipant: createTimestampMaterializingMemoryModel(),
+  };
+}
+
+function canonicalProjection(models) {
+  return canonicalizeCollections({
+    users: models.User.documents,
+    groups: models.Group.documents,
+    files: models.File.documents,
+    messages: models.Message.documents,
+    conversations: models.Conversation.documents,
+    participants: models.ConversationParticipant.documents,
+  });
 }
 
 test("Mongo demo repository is idempotent and preserves records outside the demo namespace", async () => {
@@ -98,4 +142,40 @@ test("Mongo demo repository rejects identities outside .test before writing", as
     Object.values(models).every((model) => model.operations.length === 0),
     true,
   );
+});
+
+test("K4 demo seed preserves declared timestamps and canonical content across repeated fresh writes", async () => {
+  const models = createTimestampMaterializingModels();
+  const freshModels = createTimestampMaterializingModels();
+  const dataset = buildDemoDataset({ passwordHash: "k4-fixture-password-hash" });
+  const repository = createMongoDemoRepository(models);
+  const freshRepository = createMongoDemoRepository(freshModels);
+
+  await repository.apply(dataset);
+  const firstProjection = canonicalProjection(models);
+  await repository.apply(dataset);
+  const secondProjection = canonicalProjection(models);
+  await freshRepository.apply(dataset);
+  const freshProjection = canonicalProjection(freshModels);
+
+  assert.equal(canonicalDatasetFingerprint(firstProjection), canonicalDatasetFingerprint(datasetContent()));
+  assert.equal(canonicalDatasetFingerprint(secondProjection), canonicalDatasetFingerprint(firstProjection));
+  assert.equal(canonicalDatasetFingerprint(freshProjection), canonicalDatasetFingerprint(firstProjection));
+  const expectedByModel = {
+    User: dataset.users,
+    Group: dataset.groups,
+    File: dataset.files,
+    Message: dataset.messages,
+    Conversation: dataset.conversations,
+    ConversationParticipant: dataset.participants,
+  };
+  for (const [name, model] of Object.entries(models)) {
+    const expected = expectedByModel[name];
+    assert.deepEqual(
+      model.documents.map(({ createdAt, updatedAt }) => ({ createdAt, updatedAt })),
+      expected.map(({ createdAt, updatedAt }) => ({ createdAt, updatedAt })),
+      `${name} persisted timestamps must equal the declared fixture`,
+    );
+    assert.equal(model.operations.every((operation) => operation.updateOne.timestamps === false), true);
+  }
 });
