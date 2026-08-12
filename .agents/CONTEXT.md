@@ -168,5 +168,21 @@ _Avoid_: Blocked by infrastructure, missing CD, incomplete K2.
 Năng lực release đầy đủ gồm production deployment, rollback automation, progressive delivery, environment promotion và release orchestration.
 _Avoid_: đưa Full Continuous Delivery vào phạm vi K2.
 
+**K4 Performance Evidence Run**:
+Một benchmark run có dataset K4-owned sạch, workload `scenario:version` đã resolve, topology riêng và raw artifacts có inventory. Chỉ measurement phase mới tạo số liệu được publish.
+_Avoid_: coi warm-up, dirty volume từ run trước hoặc một load test ad-hoc là performance evidence.
+
+**K4 Workload Plane**:
+Traffic business được đo từ containerized test runner qua nginx internal DNS đến backend; không gọi backend trực tiếp hoặc thêm Socket.IO routing/affinity chỉ cho benchmark.
+_Avoid_: dùng observation access để tạo measured workload.
+
+**K4 Observation Plane**:
+Đường thu thập metrics, replica attribution và resource evidence trực tiếp từ các container K4-owned; nó không tạo workload và không cấp Docker-management privilege cho test runner.
+_Avoid_: suy diễn SUT CPU từ tổng CPU host hoặc runner.
+
+**K4 Qualification Flag**:
+Một điều kiện không độc quyền giới hạn claim của completed measured run: `TARGET_NOT_REACHED`, `TOPOLOGY_NOT_EXERCISED`, `OBSERVATION_INCOMPLETE` hoặc `LOAD_GENERATOR_LIMITED`.
+_Avoid_: dùng một overall pass/fail status để che latency evidence hợp lệ hoặc claim bị cấm.
+
 
 
