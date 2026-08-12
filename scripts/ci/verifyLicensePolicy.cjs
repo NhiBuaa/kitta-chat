@@ -84,7 +84,9 @@ function reconcile(surface, policy, report) {
       errors.push(`expression drift: ${entry.package} expected ${entry.expression} but scanner reported ${scannerEntry.expression}`);
     } else if (!scannerEntry) {
       const sameName = scannerEntries.find((candidate) => packageParts(candidate.package).name === packageParts(entry.package).name);
-      if (!sameName) errors.push(`missing policy finding: ${entry.package} — ${entry.expression}`);
+      if (!sameName && entry.platformArtifact !== true) {
+        errors.push(`missing policy finding: ${entry.package} — ${entry.expression}`);
+      }
     }
   }
   const spark = expected.find((entry) => entry.package === 'spark-md5@3.0.2');

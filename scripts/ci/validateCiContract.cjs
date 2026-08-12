@@ -70,9 +70,11 @@ const LICENSE_CHECK_COMMAND =
   "node -e \"const p=require('path'),f=require('fs'),c=require('child_process'),r=f.existsSync('docs/security/issue-61-license-policy.json')?'.':'..',s=r==='.'?'root':p.basename(process.cwd());process.exit(c.spawnSync(process.execPath,[p.join(r,'scripts/ci/verifyLicensePolicy.cjs'),'--surface',s],{stdio:'inherit'}).status||0)\"";
 const LICENSE_CHECKER_VERSION = '4.4.2';
 const GITLEAKS_COMMAND =
-  'docker run --rm -v "$PWD:/repo:ro" -v "$PWD:/out" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --redact=100 --report-format sarif --report-path /out/gitleaks-results.sarif --exit-code 1 --no-banner --no-color --log-level warn';
+  'docker run --rm -v "$PWD:/repo:ro" -v "$PWD:/out" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --redact=100 --report-format sarif --report-path /out/gitleaks-results.sarif --exit-code 0 --no-banner --no-color --log-level warn';
 const SANITIZE_SARIF_COMMAND =
   'node scripts/ci/sanitizeGitleaksSarif.cjs gitleaks-results.sarif gitleaks-results-sanitized.sarif';
+const GITLEAKS_BASELINE_COMMAND =
+  'node scripts/ci/verifySecurityBaseline.cjs --baseline docs/security/issue-61-security-check-baseline.json --kind gitleaks --report gitleaks-results-sanitized.sarif';
 const SARIF_UPLOAD_CONDITION =
   "${{ always() && steps.sanitize.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}";
 const CODEQL_UPLOAD_CONDITION =
@@ -477,6 +479,9 @@ function matchesSecretScanContract(job) {
       step?.if === '${{ always() }}' &&
       step?.run?.trim() === SANITIZE_SARIF_COMMAND,
   );
+  const baselineIndex = steps.findIndex(
+    (step) => step?.run?.trim() === GITLEAKS_BASELINE_COMMAND,
+  );
   const uploadIndex = steps.findIndex(
     (step) =>
       step?.if === SARIF_UPLOAD_CONDITION &&
@@ -494,7 +499,8 @@ function matchesSecretScanContract(job) {
     checkoutIndex < setupIndex &&
     setupIndex < scanIndex &&
     scanIndex < sanitizeIndex &&
-    sanitizeIndex < uploadIndex &&
+    sanitizeIndex < baselineIndex &&
+    baselineIndex < uploadIndex &&
     !steps.some((step) => step?.uses === './.github/actions/setup-node-env') &&
     !collectRunCommands(job).some((command) => command.trim() === 'npm ci')
   );
@@ -1001,7 +1007,7 @@ function validateRepository(repositoryRoot, options = {}) {
         },
       ].every((contract) =>
         matchesJobContract(workflow?.jobs?.[contract.id], {
-          command: 'npm audit --audit-level=high',
+          command: `node ${contract.workingDirectory === '.' ? 'scripts' : '../scripts'}/ci/verifySecurityBaseline.cjs --baseline ${contract.workingDirectory === '.' ? 'docs' : '../docs'}/security/issue-61-security-check-baseline.json --kind audit --surface ${contract.id.replace('-audit', '')}`,
           lockfile: contract.lockfile,
           name: contract.name,
           workingDirectory: contract.workingDirectory,

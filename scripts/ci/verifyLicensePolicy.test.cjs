@@ -104,6 +104,22 @@ test('fails when a policy row is missing from fresh scanner output', () => {
   assert.match(result.stderr, /missing policy finding: missing-package@1\.0\.0 — BlueOak-1\.0\.0/i);
 });
 
+test('allows a platform-artifact policy row to be absent from the current scanner platform', () => {
+  const result = runVerifier(
+    createPolicy([
+      {
+        package: 'lightningcss-linux-x64-gnu@1.30.2',
+        expression: 'MPL-2.0',
+        disposition: 'ACCEPT',
+        platformArtifact: true,
+      },
+    ]),
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('fails when a package version drifts from the policy row', () => {
   const result = runVerifier(
     createPolicy([
