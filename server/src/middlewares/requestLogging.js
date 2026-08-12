@@ -12,6 +12,11 @@ const getUserId = (req) => {
 
 const defaultRequestIdGenerator = () => crypto.randomUUID();
 
+const redactResetTokenPath = (path) => path.replace(
+  /^(\/api\/auth\/reset-password\/[^/]+)\/[^/?#]+$/,
+  "$1/[REDACTED]",
+);
+
 const createRequestLoggingMiddleware = ({
   logger = defaultLogger,
   requestIdGenerator = defaultRequestIdGenerator,
@@ -22,7 +27,7 @@ const createRequestLoggingMiddleware = ({
       requestIdGenerator,
     );
     const startTime = process.hrtime.bigint();
-    const requestPath = (req.originalUrl || req.url).split("?", 1)[0];
+    const requestPath = redactResetTokenPath((req.originalUrl || req.url).split("?", 1)[0]);
 
     req.requestId = requestId;
     res.setHeader("x-request-id", requestId);

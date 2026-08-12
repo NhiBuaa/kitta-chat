@@ -112,7 +112,7 @@ const createApp = ({
     return sendError(res, {
       status: 404,
       code: "ROUTE_NOT_FOUND",
-      message: `Route ${req.method} ${req.originalUrl} not found`,
+      message: "Route not found",
     });
   });
 
@@ -120,7 +120,9 @@ const createApp = ({
     logSafely(logger, "error", "http_request_error", {
       requestId: req.requestId,
       method: req.method,
-      path: (req.originalUrl || req.url).split("?", 1)[0],
+      path: (req.originalUrl || req.url)
+        .split("?", 1)[0]
+        .replace(/^(\/api\/auth\/reset-password\/[^/]+)\/[^/?#]+$/, "$1/[REDACTED]"),
       userId: req.user?.id || req.user?._id,
       reason: err.message,
     });

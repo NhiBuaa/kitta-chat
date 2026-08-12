@@ -46,7 +46,7 @@ const createAuthRouter = () => {
   router.post("/refresh", refreshStageALimiter, refresh);
   router.post("/logout", logout);
   router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
-  router.post("/reset-password/:id/:token", resetPasswordLimiter, resetPassword);
+  router.post("/reset-password/:id", resetPasswordLimiter, resetPassword);
 
   return router;
 };

@@ -419,7 +419,7 @@ exports.forgotPassword = async (req, res) => {
     });
 
     // Tạo nội dung Email
-    const resetUrl = `${process.env.URL_FRONTEND}/reset-password/${user._id}/${resetToken}`;
+    const resetUrl = `${process.env.URL_FRONTEND}/reset-password/${user._id}#${resetToken}`;
 
     // Queue email để worker gửi qua RabbitMQ.
     const emailQueueResult = await queuePasswordResetEmail({
@@ -452,9 +452,8 @@ exports.forgotPassword = async (req, res) => {
 // resetPass------------------------------------------------
 exports.resetPassword = async (req, res) => {
   try {
-    // Lấy token từ URL
-    const { id, token } = req.params;
-    const { newPassword, confirmPassword } = req.body;
+    const { id } = req.params;
+    const { token, newPassword, confirmPassword } = req.body;
 
     // check empty
     if (!newPassword || !confirmPassword) {

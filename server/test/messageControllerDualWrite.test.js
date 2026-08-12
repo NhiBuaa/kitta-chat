@@ -97,6 +97,7 @@ const loadMessageController = ({
 test("REST createMessage dual-writes after confirmed legacy save when enabled", async () => {
   const { controller, calls } = loadMessageController({ dualWriteEnabled: true });
   const req = {
+    user: { id: "111111111111111111111111" },
     body: {
       sender: "111111111111111111111111",
       receiver: "222222222222222222222222",
@@ -121,6 +122,7 @@ test("REST createMessage skips dual-write when flag is disabled", async () => {
   const res = createResponse();
 
   await controller.createMessage({
+    user: { id: "111111111111111111111111" },
     body: {
       sender: "111111111111111111111111",
       receiver: "222222222222222222222222",
@@ -140,6 +142,7 @@ test("REST createMessage swallows read-model failure and keeps legacy response",
   const res = createResponse();
 
   await controller.createMessage({
+    user: { id: "111111111111111111111111" },
     body: {
       sender: "111111111111111111111111",
       receiver: "222222222222222222222222",
@@ -177,6 +180,7 @@ test("createMessage returns a fixed safe error response when persistence fails",
   const res = createResponse();
 
   await controller.createMessage({
+    user: { id: "sender" },
     body: { sender: "sender", receiver: "receiver", text: "hello" },
   }, res);
 
@@ -197,6 +201,7 @@ test("getMessages returns a fixed safe error response when querying fails", asyn
   const res = createResponse();
 
   await controller.getMessages({
+    user: { id: "sender" },
     params: { userId1: "sender", userId2: "receiver" },
     query: {},
   }, res);

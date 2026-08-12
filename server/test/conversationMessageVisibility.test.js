@@ -46,6 +46,9 @@ function loadController({ participant = null, findCalls = [], participants = [],
     },
   });
   mockModule(groupPath, {
+    findOne(query) {
+      return { lean: async () => groups.some((group) => String(group._id) === String(query._id)) ? { _id: query._id } : null };
+    },
     find() {
       return {
         select: async () => groups,
@@ -182,6 +185,7 @@ test("getMessages applies leftAt visibility filter for group conversation", asyn
   const findCalls = [];
   const controller = loadController({
     findCalls,
+    groups: [{ _id: "group-1" }],
     participant: {
       legacyConversationId: "group-1",
       userId: "user-a",

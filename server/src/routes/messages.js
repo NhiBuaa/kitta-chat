@@ -7,8 +7,8 @@ const messageSyncLimiter = createHttpRateLimitMiddleware({
   policyIds: ["read_expensive.aggregate", "read_expensive.message_sync"],
 });
 
-router.post("/", messageController.createMessage);
-router.get("/:userId1/:userId2", messageController.getMessages);
+router.post("/", authMiddleware, messageController.createMessage);
+router.get("/:userId1/:userId2", authMiddleware, messageController.getMessages);
 // Sync missed messages (auth required)
 router.get("/sync", authMiddleware, messageSyncLimiter, messageController.syncMissedMessages);
 
