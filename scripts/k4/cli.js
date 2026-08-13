@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { attestRuntimeTopology, buildImageSet, compareEffectiveTopologySnapshots, createRunPlan, createResultDirectory, cleanup, cleanupPreview, currentEffectiveTopologySnapshot, docker, imageSetEnvironment, runnerDiagnosticArgs, startArgs, validateCleanupTarget } = require("./lifecycle");
 const { K4_DATASET_DECLARATION, assertFreshRunTargets, classifySetupFailure, scanRetainedEvidenceDirectory, setupPreflightCommands, verifyDatasetContract } = require("./preflight");
+const { approvedWorkloadProfile, resolveWorkloadProfile } = require("./workloadProfiles");
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -13,8 +14,24 @@ function print(value) {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
 
-function planFromArguments() {
-  return createRunPlan({ runId: argument("--run-id"), profile: argument("--profile") });
+function rejectWorkloadChannels(action) {
+  const forbidden = ["--workload-json", "--workload", "--workload-config"];
+  if (forbidden.some((flag) => process.argv.includes(flag)) || process.env.K4_WORKLOAD_JSON || process.env.K4_WORKLOAD_CONFIG) {
+    throw new Error(`${action} accepts approved scenario:version profiles and operational metadata only; raw workload channels are forbidden`);
+  }
+}
+
+function planFromArguments({ inspection = false } = {}) {
+  const plan = createRunPlan({ runId: argument("--run-id"), profile: argument("--profile") });
+  const scenario = argument("--scenario");
+  if (!scenario) return plan;
+  if (inspection && argument("--workload-json")) {
+    const profile = JSON.parse(argument("--workload-json"));
+    const resolved = resolveWorkloadProfile({ ...profile, scenario });
+    return { ...plan, workload: { ...resolved, bytes: undefined }, topology: { profile: plan.profile, backendReplicaCount: plan.backendReplicaCount, backendUpstreamMembership: plan.backendUpstreamMembership } };
+  }
+  const resolved = approvedWorkloadProfile(scenario, Number(argument("--workload-version") || 1), { label: argument("--label"), notes: argument("--notes"), owner: argument("--owner") });
+  return { ...plan, workload: { ...resolved, bytes: undefined }, topology: { profile: plan.profile, backendReplicaCount: plan.backendReplicaCount, backendUpstreamMembership: plan.backendUpstreamMembership } };
 }
 
 function resolveBenchmarkPassword(environment = process.env, randomBytes = crypto.randomBytes) {
@@ -63,7 +80,7 @@ function runSetupPreflight({
 
 function main() {
   const action = process.argv[2];
-  if (action === "resolve") return print(planFromArguments());
+  if (action === "resolve") return print(planFromArguments({ inspection: true }));
   if (action === "compare") {
     const leftRunId = argument("--left-run-id");
     const rightRunId = argument("--right-run-id");
@@ -76,6 +93,7 @@ function main() {
     return print(compareEffectiveTopologySnapshots(left, right));
   }
   if (action === "diagnose-runner") {
+    rejectWorkloadChannels(action);
     const plan = planFromArguments();
     return process.stdout.write(docker(runnerDiagnosticArgs(plan), {
       env: { ...process.env, K4_PROJECT_NAME: plan.projectName, K4_RUN_ID: plan.runId, K4_RESULT_DIR: plan.resultDirectory },
@@ -83,6 +101,7 @@ function main() {
   }
   if (action === "build-image-set") return print({ action, imageSet: buildImageSet(argument("--image-set-id")) });
   if (action === "start") {
+    rejectWorkloadChannels(action);
     const plan = planFromArguments();
     const imageSet = imageSetEnvironment(argument("--image-set-id"));
     const benchmarkPassword = resolveBenchmarkPassword();
@@ -102,6 +121,7 @@ function main() {
     return print({ action, plan });
   }
   if (action === "setup-preflight") {
+    rejectWorkloadChannels(action);
     const plan = planFromArguments();
     const imageSet = imageSetEnvironment(argument("--image-set-id"));
     const benchmarkPassword = resolveBenchmarkPassword();
