@@ -8,13 +8,14 @@
 - Local `main` and `github/main` were previously synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98`; K4 Issue #81 was published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
 - No deployment or destructive K3.1 reset was performed.
 - K4 Reproducible Performance Evidence is active under locked specification Issue #80 and ADR-015.
-- Issues #81–#89 are published. Issues #81 and #82 are closed with accepted final reviews. Issue #83 is the next K4 frontier because its sole blocker, #82, is closed; #84–#89 remain blocked until their real dependencies complete.
+- Issues #81–#89 are published. Issues #81–#83 are closed with accepted final reviews. Issue #84 is the next K4 frontier because its sole blocker, #83, is closed; #85–#89 remain blocked until their real dependencies complete.
 - K4 is leader-coordinated: the leader does not implement issues. Guide revisions `k4-issue-81-r1` through `k4-issue-81-r3` remain immutable; `k4-issue-81-r4` is locked and approved. Issue #81 implementation and mandatory acceptance TC-81-01 through TC-81-04 are complete and accepted; TC-81-05 was not run because it remains conditional.
 - Issue #81 final remediation fixed point has append-only Evaluation `tc81digest-v1`; mandatory TC-81-01 through TC-81-04 pass, TC-81-05 remains conditional/non-blocking.
 - Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 is closed.
 - Issue #82 manual-acceptance guide `k4-issue-82-r4` is locked and human-approved; r1 through r3 remain immutable. The deterministic-seed timestamp and disposable credential remediations are implemented: fresh K4 setup/preflight verifies the declared and observed canonical fingerprint as equal, admits warm-up, completes nginx login and Socket.IO authentication, and scans the complete retained-evidence inventory clear. Two independently verified fresh runs produced the same canonical fingerprint and the acceptance-only oracle returned `EQUIVALENT`; all disposable runs were cleaned to empty target inventories.
 - TC-82-03 is complete: nginx-mediated public-login failure returns `FAILED_SETUP` at `login`, with owner marker only and no admission/measurement; cleanup inventory is empty. Internal `migrate:k4` and `seed:demo` non-zero command propagation is proven through the actual generic CLI command-execution path without a production-configurable failure injection. TC-82-05 runtime evidence proves prior-run, foreign-K4, and non-K4 resources were neither adopted nor mutated. Append-only Evaluation `tc82r4-acceptance-20260812` is `PASSED` with explicit human approval.
 - Issue #82 final review is `APPROVE` with zero Critical and zero Major findings, against repository standards, Issue #82, locked r4, and ADR-015. K4 regression is 47/47 and related server regression is 21/21. It was delivered by PR #92, merge commit `af9daaacd1ec6c347f0c7fef74603c908e652608`, and GitHub Issue #82 is closed.
+- Issue #83 delivered approved immutable `scenario:version` workload profiles for `sidebar`, `message`, and `socket-concurrency`; exact-byte SHA-256 profile evidence; an operational CLI boundary that rejects raw workload channels; and injectable phase orchestration with ownership-safe teardown and independent artifact, execution, qualification, and teardown evidence. Locked guide `k4-issue-83-r3` and its append-only Evaluation history record final PASSED acceptance. Deterministic closure review resolved all seven Major findings with zero Critical/Major remaining; targeted Issue #83 tests passed 14/14 and `npm run test:ci` passed 122/122. It was delivered by PR #95, merge commit `ce1adcd091fb00814e03c0021ab801a67621c168`, and GitHub Issue #83 is closed.
 
 ## Delivered Outcome
 
@@ -43,6 +44,9 @@
 - K4 Issue #82 acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-82-dataset-actors-preflight-r4.md` (locked and approved; r1 through r3 remain immutable)
 - K4 Issue #82 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-82-dataset-actors-preflight-r4.evaluations.jsonl` (PASSED run `tc82r4-acceptance-20260812`)
 - K4 Issue #82 publication: PR #92, merge commit `af9daaacd1ec6c347f0c7fef74603c908e652608`
+- K4 Issue #83 acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-83-workload-profiles-runner-r3.md` (locked and approved)
+- K4 Issue #83 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-83-workload-profiles-runner-r3.evaluations.jsonl` (latest PASSED run `tc83r3-runner-closure-20260812`)
+- K4 Issue #83 publication: PR #95, merge commit `ce1adcd091fb00814e03c0021ab801a67621c168`
 
 ## Publication History
 
