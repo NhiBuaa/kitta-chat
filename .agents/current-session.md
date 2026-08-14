@@ -91,7 +91,8 @@ own worktrees. This worktree is reserved for Issue #87 only on branch `codex/k4-
 - K3.1 implementations: PR #74 for Issue #70, PR #75 for Issue #71, and PR #76 for Issue #72.
 - K3.1 closure-ledger synchronization: PR #77, merge commit `0cb0dc2a`.
 - Issue #87 acceptance fixed point: `tc87-r2-acceptance-20260814` is `PASSED`; branch reconciliation
-  merge `e69932c` is green; final review and publication remain pending.
+  merge `e69932c` is green; fixed-point review is `APPROVE` with zero Critical/Major findings on
+  both Standards and Spec axes; PR publication remains pending.
 
 ## Guardrails
 

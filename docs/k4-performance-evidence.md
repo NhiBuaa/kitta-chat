@@ -9,8 +9,9 @@ create workload or grant Docker-management access to the runner.
 
 Issue #87 is accepted on branch `codex/k4-issue87`. The locked manual guide is `k4-issue-87-r2`.
 The append-only Evaluation history ends with `tc87-r2-acceptance-20260814` and records
-`PASSED` with explicit human approval. Final code review and integration remain separate workflow
-transitions, so the GitHub Issue remains `OPEN` until those transitions complete.
+`PASSED` with explicit human approval. The fixed-point review over base `dcdd64d` and head
+`f2f9a10` is `APPROVE` on both Standards and Spec axes with zero Critical/Major findings;
+publication through a PR remains the final integration transition.
 
 ### Delivered evidence boundary
 

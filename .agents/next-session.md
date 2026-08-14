@@ -78,8 +78,8 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 
 1. Preserve accepted Issue #81–#85 and #87 implementations, immutable guide revisions, and
    append-only Evaluation histories. These slices have no additional implementation scope.
-2. Issue #87 is acceptance-complete. The next transition is final code review when explicitly
-   requested; do not integrate the branch before that review.
+2. Issue #87 is acceptance-complete and fixed-point reviewed APPROVE. The next transition is PR
+   publication and final integration; keep the current accepted artifacts immutable.
 3. Issues #86 and #88 remain separate K4 frontiers in their own worktrees. Do not start them
    from this Issue #87 worktree.
 
@@ -90,7 +90,8 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 - `docs/k4-performance-evidence.md` is the repository delivery summary.
 - Issue #87 focused K4 136/136; combined post-reconcile K4 143/143, repository CI 132/132, and
   server 476 passed/5 skipped/0 failed remain the recorded verification results.
-- Final code review and integration are intentionally pending; no review verdict is recorded here.
+- Fixed-point review is `APPROVE` with zero Critical/Major findings on both Standards and Spec axes;
+  PR publication and final integration metadata remain pending.
 
 ## Issue #84 historical implementation checkpoint (superseded)
 
