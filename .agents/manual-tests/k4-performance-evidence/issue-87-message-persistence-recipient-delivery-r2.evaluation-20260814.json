@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "run_id": "tc87-execution-20260814-single-multi",
+  "observed_at": "2026-08-14T11:35:22+07:00",
+  "executor": "codex-leader",
+  "test_results": [
+    {
+      "id": "TC-87-01",
+      "outcome": "PASS",
+      "observation": "Fresh single- and multi-replica runs retained before/after success histograms with all bucket boundaries, counts, sums, source identities/digests, deltas, and histogram-derived labels; setup and warm-up were outside the measurement delta.",
+      "evidence": [
+        ".k4-results/issue87-single-20260814/measurement-observation-final.raw.json",
+        ".k4-results/issue87-single-20260814/measurement-observation.json",
+        ".k4-results/issue87-multi-20260814/measurement-observation-final.raw.json",
+        ".k4-results/issue87-multi-20260814/measurement-observation.json"
+      ]
+    },
+    {
+      "id": "TC-87-02",
+      "outcome": "PASS",
+      "observation": "Both real nginx-mediated message runs retained successful opportunities with sendMessage_emit_at immediately before emit, matched getMessage receivedAt, durationMs derived from those two timestamps, acknowledgement success/realId validity, idempotency correlation, sender/recipient identity, and legacy conversationId. Resource coverage was incomplete, so the separate end-to-end claim remained ineligible without discarding raw delivery evidence.",
+      "evidence": [
+        ".k4-results/issue87-single-20260814/measurement-runner.json",
+        ".k4-results/issue87-multi-20260814/measurement-runner.json",
+        ".k4-results/issue87-single-20260814/measurement-observation-final.raw.json",
+        ".k4-results/issue87-multi-20260814/measurement-observation-final.raw.json"
+      ]
+    },
+    {
+      "id": "TC-87-03",
+      "outcome": "BLOCKED",
+      "observation": "The locked guide requires a documented isolated fault fixture for acknowledgement failure/timeout, delivery timeout, and correlation mismatch. No such production/manual fixture is documented or exposed in this execution environment; no destructive or ad-hoc fault was injected.",
+      "evidence": [
+        ".agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md",
+        "No controlled fault-fixture artifact or command is available in the Issue #87 implementation scope"
+      ]
+    },
+    {
+      "id": "TC-87-04",
+      "outcome": "PASS",
+      "observation": "The multi-replica run retained measurement-window attribution and did not emit a cross-replica claim or run-level TOPOLOGY_NOT_EXERCISED without complete receiver proof; OBSERVATION_INCOMPLETE remained the affected qualification outcome. This distinguishes sample/run qualification from topology inventory.",
+      "evidence": [
+        ".k4-results/issue87-multi-20260814/measurement-observation-final.raw.json",
+        ".k4-results/issue87-multi-20260814/measurement-observation.json"
+      ]
+    },
+    {
+      "id": "TC-87-05",
+      "outcome": "PASS",
+      "observation": "The two run result directories retain runner output, raw observation sources, histogram snapshots/deltas, attribution sources, manifests, and qualification state. No new client-visible event or report/provenance schema was introduced; incomplete claims remained retained and classified.",
+      "evidence": [
+        ".k4-results/issue87-single-20260814",
+        ".k4-results/issue87-multi-20260814",
+        ".agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md"
+      ]
+    }
+  ],
+  "verdict": "BLOCKED",
+  "human_approval": "pending"
+}

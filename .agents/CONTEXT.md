@@ -184,5 +184,31 @@ _Avoid_: suy diễn SUT CPU từ tổng CPU host hoặc runner.
 Một điều kiện không độc quyền giới hạn claim của completed measured run: `TARGET_NOT_REACHED`, `TOPOLOGY_NOT_EXERCISED`, `OBSERVATION_INCOMPLETE` hoặc `LOAD_GENERATOR_LIMITED`.
 _Avoid_: dùng một overall pass/fail status để che latency evidence hợp lệ hoặc claim bị cấm.
 
+**K4 Message Persistence Evidence**:
+Evidence latency cho message persistence được derive từ delta của acknowledged-Mongo success
+histogram snapshots trước và sau measurement window; quantile derive từ histogram phải được gắn
+nhãn `histogram-derived`.
+_Avoid_: mô tả histogram-derived quantile như exact per-sample percentile hoặc dùng warm-up vào delta.
+
+**K4 Recipient-Delivery Evidence**:
+Một correlated end-to-end evidence record bắt đầu ngay trước `sendMessage` emit và kết thúc khi
+recipient nhận matched `getMessage`; duration dùng hai timestamp này trên cùng runner clock.
+Acknowledgement `{ success, realId }` chỉ là validity gate và không mở rộng public callback contract.
+_Avoid_: dùng acknowledgement timestamp làm latency endpoint hoặc thay `Message.conversationId` bằng
+internal `Conversation._id`.
+
+**K4 Delivery Qualification**:
+Sample-level delivery eligibility và cross-replica eligibility là hai kết quả riêng. Một sample
+cùng replica có thể hợp lệ cho end-to-end delivery nhưng không đủ điều kiện cross-replica; run-level
+`TOPOLOGY_NOT_EXERCISED` chỉ được đặt khi complete measurement observation chứng minh toàn bộ measured
+activity dùng đúng một replica.
+_Avoid_: gán run-level flag chỉ vì một correlation cùng replica hoặc chỉ dựa trên topology inventory.
+
+**K4 Measurement Fault Fixture**:
+Một runner-only, allowlisted, measurement-phase fault injection dùng để tạo failure evidence có
+kiểm soát cho K4 acceptance. Fixture không sửa workload snapshot, không đổi public runtime contract,
+và failure opportunity không trở thành latency sample.
+_Avoid_: dùng ad-hoc production fault, mở arbitrary workload mutation, hoặc bật fixture trong warm-up.
+
 
 

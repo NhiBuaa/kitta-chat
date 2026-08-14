@@ -1,0 +1,34 @@
+{
+  "dependencies_reachable": true,
+  "tickets": [
+    {
+      "reference": "https://github.com/NhiBuaa/kitta-chat/issues/87",
+      "implementation": {
+        "status": "completed",
+        "all_tests_green": true
+      },
+      "acceptance": {
+        "status": "completed",
+        "verdict": "PASSED",
+        "human_approval": "approved",
+        "run_id": "tc87-r2-acceptance-20260814",
+        "guide_revision": "k4-issue-87-r2"
+      },
+      "integration": {
+        "status": "pending"
+      }
+    }
+  ],
+  "integration": {
+    "default_branch": "main",
+    "feature_branch": "codex/k4-issue87",
+    "base_commit": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+    "initial_head": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+    "current_head": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+    "default_branch_unchanged": true,
+    "sequence": []
+  },
+  "review": {
+    "status": "pending"
+  }
+}

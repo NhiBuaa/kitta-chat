@@ -131,6 +131,18 @@ What I learned:
 
 ## Observability And Operations Lessons
 
+### K4 Performance Evidence Needs Claim Boundaries
+
+The accepted K4 Issue #87 slice keeps message persistence and recipient-delivery evidence
+reproducible without changing the public Socket.IO contract. Persistence evidence comes from
+histogram deltas. Recipient timing runs from just before `sendMessage` emit to matched recipient
+`getMessage` receipt, while `{ success, realId }` is only an acknowledgement validity gate.
+
+The important lesson is to separate raw evidence from claim eligibility. A failed correlation is
+retained as failure evidence, a same-replica sample is not a cross-replica sample, and incomplete
+observation coverage must not be presented as a publishable performance result. See
+`docs/k4-performance-evidence.md` and ADR-015.
+
 ### Health, Readiness, And Ops Are Different
 
 The project separates operational signals:
@@ -394,6 +406,8 @@ Safe to mention:
 - Added standardized core API error responses and app-level auth rate limiting.
 - Added GitHub Actions CI for backend tests and frontend build.
 - Documented REST APIs, RabbitMQ worker flows, Socket.IO scaling, and Docker Compose smoke verification.
+- Accepted a reproducible K4 message persistence and recipient-delivery evidence slice with explicit
+  claim boundaries and retained failure evidence.
 
 Avoid saying:
 

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-performance-evidence-evaluation-executed-20260814",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "87",
+  "transition": "evaluation_executed",
+  "skill": "manual-acceptance",
+  "execution_revision": "k4-issue-87-r2",
+  "started_at": "2026-08-14T11:32:00+07:00",
+  "finished_at": "2026-08-14T11:36:34+07:00",
+  "status": "blocked",
+  "retry_count": 0,
+  "input_digest": "sha256:7C228FC88849C0725B908466F8DDBFD334C62E657286880428BC56A8A28F254A",
+  "output_digest": "sha256:2B1813D2A1130DB732C0CDD9EA1222D3482BDF78FCB0523B232F9629C508C4A7",
+  "evidence_references": [
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl",
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.k4-results/issue87-single-20260814",
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.k4-results/issue87-multi-20260814",
+    "TC-87-03 blocked: no documented isolated fault fixture"
+  ]
+}

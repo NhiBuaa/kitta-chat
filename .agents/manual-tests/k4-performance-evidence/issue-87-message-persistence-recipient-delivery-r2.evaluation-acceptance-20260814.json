@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "run_id": "tc87-r2-acceptance-20260814",
+  "observed_at": "2026-08-14T12:15:00+07:00",
+  "executor": "codex-leader",
+  "test_results": [
+    {
+      "id": "TC-87-01",
+      "outcome": "PASS",
+      "observation": "Fresh Issue #87 message runs retained acknowledged-Mongo before/after success histograms, bucket/count/sum deltas, source identities and digests, and histogram-derived labels; setup and warm-up were outside the measurement delta.",
+      "evidence": [
+        ".k4-results/issue87-single-20260814/measurement-observation-final.raw.json",
+        ".k4-results/issue87-multi-20260814/measurement-observation-final.raw.json"
+      ]
+    },
+    {
+      "id": "TC-87-02",
+      "outcome": "PASS",
+      "observation": "Fresh nginx-mediated message runs retained sendMessage_emit_at immediately before emit, matched recipient getMessage receivedAt, duration derived from those endpoints, acknowledgement validity using only success/realId, and idempotency, sender, recipient, and legacy conversationId correlation; resource coverage kept the separate end-to-end claim ineligible without discarding raw delivery evidence.",
+      "evidence": [
+        ".k4-results/issue87-single-20260814/measurement-runner.json",
+        ".k4-results/issue87-multi-20260814/measurement-runner.json"
+      ]
+    },
+    {
+      "id": "TC-87-03",
+      "outcome": "PASS",
+      "observation": "Four allowlisted, isolated measurement-phase fixtures produced retained failure evidence: acknowledgement failure, acknowledgement timeout, recipient delivery timeout, and correlation mismatch. Every fixture run recorded 30 failed opportunities, zero successful correlationIds, zero deliveries, and a concrete failure reason; warm-up remained normal with ten successful opportunities.",
+      "evidence": [
+        "scripts/k4/runner/faultFixtures.js",
+        ".k4-results/issue87-fault-ackfail-20260814/measurement-runner.json",
+        ".k4-results/issue87-fault-acktimeout-20260814/measurement-runner.json",
+        ".k4-results/issue87-fault-deliverytimeout-20260814/measurement-runner.json",
+        ".k4-results/issue87-fault-correlation-20260814/measurement-runner.json",
+        "npm run k4 -- help"
+      ]
+    },
+    {
+      "id": "TC-87-04",
+      "outcome": "PASS",
+      "observation": "The fresh multi-replica run retained measurement-window attribution and kept cross-replica qualification separate from sample-level same-replica eligibility; incomplete receiver proof did not emit a cross-replica claim or run-level TOPOLOGY_NOT_EXERCISED.",
+      "evidence": [
+        ".k4-results/issue87-multi-20260814/measurement-observation-final.raw.json",
+        ".k4-results/issue87-multi-20260814/measurement-observation.json"
+      ]
+    },
+    {
+      "id": "TC-87-05",
+      "outcome": "PASS",
+      "observation": "Successful and faulted runs retained runner output, raw observation sources, histogram snapshots/deltas, attribution sources, and qualification state without adding a report/provenance schema or changing public REST/Socket.IO contracts.",
+      "evidence": [
+        ".k4-results/issue87-single-20260814",
+        ".k4-results/issue87-multi-20260814",
+        ".k4-results/issue87-fault-ackfail-20260814",
+        ".k4-results/issue87-fault-acktimeout-20260814",
+        ".k4-results/issue87-fault-deliverytimeout-20260814",
+        ".k4-results/issue87-fault-correlation-20260814"
+      ]
+    }
+  ],
+  "verdict": "PASSED",
+  "human_approval": "approved",
+  "notes": "Explicit human approval received in the continuation request. This append-only acceptance record supersedes neither prior record; no code review was executed in this transition per user instruction.",
+  "image_set_id": "k4issue87r3"
+}
