@@ -276,6 +276,8 @@ The badges in the Hero read directly from their workflows; no passing state or t
 - [K3/K3.1 Observability](docs/observability/README.md) — metrics, dashboard, alerts, operator validation, local demo and accepted browser evidence.
 - [ADR-012: K3 Observability Metrics Boundary](docs/adr/012-k3-observability-metrics-boundary.md) — application metrics ownership, labels and failure semantics.
 - [ADR-013: K3.1 Local Observability Demo Seam](docs/adr/013-k3-1-local-observability-demo-seam.md) — isolated Prometheus/Grafana operation and evidence boundaries.
+- [ADR-015: K4 Performance Evidence Boundary](docs/adr/015-k4-performance-evidence-boundary.md) — isolated benchmark workload/observation planes, exact provenance, bounded claims and comparison contracts.
+- [Issue #85 Delivery Package](docs/reviews/issue-85-delivery-package.md) — accepted provenance/report validation slice and verification evidence; final feature review remains deferred until K4 is complete.
 - [REST API Reference](docs/API.md) — authentication, request contracts and endpoint examples.
 - [Socket.IO Multi-Replica Scaling](docs/SOCKET_IO_SCALING.md) — rooms, Redis Adapter fan-out, reconnect behavior and operational proof.
 - [RabbitMQ Worker Flows](docs/RABBITMQ_WORKER_FLOWS.md) — queue topology, retry, DLQ, poison-message and correlation behavior.

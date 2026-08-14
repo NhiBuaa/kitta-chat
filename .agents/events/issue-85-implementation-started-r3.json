@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-issue-85-implementation-started-r3",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "issue-85",
+  "transition": "implementation_completed",
+  "skill": "implement",
+  "execution_revision": "k4-issue-85-r3",
+  "started_at": "2026-08-14T04:40:00Z",
+  "finished_at": null,
+  "status": "started",
+  "retry_count": 0,
+  "input_digest": "44b97b50a77f080dc37c3e5f740238c1da3a383147b6ada838145b225cb5fe13",
+  "output_digest": "b5b12609b51a31fb24aa06f4bfb14fb56fc26acc9d5b4df4e376578a44375dce",
+  "evidence_references": [
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md",
+    "https://github.com/NhiBuaa/kitta-chat/issues/80",
+    "https://github.com/NhiBuaa/kitta-chat/issues/85",
+    "docs/adr/015-k4-performance-evidence-boundary.md"
+  ]
+}

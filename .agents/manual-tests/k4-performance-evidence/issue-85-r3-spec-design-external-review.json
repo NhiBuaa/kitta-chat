@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "review_id": "k4-issue-85-r3-spec-design-external-review",
+  "surface": "spec_design",
+  "ticket_id": "issue-85",
+  "guide_revision": "k4-issue-85-r3",
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "reviewer": "/root/issue85_r3_spec_review",
+  "reviewed_artifacts": [
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r2.md",
+    "https://github.com/NhiBuaa/kitta-chat/issues/80",
+    "https://github.com/NhiBuaa/kitta-chat/issues/85",
+    "docs/adr/015-k4-performance-evidence-boundary.md"
+  ],
+  "guide_sha256": "2a3fb4a1e632d66ba19ddaf08f9974440f5b32ef49519d331ad91251cf5b17e4"
+}

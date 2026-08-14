@@ -1,5 +1,26 @@
 # K3/K3.1 Completion and K4 Active Checkpoint
 
+## K4 Current Frontier Override
+
+Issue #84 is closed after the accepted K4 measurement-observation delivery. Issue #85 is
+implemented and manually accepted. Issues #86–#88 continue independently in their own
+worktrees; this session does not select or execute a next frontier.
+This worktree is reserved for Issue #85 only on branch `codex/k4-issue85`.
+
+Issue #85 implementation and manual acceptance are complete. Guide `k4-issue-85-r3` is locked and human-approved
+at `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`;
+r1 and r2 remain immutable. Review cadence is recorded at
+`.agents/manual-tests/k4-performance-evidence/issue-85-review-cadence.json`;
+external review evidence is tracked in
+`.agents/manual-tests/k4-performance-evidence/issue-85-review-cadence-evidence-r3.json`;
+all three required high-tier external reviews for r3 are `APPROVE` with zero Critical/Major/Minor
+findings; human approval of the guide is recorded. The delegated implementation is complete with
+focused K4 tests 12/12 and `npm run test:ci` 132/132. Manual Evaluation history
+`.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.evaluations.jsonl`
+now contains explicit approval run `tc85r3-human-approved-20260814` with verdict `PASSED`.
+Per user direction, no code review is run for this issue; the final feature review is deferred
+until the complete K4 feature reaches its fixed point.
+
 ## Status
 
 - K3 Observability is complete. Issue #44 and implementation Issues #45–#52 are closed.
@@ -8,7 +29,7 @@
 - Local `main` and `github/main` were previously synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98`; K4 Issue #81 was published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
 - No deployment or destructive K3.1 reset was performed.
 - K4 Reproducible Performance Evidence is active under locked specification Issue #80 and ADR-015.
-- Issues #81–#89 are published. Issues #81–#83 are closed with accepted final reviews. Issue #84 is the next K4 frontier because its sole blocker, #83, is closed; #85–#89 remain blocked until their real dependencies complete.
+- Issues #81–#85 have completed their approved implementation and acceptance transitions. Issue #85 is manually accepted. The remaining K4 issues continue independently outside this session.
 - K4 is leader-coordinated: the leader does not implement issues. Guide revisions `k4-issue-81-r1` through `k4-issue-81-r3` remain immutable; `k4-issue-81-r4` is locked and approved. Issue #81 implementation and mandatory acceptance TC-81-01 through TC-81-04 are complete and accepted; TC-81-05 was not run because it remains conditional.
 - Issue #81 final remediation fixed point has append-only Evaluation `tc81digest-v1`; mandatory TC-81-01 through TC-81-04 pass, TC-81-05 remains conditional/non-blocking.
 - Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 is closed.
@@ -39,6 +60,9 @@
 - K4 locked specification: https://github.com/NhiBuaa/kitta-chat/issues/80
 - K4 issue graph: https://github.com/NhiBuaa/kitta-chat/issues/81 through https://github.com/NhiBuaa/kitta-chat/issues/89
 - K4 architecture authority: `docs/adr/015-k4-performance-evidence-boundary.md`
+- Issue #85 delivery package: `docs/reviews/issue-85-delivery-package.md`
+- Issue #85 acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md` (locked; r1 and r2 remain immutable)
+- Issue #85 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.evaluations.jsonl` (latest PASSED run `tc85r3-human-approved-20260814`)
 - K4 current acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.md` (locked; r1 through r3 remain immutable)
 - K4 Issue #81 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.evaluations.jsonl` (latest PASSED run `tc81digest-v1`)
 - K4 Issue #82 acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-82-dataset-actors-preflight-r4.md` (locked and approved; r1 through r3 remain immutable)
@@ -64,3 +88,4 @@
 - K4 benchmark work is a separate approved milestone, not an expansion of K3/K3.1. K4 resources must remain K4-owned and must never share target resources with Issue #61.
 - K4 semantics are locked by Issue #80 and ADR-015. Any ambiguity affecting benchmark meaning returns to those authorities before implementation.
 - Do not implement an issue from the leader session. After manual-acceptance approval, delegate the issue to an execution agent.
+- Do not run a per-issue code review for K4. Perform one high-cadence final feature review after the complete K4 feature reaches its fixed point.
