@@ -5,6 +5,7 @@ const { attestRuntimeTopology, buildImageSet, compareEffectiveTopologySnapshots,
 const { K4_DATASET_DECLARATION, assertFreshRunTargets, classifySetupFailure, scanRetainedEvidenceDirectory, setupPreflightCommands, verifyDatasetContract } = require("./preflight");
 const { approvedWorkloadProfile, resolveWorkloadProfile } = require("./workloadProfiles");
 const { runProductionPlan } = require("./productionRun");
+const { ALLOWED_FAULT_FIXTURES, normalizeFaultFixture } = require("./runner/faultFixtures");
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -13,6 +14,14 @@ function argument(name) {
 
 function print(value) {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+}
+
+function printHelp() {
+  return print({
+    usage: "npm run k4 -- execute --run-id <id> --profile <profile> --scenario message --workload-version 2 [--fault-fixture <fixture>]",
+    faultFixtures: ALLOWED_FAULT_FIXTURES,
+    note: "Fault fixtures are runner-only, measurement-phase options and are disabled unless explicitly selected.",
+  });
 }
 
 function rejectWorkloadChannels(action) {
@@ -81,6 +90,7 @@ function runSetupPreflight({
 
 async function main({ executeProduction } = {}) {
   const action = process.argv[2];
+  if (action === "help" || process.argv.includes("--help") || process.argv.includes("-h")) return printHelp();
   if (action === "resolve") return print(planFromArguments({ inspection: true }));
   if (action === "compare") {
     const leftRunId = argument("--left-run-id");
@@ -105,8 +115,10 @@ async function main({ executeProduction } = {}) {
     rejectWorkloadChannels(action);
     const plan = planFromArguments();
     if (!plan.workload?.scenario) throw new Error("execute requires an approved --scenario and --workload-version");
+    const faultFixture = normalizeFaultFixture(argument("--fault-fixture"));
+    if (faultFixture && plan.workload.scenario !== "message") throw new Error("K4 fault fixtures require the message scenario");
     if (typeof executeProduction !== "function") throw new Error("production phase adapters must be supplied by the K4 runtime composition root");
-    return print(await executeProduction({ plan, intervalMs: Number(argument("--observation-interval-ms") || 1000) }));
+    return print(await executeProduction({ plan, intervalMs: Number(argument("--observation-interval-ms") || 1000), faultFixture }));
   }
   if (action === "start") {
     rejectWorkloadChannels(action);
@@ -156,7 +168,7 @@ async function main({ executeProduction } = {}) {
     return print(validateCleanupTarget(argument("--class"), target, argument("--run-id")));
   }
   if (action === "cleanup") return print(cleanup(argument("--run-id"), argument("--confirm-digest")));
-  throw new Error("usage: k4 <resolve|compare|diagnose-runner|build-image-set|execute|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
+  throw new Error("usage: k4 <help|resolve|compare|diagnose-runner|build-image-set|execute|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
 }
 
 if (require.main === module) {

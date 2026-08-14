@@ -6,6 +6,7 @@ const { createObserverComposeBridge } = require("./observerComposeBridge");
 const { createProductionObservationSources } = require("./productionObservationSources");
 const { runProductionPlan } = require("./productionRun");
 const { executeRun } = require("./runner");
+const { normalizeFaultFixture } = require("./runner/faultFixtures");
 
 const APPROVED_SCENARIOS = Object.freeze(["sidebar", "message", "socket-concurrency"]);
 const WORKLOAD_TARGET = "http://nginx";
@@ -103,20 +104,23 @@ async function runApprovedSetupPreflight({ plan, environment, dockerCommand = do
   };
 }
 
-function runnerPhaseArgs(plan, { phase, workload, actorRefs }) {
-  return composeArgs(plan, [
+function runnerPhaseArgs(plan, { phase, workload, actorRefs, faultFixture }) {
+  const requestedFaultFixture = normalizeFaultFixture(faultFixture);
+  const activeFaultFixture = phase === "measurement" ? requestedFaultFixture : null;
+  const args = composeArgs(plan, [
     "exec", "-T",
     "-e", `K4_PHASE=${phase}`,
     "-e", `K4_PROFILE_B64=${Buffer.from(JSON.stringify(workload.snapshot), "utf8").toString("base64")}`,
     "-e", `K4_ACTOR_REFS_B64=${Buffer.from(JSON.stringify(actorRefs), "utf8").toString("base64")}`,
-    "-e", "K4_ACTOR_SECRETS_JSON",
-    "runner", "node", "/opt/k4/workload.js",
   ]);
+  if (activeFaultFixture) args.push("-e", `K4_FAULT_FIXTURE=${activeFaultFixture}`);
+  args.push("-e", "K4_ACTOR_SECRETS_JSON", "runner", "node", "/opt/k4/workload.js");
+  return args;
 }
 
-async function executeRunnerWorkload({ plan, phase, workload, actorRefs, actorSecrets, target = WORKLOAD_TARGET, environment, dockerCommand = dockerAsync, writeFileSync = require("node:fs").writeFileSync }) {
+async function executeRunnerWorkload({ plan, phase, workload, actorRefs, actorSecrets, faultFixture, target = WORKLOAD_TARGET, environment, dockerCommand = dockerAsync, writeFileSync = require("node:fs").writeFileSync }) {
   if (target !== WORKLOAD_TARGET) throw new Error("production workload target must be nginx");
-  const output = await dockerCommand(runnerPhaseArgs(plan, { phase, workload, actorRefs }), {
+  const output = await dockerCommand(runnerPhaseArgs(plan, { phase, workload, actorRefs, faultFixture }), {
     env: {
       ...environment,
       K4_ACTOR_SECRETS_JSON: JSON.stringify(actorSecrets),
@@ -147,10 +151,12 @@ function createRuntimeComposition({
   observerBridgeFactory = createObserverComposeBridge,
   observationSourcesFactory = createProductionObservationSources,
 } = {}) {
-  async function executeProduction({ plan, intervalMs = 1000 }) {
+  async function executeProduction({ plan, intervalMs = 1000, faultFixture }) {
     if (!APPROVED_SCENARIOS.includes(plan?.workload?.scenario)) {
       throw new Error(`production workload adapter is unavailable for ${plan?.workload?.scenario || "unknown"}`);
     }
+    const normalizedFaultFixture = normalizeFaultFixture(faultFixture);
+    if (normalizedFaultFixture && plan.workload.scenario !== "message") throw new Error("K4 fault fixtures require the message scenario");
     assertExecutableProfile(plan.workload);
     requireBenchmarkSecret(environment);
     const scopedEnvironment = productionEnvironment(plan, environment, randomBytes);
@@ -182,6 +188,7 @@ function createRuntimeComposition({
       workload: plan.workload,
       actorRefs,
       actorSecrets,
+      faultFixture: phase === "measurement" ? normalizedFaultFixture : undefined,
       target: WORKLOAD_TARGET,
       environment: scopedEnvironment,
     });

@@ -39,7 +39,14 @@ function createProductionObservationSources({ helper } = {}) {
   const preWindowSources = new Map();
   async function snapshotPersistenceHistogram({ plan, replica }) {
     const response = await helper.metrics(base(plan, "backend", replica));
-    return parsePrometheusHistogram(response.body);
+    const histogram = parsePrometheusHistogram(response.body);
+    return {
+      ...histogram,
+      source: {
+        sourceIdentity: response.sourceIdentity || `metrics:${replica}`,
+        sourceDigest: response.sourceDigest || sha256(response.body),
+      },
+    };
   }
   async function captureTopologyInventory({ plan, point, replicas }) {
     const containers = await Promise.all(replicas.map((replica) => helper.identity(base(plan, "backend", replica))));
@@ -111,12 +118,23 @@ function createProductionObservationSources({ helper } = {}) {
         const delivery = measurementOutput?.deliveries?.find((record) => record.correlationId === correlationId);
         return crossReplicaAttribution({ sender: select("message_sender")[0], acknowledgement: select("message_acknowledgement")[0], receiver: select("message_receiver")[0], delivery, measuredActors: measurementOutput?.measuredActors, metadata });
       });
+      const attempted = measurementOutput?.attemptedCorrelationIds || [];
+      const covered = measurementOutput?.attributionComplete === true
+        && attempted.length > 0
+        && attempted.length === correlations.length
+        && attempted.every((correlationId) => correlations.includes(correlationId))
+        && results.length === attempted.length
+        && results.every(({ complete }) => complete);
+      const observedReplicas = new Set(results.flatMap(({ senderReplica, receiverReplica }) => [senderReplica, receiverReplica]).filter(Boolean));
+      const runTopologyNotExercised = covered && observedReplicas.size === 1;
       return {
         scenario: "message",
         source: metadata,
         complete: correlations.length > 0 && results.every(({ complete }) => complete),
+        deliveryEligible: results.length > 0 && results.every(({ deliveryEligible }) => deliveryEligible),
         claimEligible: results.length > 0 && results.every(({ claimEligible }) => claimEligible),
-        topologyNotExercised: results.length > 0 && results.every(({ topologyNotExercised }) => topologyNotExercised),
+        topologyNotExercised: runTopologyNotExercised,
+        sampleTopologyNotExercised: results.some(({ topologyNotExercised }) => topologyNotExercised),
         correlations: results,
       };
     }

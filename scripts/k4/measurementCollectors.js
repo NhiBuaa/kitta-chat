@@ -1,4 +1,5 @@
 const REQUIRED_CONTAINER_PREFIX = ["nginx"];
+const PERSISTENCE_METRIC = "kittachat_message_persistence_duration_seconds";
 const LOCKED_CLAIM_TYPES = [
   "persistenceHistogramDerivedLatency",
   "endToEndDelivery",
@@ -77,7 +78,20 @@ function equalSchema(left, right) {
     && JSON.stringify((left?.buckets || []).map(({ le }) => le)) === JSON.stringify((right?.buckets || []).map(({ le }) => le));
 }
 
+function assertPersistenceHistogram(snapshot, replica) {
+  if (snapshot?.metric !== PERSISTENCE_METRIC) throw new Error(`persistence histogram metric mismatch for ${replica}`);
+  if (snapshot?.labels?.outcome !== "success") throw new Error(`persistence histogram outcome must be success for ${replica}`);
+  if (!Array.isArray(snapshot.buckets) || !snapshot.buckets.length || snapshot.buckets.some(({ le, count }) => typeof le !== "string" || !Number.isFinite(count) || count < 0)) {
+    throw new Error(`persistence histogram buckets are malformed for ${replica}`);
+  }
+  if (!Number.isFinite(snapshot.count) || snapshot.count < 0 || !Number.isFinite(snapshot.sum) || snapshot.sum < 0) {
+    throw new Error(`persistence histogram count or sum is malformed for ${replica}`);
+  }
+}
+
 function subtractHistogram(before, after, replica) {
+  assertPersistenceHistogram(before, replica);
+  assertPersistenceHistogram(after, replica);
   if (!equalSchema(before, after)) throw new Error(`histogram schema mismatch for ${replica}`);
   const buckets = after.buckets.map((bucket, index) => {
     const delta = bucket.count - before.buckets[index].count;
@@ -99,35 +113,40 @@ function assertAggregateCoverage(resolvedBackendReplicas, aggregateEvidence) {
   }
 }
 
-function deriveHistogramEvidence({ resolvedBackendReplicas, snapshots, aggregateEvidence }) {
+function deriveHistogramEvidence({ resolvedBackendReplicas, snapshots: snapshotInput, aggregateEvidence }) {
   if (!Array.isArray(resolvedBackendReplicas) || !resolvedBackendReplicas.length) throw new Error("resolved backend replica inventory is required");
   if (aggregateEvidence) {
     assertAggregateCoverage(resolvedBackendReplicas, aggregateEvidence);
+    const delta = subtractHistogram(aggregateEvidence.before, aggregateEvidence.after, "topology-wide aggregate");
     return {
       label: "histogram-derived",
+      quantileLabel: "histogram-derived",
       source: "topology-wide-aggregate",
       resolvedBackendReplicas: [...resolvedBackendReplicas],
-      aggregate: subtractHistogram(aggregateEvidence.before, aggregateEvidence.after, "topology-wide aggregate"),
+      snapshots: { aggregate: { before: aggregateEvidence.before, after: aggregateEvidence.after } },
+      deltas: { aggregate: delta },
+      aggregate: delta,
     };
   }
-  const perReplica = Object.fromEntries(resolvedBackendReplicas.map((replica) => {
-    const snapshot = snapshots?.[replica];
+  const snapshots = Object.fromEntries(resolvedBackendReplicas.map((replica) => {
+    const snapshot = snapshotInput?.[replica];
     if (!snapshot?.before || !snapshot?.after) throw new Error(`missing snapshot for resolved replica ${replica}`);
-    return [replica, subtractHistogram(snapshot.before, snapshot.after, replica)];
+    return [replica, { before: snapshot.before, after: snapshot.after }];
   }));
+  const deltas = Object.fromEntries(resolvedBackendReplicas.map((replica) => [replica, subtractHistogram(snapshots[replica].before, snapshots[replica].after, replica)]));
   const referenceSnapshot = snapshots[resolvedBackendReplicas[0]].before;
   for (const replica of resolvedBackendReplicas.slice(1)) {
     if (!equalSchema(referenceSnapshot, snapshots[replica].before)) {
       throw new Error(`histogram schema mismatch across resolved replicas at ${replica}`);
     }
   }
-  const first = Object.values(perReplica)[0];
+  const first = Object.values(deltas)[0];
   const aggregate = {
-    buckets: first.buckets.map(({ le }, index) => ({ le, count: Object.values(perReplica).reduce((total, delta) => total + delta.buckets[index].count, 0) })),
-    count: Object.values(perReplica).reduce((total, delta) => total + delta.count, 0),
-    sum: Object.values(perReplica).reduce((total, delta) => total + delta.sum, 0),
+    buckets: first.buckets.map(({ le }, index) => ({ le, count: Object.values(deltas).reduce((total, delta) => total + delta.buckets[index].count, 0) })),
+    count: Object.values(deltas).reduce((total, delta) => total + delta.count, 0),
+    sum: Object.values(deltas).reduce((total, delta) => total + delta.sum, 0),
   };
-  return { label: "histogram-derived", source: "per-replica", resolvedBackendReplicas: [...resolvedBackendReplicas], perReplica, aggregate };
+  return { label: "histogram-derived", quantileLabel: "histogram-derived", source: "per-replica", resolvedBackendReplicas: [...resolvedBackendReplicas], snapshots, deltas, perReplica: deltas, aggregate };
 }
 
 function overlap(start, end, windowStart, windowEnd) {

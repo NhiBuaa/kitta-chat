@@ -1,4 +1,5 @@
 const crypto = require("node:crypto");
+const { FAULT_FIXTURES, normalizeFaultFixture } = require("./faultFixtures");
 
 const DEFAULT_TARGET = "http://nginx";
 
@@ -38,15 +39,16 @@ async function openLoopSlots({ ratePerSecond, durationSeconds, startOpportunity,
     }
     inFlight.push(Promise.resolve(operation)
       .then((evidence) => { record.evidence = evidence; record.completedAt = clock(); })
-      .catch((error) => { record.error = error.message; record.completedAt = clock(); }));
+      .catch((error) => { record.status = "failed"; record.error = error.message; record.completedAt = clock(); }));
   }
   await Promise.all(inFlight);
   opportunities.sort((left, right) => left.opportunityId - right.opportunityId);
   return { phaseStart, phaseEnd: phaseStart + durationSeconds * 1000, opportunities };
 }
 
-function waitForSocket(socket, event, timeoutMs, clock = Date.now, setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout) {
+function waitForSocket(socket, event, timeoutMs, clock = Date.now, setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout, predicate) {
   return new Promise((resolve, reject) => {
+    const hasPredicate = typeof predicate === "function";
     const startedAt = clock();
     const timer = setTimeoutFn(() => {
       cleanup();
@@ -57,9 +59,16 @@ function waitForSocket(socket, event, timeoutMs, clock = Date.now, setTimeoutFn 
       socket.off?.(event, onEvent);
       socket.off?.("connect_error", onError);
     };
-    const onEvent = (value) => { cleanup(); resolve({ value, timestamp: clock(), startedAt }); };
+    const onEvent = (value) => {
+      if (hasPredicate && !predicate(value)) return;
+      cleanup();
+      resolve({ value, timestamp: clock(), startedAt });
+    };
     const onError = (error) => { cleanup(); reject(error instanceof Error ? error : new Error(String(error))); };
-    socket.once(event, onEvent);
+    if (hasPredicate) {
+      if (typeof socket.on !== "function") throw new Error(`${event} filtered listener adapter is required`);
+      socket.on(event, onEvent);
+    } else socket.once(event, onEvent);
     if (event === "connect") socket.once("connect_error", onError);
   });
 }
@@ -91,6 +100,34 @@ function messageText(bytes) {
   return "x".repeat(bytes);
 }
 
+function waitForTimeout(event, timeoutMs, setTimeoutFn = setTimeout) {
+  return new Promise((resolve, reject) => {
+    setTimeoutFn(() => reject(new Error(`${event} timeout`)), timeoutMs);
+  });
+}
+
+function legacyConversationId(senderId, recipientId) {
+  return [String(senderId), String(recipientId)].sort().join("_");
+}
+
+function comparableId(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "object" && value._id !== undefined) return comparableId(value._id);
+  return String(value);
+}
+
+function deliveredEnvelopeMatches(delivered, { id, senderId, recipientId, conversationId }) {
+  return comparableId(delivered?.idempotencyKey) === comparableId(id)
+    && comparableId(delivered?.sender?._id || delivered?.sender) === comparableId(senderId)
+    && comparableId(delivered?.receiverId || delivered?.receiver) === comparableId(recipientId)
+    && comparableId(delivered?.conversationId) === comparableId(conversationId);
+}
+
+function deliveredMessageMatches(delivered, { id, senderId, recipientId, conversationId, realId }) {
+  return deliveredEnvelopeMatches(delivered, { id, senderId, recipientId, conversationId })
+    && comparableId(delivered?._id) === comparableId(realId);
+}
+
 function createWorkloadExecutor({ fetch = globalThis.fetch, createSocket, clock = Date.now, sleep = sleepMs, correlationId = randomCorrelationId, setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout } = {}) {
   if (typeof fetch !== "function") throw new Error("workload fetch adapter is required");
 
@@ -115,44 +152,88 @@ function createWorkloadExecutor({ fetch = globalThis.fetch, createSocket, clock 
     });
   }
 
-  async function executeMessage({ phase, target, profile, actorRefs, actorSecrets }) {
+  async function executeMessage({ phase, target, profile, actorRefs, actorSecrets, faultFixture }) {
     if (typeof createSocket !== "function") throw new Error("message workload socket adapter is required");
+    const activeFaultFixture = phase === "measurement" ? faultFixture : null;
     const durationSeconds = profile[phase === "warm-up" ? "warmup" : "measurement"].durationSeconds;
-    const connections = [];
-    await Promise.all(["alice", "bob"].map((name) => connectActor({
+    const connections = await Promise.all(["alice", "bob"].map((name) => connectActor({
       createSocket, target, actor: actorRefs[name], token: actorSecrets[name].token,
       timeoutMs: profile.deliveryTimeoutMs, clock,
-    }).then((connection) => { connections.push(connection); })));
+    })));
     const [sender, recipient] = connections;
     try {
       const result = await openLoopSlots({
         ratePerSecond: profile.loadModel.ratePerSecond, durationSeconds, clock, sleep, correlationId,
         startOpportunity: async ({ correlationId: id }) => {
-          const delivery = waitForSocket(recipient.socket, "getMessage", profile.deliveryTimeoutMs, clock, setTimeoutFn, clearTimeoutFn);
+          const delivery = activeFaultFixture === FAULT_FIXTURES.RECIPIENT_DELIVERY_TIMEOUT
+            ? waitForTimeout("getMessage", profile.deliveryTimeoutMs, setTimeoutFn)
+            : waitForSocket(recipient.socket, "getMessage", profile.deliveryTimeoutMs, clock, setTimeoutFn, clearTimeoutFn,
+              (value) => deliveredEnvelopeMatches(value, {
+                id,
+                senderId: actorRefs.alice.id,
+                recipientId: actorRefs.bob.id,
+                conversationId: legacyConversationId(actorRefs.alice.id, actorRefs.bob.id),
+              }));
+          const conversationId = legacyConversationId(actorRefs.alice.id, actorRefs.bob.id);
           const acknowledgement = new Promise((resolve, reject) => {
             const timer = setTimeoutFn(() => reject(new Error("sendMessage acknowledgement timeout")), profile.deliveryTimeoutMs);
-            sender.socket.emit("sendMessage", {
+            const sendMessageEmitAt = clock();
+            const payload = {
               sender: actorRefs.alice.id,
               receiverId: actorRefs.bob.id,
               text: messageText(profile.messageSizeBytes),
               isGroup: false,
               idempotencyKey: id,
-            }, (ack) => {
+              conversationId,
+            };
+            const onAcknowledgement = (ack) => {
               clearTimeoutFn(timer);
-              if (!ack?.success) reject(new Error("sendMessage acknowledgement failed"));
-              else resolve({ ...ack, timestamp: clock() });
-            });
+              if (ack?.success !== true || !ack?.realId) reject(new Error("sendMessage acknowledgement failed"));
+              else {
+                const acknowledgedAt = clock();
+                resolve({ success: true, realId: ack.realId, acknowledgedAt, timestamp: acknowledgedAt, sendMessageEmitAt });
+              }
+            };
+            const callback = activeFaultFixture === FAULT_FIXTURES.ACKNOWLEDGEMENT_TIMEOUT
+              ? () => {}
+              : activeFaultFixture === FAULT_FIXTURES.ACKNOWLEDGEMENT_FAILURE
+                ? () => onAcknowledgement({ success: false })
+                : onAcknowledgement;
+            sender.socket.emit("sendMessage", payload, callback);
           });
           const [ack, delivered] = await Promise.all([acknowledgement, delivery]);
-          if (delivered.value?.idempotencyKey !== id) throw new Error("getMessage correlation mismatch");
-          return { correlationId: id, acknowledgement: ack, delivery: { timestamp: delivered.timestamp, messageId: delivered.value?._id } };
+          if (!deliveredMessageMatches(delivered.value, {
+            id,
+            senderId: actorRefs.alice.id,
+            recipientId: actorRefs.bob.id,
+            conversationId,
+            realId: activeFaultFixture === FAULT_FIXTURES.CORRELATION_MISMATCH ? `${ack.realId}-fixture-mismatch` : ack.realId,
+          })) throw new Error("getMessage correlation mismatch");
+          return {
+            correlationId: id,
+            acknowledgement: ack,
+            delivery: {
+              sendMessageEmitAt: ack.sendMessageEmitAt,
+              receivedAt: delivered.timestamp,
+              durationMs: delivered.timestamp - ack.sendMessageEmitAt,
+              messageId: delivered.value?._id,
+              senderId: actorRefs.alice.id,
+              recipientId: actorRefs.bob.id,
+              conversationId,
+            },
+          };
         },
       });
       const successful = result.opportunities.filter(({ status, error }) => status === "started" && !error);
+      const attempted = result.opportunities.filter(({ status }) => status === "started" || status === "failed");
       return decorateFixedRateEvidence({ ...result, connections: disconnectAll(connections, clock) }, profile, phase, {
+        ...(activeFaultFixture ? { faultFixture: activeFaultFixture } : {}),
         correlationIds: successful.map(({ correlationId: id }) => id),
+        attemptedCorrelationIds: attempted.map(({ correlationId: id }) => id),
+        attributionComplete: attempted.length > 0 && attempted.length === successful.length && attempted.length === result.opportunities.filter(({ status }) => status !== "not-started").length,
         measuredActors: { sender: actorRefs.alice.id, recipient: actorRefs.bob.id },
         deliveries: successful.map(({ correlationId: id, evidence }) => ({ correlationId: id, success: true, ...evidence.delivery })),
+        failures: result.opportunities.filter(({ status }) => status === "failed").map(({ correlationId: id, error }) => ({ correlationId: id, success: false, error })),
       });
     } catch (error) {
       disconnectAll(connections, clock);
@@ -190,10 +271,12 @@ function createWorkloadExecutor({ fetch = globalThis.fetch, createSocket, clock 
     }
   }
 
-  async function execute({ phase, target = DEFAULT_TARGET, profile, actorRefs, actorSecrets }) {
+  async function execute({ phase, target = DEFAULT_TARGET, profile, actorRefs, actorSecrets, faultFixture }) {
     if (target !== DEFAULT_TARGET) throw new Error("workload target must be nginx");
+    const normalizedFaultFixture = normalizeFaultFixture(faultFixture);
+    if (normalizedFaultFixture && profile.scenario !== "message") throw new Error("K4 fault fixtures require the message scenario");
     if (profile.scenario === "sidebar") return executeSidebar({ phase, target, profile, actorRefs, actorSecrets });
-    if (profile.scenario === "message") return executeMessage({ phase, target, profile, actorRefs, actorSecrets });
+    if (profile.scenario === "message") return executeMessage({ phase, target, profile, actorRefs, actorSecrets, faultFixture: normalizedFaultFixture });
     if (profile.scenario === "socket-concurrency") return executeSocketConcurrency({ phase, target, profile, actorRefs, actorSecrets });
     throw new Error(`unsupported workload scenario: ${profile.scenario}`);
   }
@@ -226,7 +309,7 @@ async function main(environment = process.env) {
   const actorSecrets = JSON.parse(environment.K4_ACTOR_SECRETS_JSON || "{}");
   delete environment.K4_ACTOR_SECRETS_JSON;
   const executor = createWorkloadExecutor({ createSocket: io });
-  const result = await executor.execute({ phase: environment.K4_PHASE, target: environment.K4_WORKLOAD_URL || DEFAULT_TARGET, profile, actorRefs, actorSecrets });
+  const result = await executor.execute({ phase: environment.K4_PHASE, target: environment.K4_WORKLOAD_URL || DEFAULT_TARGET, profile, actorRefs, actorSecrets, faultFixture: environment.K4_FAULT_FIXTURE });
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 

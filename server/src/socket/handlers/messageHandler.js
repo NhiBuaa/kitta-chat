@@ -27,6 +27,7 @@ const createRegisterMessageHandlers = ({
   UserModel = User,
   MessageModel = Message,
   logger = console,
+  attribution = k4Attribution,
 } = {}) => (socket, io) => {
   socket.on(SOCKET_EVENTS.MESSAGE_SEND, async (messageData, callBack) => {
     try {
@@ -56,7 +57,7 @@ const createRegisterMessageHandlers = ({
       logger.log(
         `${logPrefix} sendMessage start sender=${senderId} receiver=${receiverId} conv=${conversationId} isGroup=${Boolean(isGroup)} socket=${socket.id}`,
       );
-      k4Attribution.messageSender({ correlationId, actorRef: String(senderId), recipientRef: String(receiverId), replica: NODE_NAME });
+      attribution.messageSender({ correlationId, actorRef: String(senderId), recipientRef: String(receiverId), replica: NODE_NAME, conversationId });
 
       const { doc: savedMessage, isDuplicate } = await saveMessage({
         ...messageData,
@@ -121,7 +122,16 @@ const createRegisterMessageHandlers = ({
         `${logPrefix} sendMessage done messageId=${savedMessage?._id || "n/a"} duplicate=${Boolean(isDuplicate)}`,
       );
 
-      k4Attribution.messageAcknowledged({ correlationId, actorRef: String(senderId), recipientRef: String(receiverId), replica: NODE_NAME, success: true });
+      attribution.messageAcknowledged({
+        correlationId,
+        actorRef: String(senderId),
+        recipientRef: String(receiverId),
+        replica: NODE_NAME,
+        success: true,
+        realId: savedMessage?._id,
+        messageId: savedMessage?._id,
+        conversationId,
+      });
 
       callBack?.({
         success: true,

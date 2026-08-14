@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 
 const {
@@ -153,6 +155,61 @@ test("runner phase transport keeps credentials out of command arguments", () => 
   assert.equal(serialized.includes("K4_ACTORS_B64"), false);
   assert.match(serialized, /K4_ACTOR_SECRETS_JSON/);
   assert.doesNotMatch(serialized, /secret-a/);
+});
+
+test("runner phase transports an allowlisted fault fixture only for measurement", () => {
+  const measurement = JSON.stringify(runnerPhaseArgs(plan("message"), {
+    phase: "measurement",
+    workload: plan("message").workload,
+    actorRefs: { alice: { id: "actor-alice" }, bob: { id: "actor-bob" } },
+    faultFixture: "acknowledgement-failure",
+  }));
+  assert.match(measurement, /K4_FAULT_FIXTURE=acknowledgement-failure/);
+  const warmup = JSON.stringify(runnerPhaseArgs(plan("message"), {
+    phase: "warm-up",
+    workload: plan("message").workload,
+    actorRefs: { alice: { id: "actor-alice" }, bob: { id: "actor-bob" } },
+    faultFixture: "acknowledgement-failure",
+  }));
+  assert.doesNotMatch(warmup, /K4_FAULT_FIXTURE/);
+});
+
+test("runner image packages the allowlist module used by the workload entrypoint", () => {
+  const dockerfile = fs.readFileSync(path.join(__dirname, "../../k4/runner/Dockerfile"), "utf8");
+  assert.match(dockerfile, /COPY faultFixtures\.js \.\/faultFixtures\.js/);
+});
+
+test("runtime composition forwards the operational fixture to measurement only", async () => {
+  const phases = [];
+  const runtime = createRuntimeComposition({
+    executeRunFn: async (_plan, { executePhase, observation }) => {
+      const context = { registerOwnedResource() {}, ownedResources: () => [] };
+      await executePhase("setup/seed", context);
+      await executePhase("warm-up", context);
+      await executePhase("measurement", context);
+      await executePhase("teardown", context);
+      return { observation, phases };
+    },
+    environment: { K4_IMAGE_SET_ID: "fixed-images", K4_BENCHMARK_PASSWORD: "memory-only-password" },
+    randomBytes: (size) => Buffer.alloc(size, 2),
+    setupPreflight: async () => ({
+      warmupAdmission: "WARMUP_ADMITTED",
+      benchmarkActors: {
+        alice: { id: "actor-alice", token: "alice-token" },
+        bob: { id: "actor-bob", token: "bob-token" },
+      },
+    }),
+    executeRunnerWorkload: async ({ phase, faultFixture }) => { phases.push([phase, faultFixture]); return {}; },
+    teardownOwnedRun: async () => ({}),
+    observationFactory: () => ({ id: "observation" }),
+    observerBridgeFactory: () => ({}),
+    observationSourcesFactory: () => ({}),
+  });
+  await runtime.executeProduction({ plan: plan("message"), faultFixture: "acknowledgement-failure" });
+  assert.deepEqual(phases, [
+    ["warm-up", undefined],
+    ["measurement", "acknowledgement-failure"],
+  ]);
 });
 
 test("production setup authenticates every v2 message actor through nginx", async () => {
