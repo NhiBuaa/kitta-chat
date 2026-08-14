@@ -511,29 +511,29 @@ test("effective topology canonicalizes complete rendered Compose semantics beyon
 test("current effective snapshots render Compose with the started run secret and remain comparable", () => {
   const commandEnvironments = [];
   const plan = createRunPlan({ runId: "snapshot-live", profile: "single-replica" });
-  const inspected = ["runner", "nginx", "backend", "mongo", "redis", "rabbitmq"].map((service) => ({
+  const inspected = ["runner", "nginx", "backend", "mongo", "redis", "rabbitmq", "observer", "observer-helper"].map((service) => ({
     Id: `${service}-id`,
     Name: `/${plan.projectName}-${service}-1`,
     Image: immutableDigest(service),
     Config: {
-      Image: service === "nginx" ? "kittachat-k4-nginx:fixed-source-a" : service === "backend" ? "kittachat-k4-backend:fixed-source-a" : `${service}:pinned`,
+      Image: service === "nginx" ? "kittachat-k4-nginx:fixed-source-a" : service === "backend" ? "kittachat-k4-backend:fixed-source-a" : service === "observer" ? "kittachat-k4-observer:fixed-source-a" : service === "observer-helper" ? "kittachat-k4-observer-helper:fixed-source-a" : `${service}:pinned`,
       Labels: { "com.docker.compose.service": service },
       Env: service === "backend"
         ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret", "DEMO_SEED_PASSWORD=runtime-only-test-password"]
-        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : [],
+        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : ["observer", "observer-helper"].includes(service) ? ["K4_OBSERVER_TOKEN=runtime-only-observer-token"] : [],
     },
     NetworkSettings: {
-      Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"])
+      Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : service === "observer" ? ["k4-observation"] : service === "observer-helper" ? ["k4-observation", "k4-backend"] : ["k4-backend"])
         .map((network) => [`${plan.projectName}_${network}`, {}])),
       Ports: {},
     },
   }));
-  const renderedCompose = { services: Object.fromEntries(["runner", "nginx", "backend", "mongo", "redis", "rabbitmq"].map((service) => [service, {
+  const renderedCompose = { services: Object.fromEntries(["runner", "nginx", "backend", "mongo", "redis", "rabbitmq", "observer", "observer-helper"].map((service) => [service, {
     image: `${service}:pinned`,
     environment: service === "backend"
       ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret", DEMO_SEED_PASSWORD: "runtime-only-test-password" }
-      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : {},
-    networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"],
+      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : ["observer", "observer-helper"].includes(service) ? { K4_OBSERVER_TOKEN: "runtime-only-observer-token" } : {},
+    networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : service === "observer" ? ["k4-observation"] : service === "observer-helper" ? ["k4-observation", "k4-backend"] : ["k4-backend"],
   }])), networks: {}, volumes: {} };
   const dockerCommand = (args, options) => {
     commandEnvironments.push({ args, env: options?.env });
@@ -578,7 +578,7 @@ test("a changed image set remains non-comparable without weakening immutable ide
   const result = compareEffectiveTopologySnapshots(single, multi);
 
   assert.equal(result.status, "NON-COMPARABLE");
-  assert.deepEqual(result.unexpectedDifferences, ["compose.services.backend.image", "compose.services.nginx.image", "configFingerprints.nginx.provenance.imageIdentity", "imageIdentities.backend", "imageIdentities.nginx"]);
+  assert.deepEqual(result.unexpectedDifferences, ["compose.services.backend.image", "compose.services.nginx.image", "compose.services.observer-helper.image", "compose.services.observer.image", "configFingerprints.nginx.provenance.imageIdentity", "imageIdentities.backend", "imageIdentities.nginx"]);
 });
 
 test("current effective evidence fails closed when the image-set config provenance is stale", () => {
@@ -598,11 +598,13 @@ test("shared image-set starts use immutable tagged images and never rebuild per 
     K4_NGINX_IMAGE: "kittachat-k4-nginx:fixed-source-a",
     K4_BACKEND_IMAGE: "kittachat-k4-backend:fixed-source-a",
     K4_RUNNER_IMAGE: "kittachat-k4-runner:fixed-source-a",
+    K4_OBSERVER_IMAGE: "kittachat-k4-observer:fixed-source-a",
+    K4_OBSERVER_HELPER_IMAGE: "kittachat-k4-observer-helper:fixed-source-a",
   });
   assert.equal(startArgs(plan).includes("--build"), false);
 });
 
-test("building an image set resolves nginx, backend, and runner immutable identities once before any run starts", () => {
+test("building an image set resolves nginx, backend, runner, observer, and observer-helper immutable identities once before any run starts", () => {
   const commands = [];
   const imageSetManifestRoot = path.join(process.env.TEMP || process.cwd(), "k4-image-set-test-manifests");
   const built = buildImageSet("fixed-source-a", {
@@ -614,6 +616,8 @@ test("building an image set resolves nginx, backend, and runner immutable identi
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-nginx:fixed-source-a") return `${immutableDigest("nginx-fixed-source-a")}\n`;
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-backend:fixed-source-a") return `${immutableDigest("backend-fixed-source-a")}\n`;
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-runner:fixed-source-a") return `${immutableDigest("runner-fixed-source-a")}\n`;
+      if (args[0] === "image" && args.at(-1) === "kittachat-k4-observer:fixed-source-a") return `${immutableDigest("observer-fixed-source-a")}\n`;
+      if (args[0] === "image" && args.at(-1) === "kittachat-k4-observer-helper:fixed-source-a") return `${immutableDigest("observer-helper-fixed-source-a")}\n`;
       if (args[0] === "container" && args[1] === "create") return "temporary-nginx-container\n";
       if (args[0] === "container" && args[1] === "inspect") return `${immutableDigest("nginx-fixed-source-a")}\n`;
       if (args[0] === "cp") {
@@ -625,20 +629,27 @@ test("building an image set resolves nginx, backend, and runner immutable identi
     },
   });
 
-  assert.deepEqual(commands[0].args.slice(-4), ["build", "nginx", "backend", "runner"]);
+  assert.deepEqual(commands[0].args.slice(-6), ["build", "nginx", "backend", "runner", "observer", "observer-helper"]);
   assert.equal(commands[0].env.K4_NGINX_IMAGE, "kittachat-k4-nginx:fixed-source-a");
+  assert.equal(commands[0].env.K4_BENCHMARK_EMAIL, "build-only@kittachat.invalid");
+  assert.equal(commands[0].env.K4_BENCHMARK_PASSWORD, "build-only-not-a-runtime-credential");
+  assert.equal(commands[0].env.K4_OBSERVER_TOKEN, "build-only-not-a-runtime-token");
   assert.deepEqual({
     K4_IMAGE_SET_ID: built.K4_IMAGE_SET_ID,
     K4_NGINX_IMAGE: built.K4_NGINX_IMAGE,
     K4_BACKEND_IMAGE: built.K4_BACKEND_IMAGE,
     K4_RUNNER_IMAGE: built.K4_RUNNER_IMAGE,
+    K4_OBSERVER_IMAGE: built.K4_OBSERVER_IMAGE,
+    K4_OBSERVER_HELPER_IMAGE: built.K4_OBSERVER_HELPER_IMAGE,
     imageIdentities: built.imageIdentities,
   }, {
     K4_IMAGE_SET_ID: "fixed-source-a",
     K4_NGINX_IMAGE: "kittachat-k4-nginx:fixed-source-a",
     K4_BACKEND_IMAGE: "kittachat-k4-backend:fixed-source-a",
     K4_RUNNER_IMAGE: "kittachat-k4-runner:fixed-source-a",
-    imageIdentities: { nginx: immutableDigest("nginx-fixed-source-a"), backend: immutableDigest("backend-fixed-source-a"), runner: immutableDigest("runner-fixed-source-a") },
+    K4_OBSERVER_IMAGE: "kittachat-k4-observer:fixed-source-a",
+    K4_OBSERVER_HELPER_IMAGE: "kittachat-k4-observer-helper:fixed-source-a",
+    imageIdentities: { nginx: immutableDigest("nginx-fixed-source-a"), backend: immutableDigest("backend-fixed-source-a"), runner: immutableDigest("runner-fixed-source-a"), observer: immutableDigest("observer-fixed-source-a"), "observer-helper": immutableDigest("observer-helper-fixed-source-a") },
   });
   assert.equal(built.configArtifacts.nginx.provenance.imageIdentity, immutableDigest("nginx-fixed-source-a"));
   const manifest = JSON.parse(fs.readFileSync(path.join(imageSetManifestRoot, "fixed-source-a.json"), "utf8"));
@@ -659,6 +670,8 @@ test("image-set baked config provenance uses bytes copied from the exact immutab
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-nginx:effective-artifact-a") return `${immutableDigest("nginx-effective-artifact-a")}\n`;
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-backend:effective-artifact-a") return `${immutableDigest("backend-effective-artifact-a")}\n`;
       if (args[0] === "image" && args.at(-1) === "kittachat-k4-runner:effective-artifact-a") return `${immutableDigest("runner-effective-artifact-a")}\n`;
+      if (args[0] === "image" && args.at(-1) === "kittachat-k4-observer:effective-artifact-a") return `${immutableDigest("observer-effective-artifact-a")}\n`;
+      if (args[0] === "image" && args.at(-1) === "kittachat-k4-observer-helper:effective-artifact-a") return `${immutableDigest("observer-helper-effective-artifact-a")}\n`;
       if (args[0] === "container" && args[1] === "create") return "temporary-nginx-container\n";
       if (args[0] === "container" && args[1] === "inspect") return `${immutableDigest("nginx-effective-artifact-a")}\n`;
       if (args[0] === "cp") {
@@ -699,31 +712,31 @@ function imageSetManifestFor(imageIdentities) {
 function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest }) {
   const plan = createRunPlan({ runId, profile });
   const imageEnvironment = imageSetEnvironment(imageSet);
-  const services = ["runner", "nginx", "backend", "mongo", "redis", "rabbitmq"];
+  const services = ["runner", "nginx", "backend", "mongo", "redis", "rabbitmq", "observer", "observer-helper"];
   const backendCount = profile === "multi-replica" ? 3 : 1;
   const inspected = services.flatMap((service) => Array.from({ length: service === "backend" ? backendCount : 1 }, (_, index) => ({
     Id: `${service}-${index + 1}`,
     Name: `/${plan.projectName}-${service}-${index + 1}`,
     Image: immutableDigest(service === "nginx" ? `nginx-${imageSet}` : service === "backend" ? `backend-${imageSet}` : service),
     Config: {
-      Image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : `${service}:pinned`,
+      Image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : service === "observer" ? imageEnvironment.K4_OBSERVER_IMAGE : service === "observer-helper" ? imageEnvironment.K4_OBSERVER_HELPER_IMAGE : `${service}:pinned`,
       Labels: { "com.docker.compose.service": service },
       Env: service === "backend"
         ? ["JWT_SECRET=runtime-only-test-secret", "REFRESH_TOKEN_SECRET=runtime-only-test-secret", "DEMO_SEED_PASSWORD=runtime-only-test-password"]
-        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : [],
+        : service === "runner" ? ["K4_BENCHMARK_PASSWORD=runtime-only-test-password"] : ["observer", "observer-helper"].includes(service) ? ["K4_OBSERVER_TOKEN=runtime-only-observer-token"] : [],
     },
     NetworkSettings: {
-      Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"])
+      Networks: Object.fromEntries((service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : service === "observer" ? ["k4-observation"] : service === "observer-helper" ? ["k4-observation", "k4-backend"] : ["k4-backend"])
         .map((network) => [`${plan.projectName}_${network}`, {}])),
       Ports: {},
     },
   })));
   const renderedCompose = { services: Object.fromEntries(services.map((service) => [service, {
-    image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : `${service}:pinned`,
+    image: service === "nginx" ? imageEnvironment.K4_NGINX_IMAGE : service === "backend" ? imageEnvironment.K4_BACKEND_IMAGE : service === "observer" ? imageEnvironment.K4_OBSERVER_IMAGE : service === "observer-helper" ? imageEnvironment.K4_OBSERVER_HELPER_IMAGE : `${service}:pinned`,
     environment: service === "backend"
       ? { JWT_SECRET: "runtime-only-test-secret", REFRESH_TOKEN_SECRET: "runtime-only-test-secret", DEMO_SEED_PASSWORD: "runtime-only-test-password" }
-      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : {},
-    networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : ["k4-backend"],
+      : service === "runner" ? { K4_BENCHMARK_PASSWORD: "runtime-only-test-password" } : ["observer", "observer-helper"].includes(service) ? { K4_OBSERVER_TOKEN: "runtime-only-observer-token" } : {},
+    networks: service === "runner" ? ["k4-workload"] : service === "nginx" ? ["k4-workload", "k4-backend"] : service === "observer" ? ["k4-observation"] : service === "observer-helper" ? ["k4-observation", "k4-backend"] : ["k4-backend"],
   }])), networks: {}, volumes: {} };
   const dockerCommand = (args) => {
     if (args[0] === "ps") return inspected.map(({ Id }) => Id).join("\n");
@@ -741,7 +754,7 @@ function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest 
 
 test("current effective snapshot fails closed when the active backend cannot supply the Compose secret", () => {
   const plan = createRunPlan({ runId: "snapshot-missing", profile: "single-replica" });
-  const inspected = ["runner", "nginx", "backend", "mongo", "redis", "rabbitmq"].map((service) => ({
+  const inspected = ["runner", "nginx", "backend", "mongo", "redis", "rabbitmq", "observer", "observer-helper"].map((service) => ({
     Id: `${service}-id`,
     Image: immutableDigest(service),
     Config: { Labels: { "com.docker.compose.service": service }, Env: [] },
@@ -815,12 +828,24 @@ test("cleanup validation rejects non-K4 and foreign-run targets without deletion
 });
 
 test("K4 compose runner has nginx-only workload ingress and no Docker-management mount", () => {
-  const compose = fs.readFileSync(path.resolve(__dirname, "../../../docker-compose.k4.yml"), "utf8");
+  const raw = fs.readFileSync(path.resolve(__dirname, "../../../docker-compose.k4.yml"), "utf8");
+  const compose = parse(raw);
 
-  assert.match(compose, /K4_WORKLOAD_URL: http:\/\/nginx/);
-  assert.match(compose, /read_only: true/);
-  assert.match(compose, /cap_drop: \[ALL\]/);
-  assert.doesNotMatch(compose, /docker\.sock|\/var\/run\/docker|privileged:\s*true/);
+  assert.equal(compose.services.runner.environment.K4_WORKLOAD_URL, "http://nginx");
+  assert.equal(compose.services.runner.read_only, true);
+  assert.deepEqual(compose.services.runner.cap_drop, ["ALL"]);
+  assert.equal(JSON.stringify(compose.services.runner).match(/docker\.sock|\/var\/run\/docker|privileged/), null);
+  assert.equal(JSON.stringify(compose.services.observer).match(/docker\.sock|\/var\/run\/docker|privileged/), null);
+  assert.equal(compose.services["observer-helper"].volumes.includes("/var/run/docker.sock:/var/run/docker.sock:ro"), true);
+});
+
+test("current effective snapshot includes and attests the isolated observation-plane images and networks", () => {
+  const snapshot = currentSnapshotForProfile({ runId: "observation-plane-snapshot", profile: "single-replica", imageSet: "fixed-source-a" });
+  assert.equal(snapshot.effective_spec.imageIdentities.observer, immutableDigest("observer"));
+  assert.equal(snapshot.effective_spec.imageIdentities["observer-helper"], immutableDigest("observer-helper"));
+  assert.deepEqual(snapshot.runtime_attestation.networkSets.observer, ["k4-observation"]);
+  assert.deepEqual(snapshot.runtime_attestation.networkSets["observer-helper"], ["k4-backend", "k4-observation"]);
+  assert.deepEqual(attestRuntimeTopology(snapshot), { status: "ATTESTED" });
 });
 
 test("K4 Compose structurally isolates runner ingress from backend and dependencies", () => {

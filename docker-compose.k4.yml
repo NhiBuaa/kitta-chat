@@ -24,7 +24,9 @@ services:
       target: prod
     labels: *k4-labels
     environment:
-      NODE_NAME: k4-backend
+      K4_ATTRIBUTION_ENABLED: "true"
+      K4_RUN_ID: ${K4_RUN_ID:?run through the K4 lifecycle CLI}
+      METRICS_ENABLED: "true"
       PORT: 3000
       MONGO_URI: mongodb://mongo:27017/kittachat_k4
       REDIS_URL: redis://redis:6379
@@ -106,11 +108,61 @@ services:
       nginx:
         condition: service_started
 
+  observer:
+    image: ${K4_OBSERVER_IMAGE:?build or start through the K4 lifecycle CLI with an image set}
+    build:
+      context: .
+      dockerfile: scripts/k4/observer.Dockerfile
+    labels: *k4-labels
+    command: ["node", "-e", "setInterval(() => {}, 2147483647)"]
+    environment:
+      K4_OBSERVER_TOKEN: ${K4_OBSERVER_TOKEN:?run through the K4 lifecycle CLI}
+      K4_OBSERVER_HELPER_URL: http://observer-helper:8080
+      K4_RUN_ID: ${K4_RUN_ID:?run through the K4 lifecycle CLI}
+      K4_PROJECT_NAME: ${K4_PROJECT_NAME:?run through the K4 lifecycle CLI}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [k4-observation]
+    depends_on:
+      observer-helper:
+        condition: service_healthy
+
+  observer-helper:
+    image: ${K4_OBSERVER_HELPER_IMAGE:?build or start through the K4 lifecycle CLI with a helper image set}
+    build:
+      context: .
+      dockerfile: scripts/k4/observer-helper.Dockerfile
+    labels: *k4-labels
+    environment:
+      K4_OBSERVER_TOKEN: ${K4_OBSERVER_TOKEN:?run through the K4 lifecycle CLI}
+      K4_RUN_ID: ${K4_RUN_ID:?run through the K4 lifecycle CLI}
+      K4_PROJECT_NAME: ${K4_PROJECT_NAME:?run through the K4 lifecycle CLI}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [k4-observation, k4-backend]
+    depends_on:
+      nginx:
+        condition: service_started
+      runner:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then((r) => { if (r.status !== 401) process.exit(1); })"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
 networks:
   k4-workload:
     internal: true
     labels: *k4-labels
   k4-backend:
+    internal: true
+    labels: *k4-labels
+  k4-observation:
     internal: true
     labels: *k4-labels
 

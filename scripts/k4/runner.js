@@ -3,7 +3,7 @@
  * intentionally injectable for deterministic tests; production callers supply
  * the repository-owned phase implementation.
  */
-async function executeRun(plan, { executePhase } = {}) {
+async function executeRun(plan, { executePhase, observation } = {}) {
   if (!plan || typeof plan !== "object") throw new Error("run plan is required");
   if (typeof executePhase !== "function") throw new Error("executePhase seam is required");
   const phases = {};
@@ -26,14 +26,26 @@ async function executeRun(plan, { executePhase } = {}) {
   const runPhase = async (name) => {
     const started = true;
     try {
+      if (name === "measurement" && observation) await observation.start(plan);
       const output = await executePhase(name, context);
-      qualification = name === "measurement" ? (output.qualificationFlags || { complete: true, qualified: true }) : qualification;
-      phases[name] = { started, completed: true, qualified: name === "measurement" && qualification.qualified === true, publishable: false, output };
+      const observationEvidence = name === "measurement" && observation ? await observation.finalize(plan, output) : undefined;
+      const measurementOutput = observationEvidence ? {
+        ...output,
+        observation: observationEvidence,
+        qualificationFlags: observationEvidence.qualificationFlags,
+        claimEligibility: observationEvidence.claimEligibility,
+      } : output;
+      qualification = name === "measurement"
+        ? (Array.isArray(measurementOutput.qualificationFlags)
+          ? { complete: !measurementOutput.qualificationFlags.includes("OBSERVATION_INCOMPLETE"), qualified: !measurementOutput.qualificationFlags.includes("OBSERVATION_INCOMPLETE") }
+          : (measurementOutput.qualificationFlags || { complete: true, qualified: true }))
+        : qualification;
+      phases[name] = { started, completed: true, qualified: name === "measurement" && qualification.qualified === true, publishable: false, output: measurementOutput };
       artifactStatus = "RETAINED";
       if (name !== "teardown") executionOutcome = "COMPLETED";
-      context = { ...context, ...output };
-      if (name === "setup/seed" && output?.resourcesCreated === true) registerOwnedResource({ class: "run", id: plan.runId });
-      if (name === "measurement") publishable = output?.numbers === undefined ? undefined : { numbers: output.numbers };
+      context = { ...context, ...measurementOutput };
+      if (name === "setup/seed" && measurementOutput?.resourcesCreated === true) registerOwnedResource({ class: "run", id: plan.runId });
+      if (name === "measurement") publishable = measurementOutput?.numbers === undefined ? undefined : { numbers: measurementOutput.numbers };
       return true;
     } catch (error) {
       phases[name] = { started, completed: false, qualified: false, publishable: false, error: error.message };
@@ -70,6 +82,10 @@ async function executeRun(plan, { executePhase } = {}) {
   result.executionOutcome = executionOutcome;
   result.artifactStatus = artifactStatus;
   result.qualification = qualification;
+  if (context.observation) {
+    result.qualificationFlags = context.observation.qualificationFlags;
+    result.claimEligibility = context.observation.claimEligibility;
+  }
   return result;
 }
 

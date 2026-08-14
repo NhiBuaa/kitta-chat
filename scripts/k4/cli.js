@@ -4,6 +4,7 @@ const path = require("node:path");
 const { attestRuntimeTopology, buildImageSet, compareEffectiveTopologySnapshots, createRunPlan, createResultDirectory, cleanup, cleanupPreview, currentEffectiveTopologySnapshot, docker, imageSetEnvironment, runnerDiagnosticArgs, startArgs, validateCleanupTarget } = require("./lifecycle");
 const { K4_DATASET_DECLARATION, assertFreshRunTargets, classifySetupFailure, scanRetainedEvidenceDirectory, setupPreflightCommands, verifyDatasetContract } = require("./preflight");
 const { approvedWorkloadProfile, resolveWorkloadProfile } = require("./workloadProfiles");
+const { runProductionPlan } = require("./productionRun");
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -78,7 +79,7 @@ function runSetupPreflight({
   return { action: "setup-preflight", verification, warmupAdmission: "WARMUP_ADMITTED", evidenceScan };
 }
 
-function main() {
+async function main({ executeProduction } = {}) {
   const action = process.argv[2];
   if (action === "resolve") return print(planFromArguments({ inspection: true }));
   if (action === "compare") {
@@ -100,12 +101,19 @@ function main() {
     }));
   }
   if (action === "build-image-set") return print({ action, imageSet: buildImageSet(argument("--image-set-id")) });
+  if (action === "execute") {
+    rejectWorkloadChannels(action);
+    const plan = planFromArguments();
+    if (!plan.workload?.scenario) throw new Error("execute requires an approved --scenario and --workload-version");
+    if (typeof executeProduction !== "function") throw new Error("production phase adapters must be supplied by the K4 runtime composition root");
+    return print(await executeProduction({ plan, intervalMs: Number(argument("--observation-interval-ms") || 1000) }));
+  }
   if (action === "start") {
     rejectWorkloadChannels(action);
     const plan = planFromArguments();
     const imageSet = imageSetEnvironment(argument("--image-set-id"));
     const benchmarkPassword = resolveBenchmarkPassword();
-    createResultDirectory(plan);
+    const observerToken = process.env.K4_OBSERVER_TOKEN || crypto.randomBytes(32).toString("hex");
     docker(startArgs(plan), {
       env: {
         ...process.env,
@@ -116,6 +124,7 @@ function main() {
         K4_JWT_SECRET: process.env.K4_JWT_SECRET || crypto.randomBytes(48).toString("hex"),
         K4_BENCHMARK_EMAIL: process.env.K4_BENCHMARK_EMAIL || "alice@kittachat.test",
         K4_BENCHMARK_PASSWORD: benchmarkPassword,
+        K4_OBSERVER_TOKEN: observerToken,
       },
     });
     return print({ action, plan });
@@ -125,6 +134,7 @@ function main() {
     const plan = planFromArguments();
     const imageSet = imageSetEnvironment(argument("--image-set-id"));
     const benchmarkPassword = resolveBenchmarkPassword();
+    const observerToken = process.env.K4_OBSERVER_TOKEN || crypto.randomBytes(32).toString("hex");
     const environment = {
       ...process.env,
       ...imageSet,
@@ -134,6 +144,7 @@ function main() {
       K4_JWT_SECRET: process.env.K4_JWT_SECRET || crypto.randomBytes(48).toString("hex"),
       K4_BENCHMARK_EMAIL: process.env.K4_BENCHMARK_EMAIL || "alice@kittachat.test",
       K4_BENCHMARK_PASSWORD: benchmarkPassword,
+      K4_OBSERVER_TOKEN: observerToken,
       DEMO_SEED_PASSWORD: benchmarkPassword,
     };
     return print(runSetupPreflight({ plan, environment }));
@@ -145,11 +156,11 @@ function main() {
     return print(validateCleanupTarget(argument("--class"), target, argument("--run-id")));
   }
   if (action === "cleanup") return print(cleanup(argument("--run-id"), argument("--confirm-digest")));
-  throw new Error("usage: k4 <resolve|compare|diagnose-runner|build-image-set|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
+  throw new Error("usage: k4 <resolve|compare|diagnose-runner|build-image-set|execute|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
 }
 
 if (require.main === module) {
-  try { main(); } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1; }
+  main({ executeProduction: require("./runtimeComposition").executeProduction }).catch((error) => { process.stderr.write(`${error.message}\n`); process.exitCode = 1; });
 }
 
-module.exports = { resolveBenchmarkPassword, runSetupPreflight };
+module.exports = { main, planFromArguments, resolveBenchmarkPassword, runSetupPreflight };
