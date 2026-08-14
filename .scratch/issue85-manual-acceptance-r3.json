@@ -1,0 +1,1069 @@
+{
+  "schema_version": 1,
+  "guide_revision": "k4-issue-85-r3",
+  "generated_at": "2026-08-14T05:12:31.847Z",
+  "node": "v22.23.2",
+  "tc85_05": {
+    "valid": {
+      "validation": "PUBLISHABLE",
+      "claims": {
+        "claimEligibility": {
+          "scalable": {
+            "eligible": true,
+            "reasons": []
+          },
+          "high-performance": {
+            "eligible": true,
+            "reasons": []
+          },
+          "production-ready": {
+            "eligible": true,
+            "reasons": []
+          }
+        },
+        "publishable": true
+      }
+    },
+    "qualification_matrix": {
+      "none": {
+        "flags": [],
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-flags-none",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [],
+          "source_inventory_sha256": "sha256:e26b253541cab5d5655e5fa49696059dfcc2fb766fd748ba4c8c2771387af94c",
+          "bundle_inventory_sha256": "sha256:503ca6073d7ea584985c1f086d88d3b840f88e43dc295fa32ed5f46c5c990847"
+        },
+        "artifactValidation": "PUBLISHABLE",
+        "claims": {
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true,
+              "reasons": []
+            },
+            "scalable": {
+              "eligible": true,
+              "reasons": []
+            },
+            "high-performance": {
+              "eligible": true,
+              "reasons": []
+            },
+            "production-ready": {
+              "eligible": true,
+              "reasons": []
+            }
+          },
+          "publishable": true
+        }
+      },
+      "TARGET_NOT_REACHED": {
+        "flags": [
+          "TARGET_NOT_REACHED"
+        ],
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-flags-target_not_reached",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [
+            "TARGET_NOT_REACHED"
+          ],
+          "source_inventory_sha256": "sha256:7ff90c286365658182d6ef9059cd392cd9d8c622f005d273bb80a668581812c1",
+          "bundle_inventory_sha256": "sha256:3c49a2b0a5c47aa061980188dc1a1377fd6657f5fb212fbf511a802bf1184a94"
+        },
+        "artifactValidation": "PUBLISHABLE",
+        "claims": {
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true,
+              "reasons": []
+            },
+            "scalable": {
+              "eligible": false,
+              "reasons": [
+                "TARGET_NOT_REACHED"
+              ]
+            },
+            "high-performance": {
+              "eligible": false,
+              "reasons": [
+                "TARGET_NOT_REACHED"
+              ]
+            },
+            "production-ready": {
+              "eligible": false,
+              "reasons": [
+                "TARGET_NOT_REACHED"
+              ]
+            }
+          },
+          "publishable": false
+        }
+      },
+      "TOPOLOGY_NOT_EXERCISED": {
+        "flags": [
+          "TOPOLOGY_NOT_EXERCISED"
+        ],
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-flags-topology_not_exercised",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [
+            "TOPOLOGY_NOT_EXERCISED"
+          ],
+          "source_inventory_sha256": "sha256:448639a495769e4ed33e98feb2f8837fe7eae3a65b2cf3e2d5e75bf6d4b9e985",
+          "bundle_inventory_sha256": "sha256:148539d41ae2ba036a25812c73cd58a65cfffbdd96459ca13d9278b742b5a7d7"
+        },
+        "artifactValidation": "PUBLISHABLE",
+        "claims": {
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true,
+              "reasons": []
+            },
+            "scalable": {
+              "eligible": false,
+              "reasons": [
+                "TOPOLOGY_NOT_EXERCISED"
+              ]
+            },
+            "high-performance": {
+              "eligible": false,
+              "reasons": [
+                "TOPOLOGY_NOT_EXERCISED"
+              ]
+            },
+            "production-ready": {
+              "eligible": false,
+              "reasons": [
+                "TOPOLOGY_NOT_EXERCISED"
+              ]
+            }
+          },
+          "publishable": false
+        }
+      },
+      "OBSERVATION_INCOMPLETE": {
+        "flags": [
+          "OBSERVATION_INCOMPLETE"
+        ],
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-flags-observation_incomplete",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [
+            "OBSERVATION_INCOMPLETE"
+          ],
+          "source_inventory_sha256": "sha256:bab2b4ca18b9529b1e7257ac3394c37442ffeee3b22578e98d862049df7f611a",
+          "bundle_inventory_sha256": "sha256:dc5d143042f196419783670c19a893e84ec94352bc41f51c3b438655f6c7c609"
+        },
+        "artifactValidation": "PUBLISHABLE",
+        "claims": {
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true,
+              "reasons": []
+            },
+            "scalable": {
+              "eligible": true,
+              "reasons": []
+            },
+            "high-performance": {
+              "eligible": false,
+              "reasons": [
+                "OBSERVATION_INCOMPLETE"
+              ]
+            },
+            "production-ready": {
+              "eligible": false,
+              "reasons": [
+                "OBSERVATION_INCOMPLETE"
+              ]
+            }
+          },
+          "publishable": false
+        }
+      },
+      "LOAD_GENERATOR_LIMITED": {
+        "flags": [
+          "LOAD_GENERATOR_LIMITED"
+        ],
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-flags-load_generator_limited",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [
+            "LOAD_GENERATOR_LIMITED"
+          ],
+          "source_inventory_sha256": "sha256:68d7b45993241af9917900bda5dcb8cf77dc915618458812779037bc8b2a2d1e",
+          "bundle_inventory_sha256": "sha256:871aa8836a691534b065b74ebfb2ca2fdd270e39642708311f2d791415e929a6"
+        },
+        "artifactValidation": "PUBLISHABLE",
+        "claims": {
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true,
+              "reasons": []
+            },
+            "scalable": {
+              "eligible": true,
+              "reasons": []
+            },
+            "high-performance": {
+              "eligible": false,
+              "reasons": [
+                "LOAD_GENERATOR_LIMITED"
+              ]
+            },
+            "production-ready": {
+              "eligible": false,
+              "reasons": [
+                "LOAD_GENERATOR_LIMITED"
+              ]
+            }
+          },
+          "publishable": false
+        }
+      },
+      "TARGET_NOT_REACHED+OBSERVATION_INCOMPLETE": {
+        "flags": [
+          "TARGET_NOT_REACHED",
+          "OBSERVATION_INCOMPLETE"
+        ],
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-flags-target_not_reached+observation_incomplete",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [
+            "TARGET_NOT_REACHED",
+            "OBSERVATION_INCOMPLETE"
+          ],
+          "source_inventory_sha256": "sha256:853a510e35c3a7f04f6ffe05d00da1dc4f059c0044e74f14faac2852df7c3178",
+          "bundle_inventory_sha256": "sha256:dd4194b340793c37af25ebd9ac76dc75c23b41ca4f79549528bf48a55029e769"
+        },
+        "artifactValidation": "PUBLISHABLE",
+        "claims": {
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true,
+              "reasons": []
+            },
+            "scalable": {
+              "eligible": false,
+              "reasons": [
+                "TARGET_NOT_REACHED"
+              ]
+            },
+            "high-performance": {
+              "eligible": false,
+              "reasons": [
+                "TARGET_NOT_REACHED",
+                "OBSERVATION_INCOMPLETE"
+              ]
+            },
+            "production-ready": {
+              "eligible": false,
+              "reasons": [
+                "TARGET_NOT_REACHED",
+                "OBSERVATION_INCOMPLETE"
+              ]
+            }
+          },
+          "publishable": false
+        }
+      },
+      "TOPOLOGY_NOT_EXERCISED+LOAD_GENERATOR_LIMITED": {
+        "flags": [
+          "TOPOLOGY_NOT_EXERCISED",
+          "LOAD_GENERATOR_LIMITED"
+        ],
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-flags-topology_not_exercised+load_generator_limited",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [
+            "TOPOLOGY_NOT_EXERCISED",
+            "LOAD_GENERATOR_LIMITED"
+          ],
+          "source_inventory_sha256": "sha256:3758b8271a6dcaffc0c5db24f995799b6b47e7e9f0e6ac5d6c9f707f7b6095c3",
+          "bundle_inventory_sha256": "sha256:2bc6edbe46dd2045ff3868ae0fed4f7db36d7bcbf197f92c9fc6a0dce708297c"
+        },
+        "artifactValidation": "PUBLISHABLE",
+        "claims": {
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true,
+              "reasons": []
+            },
+            "scalable": {
+              "eligible": false,
+              "reasons": [
+                "TOPOLOGY_NOT_EXERCISED"
+              ]
+            },
+            "high-performance": {
+              "eligible": false,
+              "reasons": [
+                "TOPOLOGY_NOT_EXERCISED",
+                "LOAD_GENERATOR_LIMITED"
+              ]
+            },
+            "production-ready": {
+              "eligible": false,
+              "reasons": [
+                "TOPOLOGY_NOT_EXERCISED",
+                "LOAD_GENERATOR_LIMITED"
+              ]
+            }
+          },
+          "publishable": false
+        }
+      }
+    },
+    "non_measured": {
+      "notRun": {
+        "report": {
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "NOT_RUN",
+          "qualification_flags": [],
+          "profile": "sidebar:v2",
+          "measuredScope": {
+            "topology": "sidebar:v2"
+          },
+          "hardwareLimits": {
+            "cpu": "1",
+            "memory": "512MiB"
+          },
+          "profileArtifact": "manifest.json",
+          "rawResultArtifacts": [
+            "raw.bin"
+          ],
+          "notRunReason": "multi-replica environment unavailable: runner placement was not admitted",
+          "claims": [],
+          "runId": "tc85-not-run-multireplica",
+          "source_inventory_sha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316",
+          "sourceDigests": [
+            {
+              "path": "manifest.json",
+              "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+            },
+            {
+              "path": "raw.bin",
+              "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+            }
+          ],
+          "claimEligibility": {},
+          "report": {
+            "artifact_status": "COMPLETED",
+            "execution_outcome": "NOT_RUN",
+            "qualification_flags": [],
+            "profile": "sidebar:v2",
+            "measuredScope": {
+              "topology": "sidebar:v2"
+            },
+            "hardwareLimits": {
+              "cpu": "1",
+              "memory": "512MiB"
+            },
+            "profileArtifact": "manifest.json",
+            "rawResultArtifacts": [
+              "raw.bin"
+            ],
+            "notRunReason": "multi-replica environment unavailable: runner placement was not admitted",
+            "claims": [],
+            "runId": "tc85-not-run-multireplica",
+            "source_inventory_sha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316",
+            "sourceDigests": [
+              {
+                "path": "manifest.json",
+                "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+              },
+              {
+                "path": "raw.bin",
+                "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+              }
+            ],
+            "claimEligibility": {}
+          },
+          "reportPath": "C:\\Users\\Nhi\\AppData\\Local\\Temp\\k4-issue85-not-run-multireplica-5DjZWA\\report.json",
+          "sourceInventorySha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316"
+        },
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-not-run-multireplica",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "NOT_RUN",
+          "qualification_flags": [],
+          "source_inventory_sha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316",
+          "bundle_inventory_sha256": "sha256:c0809be989ff7721e6172411a540e6ff07d4222ae1f540f21ba372b82585400a"
+        },
+        "validation": {
+          "status": "PUBLISHABLE",
+          "publishable": true,
+          "marker": {
+            "schema": "k4-completion-marker-v1",
+            "runId": "tc85-not-run-multireplica",
+            "artifact_status": "COMPLETED",
+            "execution_outcome": "NOT_RUN",
+            "qualification_flags": [],
+            "source_inventory_sha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316",
+            "bundle_inventory_sha256": "sha256:c0809be989ff7721e6172411a540e6ff07d4222ae1f540f21ba372b82585400a"
+          },
+          "report": {
+            "artifact_status": "COMPLETED",
+            "execution_outcome": "NOT_RUN",
+            "qualification_flags": [],
+            "profile": "sidebar:v2",
+            "measuredScope": {
+              "topology": "sidebar:v2"
+            },
+            "hardwareLimits": {
+              "cpu": "1",
+              "memory": "512MiB"
+            },
+            "profileArtifact": "manifest.json",
+            "rawResultArtifacts": [
+              "raw.bin"
+            ],
+            "notRunReason": "multi-replica environment unavailable: runner placement was not admitted",
+            "claims": [],
+            "runId": "tc85-not-run-multireplica",
+            "source_inventory_sha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316",
+            "sourceDigests": [
+              {
+                "path": "manifest.json",
+                "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+              },
+              {
+                "path": "raw.bin",
+                "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+              }
+            ],
+            "claimEligibility": {}
+          },
+          "claimEligibility": {},
+          "source": {
+            "status": "VERIFIED",
+            "boundary": "whole-file-bytes",
+            "digest": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316",
+            "sourceInventorySha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316",
+            "entries": [
+              {
+                "path": "manifest.json",
+                "type": "environment-manifest",
+                "byteSize": 53,
+                "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+              },
+              {
+                "path": "raw.bin",
+                "type": "source-artifact",
+                "byteSize": 4,
+                "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+              }
+            ],
+            "inventory": {
+              "schema": "k4-source-inventory-v1",
+              "runId": "tc85-not-run-multireplica",
+              "representation": "whole-file-bytes",
+              "entries": [
+                {
+                  "path": "manifest.json",
+                  "type": "environment-manifest",
+                  "byteSize": 53,
+                  "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+                },
+                {
+                  "path": "raw.bin",
+                  "type": "source-artifact",
+                  "byteSize": 4,
+                  "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+                }
+              ]
+            },
+            "inventoryPath": "C:\\Users\\Nhi\\AppData\\Local\\Temp\\k4-issue85-not-run-multireplica-5DjZWA\\source-inventory.json"
+          },
+          "bundle": {
+            "status": "VERIFIED",
+            "bundle": {
+              "schema": "k4-bundle-inventory-v1",
+              "runId": "tc85-not-run-multireplica",
+              "entries": [
+                {
+                  "path": "source-inventory.json",
+                  "type": "derived-artifact",
+                  "byteSize": 516,
+                  "sha256": "sha256:2e15a2ffa5a8a830cad1ac222b7b9f6dae175b3a6ca1a99428e9607d14d4d316"
+                },
+                {
+                  "path": "report.json",
+                  "type": "derived-artifact",
+                  "byteSize": 898,
+                  "sha256": "sha256:7993496f64618d627768d7639bee5ec5172b6b80b1fd4786c68402334605e5fb"
+                }
+              ]
+            },
+            "digest": "sha256:c0809be989ff7721e6172411a540e6ff07d4222ae1f540f21ba372b82585400a",
+            "bundlePath": "C:\\Users\\Nhi\\AppData\\Local\\Temp\\k4-issue85-not-run-multireplica-5DjZWA\\bundle-inventory.json"
+          }
+        },
+        "claims": {
+          "claimEligibility": {
+            "multiReplica": {
+              "eligible": false,
+              "reasons": [
+                "execution outcome is not MEASURED",
+                "measured scope is missing",
+                "claim exceeds measured scope"
+              ]
+            }
+          },
+          "publishable": false
+        }
+      },
+      "failedSetup": {
+        "report": {
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "FAILED_SETUP",
+          "qualification_flags": [],
+          "profile": "sidebar:v2",
+          "measuredScope": {
+            "workload": "sidebar:v2",
+            "topology": "single-replica"
+          },
+          "hardwareLimits": {
+            "cpu": "1",
+            "memory": "512MiB"
+          },
+          "profileArtifact": "manifest.json",
+          "rawResultArtifacts": [
+            "raw.bin"
+          ],
+          "setupFailureReason": "nginx login prerequisite failed",
+          "claims": [],
+          "runId": "tc85-failed-setup",
+          "source_inventory_sha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae",
+          "sourceDigests": [
+            {
+              "path": "manifest.json",
+              "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+            },
+            {
+              "path": "raw.bin",
+              "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+            }
+          ],
+          "claimEligibility": {},
+          "report": {
+            "artifact_status": "COMPLETED",
+            "execution_outcome": "FAILED_SETUP",
+            "qualification_flags": [],
+            "profile": "sidebar:v2",
+            "measuredScope": {
+              "workload": "sidebar:v2",
+              "topology": "single-replica"
+            },
+            "hardwareLimits": {
+              "cpu": "1",
+              "memory": "512MiB"
+            },
+            "profileArtifact": "manifest.json",
+            "rawResultArtifacts": [
+              "raw.bin"
+            ],
+            "setupFailureReason": "nginx login prerequisite failed",
+            "claims": [],
+            "runId": "tc85-failed-setup",
+            "source_inventory_sha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae",
+            "sourceDigests": [
+              {
+                "path": "manifest.json",
+                "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+              },
+              {
+                "path": "raw.bin",
+                "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+              }
+            ],
+            "claimEligibility": {}
+          },
+          "reportPath": "C:\\Users\\Nhi\\AppData\\Local\\Temp\\k4-issue85-failed-setup-DaoRCn\\report.json",
+          "sourceInventorySha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae"
+        },
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-failed-setup",
+          "artifact_status": "COMPLETED",
+          "execution_outcome": "FAILED_SETUP",
+          "qualification_flags": [],
+          "source_inventory_sha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae",
+          "bundle_inventory_sha256": "sha256:087e2d6cd692389d2cca4a56c344621136067ec422487fd4fdb5ab3546c882c9"
+        },
+        "validation": {
+          "status": "PUBLISHABLE",
+          "publishable": true,
+          "marker": {
+            "schema": "k4-completion-marker-v1",
+            "runId": "tc85-failed-setup",
+            "artifact_status": "COMPLETED",
+            "execution_outcome": "FAILED_SETUP",
+            "qualification_flags": [],
+            "source_inventory_sha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae",
+            "bundle_inventory_sha256": "sha256:087e2d6cd692389d2cca4a56c344621136067ec422487fd4fdb5ab3546c882c9"
+          },
+          "report": {
+            "artifact_status": "COMPLETED",
+            "execution_outcome": "FAILED_SETUP",
+            "qualification_flags": [],
+            "profile": "sidebar:v2",
+            "measuredScope": {
+              "workload": "sidebar:v2",
+              "topology": "single-replica"
+            },
+            "hardwareLimits": {
+              "cpu": "1",
+              "memory": "512MiB"
+            },
+            "profileArtifact": "manifest.json",
+            "rawResultArtifacts": [
+              "raw.bin"
+            ],
+            "setupFailureReason": "nginx login prerequisite failed",
+            "claims": [],
+            "runId": "tc85-failed-setup",
+            "source_inventory_sha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae",
+            "sourceDigests": [
+              {
+                "path": "manifest.json",
+                "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+              },
+              {
+                "path": "raw.bin",
+                "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+              }
+            ],
+            "claimEligibility": {}
+          },
+          "claimEligibility": {},
+          "source": {
+            "status": "VERIFIED",
+            "boundary": "whole-file-bytes",
+            "digest": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae",
+            "sourceInventorySha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae",
+            "entries": [
+              {
+                "path": "manifest.json",
+                "type": "environment-manifest",
+                "byteSize": 53,
+                "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+              },
+              {
+                "path": "raw.bin",
+                "type": "source-artifact",
+                "byteSize": 4,
+                "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+              }
+            ],
+            "inventory": {
+              "schema": "k4-source-inventory-v1",
+              "runId": "tc85-failed-setup",
+              "representation": "whole-file-bytes",
+              "entries": [
+                {
+                  "path": "manifest.json",
+                  "type": "environment-manifest",
+                  "byteSize": 53,
+                  "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+                },
+                {
+                  "path": "raw.bin",
+                  "type": "source-artifact",
+                  "byteSize": 4,
+                  "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+                }
+              ]
+            },
+            "inventoryPath": "C:\\Users\\Nhi\\AppData\\Local\\Temp\\k4-issue85-failed-setup-DaoRCn\\source-inventory.json"
+          },
+          "bundle": {
+            "status": "VERIFIED",
+            "bundle": {
+              "schema": "k4-bundle-inventory-v1",
+              "runId": "tc85-failed-setup",
+              "entries": [
+                {
+                  "path": "source-inventory.json",
+                  "type": "derived-artifact",
+                  "byteSize": 508,
+                  "sha256": "sha256:ef2378bde8801792616ce5556b99fa92b3a1b0f3ff1037203c1c172ff41299ae"
+                },
+                {
+                  "path": "report.json",
+                  "type": "derived-artifact",
+                  "byteSize": 894,
+                  "sha256": "sha256:1ca4d2ddbd0ceb6a959538e03e161191762b86859c71aa3d393a7121856a5c57"
+                }
+              ]
+            },
+            "digest": "sha256:087e2d6cd692389d2cca4a56c344621136067ec422487fd4fdb5ab3546c882c9",
+            "bundlePath": "C:\\Users\\Nhi\\AppData\\Local\\Temp\\k4-issue85-failed-setup-DaoRCn\\bundle-inventory.json"
+          }
+        }
+      },
+      "incomplete": {
+        "report": {
+          "artifact_status": "INCOMPLETE",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [],
+          "profile": "sidebar:v2",
+          "measuredScope": {
+            "workload": "sidebar:v2",
+            "topology": "single-replica"
+          },
+          "hardwareLimits": {
+            "cpu": "1",
+            "memory": "512MiB"
+          },
+          "profileArtifact": "manifest.json",
+          "rawResultArtifacts": [
+            "raw.bin"
+          ],
+          "claims": [],
+          "runId": "tc85-incomplete",
+          "source_inventory_sha256": "sha256:377aa6f83e3251f00dddd1725a6588a4baa527daceb9b448e46b4f57f967f0b8",
+          "sourceDigests": [
+            {
+              "path": "manifest.json",
+              "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+            },
+            {
+              "path": "raw.bin",
+              "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+            }
+          ],
+          "claimEligibility": {},
+          "report": {
+            "artifact_status": "INCOMPLETE",
+            "execution_outcome": "MEASURED",
+            "qualification_flags": [],
+            "profile": "sidebar:v2",
+            "measuredScope": {
+              "workload": "sidebar:v2",
+              "topology": "single-replica"
+            },
+            "hardwareLimits": {
+              "cpu": "1",
+              "memory": "512MiB"
+            },
+            "profileArtifact": "manifest.json",
+            "rawResultArtifacts": [
+              "raw.bin"
+            ],
+            "claims": [],
+            "runId": "tc85-incomplete",
+            "source_inventory_sha256": "sha256:377aa6f83e3251f00dddd1725a6588a4baa527daceb9b448e46b4f57f967f0b8",
+            "sourceDigests": [
+              {
+                "path": "manifest.json",
+                "sha256": "sha256:611615bd3e0d958c0728bd150a47c07284341ffaf930b868088130f446a47e92"
+              },
+              {
+                "path": "raw.bin",
+                "sha256": "sha256:a95803d91f2a2eb57d42e2a799bb0d42e2acc37c22aa9d433a4173e5db794f28"
+              }
+            ],
+            "claimEligibility": {}
+          },
+          "reportPath": "C:\\Users\\Nhi\\AppData\\Local\\Temp\\k4-issue85-incomplete-dbDQVP\\report.json",
+          "sourceInventorySha256": "sha256:377aa6f83e3251f00dddd1725a6588a4baa527daceb9b448e46b4f57f967f0b8"
+        },
+        "marker": {
+          "schema": "k4-completion-marker-v1",
+          "runId": "tc85-incomplete",
+          "artifact_status": "INCOMPLETE",
+          "execution_outcome": "MEASURED",
+          "qualification_flags": [],
+          "source_inventory_sha256": "sha256:377aa6f83e3251f00dddd1725a6588a4baa527daceb9b448e46b4f57f967f0b8",
+          "bundle_inventory_sha256": "sha256:aa4486b1ab17af8302475abbf5f49cb6dac02ccc56d805e0afdd1f691a9e06d1"
+        },
+        "validation": {
+          "status": "INCOMPLETE",
+          "artifactStatus": "INCOMPLETE",
+          "executionOutcome": "MEASURED",
+          "qualificationFlags": [],
+          "publishable": false
+        }
+      }
+    },
+    "report_guardrails": {
+      "missingProfile": {
+        "claimEligibility": {
+          "scalable": {
+            "eligible": false,
+            "reasons": [
+              "profile/environment manifest provenance is missing"
+            ]
+          }
+        },
+        "publishable": false
+      },
+      "missingRaw": {
+        "claimEligibility": {
+          "high-performance": {
+            "eligible": false,
+            "reasons": [
+              "raw result artifact provenance is missing"
+            ]
+          }
+        },
+        "publishable": false
+      },
+      "missingHardware": {
+        "claimEligibility": {
+          "production-ready": {
+            "eligible": false,
+            "reasons": [
+              "hardware limits are missing"
+            ]
+          }
+        },
+        "publishable": false
+      },
+      "missingScope": {
+        "claimEligibility": {
+          "scalable": {
+            "eligible": false,
+            "reasons": [
+              "measured scope is missing",
+              "marketing claim has no bounded measured scope"
+            ]
+          }
+        },
+        "publishable": false
+      },
+      "extrapolated": {
+        "claimEligibility": {
+          "production-ready": {
+            "eligible": false,
+            "reasons": [
+              "claim exceeds measured scope"
+            ]
+          }
+        },
+        "publishable": false
+      }
+    }
+  },
+  "tc85_06_boundary": {
+    "exact90": {
+      "successful": 9,
+      "error": 0,
+      "missing": 1,
+      "expected": 10
+    },
+    "below90": {
+      "successful": 8,
+      "error": 0,
+      "missing": 2,
+      "expected": 10
+    },
+    "finalPartial": {
+      "successful": 3,
+      "error": 0,
+      "missing": 0,
+      "expected": 3
+    },
+    "zeroSuccess": {
+      "successful": 0,
+      "error": 0,
+      "missing": 10,
+      "expected": 10
+    }
+  },
+  "tc85_07": {
+    "singleReplica": {
+      "schema": "k4-measurement-attribution-v1",
+      "source": {
+        "runId": "tc85-attribution",
+        "sourceIdentity": "backend-logs",
+        "sourceDigest": "sha256:source",
+        "parserVersion": "k4-attribution-log-parser-v1",
+        "measurementStart": "2026-08-14T00:00:00.000Z",
+        "measurementEnd": "2026-08-14T00:00:10.000Z"
+      },
+      "complete": true,
+      "incompleteReasons": [],
+      "replicas": [
+        "backend-1"
+      ],
+      "topologyNotExercised": true,
+      "claimEligible": false,
+      "supportingRecords": [
+        {
+          "requestId": "r1",
+          "upstreamAddr": "10.0.0.1:3000"
+        }
+      ]
+    },
+    "ambiguous": {
+      "schema": "k4-measurement-attribution-v1",
+      "source": {
+        "runId": "tc85-attribution",
+        "sourceIdentity": "backend-logs",
+        "sourceDigest": "sha256:source",
+        "parserVersion": "k4-attribution-log-parser-v1",
+        "measurementStart": "2026-08-14T00:00:00.000Z",
+        "measurementEnd": "2026-08-14T00:00:10.000Z"
+      },
+      "complete": false,
+      "incompleteReasons": [
+        "ambiguous upstream mapping"
+      ],
+      "replicas": [],
+      "topologyNotExercised": false,
+      "claimEligible": false,
+      "supportingRecords": [
+        {
+          "requestId": "r1",
+          "upstreamAddr": "10.0.0.9:3000"
+        }
+      ]
+    },
+    "multiReplica": {
+      "schema": "k4-measurement-attribution-v1",
+      "source": {
+        "runId": "tc85-attribution",
+        "sourceIdentity": "backend-logs",
+        "sourceDigest": "sha256:source",
+        "parserVersion": "k4-attribution-log-parser-v1",
+        "measurementStart": "2026-08-14T00:00:00.000Z",
+        "measurementEnd": "2026-08-14T00:00:10.000Z"
+      },
+      "complete": true,
+      "incompleteReasons": [],
+      "replicas": [
+        "backend-1",
+        "backend-2"
+      ],
+      "topologyNotExercised": false,
+      "claimEligible": true,
+      "supportingRecords": [
+        {
+          "requestId": "r1",
+          "upstreamAddr": "10.0.0.1:3000"
+        },
+        {
+          "requestId": "r2",
+          "upstreamAddr": "10.0.0.2:3000"
+        }
+      ]
+    },
+    "sockets": {
+      "schema": "k4-measurement-attribution-v1",
+      "source": {
+        "runId": "tc85-attribution",
+        "sourceIdentity": "backend-logs",
+        "sourceDigest": "sha256:source",
+        "parserVersion": "k4-attribution-log-parser-v1",
+        "measurementStart": "2026-08-14T00:00:00.000Z",
+        "measurementEnd": "2026-08-14T00:00:10.000Z"
+      },
+      "complete": true,
+      "incompleteReasons": [],
+      "replicas": [
+        "backend-1",
+        "backend-2"
+      ],
+      "topologyNotExercised": false,
+      "claimEligible": true,
+      "supportingRecords": [
+        {
+          "actorRef": "alice",
+          "socketId": "s1",
+          "nodeName": "backend-1",
+          "authenticatedAt": "2026-08-14T00:00:01.000Z",
+          "disconnectedAt": "2026-08-14T00:00:08.000Z"
+        },
+        {
+          "actorRef": "bob",
+          "socketId": "s2",
+          "nodeName": "backend-2",
+          "authenticatedAt": "2026-08-14T00:00:01.000Z",
+          "disconnectedAt": "2026-08-14T00:00:08.000Z"
+        }
+      ]
+    },
+    "crossReplica": {
+      "schema": "k4-measurement-attribution-v1",
+      "source": {
+        "runId": "tc85-attribution",
+        "sourceIdentity": "backend-logs",
+        "sourceDigest": "sha256:source",
+        "parserVersion": "k4-attribution-log-parser-v1",
+        "measurementStart": "2026-08-14T00:00:00.000Z",
+        "measurementEnd": "2026-08-14T00:00:10.000Z"
+      },
+      "complete": true,
+      "incompleteReasons": [],
+      "claimEligible": true,
+      "topologyNotExercised": false,
+      "senderReplica": "backend-1",
+      "receiverReplica": "backend-2",
+      "correlationId": "c1"
+    },
+    "attributionIncomplete": {
+      "schema": "k4-measurement-attribution-v1",
+      "source": {
+        "runId": "tc85-attribution",
+        "sourceIdentity": "backend-logs",
+        "sourceDigest": "sha256:source",
+        "parserVersion": "k4-attribution-log-parser-v1",
+        "measurementStart": "2026-08-14T00:00:00.000Z",
+        "measurementEnd": "2026-08-14T00:00:10.000Z",
+        "truncated": true
+      },
+      "complete": false,
+      "incompleteReasons": [
+        "source window is incomplete"
+      ],
+      "replicas": [
+        "backend-1"
+      ],
+      "topologyNotExercised": false,
+      "claimEligible": false,
+      "supportingRecords": [
+        {
+          "requestId": "r1",
+          "upstreamAddr": "10.0.0.1:3000"
+        }
+      ]
+    },
+    "unavailableMultiReplica": {
+      "executionOutcome": "NOT_RUN",
+      "reason": "multi-replica environment unavailable: runner placement was not admitted",
+      "hasSingleReplicaResult": false,
+      "hasMultiReplicaResult": false,
+      "claimCount": 0,
+      "claimValidation": {
+        "claimEligibility": {
+          "multiReplica": {
+            "eligible": false,
+            "reasons": [
+              "execution outcome is not MEASURED",
+              "measured scope is missing",
+              "claim exceeds measured scope"
+            ]
+          }
+        },
+        "publishable": false
+      }
+    }
+  }
+}
