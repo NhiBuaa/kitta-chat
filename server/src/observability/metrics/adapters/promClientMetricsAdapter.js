@@ -55,6 +55,16 @@ class PromClientMetricsAdapter {
     }
   }
 
+  initializeLabelSeries(name, labels) {
+    const metric = this.metrics.get(name);
+    if (!metric) throw new Error(`Metric is not registered: ${name}`);
+    if (metric.type === "histogram") {
+      if (typeof metric.zero === "function") metric.zero(labels);
+      else metric.observe(labels, 0);
+    }
+    else metric.labels(labels);
+  }
+
   set(name, labels, value) {
     const metric = this.metrics.get(name);
     if (!metric) throw new Error(`Metric is not registered: ${name}`);

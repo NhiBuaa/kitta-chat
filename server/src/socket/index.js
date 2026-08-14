@@ -14,8 +14,9 @@ const { createSocketConnectionTracker } = require("./connectionMetrics");
 const { logger: defaultLogger } = require("../utils/logger");
 const { createIssue61AggregateMeasurementModule } = require("../observability/issue61");
 const { createBrowserOriginPolicy } = require("../config/browserOriginPolicy");
+const { k4Attribution } = require("../observability/k4Attribution");
 
-const NODE_NAME = process.env.NODE_NAME || "backend";
+const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Socket][node=${NODE_NAME}]`;
 const deliveryLogPrefix = `[Delivery][node=${NODE_NAME}]`;
 
@@ -103,6 +104,13 @@ const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement
         const localCount = localReceiverSockets?.size || 0;
 
         if (localCount > 0) {
+            const correlationId = payload.correlationId;
+            k4Attribution.messageReceiver({
+                correlationId,
+                actorRef: String(receiverId),
+                senderRef: senderId == null ? null : String(senderId),
+                replica: NODE_NAME,
+            });
             console.log(
                 `${deliveryLogPrefix} RECEIVED receiver=${receiverId} sender=${senderId} messageId=${messageId || "n/a"} conv=${conversationId || "n/a"} localSockets=${localCount} originNode=${originNode || "unknown"}`
             );
@@ -144,11 +152,13 @@ const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement
     // =========================================================
     io.on("connection", (socket) => {
         const userId = socket.userId;
+        k4Attribution.socketConnected({ actorRef: String(userId), socketId: socket.id, nodeName: NODE_NAME });
         console.log(`${logPrefix} CONNECT user=${userId} socket=${socket.id}`);
 
         connectionTracker.track(socket);
 
         socket.on("disconnect", (reason) => {
+            k4Attribution.socketDisconnected({ actorRef: String(socket.userId), socketId: socket.id, nodeName: NODE_NAME, reason });
             console.log(`${logPrefix} DISCONNECT user=${socket.userId} socket=${socket.id} reason=${reason}`);
         });
 

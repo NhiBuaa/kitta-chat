@@ -12,6 +12,11 @@ class MetricsModule {
     this.logger = logger;
     this.catalog = { ...METRIC_CATALOG, ...metricCatalog };
     Object.values(this.catalog).forEach((definition) => this.adapter.registerMetric(definition));
+    if (typeof this.adapter.initializeLabelSeries === "function") {
+      for (const outcome of ALLOWLISTS.messageOutcomes) {
+        this.adapter.initializeLabelSeries(this.catalog.messagePersistenceDuration.name, { outcome });
+      }
+    }
   }
 
   warn(event, details) {
