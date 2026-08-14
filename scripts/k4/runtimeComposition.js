@@ -26,7 +26,7 @@ function productionEnvironment(plan, environment = process.env, randomBytes = cr
     K4_PROJECT_NAME: plan.projectName,
     K4_RUN_ID: plan.runId,
     K4_RESULT_DIR: plan.resultDirectory,
-    K4_JWT_SECRET: environment.K4_JWT_SECRET || secretHex(48, randomBytes),
+    K4_JWT_SECRET: environment.K4_JWT_SECRET || secretHex(48, randomBytes), // gitleaks:allow generated runtime secret; no literal credential
     K4_OBSERVER_TOKEN: environment.K4_OBSERVER_TOKEN || secretHex(32, randomBytes),
     K4_BENCHMARK_EMAIL: environment.K4_BENCHMARK_EMAIL || "alice@kittachat.test",
     K4_BENCHMARK_PASSWORD: environment.K4_BENCHMARK_PASSWORD,

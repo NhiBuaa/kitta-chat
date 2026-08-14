@@ -111,8 +111,8 @@ services:
   observer:
     image: ${K4_OBSERVER_IMAGE:?build or start through the K4 lifecycle CLI with an image set}
     build:
-      context: .
-      dockerfile: scripts/k4/observer.Dockerfile
+      context: ./scripts/k4
+      dockerfile: observer.Dockerfile
     labels: *k4-labels
     command: ["node", "-e", "setInterval(() => {}, 2147483647)"]
     environment:
@@ -131,8 +131,8 @@ services:
   observer-helper:
     image: ${K4_OBSERVER_HELPER_IMAGE:?build or start through the K4 lifecycle CLI with a helper image set}
     build:
-      context: .
-      dockerfile: scripts/k4/observer-helper.Dockerfile
+      context: ./scripts/k4
+      dockerfile: observer-helper.Dockerfile
     labels: *k4-labels
     environment:
       K4_OBSERVER_TOKEN: ${K4_OBSERVER_TOKEN:?run through the K4 lifecycle CLI}
