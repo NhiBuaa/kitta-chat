@@ -14,14 +14,10 @@ const WORKLOAD_ARTIFACTS = Object.freeze({
   measurement: "measurement-runner.json",
 });
 
-function secretHex(bytes, randomBytes = crypto.randomBytes) {
-  return randomBytes(bytes).toString("hex");
-}
-
 function productionEnvironment(plan, environment = process.env, randomBytes = crypto.randomBytes) {
   const imageSet = imageSetEnvironment(environment.K4_IMAGE_SET_ID);
   const jwtEnvironmentKey = ["K4", "JWT", "SECRET"].join("_");
-  const jwtEnvironmentValue = environment[jwtEnvironmentKey] || secretHex(48, randomBytes);
+  const jwtEnvironmentValue = environment[jwtEnvironmentKey] || randomBytes(48).toString("hex");
   return {
     ...environment,
     ...imageSet,
@@ -29,7 +25,7 @@ function productionEnvironment(plan, environment = process.env, randomBytes = cr
     K4_RUN_ID: plan.runId,
     K4_RESULT_DIR: plan.resultDirectory,
     [jwtEnvironmentKey]: jwtEnvironmentValue,
-    K4_OBSERVER_TOKEN: environment.K4_OBSERVER_TOKEN || secretHex(32, randomBytes),
+    K4_OBSERVER_TOKEN: environment.K4_OBSERVER_TOKEN || randomBytes(32).toString("hex"),
     K4_BENCHMARK_EMAIL: environment.K4_BENCHMARK_EMAIL || "alice@kittachat.test",
     K4_BENCHMARK_PASSWORD: environment.K4_BENCHMARK_PASSWORD,
     DEMO_SEED_PASSWORD: environment.K4_BENCHMARK_PASSWORD,
