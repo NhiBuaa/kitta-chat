@@ -7,11 +7,12 @@ create workload or grant Docker-management access to the runner.
 
 ## Issue #87: Message persistence and recipient delivery
 
-Issue #87 is accepted on branch `codex/k4-issue87`. The locked manual guide is `k4-issue-87-r2`.
-The append-only Evaluation history ends with `tc87-r2-acceptance-20260814` and records
-`PASSED` with explicit human approval. The fixed-point review over base `dcdd64d` and head
-`f2f9a10` is `APPROVE` on both Standards and Spec axes with zero Critical/Major findings;
-publication through a PR remains the final integration transition.
+Issue #87 was accepted from branch `codex/k4-issue87` and delivered through [PR #99](https://github.com/NhiBuaa/kitta-chat/pull/99),
+merged into `main` at `cfd1bf90c490dfcfe3349107f841269d1b6aa720`. GitHub Issue #87 is now
+`CLOSED`. The locked manual guide is `k4-issue-87-r2`; its append-only Evaluation history ends
+with `tc87-r2-acceptance-20260814` and records `PASSED` with explicit human approval. The
+fixed-point review over base `dcdd64d` and head `f2f9a10` is `APPROVE` on both Standards and Spec
+axes with zero Critical/Major findings, and post-merge integration verification remains green.
 
 ### Delivered evidence boundary
 
@@ -41,6 +42,7 @@ publication through a PR remains the final integration transition.
 | `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md` | Locked manual guide |
 | `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl` | Append-only acceptance history |
 | `.agents/feature-delivery-events/events.jsonl` | Transition ledger |
+| `.agents/feature-delivery-events/k4-performance-evidence-integration-completed-20260814.json` | Integration/publication completion event |
 | `.k4-image-sets/k4issue87r3.json` | Immutable image-set identities and nginx config fingerprint |
 | `.k4-results/issue87-single-20260814` | Fresh single-replica evidence |
 | `.k4-results/issue87-multi-20260814` | Fresh multi-replica evidence |

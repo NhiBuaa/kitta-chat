@@ -2,16 +2,17 @@
 
 ## Current Parallel Frontier Override
 
-Issue #84 and #87 are complete. This worktree records the Issue #87 message persistence and
-recipient-delivery fixed point. Issues #85, #86, and #88 must be handled in their own worktrees.
+Issue #84 and #87 are complete. Issue #87 is fully integrated through PR #99; this worktree
+records its closeout metadata on branch `codex/k4-issue87-closeout`. Issues #85, #86, and #88
+must be handled in their own worktrees.
 
-## Issue #87 Continuation Checkpoint
+## Issue #87 Closeout Checkpoint
 
-Issue #87 implementation and TC-87-03 remediation are complete on `codex/k4-issue87`. The locked
-`k4-issue-87-r2` guide and append-only Evaluation history are unchanged except for the new
-remediation record: TC-87-01 through TC-87-05 all pass, and `tc87-r2-acceptance-20260814` is
-`PASSED` with explicit human approval. The next review transition remains intentionally pending;
-do not integrate before that gate.
+Issue #87 implementation and TC-87-03 remediation were completed on `codex/k4-issue87`, then
+published by PR #99 and merged into `main` at `cfd1bf90c490dfcfe3349107f841269d1b6aa720`.
+The locked `k4-issue-87-r2` guide and append-only Evaluation history are retained: TC-87-01 through
+TC-87-05 all pass, and `tc87-r2-acceptance-20260814` is `PASSED` with explicit human approval.
+GitHub Issue #87 is closed; do not reopen or extend this slice from this worktree.
 
 ## Issue #85 Completion Checkpoint (parallel frontier)
 
@@ -78,8 +79,8 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 
 1. Preserve accepted Issue #81–#85 and #87 implementations, immutable guide revisions, and
    append-only Evaluation histories. These slices have no additional implementation scope.
-2. Issue #87 is acceptance-complete and fixed-point reviewed APPROVE. The next transition is PR
-   publication and final integration; keep the current accepted artifacts immutable.
+2. Issue #87 is acceptance-complete, fixed-point reviewed APPROVE, and integrated by PR #99 at
+   `cfd1bf90c490dfcfe3349107f841269d1b6aa720`; keep the current accepted artifacts immutable.
 3. Issues #86 and #88 remain separate K4 frontiers in their own worktrees. Do not start them
    from this Issue #87 worktree.
 
@@ -90,8 +91,8 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 - `docs/k4-performance-evidence.md` is the repository delivery summary.
 - Issue #87 focused K4 136/136; combined post-reconcile K4 143/143, repository CI 132/132, and
   server 476 passed/5 skipped/0 failed remain the recorded verification results.
-- Fixed-point review is `APPROVE` with zero Critical/Major findings on both Standards and Spec axes;
-  PR publication and final integration metadata remain pending.
+- Fixed-point review is `APPROVE` with zero Critical/Major findings on both Standards and Spec axes.
+- PR #99 is `MERGED` at `cfd1bf90c490dfcfe3349107f841269d1b6aa720`, and Issue #87 is `CLOSED`.
 
 ## Issue #84 historical implementation checkpoint (superseded)
 
@@ -135,6 +136,7 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 - Issue #87 delivery summary: `docs/k4-performance-evidence.md`
 - Locked Issue #87 guide: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md`
 - Issue #87 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl`
+- Issue #87 publication: PR #99, merge commit `cfd1bf90c490dfcfe3349107f841269d1b6aa720`
 - Current World Model: `.agents/CONTEXT.md`
 - Current workflow state: `.agents/current-session.md` and `.agents/feature-delivery-events/events.jsonl`;
   create a fresh Resume Contract only when suspending this workflow.
