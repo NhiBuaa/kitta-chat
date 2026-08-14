@@ -15,11 +15,19 @@
         "guide_revision": "k4-issue-87-r2"
       },
       "integration": {
-        "status": "reconciled",
+        "status": "integrated",
         "verification": {
           "k4_tests": "143/143 passed",
           "repository_ci": "132/132 passed",
           "server": "476 passed, 5 skipped, 0 failed"
+        },
+        "publication": {
+          "provider": "github",
+          "pr_number": 99,
+          "pr_url": "https://github.com/NhiBuaa/kitta-chat/pull/99",
+          "merge_commit": "cfd1bf90c490dfcfe3349107f841269d1b6aa720",
+          "merged_at": "2026-08-14T06:35:25Z",
+          "issue_state": "CLOSED"
         }
       }
     }
@@ -30,7 +38,17 @@
     "base_commit": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
     "initial_head": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
     "current_head": "f2f9a108a117b8a37b9829fa574c22ecf407a883",
+    "status": "integrated",
     "default_branch_unchanged": true,
+    "published_head": "cfd1bf90c490dfcfe3349107f841269d1b6aa720",
+    "publication": {
+      "provider": "github",
+      "pr_number": 99,
+      "pr_url": "https://github.com/NhiBuaa/kitta-chat/pull/99",
+      "merge_commit": "cfd1bf90c490dfcfe3349107f841269d1b6aa720",
+      "merged_at": "2026-08-14T06:35:25Z",
+      "issue_state": "CLOSED"
+    },
     "sequence": [
       {
         "action": "reconcile_with_default_branch",

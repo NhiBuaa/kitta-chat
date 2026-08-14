@@ -3,9 +3,10 @@
 ## K4 Current Frontier Override
 
 Issue #84 is closed after the accepted K4 measurement-observation delivery. Issue #85 is
-implemented and manually accepted. Issue #87 is now accepted after implementation, bounded
-remediation, and manual acceptance. Issues #86 and #88 remain independent K4 children in their
-own worktrees. This worktree is reserved for Issue #87 only on branch `codex/k4-issue87`.
+implemented and manually accepted. Issue #87 is fully integrated after implementation, bounded
+remediation, manual acceptance, final review, and PR #99 publication. Issues #86 and #88 remain
+independent K4 children in their own worktrees. This worktree retains the Issue #87 closeout
+metadata on branch `codex/k4-issue87-closeout`.
 
 - Issue #87 implementation and bounded TC-87-03 remediation are complete in this worktree.
 - Automated evidence is green: Issue #87 focused K4 136/136; combined post-reconcile K4 143/143;
@@ -29,10 +30,9 @@ own worktrees. This worktree is reserved for Issue #87 only on branch `codex/k4-
 - Local `main` and `github/main` were previously synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98`; K4 Issue #81 was published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
 - No deployment or destructive K3.1 reset was performed.
 - K4 Reproducible Performance Evidence is active under locked specification Issue #80 and ADR-015.
-- Issues #81–#89 are published. Issues #81–#85 and #87 have completed implementation/acceptance
-  milestones; final review/integration remains a separate transition for #87. Issues #86 and #88
-  remain independent pending frontiers, and later dependent issues remain blocked by the approved
-  ticket graph.
+- Issues #81–#89 are published. Issues #81–#85 and #87 have completed implementation, acceptance,
+  review, and integration milestones. Issues #86 and #88 remain independent pending frontiers, and
+  later dependent issues remain blocked by the approved ticket graph.
 - K4 is leader-coordinated: the leader does not implement issues. Guide revisions `k4-issue-81-r1` through `k4-issue-81-r3` remain immutable; `k4-issue-81-r4` is locked and approved. Issue #81 implementation and mandatory acceptance TC-81-01 through TC-81-04 are complete and accepted; TC-81-05 was not run because it remains conditional.
 - Issue #81 final remediation fixed point has append-only Evaluation `tc81digest-v1`; mandatory TC-81-01 through TC-81-04 pass, TC-81-05 remains conditional/non-blocking.
 - Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 is closed.
@@ -92,7 +92,8 @@ own worktrees. This worktree is reserved for Issue #87 only on branch `codex/k4-
 - K3.1 closure-ledger synchronization: PR #77, merge commit `0cb0dc2a`.
 - Issue #87 acceptance fixed point: `tc87-r2-acceptance-20260814` is `PASSED`; branch reconciliation
   merge `e69932c` is green; fixed-point review is `APPROVE` with zero Critical/Major findings on
-  both Standards and Spec axes; PR publication remains pending.
+  both Standards and Spec axes; PR #99 is merged at `cfd1bf90c490dfcfe3349107f841269d1b6aa720`,
+  and GitHub Issue #87 is closed.
 
 ## Guardrails
 
