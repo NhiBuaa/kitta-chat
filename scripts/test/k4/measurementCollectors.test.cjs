@@ -133,3 +133,33 @@ test("collector preserves valid latency evidence while claim eligibility is dete
   assert.equal(evidence.claimEligibility.multiReplica.eligible, false);
   assert.equal(evidence.claimEligibility.crossReplica.eligible, false);
 });
+
+test("resource coverage counts the final partial slot and enforces the exact ninety-percent boundary", () => {
+  const samples = (offsets) => offsets.map((offset) => ({
+    timestamp: new Date(Date.parse("2026-08-13T00:00:00.000Z") + offset * 1000).toISOString(),
+    status: "success",
+    sample: { cpuUsageUsec: offset + 1 },
+  }));
+  const base = {
+    measurementStart: "2026-08-13T00:00:00.000Z",
+    measurementEnd: "2026-08-13T00:00:10.000Z",
+    intervalMs: 1000,
+    requiredContainers: ["nginx"],
+  };
+  const ninety = deriveResourceQualification({ ...base, observations: { nginx: samples([0, 1, 2, 3, 4, 5, 6, 7, 8]) } });
+  assert.deepEqual(ninety.byContainer.nginx.counts, { successful: 9, error: 0, missing: 1, expected: 10 });
+  assert.equal(ninety.byContainer.nginx.coverage, 0.9);
+  assert.equal(ninety.byContainer.nginx.sufficient, true);
+  const below = deriveResourceQualification({ ...base, observations: { nginx: samples([0, 1, 2, 3, 4, 5, 6, 7]) } });
+  assert.equal(below.byContainer.nginx.sufficient, false);
+  const partial = deriveResourceQualification({
+    ...base,
+    measurementEnd: "2026-08-13T00:00:02.500Z",
+    observations: { nginx: samples([0, 1, 2]) },
+  });
+  assert.equal(partial.expectedCount, 3);
+  assert.deepEqual(partial.byContainer.nginx.counts, { successful: 3, error: 0, missing: 0, expected: 3 });
+  const zero = deriveResourceQualification({ ...base, observations: { nginx: [] } });
+  assert.deepEqual(zero.byContainer.nginx.counts, { successful: 0, error: 0, missing: 10, expected: 10 });
+  assert.equal(zero.byContainer.nginx.sufficient, false);
+});
