@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-issue-85-acceptance-approved-r3",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "issue-85",
+  "transition": "acceptance_prepared",
+  "skill": "manual-acceptance",
+  "execution_revision": "k4-issue-85-r3",
+  "started_at": "2026-08-14T04:37:23Z",
+  "finished_at": "2026-08-14T04:37:50Z",
+  "status": "completed",
+  "retry_count": 0,
+  "input_digest": "44b97b50a77f080dc37c3e5f740238c1da3a383147b6ada838145b225cb5fe13",
+  "output_digest": "b5b12609b51a31fb24aa06f4bfb14fb56fc26acc9d5b4df4e376578a44375dce",
+  "evidence_references": [
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-review-cadence-evidence-r3.json",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-r3-spec-design-external-review.json",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-r3-ticket-external-review.json",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-r3-manual-guide-external-review.json"
+  ]
+}

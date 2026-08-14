@@ -52,4 +52,4 @@ Final verdict: `APPROVE` with zero Critical and zero Major findings.
 - PR: https://github.com/NhiBuaa/kitta-chat/pull/95
 - Merge commit: `ce1adcd091fb00814e03c0021ab801a67621c168`
 - Tracker: GitHub Issue #83 is closed.
-- Next K4 frontier: Issue #84, measurement and observation collectors. Issue #85 remains blocked by #84.
+- Issue #84 and Issue #85 have since completed their approved implementation and acceptance transitions. Remaining K4 issues continue in separate parallel worktrees; no next frontier is selected by this Issue #85 session.

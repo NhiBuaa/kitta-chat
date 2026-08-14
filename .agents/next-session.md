@@ -13,12 +13,38 @@ remediation record: TC-87-01 through TC-87-05 all pass, and `tc87-r2-acceptance-
 `PASSED` with explicit human approval. The next review transition remains intentionally pending;
 do not integrate before that gate.
 
+## Issue #85 Completion Checkpoint (parallel frontier)
+
+Manual guide revision `k4-issue-85-r3` is locked and human-approved at
+`.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`; r1
+and r2 remain immutable. It covers whole-file exact retained source-inventory bytes, source/bundle provenance,
+report hardware/measured-scope guardrails, exact resource-coverage boundaries, report immutability,
+run collision and incomplete state, independent/combined qualification axes, attribution/`NOT_RUN`,
+and separate optimization versus topology comparison contracts. Review cadence is `high` at
+`.agents/manual-tests/k4-performance-evidence/issue-85-review-cadence.json`.
+
+The current cadence evidence envelope is
+`.agents/manual-tests/k4-performance-evidence/issue-85-review-cadence-evidence-r3.json`. The
+required high-cadence spec/design, ticket, and manual-guide external reviews are complete with
+`APPROVE` and zero Critical/Major/Minor findings. Human acceptance is complete; the final
+feature review is intentionally deferred until the complete K4 feature reaches its fixed point.
+
+The delegated implementation is complete in the dedicated `codex/k4-issue85` worktree. Focused
+K4 tests pass 12/12 and `npm run test:ci` passes 132/132. The append-only manual Evaluation
+`issue-85-provenance-report-validator-r3.evaluations.jsonl` records all required TC-85-01 through
+TC-85-08 observations as PASS; explicit human approval is recorded by
+`tc85r3-human-approved-20260814`.
+
+Next valid transition for the Issue #85 worktree was completion after acceptance. Its implementation
+and evidence remain preserved here as a separate parallel frontier; do not select Issue #86 from
+this Issue #87 worktree.
+
 ## Current State
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89. Issues #81–#84 and #87 have completed their implementation/acceptance milestones.
-Issues #85, #86, and #88 remain separate frontiers; later dependent issues remain governed by the
+Issues #81–#89. Issues #81–#85 and #87 have completed their implementation/acceptance milestones.
+Issues #86 and #88 remain separate frontiers; later dependent issues remain governed by the
 approved dependency graph.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
@@ -48,14 +74,14 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 `npm run test:ci` passed 122/122. Issue #83 was delivered by PR #95, merge commit
 `ce1adcd091fb00814e03c0021ab801a67621c168`, and is closed.
 
-## Next Valid Transition
+## Session Stop State
 
-1. Preserve accepted Issue #81–#84 and #87 implementations, immutable guide revisions, and
+1. Preserve accepted Issue #81–#85 and #87 implementations, immutable guide revisions, and
    append-only Evaluation histories. These slices have no additional implementation scope.
 2. Issue #87 is acceptance-complete. The next transition is final code review when explicitly
    requested; do not integrate the branch before that review.
-3. Issues #85, #86, and #88 remain separate K4 frontiers in their own worktrees. Do not start
-   them from this Issue #87 worktree.
+3. Issues #86 and #88 remain separate K4 frontiers in their own worktrees. Do not start them
+   from this Issue #87 worktree.
 
 ## Issue #87 Fixed Point
 
@@ -65,6 +91,35 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 - K4 136/136, repository CI 132/132, and server 476 passed/5 skipped/0 failed remain the recorded
   verification results.
 - Final code review and integration are intentionally pending; no review verdict is recorded here.
+
+## Issue #84 historical implementation checkpoint (superseded)
+
+- The observer-owned collector lifecycle, deterministic cadence, topology-complete histogram evidence,
+  attribution derivation/raw-source parsing, typed observer-helper boundary, claim qualification, artifact
+  persistence, and CLI-to-runner composition seams are implemented with automated coverage.
+- Manual acceptance remains blocked. The approved Issue #83 profile snapshots do not define the production
+  execution window and actor allocation needed by the production entry: fixed-rate duration and warm-up
+  semantics are absent, while socket-concurrency has no actor allocation or ramp timeout. The production
+  composition fails closed before setup when these fields are absent.
+- Next valid transition: obtain a minimal upstream Issue #83/K4 authority amendment that locks those execution
+  semantics and updates the approved immutable profile version(s). Then implement the concrete runner executable,
+  rerun automated verification, and only afterward execute locked Issue #84 guide r4. Do not choose local defaults
+  or run manual acceptance before that authority is approved.
+
+## Issue #84 post-amendment historical checkpoint (superseded)
+
+- The executable profile amendment is locked at Issue #80 comment
+  `https://github.com/NhiBuaa/kitta-chat/issues/80#issuecomment-5275838939`.
+- Approved v2 profiles and the runner workload executor are implemented; K4 automated tests pass 101/101 and
+  `npm run test:ci` passes 132/132.
+- Manual acceptance remains blocked by a concrete caller-graph defect: `runtimeComposition` constructs the
+  observation lifecycle in the host CLI process, while the locked helper URL (`observer-helper:8080`) is only
+  resolvable from the Compose observation network. The `observer` service is currently idle and does not own or
+  expose the observation lifecycle. Running r4 now would therefore fail helper reachability or bypass the locked
+  observer capability boundary.
+- Next valid transition: implement and test the production observation RPC/caller path so the observer process on
+  `k4-observation` owns observation lifecycle calls, the helper remains the only Docker authority, and the runner
+  has no route or credential to either. Only after that path is proven should manual guide r4 execute.
 
 ## K4 Authorities
 
@@ -84,6 +139,11 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
   create a fresh Resume Contract only when suspending this workflow.
 - Issue #84 historical execution branch/worktree: `codex/k4-issue84` /
   `D:\Developer\Projects\shotter\shot-chat-worktrees\issue-84`
+- Locked Issue #85 guide: `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`
+- Issue #85 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.evaluations.jsonl`
+- Resume Contract: `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-feature-delivery-leader.json`
+- Issue #85 completion worktree: `codex/k4-issue85` /
+  `D:\Developer\Projects\shotter\shot-chat-worktrees\issue-85`
 
 ## Guardrails
 

@@ -45,11 +45,12 @@ function classifySlots(slots, intervalMs, observations = []) {
   return slots.map((start, index) => assigned.get(index) || { status: "missing", slotStart: new Date(start).toISOString() });
 }
 
-function deriveResourceQualification({ measurementStart, measurementEnd, intervalMs, requiredContainers, observations }) {
-  const slots = slotStarts({ measurementStart, measurementEnd, intervalMs });
+function deriveResourceQualification({ measurementStart, measurementEnd, intervalMs, interval, requiredContainers, observations }) {
+  const cadenceMs = intervalMs || interval;
+  const slots = slotStarts({ measurementStart, measurementEnd, intervalMs: cadenceMs });
   if (!Array.isArray(requiredContainers) || !requiredContainers.length) throw new Error("required container set is required");
   const byContainer = Object.fromEntries(requiredContainers.map((container) => {
-    const classified = classifySlots(slots, intervalMs, observations?.[container]);
+    const classified = classifySlots(slots, cadenceMs, observations?.[container]);
     const counts = classified.reduce((total, slot) => ({ ...total, [slot.status === "success" ? "successful" : slot.status]: total[slot.status === "success" ? "successful" : slot.status] + 1 }), {
       successful: 0, error: 0, missing: 0, expected: slots.length,
     });
@@ -64,7 +65,7 @@ function deriveResourceQualification({ measurementStart, measurementEnd, interva
   const incomplete = Object.values(byContainer).some((coverage) => !coverage.sufficient);
   return {
     measurementWindow: { start: measurementStart, end: measurementEnd, boundary: "[measurement_start, measurement_end)" },
-    intervalMs,
+    intervalMs: cadenceMs,
     expectedCount: slots.length,
     requiredContainers: [...requiredContainers],
     byContainer,

@@ -6,6 +6,9 @@ const { K4_DATASET_DECLARATION, assertFreshRunTargets, classifySetupFailure, sca
 const { approvedWorkloadProfile, resolveWorkloadProfile } = require("./workloadProfiles");
 const { runProductionPlan } = require("./productionRun");
 const { ALLOWED_FAULT_FIXTURES, normalizeFaultFixture } = require("./runner/faultFixtures");
+const { buildSourceInventory, deriveReport } = require("./provenance");
+const { finalizeRun, validateRunArtifacts } = require("./runArtifacts");
+const { validateExperimentComparison } = require("./experimentValidator");
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -46,6 +49,16 @@ function planFromArguments({ inspection = false } = {}) {
 
 function resolveBenchmarkPassword(environment = process.env, randomBytes = crypto.randomBytes) {
   return environment.K4_BENCHMARK_PASSWORD || `K4a!${randomBytes(24).toString("base64url")}`;
+}
+
+function jsonArgument(name, fallback) {
+  const value = argument(name);
+  if (!value) return fallback;
+  try { return JSON.parse(value); } catch { throw new Error(`${name} must be valid JSON`); }
+}
+
+function resultDirectoryArgument() {
+  return argument("--result-dir") || planFromArguments().resultDirectory;
 }
 
 function runSetupPreflight({
@@ -102,6 +115,62 @@ async function main({ executeProduction } = {}) {
     const rightAttestation = attestRuntimeTopology(right);
     if (leftAttestation.status !== "ATTESTED" || rightAttestation.status !== "ATTESTED") return print({ status: "NON-COMPARABLE", leftAttestation, rightAttestation });
     return print(compareEffectiveTopologySnapshots(left, right));
+  }
+  if (action === "provenance") {
+    const plan = planFromArguments();
+    return print(buildSourceInventory({
+      resultDirectory: resultDirectoryArgument(),
+      runId: plan.runId,
+      profile: plan.profile,
+      topology: plan.topology,
+      sourceArtifacts: jsonArgument("--source-artifacts", undefined),
+      environmentManifestPath: argument("--environment-manifest"),
+    }));
+  }
+  if (action === "derive-report") {
+    const resultDirectory = resultDirectoryArgument();
+    const reportPath = argument("--report-path") || "report.json";
+    return print(deriveReport({
+      resultDirectory,
+      sourceInventoryPath: argument("--source-inventory") || "source-inventory.json",
+      sourceInventorySha256: argument("--source-inventory-sha256"),
+      reportPath,
+      report: jsonArgument("--report-json", {}),
+      claims: jsonArgument("--claims-json", undefined),
+    }));
+  }
+  if (action === "finalize") {
+    const plan = planFromArguments();
+    return print(finalizeRun({
+      resultDirectory: resultDirectoryArgument(),
+      runId: plan.runId,
+      sourceInventoryPath: argument("--source-inventory") || "source-inventory.json",
+      sourceInventorySha256: argument("--source-inventory-sha256"),
+      reportPath: argument("--report-path") || "report.json",
+      derivedArtifacts: jsonArgument("--derived-artifacts", []),
+      artifactStatus: argument("--artifact-status") || "COMPLETED",
+      executionOutcome: argument("--execution-outcome") || "MEASURED",
+      qualificationFlags: jsonArgument("--qualification-flags", []),
+    }));
+  }
+  if (action === "validate") {
+    const plan = planFromArguments();
+    return print(validateRunArtifacts({
+      resultDirectory: resultDirectoryArgument(),
+      expectedRunId: plan.runId,
+      markerPath: argument("--marker") || "COMPLETED",
+      sourceInventoryPath: argument("--source-inventory") || "source-inventory.json",
+      reportPath: argument("--report-path") || "report.json",
+    }));
+  }
+  if (action === "compare-experiment") {
+    return print(validateExperimentComparison({
+      experimentType: argument("--experiment-type") || argument("--type"),
+      baseline: jsonArgument("--baseline-json"),
+      candidate: jsonArgument("--candidate-json"),
+      bottleneckEvidence: jsonArgument("--bottleneck-json"),
+      treatment: jsonArgument("--treatment-json"),
+    }));
   }
   if (action === "diagnose-runner") {
     rejectWorkloadChannels(action);
@@ -168,7 +237,7 @@ async function main({ executeProduction } = {}) {
     return print(validateCleanupTarget(argument("--class"), target, argument("--run-id")));
   }
   if (action === "cleanup") return print(cleanup(argument("--run-id"), argument("--confirm-digest")));
-  throw new Error("usage: k4 <help|resolve|compare|diagnose-runner|build-image-set|execute|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
+  throw new Error("usage: k4 <resolve|compare|provenance|derive-report|finalize|validate|compare-experiment|diagnose-runner|build-image-set|execute|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
 }
 
 if (require.main === module) {

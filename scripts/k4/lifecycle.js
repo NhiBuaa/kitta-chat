@@ -517,6 +517,7 @@ function resultDirectoryIsOwned(resultDirectory, runId) {
 }
 
 function createResultDirectory(plan) {
+  if (fs.existsSync(plan.resultDirectory)) throw new Error("K4 result directory already exists and cannot be reused");
   fs.mkdirSync(plan.resultDirectory, { recursive: true });
   fs.writeFileSync(ownerFile(plan.resultDirectory), `${JSON.stringify({ project: PROJECT_MARKER, runId: plan.runId })}\n`, { flag: "wx" });
 }

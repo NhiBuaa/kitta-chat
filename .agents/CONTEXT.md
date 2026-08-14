@@ -210,5 +210,38 @@ kiểm soát cho K4 acceptance. Fixture không sửa workload snapshot, không �
 và failure opportunity không trở thành latency sample.
 _Avoid_: dùng ad-hoc production fault, mở arbitrary workload mutation, hoặc bật fixture trong warm-up.
 
+**K4 Source Inventory**:
+Artifact persisted on disk that lists the retained source artifacts for one run. By default,
+`source_inventory_sha256` is the SHA-256 of the complete exact persisted bytes of that artifact;
+the verifier does not parse, reserialize, canonicalize, or normalize those bytes. A different
+representation is valid only when an authoritative schema or contract defines it.
+
+**K4 Bundle Inventory and Completion Marker**:
+The bundle inventory hashes the source inventory, report, and declared derived artifacts but does
+not hash itself or the non-inventoried `COMPLETED` marker. The marker records independent
+`artifact_status`, `execution_outcome`, and `qualification_flags` axes plus both inventory
+digests. Marker presence alone does not make every report claim eligible.
+
+**K4 Report Claim Guardrail**:
+A report claim is bounded by the recorded hardware limits, measured workload/topology scope,
+source/profile/environment provenance, and raw-result artifacts. Claims cannot extrapolate beyond
+that scope, and `scalable`, `high-performance`, or `production-ready` claims are not publishable
+when the required provenance is incomplete.
+
+**K4 Resource Coverage**:
+Resource observation uses the half-open measurement window `[measurement_start, measurement_end)`.
+The expected slot count is `ceil(duration / interval)`, including a final partial slot; every
+required container needs at least one success and `successful / expected >= 0.90`.
+
+**K4 Comparison Contract**:
+Optimization comparisons allow only the declared treatment (with equivalent non-treatment
+conditions and linked bottleneck evidence). Topology comparisons allow only the declared topology
+or replica-count difference. Both contracts retain source/bundle provenance and reject undeclared
+condition changes.
+
+_Normative K4 boundary_: [ADR-015](../docs/adr/015-k4-performance-evidence-boundary.md) and the
+locked Issue #85 acceptance guide define the validation and evidence rules; workflow status lives
+in `.agents/current-session.md` and `.agents/next-session.md`.
+
 
 
