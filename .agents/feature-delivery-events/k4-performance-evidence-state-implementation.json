@@ -1,0 +1,66 @@
+{
+  "dependencies_reachable": true,
+  "tickets": [
+    {
+      "reference": "https://github.com/NhiBuaa/kitta-chat/issues/87",
+      "implementation": {
+        "status": "completed",
+        "all_tests_green": true
+      },
+      "acceptance": {
+        "status": "completed",
+        "verdict": "PASSED",
+        "human_approval": "approved",
+        "run_id": "tc87-r2-acceptance-20260814",
+        "guide_revision": "k4-issue-87-r2"
+      },
+      "integration": {
+        "status": "reconciled",
+        "verification": {
+          "k4_tests": "143/143 passed",
+          "repository_ci": "132/132 passed",
+          "server": "476 passed, 5 skipped, 0 failed"
+        }
+      }
+    }
+  ],
+  "integration": {
+    "default_branch": "main",
+    "feature_branch": "codex/k4-issue87",
+    "base_commit": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+    "initial_head": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+    "current_head": "f2f9a108a117b8a37b9829fa574c22ecf407a883",
+    "default_branch_unchanged": true,
+    "sequence": [
+      {
+        "action": "reconcile_with_default_branch",
+        "default_branch_head": "dcdd64d613da5ec378cfeb67f1c08756fc286987",
+        "merge_commit": "e69932c",
+        "conflicts_resolved": [
+          ".agents/CONTEXT.md",
+          ".agents/current-session.md",
+          ".agents/next-session.md",
+          "README.md",
+          "scripts/k4/cli.js"
+        ]
+      }
+    ]
+  },
+  "review": {
+    "status": "completed",
+    "verdict": "APPROVE",
+    "critical_count": 0,
+    "major_count": 0,
+    "base_commit": "dcdd64d613da5ec378cfeb67f1c08756fc286987",
+    "merge_base_commit": "dcdd64d613da5ec378cfeb67f1c08756fc286987",
+    "head_commit": "f2f9a108a117b8a37b9829fa574c22ecf407a883",
+    "merge_base_semantics": true,
+    "commit_list": [
+      "2aa5d69249051baa5291de483085304ddf7a28ed",
+      "55b9cba26663a674a7c45df0d136cbee3428d22d",
+      "e69932cd5adb12a5c8ec2d7607008bb7dcaf1dcb",
+      "f2f9a108a117b8a37b9829fa574c22ecf407a883"
+    ],
+    "diff_command": "git diff dcdd64d613da5ec378cfeb67f1c08756fc286987..f2f9a108a117b8a37b9829fa574c22ecf407a883"
+  }
+}

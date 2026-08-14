@@ -60,7 +60,10 @@ function createProductionMeasurementObservation({ intervalMs, runtimePort, clock
         resource: { observations: mergeResourceSamples(samples, observations, requiredContainers) },
         loadGenerator: { shortfall, runner: { ...runner, samples: samples.map((sample) => sample.value?.cgroup).filter(Boolean) } },
         claimEvidence: claimEvidenceFromMeasurement({ plan, measurementOutput, attribution }),
-        qualificationFlags: measurementOutput?.qualificationFlags,
+        qualificationFlags: [...new Set([
+          ...(measurementOutput?.qualificationFlags || []),
+          ...(attribution?.topologyNotExercised === true ? ["TOPOLOGY_NOT_EXERCISED"] : []),
+        ])],
       };
     },
   });
@@ -86,7 +89,7 @@ function claimEvidenceFromMeasurement({ plan, measurementOutput, attribution }) 
       && measurementOutput?.targetConcurrency === target;
   }
   if (scenario === "message") {
-    evidence.endToEndDelivery = attribution?.claimEligible === true;
+    evidence.endToEndDelivery = attribution?.deliveryEligible === true || attribution?.claimEligible === true;
     evidence.crossReplica = attribution?.claimEligible === true;
   }
   return evidence;

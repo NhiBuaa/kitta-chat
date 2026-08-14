@@ -1,12 +1,19 @@
 # Next Session — K4 Leader Continuation
 
-## Session Completion Override
+## Current Parallel Frontier Override
 
-Issue #85 is complete and manually accepted. This worktree retains its implementation and
-append-only acceptance evidence. This session stops here; Issue #86 is being handled in a
-separate parallel worktree and is not this session's next frontier.
+Issue #84 and #87 are complete. This worktree records the Issue #87 message persistence and
+recipient-delivery fixed point. Issues #85, #86, and #88 must be handled in their own worktrees.
 
-## Issue #85 Completion Checkpoint
+## Issue #87 Continuation Checkpoint
+
+Issue #87 implementation and TC-87-03 remediation are complete on `codex/k4-issue87`. The locked
+`k4-issue-87-r2` guide and append-only Evaluation history are unchanged except for the new
+remediation record: TC-87-01 through TC-87-05 all pass, and `tc87-r2-acceptance-20260814` is
+`PASSED` with explicit human approval. The next review transition remains intentionally pending;
+do not integrate before that gate.
+
+## Issue #85 Completion Checkpoint (parallel frontier)
 
 Manual guide revision `k4-issue-85-r3` is locked and human-approved at
 `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`; r1
@@ -28,20 +35,21 @@ K4 tests pass 12/12 and `npm run test:ci` passes 132/132. The append-only manual
 TC-85-08 observations as PASS; explicit human approval is recorded by
 `tc85r3-human-approved-20260814`.
 
-Next valid transition: stop this session with Issue #85 marked complete. Do not run a per-issue
-code review; the final feature review is deferred until the complete K4 feature reaches its fixed
-point.
+Next valid transition for the Issue #85 worktree was completion after acceptance. Its implementation
+and evidence remain preserved here as a separate parallel frontier; do not select Issue #86 from
+this Issue #87 worktree.
 
 ## Current State
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89. Issues #81–#85 are complete and manually accepted. The remaining K4 issues are
-managed in separate worktrees and are outside this session's next transition.
+Issues #81–#89. Issues #81–#85 and #87 have completed their implementation/acceptance milestones.
+Issues #86 and #88 remain separate frontiers; later dependent issues remain governed by the
+approved dependency graph.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
-delegation, evidence, and issue state; it does not implement an issue itself. Remaining K4 work
-uses independent branches and worktrees outside this completed Issue #85 session.
+delegation, evidence, and issue state; it does not implement an issue itself. This worktree is not
+an implementation target for the remaining K4 frontiers.
 
 Manual-acceptance guide revision `k4-issue-81-r4` is locked at
 `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.md`; r1 through r3
@@ -68,9 +76,22 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 
 ## Session Stop State
 
-1. Preserve accepted Issue #81–#85 implementations, immutable guide revisions, and append-only Evaluation histories; none has further scope.
-2. Mark this Issue #85 session complete. Do not choose or execute Issue #86 from this worktree.
-3. After the complete K4 feature is finished, run one high-cadence final feature code review; only an APPROVE fixed point may proceed to integration/publication.
+1. Preserve accepted Issue #81–#85 and #87 implementations, immutable guide revisions, and
+   append-only Evaluation histories. These slices have no additional implementation scope.
+2. Issue #87 is acceptance-complete and fixed-point reviewed APPROVE. The next transition is PR
+   publication and final integration; keep the current accepted artifacts immutable.
+3. Issues #86 and #88 remain separate K4 frontiers in their own worktrees. Do not start them
+   from this Issue #87 worktree.
+
+## Issue #87 Fixed Point
+
+- Locked guide `k4-issue-87-r2` is approved and immutable.
+- Evaluation `tc87-r2-acceptance-20260814` is `PASSED` with explicit human approval.
+- `docs/k4-performance-evidence.md` is the repository delivery summary.
+- Issue #87 focused K4 136/136; combined post-reconcile K4 143/143, repository CI 132/132, and
+  server 476 passed/5 skipped/0 failed remain the recorded verification results.
+- Fixed-point review is `APPROVE` with zero Critical/Major findings on both Standards and Spec axes;
+  PR publication and final integration metadata remain pending.
 
 ## Issue #84 historical implementation checkpoint (superseded)
 
@@ -111,9 +132,16 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 - Issue #82 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-82-dataset-actors-preflight-r4.evaluations.jsonl`
 - Locked Issue #83 guide: `.agents/manual-tests/k4-performance-evidence/issue-83-workload-profiles-runner-r3.md`
 - Issue #83 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-83-workload-profiles-runner-r3.evaluations.jsonl`
+- Issue #87 delivery summary: `docs/k4-performance-evidence.md`
+- Locked Issue #87 guide: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md`
+- Issue #87 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl`
+- Current World Model: `.agents/CONTEXT.md`
+- Current workflow state: `.agents/current-session.md` and `.agents/feature-delivery-events/events.jsonl`;
+  create a fresh Resume Contract only when suspending this workflow.
+- Issue #84 historical execution branch/worktree: `codex/k4-issue84` /
+  `D:\Developer\Projects\shotter\shot-chat-worktrees\issue-84`
 - Locked Issue #85 guide: `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`
 - Issue #85 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.evaluations.jsonl`
-- Current World Model: `.agents/CONTEXT.md`
 - Resume Contract: `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-feature-delivery-leader.json`
 - Issue #85 completion worktree: `codex/k4-issue85` /
   `D:\Developer\Projects\shotter\shot-chat-worktrees\issue-85`

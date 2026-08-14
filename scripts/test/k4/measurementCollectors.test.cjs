@@ -89,6 +89,11 @@ test("histogram evidence requires compatible snapshots for every resolved backen
   assert.deepEqual(complete.aggregate.buckets, [{ le: "0.1", count: 3 }, { le: "+Inf", count: 3 }]);
   assert.equal(complete.aggregate.count, 3);
   assert.ok(Math.abs(complete.aggregate.sum - 0.3) < Number.EPSILON);
+  assert.deepEqual(complete.snapshots["backend-1"], { before: histogram(4), after: histogram(7) });
+  assert.deepEqual(complete.deltas["backend-1"].buckets, [{ le: "0.1", count: 3 }, { le: "+Inf", count: 3 }]);
+  assert.equal(complete.deltas["backend-1"].count, 3);
+  assert.ok(Math.abs(complete.deltas["backend-1"].sum - 0.3) < Number.EPSILON);
+  assert.equal(complete.quantileLabel, "histogram-derived");
   assert.throws(() => deriveHistogramEvidence({ resolvedBackendReplicas: ["backend-1", "backend-2"], snapshots: { "backend-1": { before: histogram(1), after: histogram(2) } } }), /missing snapshot/i);
   assert.throws(() => deriveHistogramEvidence({ resolvedBackendReplicas: ["backend-1"], snapshots: { "backend-1": { before: histogram(2), after: histogram(1) } } }), /decreased/i);
   const mismatchedSnapshots = {
@@ -100,7 +105,7 @@ test("histogram evidence requires compatible snapshots for every resolved backen
   };
   assert.throws(
     () => deriveHistogramEvidence({ resolvedBackendReplicas: ["backend-1", "backend-2"], snapshots: mismatchedSnapshots }),
-    /mismatch/i,
+    /mismatch|success/i,
   );
 
   const aggregate = deriveHistogramEvidence({
@@ -117,6 +122,15 @@ test("histogram evidence requires compatible snapshots for every resolved backen
     resolvedBackendReplicas: ["backend-1", "backend-2"],
     aggregateEvidence: { members: ["backend-1"], seriesByReplica: { "backend-1": true }, before: histogram(1), after: histogram(2) },
   }), /coverage/i);
+  assert.throws(() => deriveHistogramEvidence({
+    resolvedBackendReplicas: ["backend-1"],
+    snapshots: {
+      "backend-1": {
+        before: { ...histogram(1), labels: { outcome: "failed" } },
+        after: { ...histogram(2), labels: { outcome: "failed" } },
+      },
+    },
+  }), /success/i);
 });
 
 test("collector preserves valid latency evidence while claim eligibility is determined per locked claim type", () => {

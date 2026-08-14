@@ -3,23 +3,23 @@
 ## K4 Current Frontier Override
 
 Issue #84 is closed after the accepted K4 measurement-observation delivery. Issue #85 is
-implemented and manually accepted. Issues #86–#88 continue independently in their own
-worktrees; this session does not select or execute a next frontier.
-This worktree is reserved for Issue #85 only on branch `codex/k4-issue85`.
+implemented and manually accepted. Issue #87 is now accepted after implementation, bounded
+remediation, and manual acceptance. Issues #86 and #88 remain independent K4 children in their
+own worktrees. This worktree is reserved for Issue #87 only on branch `codex/k4-issue87`.
 
-Issue #85 implementation and manual acceptance are complete. Guide `k4-issue-85-r3` is locked and human-approved
-at `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`;
-r1 and r2 remain immutable. Review cadence is recorded at
-`.agents/manual-tests/k4-performance-evidence/issue-85-review-cadence.json`;
-external review evidence is tracked in
-`.agents/manual-tests/k4-performance-evidence/issue-85-review-cadence-evidence-r3.json`;
-all three required high-tier external reviews for r3 are `APPROVE` with zero Critical/Major/Minor
-findings; human approval of the guide is recorded. The delegated implementation is complete with
-focused K4 tests 12/12 and `npm run test:ci` 132/132. Manual Evaluation history
-`.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.evaluations.jsonl`
-now contains explicit approval run `tc85r3-human-approved-20260814` with verdict `PASSED`.
-Per user direction, no code review is run for this issue; the final feature review is deferred
-until the complete K4 feature reaches its fixed point.
+- Issue #87 implementation and bounded TC-87-03 remediation are complete in this worktree.
+- Automated evidence is green: Issue #87 focused K4 136/136; combined post-reconcile K4 143/143;
+  `npm run test:ci` 132/132; server 476 passed/5 skipped/0 failed.
+- Locked guide `k4-issue-87-r2` remains immutable. Its append-only Evaluation history now records
+  the four allowlisted measurement-phase fault fixtures; all TC-87-01 through TC-87-05 observations
+  pass; Evaluation `tc87-r2-acceptance-20260814` is now `PASSED` with explicit human approval.
+- Image set `k4issue87r3` is retained separately from `k4issue87r2`; fixture runs were torn down
+  with zero owned containers, networks, volumes, and result-directory cleanup targets.
+- Issue #85 implementation and manual acceptance are complete. Guide `k4-issue-85-r3` is locked
+  and human-approved at `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`;
+  its append-only Evaluation history records `tc85r3-human-approved-20260814` as `PASSED`.
+  Review cadence and the three required high-tier external reviews are recorded in the Issue #85
+  acceptance artifacts; final K4 review remains governed by the complete feature fixed point.
 
 ## Status
 
@@ -29,7 +29,10 @@ until the complete K4 feature reaches its fixed point.
 - Local `main` and `github/main` were previously synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98`; K4 Issue #81 was published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
 - No deployment or destructive K3.1 reset was performed.
 - K4 Reproducible Performance Evidence is active under locked specification Issue #80 and ADR-015.
-- Issues #81–#85 have completed their approved implementation and acceptance transitions. Issue #85 is manually accepted. The remaining K4 issues continue independently outside this session.
+- Issues #81–#89 are published. Issues #81–#85 and #87 have completed implementation/acceptance
+  milestones; final review/integration remains a separate transition for #87. Issues #86 and #88
+  remain independent pending frontiers, and later dependent issues remain blocked by the approved
+  ticket graph.
 - K4 is leader-coordinated: the leader does not implement issues. Guide revisions `k4-issue-81-r1` through `k4-issue-81-r3` remain immutable; `k4-issue-81-r4` is locked and approved. Issue #81 implementation and mandatory acceptance TC-81-01 through TC-81-04 are complete and accepted; TC-81-05 was not run because it remains conditional.
 - Issue #81 final remediation fixed point has append-only Evaluation `tc81digest-v1`; mandatory TC-81-01 through TC-81-04 pass, TC-81-05 remains conditional/non-blocking.
 - Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 is closed.
@@ -37,6 +40,12 @@ until the complete K4 feature reaches its fixed point.
 - TC-82-03 is complete: nginx-mediated public-login failure returns `FAILED_SETUP` at `login`, with owner marker only and no admission/measurement; cleanup inventory is empty. Internal `migrate:k4` and `seed:demo` non-zero command propagation is proven through the actual generic CLI command-execution path without a production-configurable failure injection. TC-82-05 runtime evidence proves prior-run, foreign-K4, and non-K4 resources were neither adopted nor mutated. Append-only Evaluation `tc82r4-acceptance-20260812` is `PASSED` with explicit human approval.
 - Issue #82 final review is `APPROVE` with zero Critical and zero Major findings, against repository standards, Issue #82, locked r4, and ADR-015. K4 regression is 47/47 and related server regression is 21/21. It was delivered by PR #92, merge commit `af9daaacd1ec6c347f0c7fef74603c908e652608`, and GitHub Issue #82 is closed.
 - Issue #83 delivered approved immutable `scenario:version` workload profiles for `sidebar`, `message`, and `socket-concurrency`; exact-byte SHA-256 profile evidence; an operational CLI boundary that rejects raw workload channels; and injectable phase orchestration with ownership-safe teardown and independent artifact, execution, qualification, and teardown evidence. Locked guide `k4-issue-83-r3` and its append-only Evaluation history record final PASSED acceptance. Deterministic closure review resolved all seven Major findings with zero Critical/Major remaining; targeted Issue #83 tests passed 14/14 and `npm run test:ci` passed 122/122. It was delivered by PR #95, merge commit `ce1adcd091fb00814e03c0021ab801a67621c168`, and GitHub Issue #83 is closed.
+
+- Issue #87 delivered the message persistence and recipient-delivery evidence slice. Its locked r2
+  guide and append-only Evaluation history end with `tc87-r2-acceptance-20260814` (`PASSED`,
+  explicit approval). The evidence preserves the exact temporal boundary, `{ success, realId }`
+  acknowledgement gate, legacy conversation identity, sample/run topology distinction, and four
+  allowlisted measurement-phase fault fixtures. No public REST/Socket.IO contract changed.
 
 ## Delivered Outcome
 
@@ -71,6 +80,9 @@ until the complete K4 feature reaches its fixed point.
 - K4 Issue #83 acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-83-workload-profiles-runner-r3.md` (locked and approved)
 - K4 Issue #83 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-83-workload-profiles-runner-r3.evaluations.jsonl` (latest PASSED run `tc83r3-runner-closure-20260812`)
 - K4 Issue #83 publication: PR #95, merge commit `ce1adcd091fb00814e03c0021ab801a67621c168`
+- K4 Issue #87 delivery summary: `docs/k4-performance-evidence.md`
+- K4 Issue #87 acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md` (locked and approved)
+- K4 Issue #87 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl` (latest PASSED run `tc87-r2-acceptance-20260814`)
 
 ## Publication History
 
@@ -78,6 +90,9 @@ until the complete K4 feature reaches its fixed point.
 - K3.1 design checkpoint: PR #73, merged after the implementation absorbed the approved design.
 - K3.1 implementations: PR #74 for Issue #70, PR #75 for Issue #71, and PR #76 for Issue #72.
 - K3.1 closure-ledger synchronization: PR #77, merge commit `0cb0dc2a`.
+- Issue #87 acceptance fixed point: `tc87-r2-acceptance-20260814` is `PASSED`; branch reconciliation
+  merge `e69932c` is green; fixed-point review is `APPROVE` with zero Critical/Major findings on
+  both Standards and Spec axes; PR publication remains pending.
 
 ## Guardrails
 

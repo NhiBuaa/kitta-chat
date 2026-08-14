@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-performance-evidence-review-completed-20260814",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "87",
+  "transition": "review_completed",
+  "skill": "code-review",
+  "execution_revision": "f2f9a108a117b8a37b9829fa574c22ecf407a883",
+  "started_at": "2026-08-14T13:20:00+07:00",
+  "finished_at": "2026-08-14T13:29:15+07:00",
+  "status": "completed",
+  "retry_count": 0,
+  "input_digest": "sha256:C3F736418864859FF9CDBB9E5DF6640FE580C7C3E0CFA075318E5D5AFD8EF266",
+  "output_digest": "sha256:C3F736418864859FF9CDBB9E5DF6640FE580C7C3E0CFA075318E5D5AFD8EF266",
+  "evidence_references": [
+    "git diff dcdd64d613da5ec378cfeb67f1c08756fc286987..f2f9a108a117b8a37b9829fa574c22ecf407a883",
+    "standards axis: completed, findings 0",
+    "spec axis: completed, findings 0",
+    "aggregate verdict: APPROVE, Critical 0, Major 0"
+  ]
+}

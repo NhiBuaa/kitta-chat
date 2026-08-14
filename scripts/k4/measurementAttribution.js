@@ -51,24 +51,58 @@ function socketAttribution({ lifecycles = [], measuredActors = [], metadata, mea
   };
 }
 
+function comparableId(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "object" && value._id !== undefined) return comparableId(value._id);
+  return String(value);
+}
+
 function crossReplicaAttribution({ sender, acknowledgement, receiver, delivery, measuredActors, metadata }) {
   const source = completeSource(metadata);
   const records = [sender, acknowledgement, receiver, delivery];
-  const correlations = new Set(records.map((record) => record?.correlationId).filter(Boolean));
-  const actorsMatch = sender?.actorRef === measuredActors?.sender && receiver?.actorRef === measuredActors?.recipient;
-  const complete = source.complete && correlations.size === 1 && records.every(Boolean) && actorsMatch;
+  const recordCorrelations = records.map((record) => record?.correlationId);
+  const correlations = new Set(recordCorrelations.filter(Boolean));
+  const correlationId = recordCorrelations.every(Boolean) && correlations.size === 1 ? [...correlations][0] : null;
+  const senderId = comparableId(measuredActors?.sender);
+  const recipientId = comparableId(measuredActors?.recipient);
+  const actorsMatch = comparableId(sender?.actorRef) === senderId
+    && comparableId(sender?.recipientRef) === recipientId
+    && comparableId(acknowledgement?.actorRef) === senderId
+    && comparableId(acknowledgement?.recipientRef) === recipientId
+    && comparableId(receiver?.actorRef) === recipientId
+    && comparableId(receiver?.senderRef) === senderId
+    && comparableId(delivery?.senderId) === senderId
+    && comparableId(delivery?.recipientId) === recipientId;
+  const conversationValues = records.map((record) => comparableId(record?.conversationId));
+  const conversationIds = new Set(conversationValues.filter(Boolean));
+  const messageValues = [
+    comparableId(acknowledgement?.realId || acknowledgement?.messageId),
+    comparableId(receiver?.messageId),
+    comparableId(delivery?.messageId),
+  ];
+  const messageIds = new Set(messageValues.filter(Boolean));
+  const identityMatch = conversationValues.every(Boolean) && conversationIds.size === 1
+    && messageValues.every(Boolean) && messageIds.size === 1;
+  const replicaIdentity = [sender?.replica, receiver?.replica].every((replica) => replica !== null && replica !== undefined && String(replica).length > 0);
+  const complete = source.complete && correlationId !== null && records.every(Boolean) && actorsMatch && identityMatch && replicaIdentity;
   const distinct = complete && sender.replica !== receiver.replica;
   const succeeded = acknowledgement.success === true && delivery.success === true;
+  const deliveryEligible = complete && succeeded;
+  const sampleEligible = deliveryEligible && distinct;
   return {
     schema: ATTRIBUTION_SCHEMA,
     source: metadata,
     complete,
-    incompleteReasons: [...source.reasons, ...(correlations.size !== 1 ? ["correlation evidence mismatch"] : []), ...(!actorsMatch ? ["measured actor binding mismatch"] : [])],
-    claimEligible: complete && distinct && succeeded,
+    incompleteReasons: [...source.reasons, ...(correlationId === null ? ["correlation evidence mismatch"] : []), ...(!actorsMatch ? ["measured actor binding mismatch"] : []), ...(!identityMatch ? ["message identity evidence mismatch"] : []), ...(!replicaIdentity ? ["replica identity missing"] : [])],
+    deliveryEligible,
+    sampleEligible,
+    claimEligible: sampleEligible,
     topologyNotExercised: complete && !distinct,
     senderReplica: sender?.replica,
     receiverReplica: receiver?.replica,
-    correlationId: correlations.size === 1 ? [...correlations][0] : null,
+    correlationId,
+    conversationId: conversationIds.size === 1 ? [...conversationIds][0] : null,
+    messageId: messageIds.size === 1 ? [...messageIds][0] : null,
   };
 }
 

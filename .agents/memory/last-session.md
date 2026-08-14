@@ -1,3 +1,11 @@
+# K4 Issue #87 Documentation Checkpoint
+
+Issue #87 is implementation- and acceptance-complete on `codex/k4-issue87`.
+`tc87-r2-acceptance-20260814` is `PASSED` with explicit human approval. The locked guide and
+append-only Evaluation history are retained. The repository K4 delivery summary is
+`docs/k4-performance-evidence.md`; fixed-point code review is `APPROVE` with zero Critical/Major
+findings on both axes, and PR publication/final integration metadata remain pending.
+
 # Session Handoff — K2 CI/CD Complete
 
 The validated Resume Contract is stored at:

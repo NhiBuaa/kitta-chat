@@ -24,6 +24,7 @@ Built as a production-oriented engineering project focused on scalable realtime 
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
 - [K3.1 Local Observability Demo](#k31-local-observability-demo)
+- [K4 Reproducible Performance Evidence](#k4-reproducible-performance-evidence)
 - [Demo Accounts](#demo-accounts)
 - [Testing](#testing)
 - [Known Limitations](#known-limitations)
@@ -208,9 +209,18 @@ Browser evidence from the provisioned `KittaChat K3 Observability` dashboard:
 - [HTTP latency](docs/assets/readme/k3-observability/dashboard-latency.png)
 
 K3.1 is complete: the local browser evidence, README handoff, and non-destructive cleanup were
-accepted. K4 may reuse this dashboard during future benchmark work, but benchmark outcomes are
+accepted. K4 is a separate milestone and may reuse this dashboard, but benchmark outcomes are
 owned by K4 and are not K3.1 acceptance criteria. K3.1 does not add a second observability
 platform, production deployment, or open-ended dashboard tuning.
+
+## K4 Reproducible Performance Evidence
+
+K4 is a separate benchmark milestone with its own Compose project, deterministic dataset,
+containerized runner, nginx-only workload path, and observation plane. Issue #87 is accepted for
+message persistence and recipient-delivery evidence. Read the [K4 delivery summary](docs/k4-performance-evidence.md)
+for the locked timing boundary, acknowledgement contract, topology qualification rules, retained
+artifacts, and acceptance evidence. K4 results remain evidence-bound; incomplete observation
+coverage must not be presented as a publishable end-to-end or cross-replica performance claim.
 
 ## Demo Accounts
 
@@ -274,6 +284,7 @@ The badges in the Hero read directly from their workflows; no passing state or t
 - [CI Policy Governance](docs/CI_POLICY.md) — Required check names, policy upgrades, trust boundaries and contributor-mode controls.
 - [Architecture Overview](docs/ARCHITECTURE.md) — ownership boundaries for MongoDB, Redis, RabbitMQ and Socket.IO.
 - [K3/K3.1 Observability](docs/observability/README.md) — metrics, dashboard, alerts, operator validation, local demo and accepted browser evidence.
+- [K4 Performance Evidence](docs/k4-performance-evidence.md) — isolated benchmark boundaries and the accepted Issue #87 message evidence slice.
 - [ADR-012: K3 Observability Metrics Boundary](docs/adr/012-k3-observability-metrics-boundary.md) — application metrics ownership, labels and failure semantics.
 - [ADR-013: K3.1 Local Observability Demo Seam](docs/adr/013-k3-1-local-observability-demo-seam.md) — isolated Prometheus/Grafana operation and evidence boundaries.
 - [ADR-015: K4 Performance Evidence Boundary](docs/adr/015-k4-performance-evidence-boundary.md) — isolated benchmark workload/observation planes, exact provenance, bounded claims and comparison contracts.
