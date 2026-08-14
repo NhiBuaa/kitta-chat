@@ -15,7 +15,12 @@
         "guide_revision": "k4-issue-87-r2"
       },
       "integration": {
-        "status": "pending"
+        "status": "reconciled",
+        "verification": {
+          "k4_tests": "143/143 passed",
+          "repository_ci": "132/132 passed",
+          "server": "476 passed, 5 skipped, 0 failed"
+        }
       }
     }
   ],
@@ -24,9 +29,22 @@
     "feature_branch": "codex/k4-issue87",
     "base_commit": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
     "initial_head": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
-    "current_head": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+    "current_head": "e69932c",
     "default_branch_unchanged": true,
-    "sequence": []
+    "sequence": [
+      {
+        "action": "reconcile_with_default_branch",
+        "default_branch_head": "dcdd64d613da5ec378cfeb67f1c08756fc286987",
+        "merge_commit": "e69932c",
+        "conflicts_resolved": [
+          ".agents/CONTEXT.md",
+          ".agents/current-session.md",
+          ".agents/next-session.md",
+          "README.md",
+          "scripts/k4/cli.js"
+        ]
+      }
+    ]
   },
   "review": {
     "status": "pending"

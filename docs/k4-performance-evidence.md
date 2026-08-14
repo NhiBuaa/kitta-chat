@@ -51,7 +51,9 @@ containers, networks, volumes, or result-directory cleanup targets.
 
 ## Verification
 
-- K4 tests: `136/136` passed (including overlapping-delivery and attribution fail-closed regressions).
+- Issue #87 focused K4 tests: `136/136` passed (including overlapping-delivery and attribution
+  fail-closed regressions). After reconciling the latest main (Issue #85), the combined K4 suite is
+  `143/143` passed.
 - Repository CI tests: `npm run test:ci` — `132/132` passed.
 - Server suite: `476` passed, `5` skipped, `0` failed.
 - `node --check` on modified JavaScript and `git diff --check`: exit `0`.

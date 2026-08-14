@@ -88,8 +88,8 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 - Locked guide `k4-issue-87-r2` is approved and immutable.
 - Evaluation `tc87-r2-acceptance-20260814` is `PASSED` with explicit human approval.
 - `docs/k4-performance-evidence.md` is the repository delivery summary.
-- K4 136/136, repository CI 132/132, and server 476 passed/5 skipped/0 failed remain the recorded
-  verification results.
+- Issue #87 focused K4 136/136; combined post-reconcile K4 143/143, repository CI 132/132, and
+  server 476 passed/5 skipped/0 failed remain the recorded verification results.
 - Final code review and integration are intentionally pending; no review verdict is recorded here.
 
 ## Issue #84 historical implementation checkpoint (superseded)

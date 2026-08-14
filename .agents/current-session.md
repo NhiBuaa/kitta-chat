@@ -8,7 +8,8 @@ remediation, and manual acceptance. Issues #86 and #88 remain independent K4 chi
 own worktrees. This worktree is reserved for Issue #87 only on branch `codex/k4-issue87`.
 
 - Issue #87 implementation and bounded TC-87-03 remediation are complete in this worktree.
-- Automated evidence is green: K4 136/136, `npm run test:ci` 132/132, server 476 passed/5 skipped/0 failed.
+- Automated evidence is green: Issue #87 focused K4 136/136; combined post-reconcile K4 143/143;
+  `npm run test:ci` 132/132; server 476 passed/5 skipped/0 failed.
 - Locked guide `k4-issue-87-r2` remains immutable. Its append-only Evaluation history now records
   the four allowlisted measurement-phase fault fixtures; all TC-87-01 through TC-87-05 observations
   pass; Evaluation `tc87-r2-acceptance-20260814` is now `PASSED` with explicit human approval.
@@ -89,8 +90,8 @@ own worktrees. This worktree is reserved for Issue #87 only on branch `codex/k4-
 - K3.1 design checkpoint: PR #73, merged after the implementation absorbed the approved design.
 - K3.1 implementations: PR #74 for Issue #70, PR #75 for Issue #71, and PR #76 for Issue #72.
 - K3.1 closure-ledger synchronization: PR #77, merge commit `0cb0dc2a`.
-- Issue #87 acceptance fixed point: `tc87-r2-acceptance-20260814` is `PASSED`; final review and
-  integration remain pending and no publication commit is claimed.
+- Issue #87 acceptance fixed point: `tc87-r2-acceptance-20260814` is `PASSED`; branch reconciliation
+  merge `e69932c` is green; final review and publication remain pending.
 
 ## Guardrails
 
