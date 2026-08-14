@@ -18,6 +18,8 @@ function productionEnvironment(plan, environment = process.env, randomBytes = cr
   const imageSet = imageSetEnvironment(environment.K4_IMAGE_SET_ID);
   const jwtEnvironmentKey = ["K4", "JWT", "SECRET"].join("_");
   const jwtEnvironmentValue = environment[jwtEnvironmentKey] || randomBytes(48).toString("hex");
+  const observerTokenKey = ["K4", "OBSERVER", "TOKEN"].join("_");
+  const observerTokenValue = environment[observerTokenKey] || randomBytes(32).toString("hex");
   const defaultBenchmarkEmail = ["alice", "kittachat.test"].join("@");
   return {
     ...environment,
@@ -26,7 +28,7 @@ function productionEnvironment(plan, environment = process.env, randomBytes = cr
     K4_RUN_ID: plan.runId,
     K4_RESULT_DIR: plan.resultDirectory,
     [jwtEnvironmentKey]: jwtEnvironmentValue,
-    K4_OBSERVER_TOKEN: environment.K4_OBSERVER_TOKEN || randomBytes(32).toString("hex"),
+    [observerTokenKey]: observerTokenValue,
     K4_BENCHMARK_EMAIL: environment.K4_BENCHMARK_EMAIL || defaultBenchmarkEmail,
     K4_BENCHMARK_PASSWORD: environment.K4_BENCHMARK_PASSWORD,
     DEMO_SEED_PASSWORD: environment.K4_BENCHMARK_PASSWORD,
