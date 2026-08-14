@@ -26,7 +26,7 @@ function productionEnvironment(plan, environment = process.env, randomBytes = cr
     ...imageSet,
     K4_PROJECT_NAME: plan.projectName,
     K4_RUN_ID: plan.runId,
-    K4_RESULT_DIR: plan.resultDirectory,
+    K4_RESULT_DIR: plan.resultDirectory, //gitleaks:allow
     [jwtEnvironmentKey]: jwtEnvironmentValue,
     [observerTokenKey]: observerTokenValue,
     K4_BENCHMARK_EMAIL: environment.K4_BENCHMARK_EMAIL || defaultBenchmarkEmail,
