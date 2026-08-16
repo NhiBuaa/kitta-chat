@@ -151,11 +151,14 @@ test("socket ramp failure tears down connections that authenticated before the f
       return socket;
     },
   });
-  await assert.rejects(executor.execute({
+  const result = await executor.execute({
     phase: "measurement", target: "http://nginx",
     profile: { scenario: "socket-concurrency", actorAllocation: { alice: 2, bob: 2 }, ramp: { timeoutMs: 10000 }, settling: { durationMs: 1000 }, plateau: { durationMs: 2000 } },
     actorRefs: { alice: { id: "alice-id" }, bob: { id: "bob-id" } },
     actorSecrets: { alice: { token: "alice-token" }, bob: { token: "bob-token" } },
-  }), /auth failed/);
+  });
+  assert.equal(result.measurementAdmitted, false);
+  assert.deepEqual(result.qualificationFlags, ["TARGET_NOT_REACHED"]);
+  assert.equal(result.handshakeAccounting.handshakeFailures, 1);
   assert.equal(FakeSocket.all.every((socket) => socket.connected === false), true);
 });

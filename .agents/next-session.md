@@ -1,5 +1,17 @@
 # Next Session — K4 Leader Continuation
 
+## Current Parallel Frontier Override
+
+Issue #84 is closed. This worktree is reserved exclusively for Issue #88, the Socket.IO
+concurrency scenario-evidence slice. Issues #85–#87 must be handled in their own worktrees.
+
+Issue #88 guide `k4-issue-88-r3` is locked and human-approved at
+`.agents/manual-tests/k4-performance-evidence/issue-88-socket-concurrency-scenario-r3.md`.
+Implementation and manual acceptance are complete; Evaluation
+`tc88r3-acceptance-20260816-approved` is PASSED with explicit human approval. The next valid
+transition is to reconcile this branch with the latest `main`, publish the approved PR, and defer
+final code review until all Issues are complete.
+
 ## Current State
 
 K4 Reproducible Performance Evidence remains active under locked specification

@@ -1,5 +1,15 @@
 # K3/K3.1 Completion and K4 Active Checkpoint
 
+## K4 Current Frontier Override
+
+Issue #84 is closed after the accepted K4 measurement-observation delivery. Issues #85, #86,
+#87, and #88 are independent parallel children of locked Issue #80 and are open/unblocked.
+This worktree is reserved for Issue #88 only on branch `codex/k4-issue88`.
+Issue #88 manual-acceptance guide `k4-issue-88-r3` is locked and human-approved. The delegated
+implementation is complete on `codex/k4-issue88`; Evaluation `tc88r3-acceptance-20260816-approved`
+is PASSED with explicit human approval. Final code review remains deferred until all Issues are
+complete, per the user's delivery constraint.
+
 ## Status
 
 - K3 Observability is complete. Issue #44 and implementation Issues #45–#52 are closed.

@@ -158,13 +158,31 @@ function evaluateLoadGeneratorLimitation({ shortfall, runner }) {
   };
 }
 
+function deriveActiveSocketGaugeEvidence(activeSocketGauge) {
+  if (!activeSocketGauge) return null;
+  const points = [activeSocketGauge.before, ...(activeSocketGauge.samples || []), activeSocketGauge.after].filter(Boolean);
+  const valid = points.filter((point) => Number.isFinite(point.aggregate)
+    && Array.isArray(point.replicas)
+    && (point.complete === undefined || point.complete === true)
+    && point.replicas.length > 0
+    && point.replicas.every((replica) => (replica?.status === undefined || replica.status === "success") && Number.isFinite(Number(replica?.activeConnections)))
+    && point.replicas.reduce((total, replica) => total + Number(replica.activeConnections), 0) === point.aggregate);
+  return {
+    complete: valid.length === points.length && points.length > 0,
+    samples: points,
+    aggregates: valid.map((point) => ({ point: point.point, timestamp: point.slotTimestamp, activeConnections: point.aggregate })),
+    minimum: valid.length ? Math.min(...valid.map((point) => point.aggregate)) : null,
+    maximum: valid.length ? Math.max(...valid.map((point) => point.aggregate)) : null,
+  };
+}
+
 function claimEligibility({ qualificationFlags, histogram, claimEvidence = {} }) {
   const flags = new Set(qualificationFlags);
   const observed = (value) => value === true;
   return {
     persistenceHistogramDerivedLatency: { eligible: Boolean(histogram) },
     endToEndDelivery: { eligible: observed(claimEvidence.endToEndDelivery) },
-    targetConcurrency: { eligible: observed(claimEvidence.targetConcurrency) && !flags.has("TARGET_NOT_REACHED") && !flags.has("LOAD_GENERATOR_LIMITED") },
+    targetConcurrency: { eligible: observed(claimEvidence.targetConcurrency) && !flags.has("TARGET_NOT_REACHED") && !flags.has("LOAD_GENERATOR_LIMITED") && !flags.has("OBSERVATION_INCOMPLETE") },
     multiReplica: { eligible: observed(claimEvidence.multiReplica) && !flags.has("TOPOLOGY_NOT_EXERCISED") },
     crossReplica: { eligible: observed(claimEvidence.crossReplica) && !flags.has("TOPOLOGY_NOT_EXERCISED") },
     cpu: { eligible: !flags.has("OBSERVATION_INCOMPLETE") },
@@ -173,15 +191,22 @@ function claimEligibility({ qualificationFlags, histogram, claimEvidence = {} })
   };
 }
 
-function collectMeasurementEvidence({ topology, resource, histogram, loadGenerator, claimEvidence, qualificationFlags: inheritedQualificationFlags = [] }) {
+function collectMeasurementEvidence({ topology, resource, histogram, loadGenerator, activeSocketGauge, claimEvidence, qualificationFlags: inheritedQualificationFlags = [] }) {
   const requiredContainers = requiredContainersForTopology(topology);
   const resourceEvidence = deriveResourceQualification({ ...resource, requiredContainers });
   const histogramEvidence = deriveHistogramEvidence(histogram);
   const loadGeneratorEvidence = evaluateLoadGeneratorLimitation(loadGenerator);
-  const qualificationFlags = [...new Set([...inheritedQualificationFlags, ...resourceEvidence.qualificationFlags, ...(loadGeneratorEvidence.limited ? ["LOAD_GENERATOR_LIMITED"] : [])])];
+  const activeSocketGaugeEvidence = activeSocketGauge ? deriveActiveSocketGaugeEvidence(activeSocketGauge) : null;
+  const qualificationFlags = [...new Set([
+    ...inheritedQualificationFlags,
+    ...resourceEvidence.qualificationFlags,
+    ...(loadGeneratorEvidence.limited ? ["LOAD_GENERATOR_LIMITED"] : []),
+    ...(activeSocketGaugeEvidence && !activeSocketGaugeEvidence.complete ? ["OBSERVATION_INCOMPLETE"] : []),
+  ])];
   return {
     resourceEvidence,
     histogramEvidence,
+    ...(activeSocketGauge ? { activeSocketGaugeEvidence } : {}),
     loadGeneratorEvidence,
     qualificationFlags,
     claimEligibility: claimEligibility({ qualificationFlags, histogram: histogramEvidence, claimEvidence }),
@@ -196,5 +221,6 @@ module.exports = {
   deriveHistogramEvidence,
   deriveResourceQualification,
   evaluateLoadGeneratorLimitation,
+  deriveActiveSocketGaugeEvidence,
   requiredContainersForTopology,
 };

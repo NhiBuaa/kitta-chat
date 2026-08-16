@@ -8,6 +8,7 @@ const metrics = [
   'kittachat_message_persistence_duration_seconds_bucket{outcome="success",le="+Inf"} 2',
   'kittachat_message_persistence_duration_seconds_sum{outcome="success"} 0.2',
   'kittachat_message_persistence_duration_seconds_count{outcome="success"} 2',
+  'kittachat_socket_active_connections 2',
 ].join("\n");
 
 test("production sources use typed helper and keep topology inventory distinct from traffic attribution", async () => {
@@ -20,6 +21,7 @@ test("production sources use typed helper and keep topology inventory distinct f
   };
   const source = createProductionObservationSources({ helper });
   assert.equal((await source.snapshotPersistenceHistogram({ plan, replica: "backend-1" })).count, 2);
+  assert.equal((await source.snapshotActiveSocketGauge({ plan: { ...plan, workload: { scenario: "socket-concurrency" } }, replica: "backend-1" })).activeConnections, 2);
   const inventory = await source.captureTopologyInventory({ plan, point: "before", replicas: ["backend-1"] });
   assert.equal(inventory.evidenceType, "topology-inventory");
   const attribution = await source.captureReplicaAttribution({ plan, replicas: ["backend-1"], measurementStart: "2026-08-13T00:00:00Z", measurementEnd: "2026-08-13T00:00:10Z", measurementOutput: { measuredRequestIds: ["r1"], replicaAddressMap: { "10.0.0.1:3000": "backend-1" } } });

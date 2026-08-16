@@ -14,6 +14,13 @@ function plan(replicas, directory) {
   return { runId: "production-observation", resultDirectory: directory, topology: { profile: replicas.length === 1 ? "single-replica" : "multi-replica", backendUpstreamMembership: replicas } };
 }
 
+function socketPlan(replicas, directory) {
+  return {
+    ...plan(replicas, directory),
+    workload: { scenario: "socket-concurrency", snapshot: { loadModel: { targetConcurrency: 4 } } },
+  };
+}
+
 function runtimePort(calls, { failAfter = false } = {}) {
   return {
     async snapshotPersistenceHistogram({ replica, point }) { calls.push(["histogram", replica, point]); if (failAfter && point === "after") throw new Error("metrics read unavailable"); return histogram(point === "before" ? 1 : 2); },
@@ -37,10 +44,21 @@ test("claim eligibility derives each topology claim from the matching observatio
 
   const socket = claimEvidenceFromMeasurement({
     plan: { workload: { scenario: "socket-concurrency", snapshot: { loadModel: { targetConcurrency: 4 } } } },
-    measurementOutput: { targetReachedAt: 1, targetConcurrency: 4 },
+    measurementOutput: { targetReachedAt: 1, targetConcurrency: 4, measurementAdmitted: true },
     attribution: { claimEligible: true },
   });
-  assert.equal(socket.targetConcurrency, true);
+  assert.equal(socket.targetConcurrency, false);
+  const completeSocket = claimEvidenceFromMeasurement({
+    plan: { workload: { scenario: "socket-concurrency", snapshot: { loadModel: { targetConcurrency: 4 } } } },
+    measurementOutput: {
+      targetReachedAt: 1,
+      targetConcurrency: 4,
+      measurementAdmitted: true,
+      activeCountEvidence: { complete: true, targetHeldThroughMeasurement: true },
+    },
+    attribution: { claimEligible: true },
+  });
+  assert.equal(completeSocket.targetConcurrency, true);
   const shortSocket = claimEvidenceFromMeasurement({
     plan: { workload: { scenario: "socket-concurrency", snapshot: { loadModel: { targetConcurrency: 4 } } } },
     measurementOutput: { targetReachedAt: 1, targetConcurrency: 3 },
@@ -95,4 +113,51 @@ test("production observation samples resource and cgroup evidence during measure
   assert.equal(raw.samples.every((sample) => sample.status === "success"), true);
   assert.equal(calls.filter(([kind]) => kind === "resources").length, 3);
   assert.equal(calls.filter(([kind]) => kind === "cgroup").length, 3);
+});
+
+test("socket gauge errors are retained per replica without aborting observation artifacts", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-production-gauge-partial-"));
+  const calls = [];
+  const runtime = {
+    ...runtimePort(calls),
+    async snapshotActiveSocketGauge({ replica, point }) {
+      calls.push(["gauge", replica, point]);
+      if (replica === "backend-2") throw new Error("replica gauge unavailable");
+      return { activeConnections: 2, sourceIdentity: `metrics-${replica}` };
+    },
+  };
+  const observation = createProductionMeasurementObservation({
+    intervalMs: 1000,
+    runtimePort: runtime,
+    clock: (() => { const points = ["2026-08-13T00:00:00.000Z", "2026-08-13T00:00:02.000Z"]; return () => points.shift(); })(),
+  });
+  const result = await executeRun(socketPlan(["backend-1", "backend-2"], directory), {
+    observation,
+    executePhase: async (phase) => phase === "setup/seed" ? { resourcesCreated: true } : {},
+  });
+  const raw = JSON.parse(fs.readFileSync(path.join(directory, "measurement-observation-final.raw.json"), "utf8"));
+  assert.equal(result.executionOutcome, "MEASURED");
+  assert.equal(result.artifactStatus, "COMPLETED");
+  assert.equal(result.qualificationFlags.includes("OBSERVATION_INCOMPLETE"), true);
+  assert.equal(result.claimEligibility.targetConcurrency.eligible, false);
+  assert.equal(raw.activeSocketGauge.after.complete, false);
+  assert.equal(raw.activeSocketGauge.after.replicas.find((replica) => replica.replica === "backend-2").status, "error");
+  assert.equal(fs.existsSync(path.join(directory, "measurement-observation.json")), true);
+});
+
+test("socket gauge capability absence is explicit incomplete evidence", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-production-gauge-missing-"));
+  const observation = createProductionMeasurementObservation({
+    intervalMs: 1000,
+    runtimePort: runtimePort([]),
+    clock: (() => { const points = ["2026-08-13T00:00:00.000Z", "2026-08-13T00:00:02.000Z"]; return () => points.shift(); })(),
+  });
+  const result = await executeRun(socketPlan(["backend-1"], directory), {
+    observation,
+    executePhase: async (phase) => phase === "setup/seed" ? { resourcesCreated: true } : {},
+  });
+  const raw = JSON.parse(fs.readFileSync(path.join(directory, "measurement-observation-final.raw.json"), "utf8"));
+  assert.equal(raw.activeSocketGauge.before.capability, "unavailable");
+  assert.equal(raw.activeSocketGauge.after.replicas[0].status, "unavailable");
+  assert.equal(result.qualificationFlags.includes("OBSERVATION_INCOMPLETE"), true);
 });

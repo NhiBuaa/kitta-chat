@@ -29,21 +29,105 @@ function sidebarAttribution({ records = [], requestIds = [], replicaAddressMap =
   };
 }
 
-function socketAttribution({ lifecycles = [], measuredActors = [], metadata, measurementStart, measurementEnd }) {
+function timestampMillis(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
+  if (typeof value !== "string" || !value.trim()) return NaN;
+  return Date.parse(value);
+}
+
+function socketAttribution({ lifecycles = [], measuredActors = [], measuredConnections, metadata, measurementStart, measurementEnd } = {}) {
   const source = completeSource(metadata);
-  const actors = new Set(measuredActors);
-  const start = Date.parse(measurementStart);
-  const end = Date.parse(measurementEnd);
-  const relevant = lifecycles.filter((entry) => actors.has(entry.actorRef));
-  const invalid = relevant.filter((entry) => !entry.socketId || !entry.nodeName || !entry.authenticatedAt || (entry.disconnectedAt && Date.parse(entry.disconnectedAt) < Date.parse(entry.authenticatedAt)));
-  const overlapping = relevant.filter((entry) => Date.parse(entry.authenticatedAt) < end && (!entry.disconnectedAt || Date.parse(entry.disconnectedAt) > start));
+  const reasons = [...source.reasons];
+  const diagnostics = [];
+  const actors = new Set(Array.isArray(measuredActors) ? measuredActors.filter((actor) => typeof actor === "string" && actor) : []);
+  const bindingSupplied = measuredConnections !== undefined;
+  const expectedBySocket = new Map();
+  let bindingValid = bindingSupplied;
+
+  if (!bindingSupplied) {
+    reasons.push("measured connection binding missing");
+  } else if (!Array.isArray(measuredConnections) || measuredConnections.length === 0) {
+    reasons.push("measured connection binding incomplete");
+    bindingValid = false;
+  } else {
+    for (const connection of measuredConnections) {
+      const socketId = connection?.socketId;
+      const actorRef = connection?.actorRef;
+      if (typeof socketId !== "string" || !socketId || typeof actorRef !== "string" || !actorRef) {
+        reasons.push("invalid measured connection binding");
+        bindingValid = false;
+        continue;
+      }
+      if (expectedBySocket.has(socketId)) {
+        reasons.push("duplicate measured socket binding");
+        bindingValid = false;
+      }
+      else expectedBySocket.set(socketId, actorRef);
+    }
+  }
+
+  const expectedSockets = new Set(expectedBySocket.keys());
+  const expectedActors = new Set(expectedBySocket.values());
+  if (expectedActors.size && [...expectedActors].some((actor) => !actors.has(actor))) reasons.push("measured actor binding incomplete");
+  if (actors.size && [...actors].some((actor) => !expectedActors.has(actor))) reasons.push("measured actor binding incomplete");
+  const start = timestampMillis(measurementStart);
+  const end = timestampMillis(measurementEnd);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) reasons.push("invalid measurement window");
+
+  const relevant = Array.isArray(lifecycles)
+    ? lifecycles.filter((entry) => expectedSockets.has(entry?.socketId) || expectedActors.has(entry?.actorRef))
+    : [];
+  const socketCounts = new Map();
+  const invalid = [];
+  const overlapping = [];
+  for (const entry of relevant) {
+    const socketId = entry?.socketId;
+    socketCounts.set(socketId, (socketCounts.get(socketId) || 0) + 1);
+    const authenticatedAt = timestampMillis(entry?.authenticatedAt);
+    const disconnectedAt = entry?.disconnectedAt == null ? null : timestampMillis(entry.disconnectedAt);
+    const stillConnected = entry?.disconnectedAt === null || entry?.stillConnectedAtWindowEnd === true;
+    if (!socketId || !entry?.nodeName || !Number.isFinite(authenticatedAt) || entry?.disconnectedTimestampMissing === true || (entry?.disconnectedAt != null && !Number.isFinite(disconnectedAt)) || (entry?.disconnectedAt === undefined && !stillConnected) || (entry?.stillConnectedAtWindowEnd === false && entry?.disconnectedAt == null)) {
+      invalid.push(entry);
+      diagnostics.push("invalid socket lifecycle timestamp or identity");
+      continue;
+    }
+    if (disconnectedAt != null && disconnectedAt <= authenticatedAt) {
+      invalid.push(entry);
+      diagnostics.push("ambiguous socket lifecycle timing");
+      continue;
+    }
+    if (expectedBySocket.has(socketId) && expectedBySocket.get(socketId) !== entry.actorRef) {
+      invalid.push(entry);
+      diagnostics.push("measured actor binding mismatch");
+    }
+    if (!expectedBySocket.has(socketId)) {
+      invalid.push(entry);
+      diagnostics.push("unexpected measured socket lifecycle");
+    }
+    if (Number.isFinite(start) && Number.isFinite(end) && authenticatedAt < end && (disconnectedAt == null || disconnectedAt > start)) overlapping.push(entry);
+  }
+  for (const count of socketCounts.values()) if (count > 1) diagnostics.push("duplicate socket lifecycle");
+  if (invalid.length) reasons.push("invalid socket lifecycle");
+  const lifecycleSockets = new Set(socketCounts.keys());
+  const socketSetsMatch = lifecycleSockets.size === expectedSockets.size && [...lifecycleSockets].every((socketId) => expectedSockets.has(socketId));
+  if (!socketSetsMatch) diagnostics.push("measured socket lifecycle incomplete");
   const replicas = [...new Set(overlapping.map((entry) => entry.nodeName))];
-  const complete = source.complete && invalid.length === 0 && new Set(relevant.map((entry) => entry.actorRef)).size === actors.size;
+  const completeBinding = bindingValid
+    && expectedBySocket.size > 0
+    && socketSetsMatch
+    && relevant.length === expectedBySocket.size
+    && invalid.length === 0
+    && [...socketCounts.values()].every((count) => count === 1)
+    && actors.size === expectedActors.size
+    && [...expectedActors].every((actor) => actors.has(actor));
+  const allReasons = [...new Set([...reasons, ...diagnostics])];
+  const complete = source.complete && Number.isFinite(start) && Number.isFinite(end) && end > start && completeBinding;
   return {
     schema: ATTRIBUTION_SCHEMA,
     source: metadata,
     complete,
-    incompleteReasons: [...source.reasons, ...(invalid.length ? ["invalid socket lifecycle"] : []), ...(new Set(relevant.map((entry) => entry.actorRef)).size !== actors.size ? ["measured actor lifecycle incomplete"] : [])],
+    incompleteReasons: allReasons,
+    diagnostics: diagnostics.map((message) => ({ message })),
     replicas,
     topologyNotExercised: complete && replicas.length === 1,
     claimEligible: complete && replicas.length >= 2,

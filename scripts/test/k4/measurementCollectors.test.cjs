@@ -5,6 +5,7 @@ const {
   collectMeasurementEvidence,
   deriveHistogramEvidence,
   deriveResourceQualification,
+  deriveActiveSocketGaugeEvidence,
   evaluateLoadGeneratorLimitation,
 } = require("../../k4/measurementCollectors");
 
@@ -132,4 +133,26 @@ test("collector preserves valid latency evidence while claim eligibility is dete
   assert.equal(evidence.claimEligibility.cpu.eligible, true);
   assert.equal(evidence.claimEligibility.multiReplica.eligible, false);
   assert.equal(evidence.claimEligibility.crossReplica.eligible, false);
+});
+
+test("active-socket gauge evidence remains corroborating and preserves replica sums", () => {
+  const evidence = deriveActiveSocketGaugeEvidence({
+    before: { point: "before", aggregate: 4, replicas: [{ replica: "backend-1", activeConnections: 2 }, { replica: "backend-2", activeConnections: 2 }] },
+    samples: [{ point: "sample", slotTimestamp: "2026-08-13T00:00:01.000Z", aggregate: 3, replicas: [{ replica: "backend-1", activeConnections: 1 }, { replica: "backend-2", activeConnections: 2 }] }],
+    after: { point: "after", aggregate: 3, replicas: [{ replica: "backend-1", activeConnections: 1 }, { replica: "backend-2", activeConnections: 2 }] },
+  });
+  assert.equal(evidence.complete, true);
+  assert.equal(evidence.minimum, 3);
+  assert.equal(evidence.maximum, 4);
+  assert.deepEqual(evidence.aggregates.map(({ activeConnections }) => activeConnections), [4, 3, 3]);
+  assert.equal(deriveActiveSocketGaugeEvidence({ before: { point: "before", aggregate: 4, replicas: [{ replica: "backend-1", activeConnections: 3 }] } }).complete, false);
+});
+
+test("observation incompleteness keeps the target-concurrency claim ineligible", () => {
+  const evidence = require("../../k4/measurementCollectors").claimEligibility({
+    qualificationFlags: ["OBSERVATION_INCOMPLETE"],
+    histogram: { metric: "histogram" },
+    claimEvidence: { targetConcurrency: true },
+  });
+  assert.equal(evidence.targetConcurrency.eligible, false);
 });

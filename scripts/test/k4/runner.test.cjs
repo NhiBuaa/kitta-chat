@@ -60,8 +60,10 @@ test("qualification flags gate publishability and preserve independent axes", as
     if (phase === "measurement") return { numbers: { requests: 2 }, qualificationFlags: { complete: false, qualified: false } };
     return {};
   } });
-  assert.equal(result.executionOutcome, "COMPLETED");
-  assert.equal(result.artifactStatus, "RETAINED");
+  assert.equal(result.executionOutcome, "MEASURED");
+  assert.equal(result.artifactStatus, "COMPLETED");
+  assert.equal(["MEASURED", "NOT_RUN", "FAILED_SETUP"].includes(result.execution_outcome), true);
+  assert.equal(["COMPLETED", "INCOMPLETE"].includes(result.artifact_status), true);
   assert.equal(result.qualification.qualified, false);
   assert.equal(result.publishable, undefined);
 });
@@ -86,7 +88,9 @@ test("measurement failure keeps the primary execution outcome when teardown succ
       if (phase === "teardown" && teardownFails) throw new Error("teardown failed");
       return {};
     } });
-    assert.equal(result.executionOutcome, "FAILED");
+    assert.equal(result.executionOutcome, "NOT_RUN");
+    assert.equal(result.artifactStatus, "INCOMPLETE");
+    assert.equal(["MEASURED", "NOT_RUN", "FAILED_SETUP"].includes(result.execution_outcome), true);
     assert.equal(result.failure.phase, "measurement");
     assert.equal(result.teardown.completed, !teardownFails);
   }
@@ -106,4 +110,41 @@ test("runner-owned acquisition ledger triggers idempotent teardown after setup f
   assert.deepEqual(trace, ["setup/seed", "teardown"]);
   assert.equal(result.teardown.attempted, true);
   assert.equal(result.teardown.completed, true);
+});
+
+test("runner keeps warm-up status evidence out of the final execution and artifact axes", async () => {
+  const result = await executeRun(plan(), {
+    executePhase: async (phase) => {
+      if (phase === "setup/seed") return { resourcesCreated: true, executionOutcome: "FAILED_SETUP", artifactStatus: "RETAINED" };
+      if (phase === "warm-up") return { executionOutcome: "NOT_RUN", artifactStatus: "NONE" };
+      if (phase === "measurement") return { numbers: { requests: 1 } };
+      return {};
+    },
+  });
+  assert.equal(result.execution_outcome, "MEASURED");
+  assert.equal(result.artifact_status, "COMPLETED");
+  assert.equal(result.phases["warm-up"].output.executionOutcome, "NOT_RUN");
+  assert.equal(result.phases["warm-up"].output.artifactStatus, "NONE");
+});
+
+test("runner emits FAILED_SETUP only for setup or warm-up prerequisite failures", async () => {
+  for (const fault of ["setup/seed", "warm-up"]) {
+    const result = await executeRun(plan(), { executePhase: executor([], { [fault]: "blocked" }) });
+    assert.equal(result.execution_outcome, "FAILED_SETUP");
+    assert.equal(result.artifact_status, "INCOMPLETE");
+  }
+});
+
+test("runner normalizes legacy measurement markers onto the canonical final axes", async () => {
+  const result = await executeRun(plan(), {
+    executePhase: async (phase) => {
+      if (phase === "setup/seed") return { resourcesCreated: true };
+      if (phase === "measurement") return { executionOutcome: "COMPLETED", artifactStatus: "RETAINED" };
+      return {};
+    },
+  });
+  assert.equal(result.execution_outcome, "MEASURED");
+  assert.equal(result.artifact_status, "INCOMPLETE");
+  assert.equal(["MEASURED", "NOT_RUN", "FAILED_SETUP"].includes(result.execution_outcome), true);
+  assert.equal(["COMPLETED", "INCOMPLETE"].includes(result.artifact_status), true);
 });

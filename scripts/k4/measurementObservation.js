@@ -25,6 +25,13 @@ function mergeCapture(start, end) {
     loadGenerator: { ...(start.loadGenerator || {}), ...(end.loadGenerator || {}) },
     replicaAttribution: { before: start.replicaAttribution, after: end.replicaAttribution },
     claimEvidence: { ...(start.claimEvidence || {}), ...(end.claimEvidence || {}) },
+    ...(start.activeSocketGauge || end.activeSocketGauge ? {
+      activeSocketGauge: {
+        ...(start.activeSocketGauge || {}),
+        ...(end.activeSocketGauge || {}),
+        samples: [...(start.activeSocketGauge?.samples || []), ...(end.activeSocketGauge?.samples || [])],
+      },
+    } : {}),
   };
 }
 
@@ -94,6 +101,7 @@ function createMeasurementObservation({ intervalMs, clock = () => new Date().toI
         resource: { measurementStart: started.measurementStart, measurementEnd, intervalMs, ...(raw.resource || {}) },
         histogram: raw.histogram,
         loadGenerator: raw.loadGenerator,
+        activeSocketGauge: raw.activeSocketGauge,
         claimEvidence: raw.claimEvidence,
         qualificationFlags: raw.qualificationFlags,
       });
