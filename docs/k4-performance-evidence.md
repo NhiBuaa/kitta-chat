@@ -90,8 +90,10 @@ approved treatment is the targeted sidebar query-plan index, and one bounded
 post-treatment/optimization-comparison rerun is retained at
 `.k4-results/k4issue89r4-20260816-optimization-comparison.json`. Its append-only Evaluation ends
 with `tc89-r4-treatment-comparison-20260816-approved` (`PASSED`/`approved`); no
-production-capacity, scalability, or topology claim is emitted. Integration and the single final
-K4 feature review remain pending.
+production-capacity, scalability, or topology claim is emitted. The implementation is integrated
+at `codex/k4-integration` head `e38cfff6ec69b4e8216fb1a322f44df024a363fa`; verification is green,
+and selective invalidation preserved the accepted r3/r4 Evaluations because no inputs, environment,
+or approved behavior changed. PR publication and the single final K4 feature review remain pending.
 
 The CLI seams are `baseline-matrix`, `execute-baseline`, `validate-baseline`, `baseline-report`,
 `prerequisite-freshness`, `prerequisite-set`, and `bottleneck-dossier`. Every run also retains `run-status.json` and lifecycle details in the

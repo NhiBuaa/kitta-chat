@@ -21,8 +21,14 @@ approved append-only record `tc89-r3-baseline-20260816-approved`. The r4 Evaluat
 ends with `tc89-r4-treatment-comparison-20260816-approved` (`PASSED`/`approved`) after the prior
 `BLOCKED`/pending observation. The valid comparison artifact is
 `.k4-results/k4issue89r4-20260816-optimization-comparison.json`; the treated run completed the
-full lifecycle and was cleaned to zero owned resources. The next valid transition is integration;
-no final feature review, commit, merge, or publication was performed.
+full lifecycle and was cleaned to zero owned resources. The accepted implementation is now
+committed as `b4e3c49`, `e8c8fb6`, and `e38cfff` and fast-forwarded into `codex/k4-integration`
+at `e38cfff6ec69b4e8216fb1a322f44df024a363fa`. Integration verification passes K4 `190/190`,
+server attribution/read-model `13/13`, repository CI `132/132`, and `npm run ci:validate`.
+Selective invalidation decision: no acceptance input, authoritative guide/Evaluation, environment,
+or approved behavior changed during the fast-forward; the r3/r4 accepted Evaluations remain valid
+and no rerun is required. The Issue #89 worktree is retained; final feature review and merge remain
+deferred, and PR publication is the next action.
 
 ## K4 Current Frontier Override
 

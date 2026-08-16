@@ -4,7 +4,8 @@
 
 Issues #85–#88 are complete and integrated. Issue #89 is the only open frontier. This worktree
 is reserved exclusively for the baseline evidence-chain and bottleneck-dossier slice. Its
-integration branch is `codex/k4-integration`, pinned at `9bbd99fa0cdd1663ade6d54937d1fb41e2880ea1`.
+integration branch is `codex/k4-integration`, based at `9bbd99fa0cdd1663ade6d54937d1fb41e2880ea1`
+and currently integrated at `e38cfff6ec69b4e8216fb1a322f44df024a363fa`.
 
 ## Issue #89 Acceptance Checkpoint
 
@@ -28,9 +29,11 @@ contains the original `tc89-r3-baseline-20260816` with `verdict=BLOCKED` and
 `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.evaluations.jsonl`
 ends with `tc89-r4-treatment-comparison-20260816-approved` (`verdict=PASSED`,
 `human_approval=approved`) after the prior BLOCKED/pending observation. The valid comparison
-artifact is `.k4-results/k4issue89r4-20260816-optimization-comparison.json`. The next valid
-transition is integration; preserve all prior runs and guide revisions and do not run final review,
-commit, merge, or publication before the integration gates are satisfied.
+artifact is `.k4-results/k4issue89r4-20260816-optimization-comparison.json`.
+Integration verification is complete on `e38cfff`; selective invalidation found no changed
+acceptance input, authoritative guide/Evaluation, environment, or approved behavior, so r3/r4
+Evaluations remain valid without rerun. Preserve all prior runs and guide revisions; the next valid
+transition is PR publication, while final review and merge remain deferred.
 
 ## Current Parallel Frontier Override
 
@@ -92,17 +95,18 @@ this Issue #87 worktree.
 
 ## Current State
 
-The next valid transition for this worktree is integration of the accepted Issue #89 worktree into
-the current K4 integration head. Reconcile the dirty worktree, run integration verification, derive
-selective acceptance invalidation, and only then advance the integration head; the single final K4
-feature review remains deferred until the complete feature reaches its fixed point. Preserve all
-prior guide revisions, Evaluation records, and treated comparison artifacts.
+The accepted Issue #89 worktree is integrated into `codex/k4-integration` at
+`e38cfff6ec69b4e8216fb1a322f44df024a363fa`. Integration verification is green and the selective
+invalidation decision preserved all accepted Evaluations. The next valid transition is PR
+publication; the single final K4 feature review and merge remain deferred until the complete
+feature reaches its fixed point. Preserve all prior guide revisions, Evaluation records, and treated
+comparison artifacts.
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89; Issue #89 implementation is complete and r4 acceptance is awaiting its explicit
-Evaluation approval. Final K4 review and publication remain governed by the approved dependency
-graph and complete-feature fixed point.
+Issues #81–#89; Issue #89 implementation, r4 acceptance, and integration are complete. PR
+publication, final K4 review, and merge remain governed by the approved dependency graph and
+complete-feature fixed point.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
 delegation, evidence, and issue state; it does not implement an issue itself. This worktree is not
