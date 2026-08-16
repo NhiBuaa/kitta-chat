@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-performance-evidence-implementation-remediation-completed-20260814",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "87",
+  "transition": "implementation_completed",
+  "skill": "implement",
+  "execution_revision": "issue-87-tc87-03-remediation",
+  "started_at": "2026-08-14T11:36:40+07:00",
+  "finished_at": "2026-08-14T11:52:00+07:00",
+  "status": "completed",
+  "retry_count": 0,
+  "input_digest": "sha256:7271E0E4AD36542CA2CD7D27FFA83EC5AFDB41F96BAD0060AE57004806433803",
+  "output_digest": "sha256:E9E1C4CEE1A2DE3FF71E2057E220EFB23484EAF4A64C52723D39E1C88AAFC9FF",
+  "evidence_references": [
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/scripts/k4/runner/faultFixtures.js",
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/scripts/k4/runner/workload.js",
+    "node --test scripts/test/k4/*.test.cjs: 133/133 passed",
+    "npm run test:ci: 132/132 passed",
+    "server npm test: 476 passed, 5 skipped, 0 failed",
+    "docker build k4issue87r3: exit 0"
+  ]
+}

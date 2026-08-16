@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-issue-85-acceptance-prepared-r2",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "issue-85",
+  "transition": "acceptance_prepared",
+  "skill": "manual-acceptance",
+  "execution_revision": "k4-issue-85-r2",
+  "started_at": "2026-08-14T03:55:00Z",
+  "finished_at": "2026-08-14T04:07:10Z",
+  "status": "blocked",
+  "retry_count": 1,
+  "input_digest": "78e519931b5fdb4ce0d0f3e0cb01007ecfc6f13d3a79045b16e9c4827cbe8d36",
+  "output_digest": "66e773b7a19741d57e1545de97bb2106b075d49f162d1cb76f2d4f341f49a309",
+  "evidence_references": [
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r2.md",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r1.md",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-review-cadence.json",
+    "https://github.com/NhiBuaa/kitta-chat/issues/80",
+    "https://github.com/NhiBuaa/kitta-chat/issues/85",
+    "docs/adr/015-k4-performance-evidence-boundary.md"
+  ]
+}

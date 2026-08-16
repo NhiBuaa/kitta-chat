@@ -1,0 +1,2 @@
+# K4 result-directory path is a non-secret runtime plan field; the initial collector commit triggered generic-api-key.
+2821dc8f6400b731409dc0278325b4cedf18d97f:scripts/k4/runtimeComposition.js:generic-api-key:29

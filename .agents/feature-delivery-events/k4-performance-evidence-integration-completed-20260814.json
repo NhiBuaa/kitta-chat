@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-performance-evidence-integration-completed-20260814",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "87",
+  "transition": "integration_completed",
+  "skill": "feature-delivery",
+  "execution_revision": "cfd1bf90c490dfcfe3349107f841269d1b6aa720",
+  "started_at": "2026-08-14T13:35:25+07:00",
+  "finished_at": "2026-08-14T13:39:46+07:00",
+  "status": "completed",
+  "retry_count": 0,
+  "input_digest": "sha256:C8DD3178358DD8AC455510D6B3C5E66F526F2CF1DC27D65934DF77E2B360FB7C",
+  "output_digest": "sha256:cfd1bf90c490dfcfe3349107f841269d1b6aa720",
+  "evidence_references": [
+    "https://github.com/NhiBuaa/kitta-chat/pull/99",
+    "PR #99: MERGED into main",
+    "merge commit cfd1bf90c490dfcfe3349107f841269d1b6aa720",
+    "GitHub Issue #87: CLOSED",
+    "post-merge K4 143/143, repository CI 132/132, server 476 passed/5 skipped/0 failed"
+  ]
+}

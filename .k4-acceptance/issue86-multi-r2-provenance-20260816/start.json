@@ -1,0 +1,143 @@
+
+> k4
+> node scripts/k4/cli.js start --run-id issue86-multi-r2-provenance-20260816 --profile multi-replica --scenario sidebar --workload-version 2 --image-set-id issue86-20260814
+
+{
+  "action": "start",
+  "plan": {
+    "projectName": "kittachat-k4-issue86-multi-r2-provenance-20260816",
+    "composeFile": "D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml",
+    "runId": "issue86-multi-r2-provenance-20260816",
+    "profile": "multi-replica",
+    "backendReplicaCount": 3,
+    "backendUpstreamMembership": [
+      "backend-1",
+      "backend-2",
+      "backend-3"
+    ],
+    "nginx": {
+      "imageConfiguration": "repository-nginx/Dockerfile+nginx/nginx.conf",
+      "ingress": "nginx"
+    },
+    "backend": {
+      "imageConfiguration": "server/Dockerfile:prod",
+      "environment": "K4-owned dependencies"
+    },
+    "dependencies": {
+      "mongo": "mongo:7",
+      "redis": "redis:alpine",
+      "rabbitmq": "rabbitmq:3-management-alpine"
+    },
+    "runner": {
+      "image": "node:22.14.0-bookworm-slim",
+      "workloadTarget": "http://nginx",
+      "dockerManagement": false
+    },
+    "workload": {
+      "scenario": "sidebar",
+      "version": 2,
+      "snapshot": {
+        "actorAllocation": {
+          "alice": 1
+        },
+        "connectionReuse": "http-keep-alive-per-phase",
+        "loadModel": {
+          "ratePerSecond": 2,
+          "type": "open-loop"
+        },
+        "measurement": {
+          "durationSeconds": 30
+        },
+        "pagination": {
+          "mode": "page",
+          "pageSize": 20
+        },
+        "request": {
+          "method": "GET",
+          "path": "/api/sidebar/conversations"
+        },
+        "scenario": "sidebar",
+        "version": 2,
+        "warmup": {
+          "durationSeconds": 10
+        }
+      },
+      "representation": "{\"actorAllocation\":{\"alice\":1},\"connectionReuse\":\"http-keep-alive-per-phase\",\"loadModel\":{\"ratePerSecond\":2,\"type\":\"open-loop\"},\"measurement\":{\"durationSeconds\":30},\"pagination\":{\"mode\":\"page\",\"pageSize\":20},\"request\":{\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\"},\"scenario\":\"sidebar\",\"version\":2,\"warmup\":{\"durationSeconds\":10}}\n",
+      "digest": "dc4610a45e136aa0efa52b4481c236d5911c82634d2c2302a0049a83adc34bdd",
+      "metadata": {
+        "label": null,
+        "notes": null,
+        "owner": null
+      }
+    },
+    "phaseSettings": [
+      "setup/seed",
+      "warm-up",
+      "measurement",
+      "teardown"
+    ],
+    "resourceAllocation": "compose-default",
+    "networkIngress": "k4-internal-nginx-only",
+    "hostPorts": [],
+    "resultDirectory": "D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\.k4-results\\issue86-multi-r2-provenance-20260816",
+    "resources": [
+      {
+        "class": "containers",
+        "name": "nginx",
+        "labels": {
+          "io.kittachat.k4.project": "kittachat-k4",
+          "io.kittachat.k4.run_id": "issue86-multi-r2-provenance-20260816"
+        }
+      },
+      {
+        "class": "containers",
+        "name": "backend",
+        "labels": {
+          "io.kittachat.k4.project": "kittachat-k4",
+          "io.kittachat.k4.run_id": "issue86-multi-r2-provenance-20260816"
+        }
+      },
+      {
+        "class": "containers",
+        "name": "mongo",
+        "labels": {
+          "io.kittachat.k4.project": "kittachat-k4",
+          "io.kittachat.k4.run_id": "issue86-multi-r2-provenance-20260816"
+        }
+      },
+      {
+        "class": "containers",
+        "name": "redis",
+        "labels": {
+          "io.kittachat.k4.project": "kittachat-k4",
+          "io.kittachat.k4.run_id": "issue86-multi-r2-provenance-20260816"
+        }
+      },
+      {
+        "class": "containers",
+        "name": "rabbitmq",
+        "labels": {
+          "io.kittachat.k4.project": "kittachat-k4",
+          "io.kittachat.k4.run_id": "issue86-multi-r2-provenance-20260816"
+        }
+      },
+      {
+        "class": "containers",
+        "name": "runner",
+        "labels": {
+          "io.kittachat.k4.project": "kittachat-k4",
+          "io.kittachat.k4.run_id": "issue86-multi-r2-provenance-20260816"
+        }
+      }
+    ],
+    "topology": {
+      "profile": "multi-replica",
+      "backendReplicaCount": 3,
+      "backendUpstreamMembership": [
+        "backend-1",
+        "backend-2",
+        "backend-3"
+      ]
+    }
+  }
+}

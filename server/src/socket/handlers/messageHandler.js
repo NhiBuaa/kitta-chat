@@ -14,8 +14,9 @@ const {
   emitToUser,
 } = require("../realtimePublisher");
 const { markConversationAsRead } = require("../../services/conversationReadModelService");
+const { k4Attribution } = require("../../observability/k4Attribution");
 
-const NODE_NAME = process.env.NODE_NAME || "backend";
+const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Message][node=${NODE_NAME}]`;
 
 const createRegisterMessageHandlers = ({
@@ -26,6 +27,7 @@ const createRegisterMessageHandlers = ({
   UserModel = User,
   MessageModel = Message,
   logger = console,
+  attribution = k4Attribution,
 } = {}) => (socket, io) => {
   socket.on(SOCKET_EVENTS.MESSAGE_SEND, async (messageData, callBack) => {
     try {
@@ -33,6 +35,7 @@ const createRegisterMessageHandlers = ({
       const sender = messageData.sender;
       const isGroup = messageData.isGroup;
       const senderId = typeof sender === "object" ? sender._id : sender;
+      const correlationId = messageData.idempotencyKey || null;
 
       if (!receiverId) {
         logger.error(`${logPrefix} sendMessage rejected reason=missing-receiverId`, messageData);
@@ -54,6 +57,7 @@ const createRegisterMessageHandlers = ({
       logger.log(
         `${logPrefix} sendMessage start sender=${senderId} receiver=${receiverId} conv=${conversationId} isGroup=${Boolean(isGroup)} socket=${socket.id}`,
       );
+      attribution.messageSender({ correlationId, actorRef: String(senderId), recipientRef: String(receiverId), replica: NODE_NAME, conversationId });
 
       const { doc: savedMessage, isDuplicate } = await saveMessage({
         ...messageData,
@@ -91,6 +95,7 @@ const createRegisterMessageHandlers = ({
         );
 
         emitServerSide(io, SERVER_SIDE_EVENTS.MESSAGE_DISPATCHED_PROOF, {
+          correlationId,
           messageId: payloadToEmit._id,
           senderId,
           receiverId,
@@ -116,6 +121,17 @@ const createRegisterMessageHandlers = ({
       logger.log(
         `${logPrefix} sendMessage done messageId=${savedMessage?._id || "n/a"} duplicate=${Boolean(isDuplicate)}`,
       );
+
+      attribution.messageAcknowledged({
+        correlationId,
+        actorRef: String(senderId),
+        recipientRef: String(receiverId),
+        replica: NODE_NAME,
+        success: true,
+        realId: savedMessage?._id,
+        messageId: savedMessage?._id,
+        conversationId,
+      });
 
       callBack?.({
         success: true,

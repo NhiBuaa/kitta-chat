@@ -1,0 +1,348 @@
+{
+  "phaseStart": 1786682425552,
+  "phaseEnd": 1786682435552,
+  "opportunities": [
+    {
+      "opportunityId": 0,
+      "correlationId": "k4-0-fccff0de-0aae-4379-9d6e-ea61bcb1a2dd",
+      "scheduledAt": 1786682425552,
+      "startedAt": 1786682425552,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-0-fccff0de-0aae-4379-9d6e-ea61bcb1a2dd",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682425650,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 1,
+      "correlationId": "k4-1-4c15ed56-98a2-493f-b036-c6d93a8c2a2e",
+      "scheduledAt": 1786682426052,
+      "startedAt": 1786682426053,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-1-4c15ed56-98a2-493f-b036-c6d93a8c2a2e",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682426154,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 2,
+      "correlationId": "k4-2-f39ae9fa-e7fb-4f92-a03c-db2022ac0d68",
+      "scheduledAt": 1786682426552,
+      "startedAt": 1786682426553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-2-f39ae9fa-e7fb-4f92-a03c-db2022ac0d68",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682426595,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 3,
+      "correlationId": "k4-3-888d0be1-482b-4058-940b-437fd8ee9a8b",
+      "scheduledAt": 1786682427052,
+      "startedAt": 1786682427053,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-3-888d0be1-482b-4058-940b-437fd8ee9a8b",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682427112,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 4,
+      "correlationId": "k4-4-4190c322-bfde-4fe6-a9c5-9fb73a600066",
+      "scheduledAt": 1786682427552,
+      "startedAt": 1786682427553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-4-4190c322-bfde-4fe6-a9c5-9fb73a600066",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682427592,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 5,
+      "correlationId": "k4-5-93baf5a0-ff0d-4529-b4a2-93fd1cf830d8",
+      "scheduledAt": 1786682428052,
+      "startedAt": 1786682428053,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-5-93baf5a0-ff0d-4529-b4a2-93fd1cf830d8",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682428096,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 6,
+      "correlationId": "k4-6-3473ba71-0af6-4028-8a64-af68792dfcd5",
+      "scheduledAt": 1786682428552,
+      "startedAt": 1786682428552,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-6-3473ba71-0af6-4028-8a64-af68792dfcd5",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682428578,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 7,
+      "correlationId": "k4-7-b927e4fa-19af-4e9f-8586-3c795bd949f3",
+      "scheduledAt": 1786682429052,
+      "startedAt": 1786682429053,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-7-b927e4fa-19af-4e9f-8586-3c795bd949f3",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682429076,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 8,
+      "correlationId": "k4-8-01301a66-3251-4825-ad2b-9e71da35ca8f",
+      "scheduledAt": 1786682429552,
+      "startedAt": 1786682429553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-8-01301a66-3251-4825-ad2b-9e71da35ca8f",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682429626,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 9,
+      "correlationId": "k4-9-2bd1ac60-056b-4222-9309-331c840e7768",
+      "scheduledAt": 1786682430052,
+      "startedAt": 1786682430051,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-9-2bd1ac60-056b-4222-9309-331c840e7768",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682430083,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 10,
+      "correlationId": "k4-10-d03c234b-be2a-4db1-a066-e02974b3b707",
+      "scheduledAt": 1786682430552,
+      "startedAt": 1786682430553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-10-d03c234b-be2a-4db1-a066-e02974b3b707",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682430582,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 11,
+      "correlationId": "k4-11-1a9faff0-1823-424c-9421-5621e8e3d1cc",
+      "scheduledAt": 1786682431052,
+      "startedAt": 1786682431052,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-11-1a9faff0-1823-424c-9421-5621e8e3d1cc",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682431080,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 12,
+      "correlationId": "k4-12-dcaea307-9910-4396-b508-6584c7fad402",
+      "scheduledAt": 1786682431552,
+      "startedAt": 1786682431553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-12-dcaea307-9910-4396-b508-6584c7fad402",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682431584,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 13,
+      "correlationId": "k4-13-ac12e27f-1dcb-4eb4-863c-51c3c232e959",
+      "scheduledAt": 1786682432052,
+      "startedAt": 1786682432052,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-13-ac12e27f-1dcb-4eb4-863c-51c3c232e959",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682432092,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 14,
+      "correlationId": "k4-14-638a2521-0e7e-4277-a150-31125565040b",
+      "scheduledAt": 1786682432552,
+      "startedAt": 1786682432553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-14-638a2521-0e7e-4277-a150-31125565040b",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682432575,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 15,
+      "correlationId": "k4-15-f3a7a831-73e5-44e2-9177-6b3ad14faaf2",
+      "scheduledAt": 1786682433052,
+      "startedAt": 1786682433052,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-15-f3a7a831-73e5-44e2-9177-6b3ad14faaf2",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682433093,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 16,
+      "correlationId": "k4-16-ebf64e28-76ed-4d2c-9615-f4c57915600d",
+      "scheduledAt": 1786682433552,
+      "startedAt": 1786682433553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-16-ebf64e28-76ed-4d2c-9615-f4c57915600d",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682433583,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 17,
+      "correlationId": "k4-17-9e171dde-cdfa-47b6-88df-521c6e256d79",
+      "scheduledAt": 1786682434052,
+      "startedAt": 1786682434053,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-17-9e171dde-cdfa-47b6-88df-521c6e256d79",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682434076,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 18,
+      "correlationId": "k4-18-8b5c7a8e-4208-42c3-96e6-15408a146355",
+      "scheduledAt": 1786682434552,
+      "startedAt": 1786682434553,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-18-8b5c7a8e-4208-42c3-96e6-15408a146355",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682434619,
+      "outcome": "success",
+      "phase": "warm-up"
+    },
+    {
+      "opportunityId": 19,
+      "correlationId": "k4-19-4ba0888a-ec69-4a3e-ac49-fc49b503fc63",
+      "scheduledAt": 1786682435052,
+      "startedAt": 1786682435053,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-19-4ba0888a-ec69-4a3e-ac49-fc49b503fc63",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682435096,
+      "outcome": "success",
+      "phase": "warm-up"
+    }
+  ],
+  "scenario": "sidebar",
+  "version": 2,
+  "phase": "warm-up",
+  "request": {
+    "method": "GET",
+    "path": "/api/sidebar/conversations"
+  },
+  "pagination": {
+    "mode": "page",
+    "pageSize": 20
+  },
+  "measuredRequestIds": [
+    "k4-0-fccff0de-0aae-4379-9d6e-ea61bcb1a2dd",
+    "k4-1-4c15ed56-98a2-493f-b036-c6d93a8c2a2e",
+    "k4-2-f39ae9fa-e7fb-4f92-a03c-db2022ac0d68",
+    "k4-3-888d0be1-482b-4058-940b-437fd8ee9a8b",
+    "k4-4-4190c322-bfde-4fe6-a9c5-9fb73a600066",
+    "k4-5-93baf5a0-ff0d-4529-b4a2-93fd1cf830d8",
+    "k4-6-3473ba71-0af6-4028-8a64-af68792dfcd5",
+    "k4-7-b927e4fa-19af-4e9f-8586-3c795bd949f3",
+    "k4-8-01301a66-3251-4825-ad2b-9e71da35ca8f",
+    "k4-9-2bd1ac60-056b-4222-9309-331c840e7768",
+    "k4-10-d03c234b-be2a-4db1-a066-e02974b3b707",
+    "k4-11-1a9faff0-1823-424c-9421-5621e8e3d1cc",
+    "k4-12-dcaea307-9910-4396-b508-6584c7fad402",
+    "k4-13-ac12e27f-1dcb-4eb4-863c-51c3c232e959",
+    "k4-14-638a2521-0e7e-4277-a150-31125565040b",
+    "k4-15-f3a7a831-73e5-44e2-9177-6b3ad14faaf2",
+    "k4-16-ebf64e28-76ed-4d2c-9615-f4c57915600d",
+    "k4-17-9e171dde-cdfa-47b6-88df-521c6e256d79",
+    "k4-18-8b5c7a8e-4208-42c3-96e6-15408a146355",
+    "k4-19-4ba0888a-ec69-4a3e-ac49-fc49b503fc63"
+  ],
+  "measuredActors": [
+    "alice"
+  ],
+  "measurementWindow": {
+    "start": "2026-08-14T04:40:25.552Z",
+    "end": "2026-08-14T04:40:35.552Z",
+    "boundary": "[phase_start, phase_end)"
+  },
+  "runnerShortfallSamples": []
+}

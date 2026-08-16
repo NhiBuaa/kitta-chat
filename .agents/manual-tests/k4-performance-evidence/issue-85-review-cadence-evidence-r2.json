@@ -1,0 +1,30 @@
+{
+  "spec_design_external_review": {
+    "status": "completed",
+    "reference": ".agents/manual-tests/k4-performance-evidence/issue-85-r2-spec-design-external-review.json",
+    "sequence": 1
+  },
+  "tickets": [
+    {
+      "ticket_id": "issue-85",
+      "ticket_external_review": {
+        "status": "completed",
+        "reference": ".agents/manual-tests/k4-performance-evidence/issue-85-r2-ticket-external-review.json",
+        "sequence": 2
+      },
+      "manual_guide_external_review": {
+        "status": "completed",
+        "reference": ".agents/manual-tests/k4-performance-evidence/issue-85-r2-manual-guide-external-review.json",
+        "sequence": 3
+      },
+      "human_acceptance": {
+        "status": "pending",
+        "reference": ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r2.md"
+      }
+    }
+  ],
+  "final_feature_review": {
+    "status": "BLOCK",
+    "reference": "pending implementation and final fixed-point review"
+  }
+}

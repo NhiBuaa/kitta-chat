@@ -1,0 +1,38 @@
+{
+  "change_kinds": [
+    "concurrency",
+    "configuration",
+    "logic",
+    "performance",
+    "schema",
+    "testing"
+  ],
+  "effective_risk_level": "high",
+  "escalated": false,
+  "escalation_triggers": [],
+  "external_review_budget": 3,
+  "gates": {
+    "final_feature_code_review": "required",
+    "human_acceptance": "required",
+    "manual_guide_external_review": "required_each_guide",
+    "spec_design_external_review": "required",
+    "ticket_external_review": "required_each_ticket"
+  },
+  "reasons": [
+    "risk_level:high",
+    "concurrency",
+    "schema"
+  ],
+  "representative_ticket_index": null,
+  "risk_level": "high",
+  "schema_version": 1,
+  "selection_rule": "For representative review, select the highest-risk ticket; break ties with the earliest frontier ticket.",
+  "status": "planned",
+  "ticket_count": 1,
+  "ticket_ids": [
+    "issue-85"
+  ],
+  "ticket_risk_levels": [
+    "high"
+  ]
+}

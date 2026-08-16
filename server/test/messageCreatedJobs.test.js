@@ -126,6 +126,36 @@ test("sendMessage publishes message.created after realtime delivery succeeds", a
   assert.equal(published[0].text, undefined);
 });
 
+test("sendMessage attribution retains message id and legacy conversation identity", async () => {
+  const { handlers, socket, io } = createSocketHarness();
+  const records = [];
+  const registerMessageHandlers = createRegisterMessageHandlers({
+    getCachedUserProfile: async () => ({ displayName: "Alice" }),
+    saveMessage: async () => ({ doc: { _id: "msg-87", conversationId: "user-1_user-2" }, isDuplicate: false }),
+    auditQueue: { async publishMessageCreatedJob() {} },
+    attribution: {
+      messageSender: (fields) => records.push({ event: "sender", fields }),
+      messageAcknowledged: (fields) => records.push({ event: "ack", fields }),
+    },
+  });
+  registerMessageHandlers(socket, io);
+
+  await handlers.sendMessage({
+    sender: "user-1", receiverId: "user-2", text: "hello", isGroup: false,
+    idempotencyKey: "idem-87", conversationId: "user-1_user-2",
+  }, () => {});
+
+  assert.deepEqual(records.map(({ event, fields }) => ({
+    event,
+    correlationId: fields.correlationId,
+    conversationId: fields.conversationId,
+    messageId: fields.messageId,
+  })), [
+    { event: "sender", correlationId: "idem-87", conversationId: "user-1_user-2", messageId: undefined },
+    { event: "ack", correlationId: "idem-87", conversationId: "user-1_user-2", messageId: "msg-87" },
+  ]);
+});
+
 test("sendMessage duplicate retry returns existing message and does not publish audit again", async () => {
   const { handlers, emissions, socket, io } = createSocketHarness();
   const published = [];

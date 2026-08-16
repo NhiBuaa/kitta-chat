@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-performance-evidence-evaluation-remediation-executed-20260814",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "87",
+  "transition": "evaluation_executed",
+  "skill": "manual-acceptance",
+  "execution_revision": "k4-issue-87-r2",
+  "started_at": "2026-08-14T11:58:00+07:00",
+  "finished_at": "2026-08-14T12:08:52+07:00",
+  "status": "completed",
+  "retry_count": 0,
+  "input_digest": "sha256:7C228FC88849C0725B908466F8DDBFD334C62E657286880428BC56A8A28F254A",
+  "output_digest": "sha256:E9E1C4CEE1A2DE3FF71E2057E220EFB23484EAF4A64C52723D39E1C88AAFC9FF",
+  "evidence_references": [
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl",
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.k4-results/issue87-fault-ackfail-20260814/measurement-runner.json",
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.k4-results/issue87-fault-acktimeout-20260814/measurement-runner.json",
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.k4-results/issue87-fault-deliverytimeout-20260814/measurement-runner.json",
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.k4-results/issue87-fault-correlation-20260814/measurement-runner.json"
+  ]
+}

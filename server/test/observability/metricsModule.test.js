@@ -35,6 +35,13 @@ test("message persistence histogram has a finite bucket through the configured t
   ]);
 });
 
+test("message persistence histogram exposes zero-valued outcome series before the first observation", async () => {
+  const metrics = createMetricsModule({ adapter: createPromClientMetricsAdapter() });
+  const rendered = await metrics.renderPrometheus();
+  assert.match(rendered.body, /kittachat_message_persistence_duration_seconds_count\{outcome="success"\} 0/);
+  assert.match(rendered.body, /kittachat_message_persistence_duration_seconds_sum\{outcome="success"\} 0/);
+});
+
 test("MetricsModule exposes every semantic observation and async Prometheus exposition", async () => {
   const adapter = createPromClientMetricsAdapter();
   const metrics = createMetricsModule({ adapter });

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "run_id": "tc85r3-human-approved-20260814",
+  "observed_at": "2026-08-14T05:25:00Z",
+  "executor": "Codex leader",
+  "test_results": [
+    {
+      "id": "TC-85-01",
+      "outcome": "PASS",
+      "observation": "Human approval confirms the previously recorded exact whole-file source-inventory verification and alternate-boundary guard.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", "scripts/test/k4/provenance.test.cjs"]
+    },
+    {
+      "id": "TC-85-02",
+      "outcome": "PASS",
+      "observation": "Human approval confirms the previously recorded source-digest locking and tamper rejection evidence.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", ".scratch/issue85-manual-acceptance-r3.json"]
+    },
+    {
+      "id": "TC-85-03",
+      "outcome": "PASS",
+      "observation": "Human approval confirms the previously recorded non-self-hashing bundle and completion-marker evidence.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", "scripts/test/k4/provenance.test.cjs"]
+    },
+    {
+      "id": "TC-85-04",
+      "outcome": "PASS",
+      "observation": "Human approval confirms the previously recorded incomplete-run and run-collision evidence.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", "scripts/test/k4/provenance.test.cjs"]
+    },
+    {
+      "id": "TC-85-05",
+      "outcome": "PASS",
+      "observation": "Human approval confirms the qualification matrix and report-level hardware, measured-scope, provenance, extrapolation, and marketing-claim guardrail evidence.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", ".scratch/issue85-manual-acceptance-r3.json"]
+    },
+    {
+      "id": "TC-85-06",
+      "outcome": "PASS",
+      "observation": "Human approval confirms exact 90%, below-90%, final-partial-slot, and zero-success resource-coverage evidence.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", ".scratch/issue85-manual-acceptance-r3.json"]
+    },
+    {
+      "id": "TC-85-07",
+      "outcome": "PASS",
+      "observation": "Human approval confirms attribution qualification and unavailable multi-replica NOT_RUN evidence with no copied result or claim.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", ".scratch/issue85-manual-acceptance-r3.json"]
+    },
+    {
+      "id": "TC-85-08",
+      "outcome": "PASS",
+      "observation": "Human approval confirms the separate optimization and topology comparison-contract evidence.",
+      "evidence": ["Prior Evaluation tc85r3-acceptance-20260814", "scripts/test/k4/provenance.test.cjs"]
+    }
+  ],
+  "verdict": "PASSED",
+  "human_approval": "approved",
+  "notes": "Explicit user approval received for the Issue #85 manual acceptance. Per user direction, no per-issue code review is run; code review is deferred until the complete K4 feature is finished, then performed once at the feature fixed point. Guide revisions and prior Evaluation records remain immutable; this is a new append-only approval record."
+}

@@ -272,6 +272,19 @@ Principles:
 * RabbitMQ correlation propagation (`requestId` -> `correlationId`), retry, DLQ, and poison-message tests (`server/test/rabbitmqInfrastructure.test.js`).
 * Safe to claim: request/correlation IDs, RabbitMQ retry/DLQ, health endpoints, multi-replica scaling docs. Do NOT claim full production observability or complete CI/CD yet.
 
+### K4 Performance Evidence
+
+* K4 is a separate reproducible performance-evidence milestone with a K4-owned dataset, isolated
+  Compose project, nginx-only workload ingress, and a containerized runner without Docker authority.
+* Issue #87 is acceptance-complete for message persistence and recipient-delivery evidence. The
+  accepted boundary starts recipient timing immediately before `sendMessage` emit and ends at the
+  matched recipient `getMessage`; acknowledgement `{ success, realId }` remains only a validity gate.
+* Persistence quantiles are histogram-derived. Cross-replica claims require measurement-phase
+  attribution; sample-level same-replica ineligibility is distinct from run-level
+  `TOPOLOGY_NOT_EXERCISED`.
+* K4 evidence does not change public REST/Socket.IO contracts or authorize unsupported performance
+  claims when observation coverage is incomplete. See `docs/k4-performance-evidence.md` and ADR-015.
+
 ### Unified Sidebar Domain Glossary
 
 * **Unified Sidebar Conversation (Cuộc hội thoại Sidebar gộp chung):** Đại diện cho một phần tử hội thoại phẳng duy nhất trong sidebar hiển thị cả direct chat và group chat của user, được sắp xếp động theo `lastMessageAt` và `isPinned`.

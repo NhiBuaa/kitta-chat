@@ -1,0 +1,3573 @@
+{
+  "measurementStart": "2026-08-14T04:40:35.138Z",
+  "measurementEnd": "2026-08-14T04:41:08.315Z",
+  "samples": [
+    {
+      "slotIndex": 0,
+      "timestamp": "2026-08-14T04:40:35.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 159702000,
+                "memoryUsageBytes": 27553792
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6477081000,
+                "memoryUsageBytes": 67833856
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3040031000,
+                "memoryUsageBytes": 61485056
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3636392000,
+                "memoryUsageBytes": 66625536
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 769679000,
+                "memoryUsageBytes": 7766016
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:35.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 1,
+      "timestamp": "2026-08-14T04:40:36.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 163010000,
+                "memoryUsageBytes": 27598848
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6686124000,
+                "memoryUsageBytes": 68882432
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3047432000,
+                "memoryUsageBytes": 61964288
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3695961000,
+                "memoryUsageBytes": 67473408
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1327095000,
+                "memoryUsageBytes": 24539136
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:36.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 2,
+      "timestamp": "2026-08-14T04:40:37.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 3,
+      "timestamp": "2026-08-14T04:40:38.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 171156000,
+                "memoryUsageBytes": 28327936
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6757462000,
+                "memoryUsageBytes": 68812800
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3398106000,
+                "memoryUsageBytes": 63516672
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3808626000,
+                "memoryUsageBytes": 70365184
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1351298000,
+                "memoryUsageBytes": 25198592
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:38.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 4,
+      "timestamp": "2026-08-14T04:40:39.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 5,
+      "timestamp": "2026-08-14T04:40:40.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 189501000,
+                "memoryUsageBytes": 28209152
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6848630000,
+                "memoryUsageBytes": 68370432
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3465771000,
+                "memoryUsageBytes": 64700416
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3910406000,
+                "memoryUsageBytes": 67559424
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1367327000,
+                "memoryUsageBytes": 25731072
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:40.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 6,
+      "timestamp": "2026-08-14T04:40:41.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 192899000,
+                "memoryUsageBytes": 27308032
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6920718000,
+                "memoryUsageBytes": 71655424
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3468912000,
+                "memoryUsageBytes": 63754240
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4024231000,
+                "memoryUsageBytes": 67616768
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1373391000,
+                "memoryUsageBytes": 26202112
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:41.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 7,
+      "timestamp": "2026-08-14T04:40:42.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 194833000,
+                "memoryUsageBytes": 27938816
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6982720000,
+                "memoryUsageBytes": 72187904
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3522815000,
+                "memoryUsageBytes": 64950272
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4027063000,
+                "memoryUsageBytes": 67182592
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1387651000,
+                "memoryUsageBytes": 26640384
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:42.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 8,
+      "timestamp": "2026-08-14T04:40:43.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 201410000,
+                "memoryUsageBytes": 27951104
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6986857000,
+                "memoryUsageBytes": 72024064
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3730296000,
+                "memoryUsageBytes": 66641920
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4031090000,
+                "memoryUsageBytes": 67198976
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1394363000,
+                "memoryUsageBytes": 27164672
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:43.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 9,
+      "timestamp": "2026-08-14T04:40:44.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 204485000,
+                "memoryUsageBytes": 28581888
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6989527000,
+                "memoryUsageBytes": 71716864
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3732507000,
+                "memoryUsageBytes": 66170880
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4162013000,
+                "memoryUsageBytes": 68308992
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1438868000,
+                "memoryUsageBytes": 23900160
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:44.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 10,
+      "timestamp": "2026-08-14T04:40:45.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 206867000,
+                "memoryUsageBytes": 28311552
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6995116000,
+                "memoryUsageBytes": 72130560
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3816142000,
+                "memoryUsageBytes": 69574656
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4199359000,
+                "memoryUsageBytes": 68382720
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1447834000,
+                "memoryUsageBytes": 23941120
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:45.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 11,
+      "timestamp": "2026-08-14T04:40:46.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 209976000,
+                "memoryUsageBytes": 28237824
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7000566000,
+                "memoryUsageBytes": 71782400
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4093909000,
+                "memoryUsageBytes": 70774784
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4306017000,
+                "memoryUsageBytes": 68562944
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1461844000,
+                "memoryUsageBytes": 24068096
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:46.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 12,
+      "timestamp": "2026-08-14T04:40:47.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 13,
+      "timestamp": "2026-08-14T04:40:48.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 213052000,
+                "memoryUsageBytes": 27832320
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7134155000,
+                "memoryUsageBytes": 76238848
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4152989000,
+                "memoryUsageBytes": 69238784
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4329220000,
+                "memoryUsageBytes": 68427776
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1473580000,
+                "memoryUsageBytes": 23830528
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:48.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 14,
+      "timestamp": "2026-08-14T04:40:49.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 15,
+      "timestamp": "2026-08-14T04:40:50.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 215858000,
+                "memoryUsageBytes": 27971584
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7167829000,
+                "memoryUsageBytes": 76201984
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4252059000,
+                "memoryUsageBytes": 69877760
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4414858000,
+                "memoryUsageBytes": 70017024
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1484913000,
+                "memoryUsageBytes": 24576000
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:50.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 16,
+      "timestamp": "2026-08-14T04:40:51.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 223568000,
+                "memoryUsageBytes": 27623424
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7396991000,
+                "memoryUsageBytes": 77201408
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4337539000,
+                "memoryUsageBytes": 69226496
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4441096000,
+                "memoryUsageBytes": 68853760
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1496231000,
+                "memoryUsageBytes": 24936448
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:51.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 17,
+      "timestamp": "2026-08-14T04:40:52.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 18,
+      "timestamp": "2026-08-14T04:40:53.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 19,
+      "timestamp": "2026-08-14T04:40:54.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 227974000,
+                "memoryUsageBytes": 27860992
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7414177000,
+                "memoryUsageBytes": 76279808
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4410816000,
+                "memoryUsageBytes": 71168000
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4454820000,
+                "memoryUsageBytes": 68956160
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1512967000,
+                "memoryUsageBytes": 25620480
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:54.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 20,
+      "timestamp": "2026-08-14T04:40:55.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 21,
+      "timestamp": "2026-08-14T04:40:56.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 233948000,
+                "memoryUsageBytes": 27840512
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7486480000,
+                "memoryUsageBytes": 77451264
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4504291000,
+                "memoryUsageBytes": 72593408
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4460078000,
+                "memoryUsageBytes": 68767744
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1532750000,
+                "memoryUsageBytes": 25141248
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:56.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 22,
+      "timestamp": "2026-08-14T04:40:57.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 23,
+      "timestamp": "2026-08-14T04:40:58.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 236857000,
+                "memoryUsageBytes": 28495872
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7502726000,
+                "memoryUsageBytes": 76812288
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4743142000,
+                "memoryUsageBytes": 76300288
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4466456000,
+                "memoryUsageBytes": 68767744
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1538804000,
+                "memoryUsageBytes": 25157632
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:58.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 24,
+      "timestamp": "2026-08-14T04:40:59.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 238797000,
+                "memoryUsageBytes": 28241920
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7592429000,
+                "memoryUsageBytes": 76947456
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4744563000,
+                "memoryUsageBytes": 75415552
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4503590000,
+                "memoryUsageBytes": 70066176
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1545280000,
+                "memoryUsageBytes": 25448448
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:59.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 25,
+      "timestamp": "2026-08-14T04:41:00.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 243607000,
+                "memoryUsageBytes": 28749824
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7663212000,
+                "memoryUsageBytes": 77389824
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4772330000,
+                "memoryUsageBytes": 75468800
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4524268000,
+                "memoryUsageBytes": 69447680
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1556922000,
+                "memoryUsageBytes": 26050560
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:41:00.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 26,
+      "timestamp": "2026-08-14T04:41:01.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 247294000,
+                "memoryUsageBytes": 27701248
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7673589000,
+                "memoryUsageBytes": 77017088
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4790026000,
+                "memoryUsageBytes": 75710464
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4593484000,
+                "memoryUsageBytes": 69832704
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1560977000,
+                "memoryUsageBytes": 25763840
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:41:01.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 27,
+      "timestamp": "2026-08-14T04:41:02.138Z",
+      "status": "success",
+      "value": {
+        "resources": {
+          "nginx": [
+            {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 258808000,
+                "memoryUsageBytes": 28233728
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-1": [
+            {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7683450000,
+                "memoryUsageBytes": 77299712
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-2": [
+            {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4894886000,
+                "memoryUsageBytes": 75661312
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "backend-3": [
+            {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4733213000,
+                "memoryUsageBytes": 70795264
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ],
+          "runner": [
+            {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1610031000,
+                "memoryUsageBytes": 26329088
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          ]
+        },
+        "cgroup": {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:41:02.138Z"
+        }
+      }
+    },
+    {
+      "slotIndex": 28,
+      "timestamp": "2026-08-14T04:41:03.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 29,
+      "timestamp": "2026-08-14T04:41:04.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 30,
+      "timestamp": "2026-08-14T04:41:05.138Z",
+      "status": "missing",
+      "reason": "previous sample still in flight"
+    },
+    {
+      "slotIndex": 31,
+      "timestamp": "2026-08-14T04:41:06.138Z",
+      "status": "missing",
+      "reason": "no sample completed for cadence slot"
+    },
+    {
+      "slotIndex": 32,
+      "timestamp": "2026-08-14T04:41:07.138Z",
+      "status": "missing",
+      "reason": "no sample completed for cadence slot"
+    },
+    {
+      "slotIndex": 33,
+      "timestamp": "2026-08-14T04:41:08.138Z",
+      "status": "missing",
+      "reason": "no sample completed for cadence slot"
+    }
+  ],
+  "histogram": {
+    "resolvedBackendReplicas": [
+      "backend-1",
+      "backend-2",
+      "backend-3"
+    ],
+    "snapshots": {
+      "backend-1": {
+        "before": {
+          "metric": "kittachat_message_persistence_duration_seconds",
+          "labels": {
+            "outcome": "success"
+          },
+          "buckets": [
+            {
+              "le": "0.001",
+              "count": 0
+            },
+            {
+              "le": "0.005",
+              "count": 0
+            },
+            {
+              "le": "0.01",
+              "count": 0
+            },
+            {
+              "le": "0.025",
+              "count": 0
+            },
+            {
+              "le": "0.05",
+              "count": 0
+            },
+            {
+              "le": "0.1",
+              "count": 0
+            },
+            {
+              "le": "0.25",
+              "count": 0
+            },
+            {
+              "le": "0.5",
+              "count": 0
+            },
+            {
+              "le": "1",
+              "count": 0
+            },
+            {
+              "le": "2.5",
+              "count": 0
+            },
+            {
+              "le": "5",
+              "count": 0
+            },
+            {
+              "le": "10",
+              "count": 0
+            },
+            {
+              "le": "+Inf",
+              "count": 0
+            }
+          ],
+          "count": 0,
+          "sum": 0
+        },
+        "after": {
+          "metric": "kittachat_message_persistence_duration_seconds",
+          "labels": {
+            "outcome": "success"
+          },
+          "buckets": [
+            {
+              "le": "0.001",
+              "count": 0
+            },
+            {
+              "le": "0.005",
+              "count": 0
+            },
+            {
+              "le": "0.01",
+              "count": 0
+            },
+            {
+              "le": "0.025",
+              "count": 0
+            },
+            {
+              "le": "0.05",
+              "count": 0
+            },
+            {
+              "le": "0.1",
+              "count": 0
+            },
+            {
+              "le": "0.25",
+              "count": 0
+            },
+            {
+              "le": "0.5",
+              "count": 0
+            },
+            {
+              "le": "1",
+              "count": 0
+            },
+            {
+              "le": "2.5",
+              "count": 0
+            },
+            {
+              "le": "5",
+              "count": 0
+            },
+            {
+              "le": "10",
+              "count": 0
+            },
+            {
+              "le": "+Inf",
+              "count": 0
+            }
+          ],
+          "count": 0,
+          "sum": 0
+        }
+      },
+      "backend-2": {
+        "before": {
+          "metric": "kittachat_message_persistence_duration_seconds",
+          "labels": {
+            "outcome": "success"
+          },
+          "buckets": [
+            {
+              "le": "0.001",
+              "count": 0
+            },
+            {
+              "le": "0.005",
+              "count": 0
+            },
+            {
+              "le": "0.01",
+              "count": 0
+            },
+            {
+              "le": "0.025",
+              "count": 0
+            },
+            {
+              "le": "0.05",
+              "count": 0
+            },
+            {
+              "le": "0.1",
+              "count": 0
+            },
+            {
+              "le": "0.25",
+              "count": 0
+            },
+            {
+              "le": "0.5",
+              "count": 0
+            },
+            {
+              "le": "1",
+              "count": 0
+            },
+            {
+              "le": "2.5",
+              "count": 0
+            },
+            {
+              "le": "5",
+              "count": 0
+            },
+            {
+              "le": "10",
+              "count": 0
+            },
+            {
+              "le": "+Inf",
+              "count": 0
+            }
+          ],
+          "count": 0,
+          "sum": 0
+        },
+        "after": {
+          "metric": "kittachat_message_persistence_duration_seconds",
+          "labels": {
+            "outcome": "success"
+          },
+          "buckets": [
+            {
+              "le": "0.001",
+              "count": 0
+            },
+            {
+              "le": "0.005",
+              "count": 0
+            },
+            {
+              "le": "0.01",
+              "count": 0
+            },
+            {
+              "le": "0.025",
+              "count": 0
+            },
+            {
+              "le": "0.05",
+              "count": 0
+            },
+            {
+              "le": "0.1",
+              "count": 0
+            },
+            {
+              "le": "0.25",
+              "count": 0
+            },
+            {
+              "le": "0.5",
+              "count": 0
+            },
+            {
+              "le": "1",
+              "count": 0
+            },
+            {
+              "le": "2.5",
+              "count": 0
+            },
+            {
+              "le": "5",
+              "count": 0
+            },
+            {
+              "le": "10",
+              "count": 0
+            },
+            {
+              "le": "+Inf",
+              "count": 0
+            }
+          ],
+          "count": 0,
+          "sum": 0
+        }
+      },
+      "backend-3": {
+        "before": {
+          "metric": "kittachat_message_persistence_duration_seconds",
+          "labels": {
+            "outcome": "success"
+          },
+          "buckets": [
+            {
+              "le": "0.001",
+              "count": 0
+            },
+            {
+              "le": "0.005",
+              "count": 0
+            },
+            {
+              "le": "0.01",
+              "count": 0
+            },
+            {
+              "le": "0.025",
+              "count": 0
+            },
+            {
+              "le": "0.05",
+              "count": 0
+            },
+            {
+              "le": "0.1",
+              "count": 0
+            },
+            {
+              "le": "0.25",
+              "count": 0
+            },
+            {
+              "le": "0.5",
+              "count": 0
+            },
+            {
+              "le": "1",
+              "count": 0
+            },
+            {
+              "le": "2.5",
+              "count": 0
+            },
+            {
+              "le": "5",
+              "count": 0
+            },
+            {
+              "le": "10",
+              "count": 0
+            },
+            {
+              "le": "+Inf",
+              "count": 0
+            }
+          ],
+          "count": 0,
+          "sum": 0
+        },
+        "after": {
+          "metric": "kittachat_message_persistence_duration_seconds",
+          "labels": {
+            "outcome": "success"
+          },
+          "buckets": [
+            {
+              "le": "0.001",
+              "count": 0
+            },
+            {
+              "le": "0.005",
+              "count": 0
+            },
+            {
+              "le": "0.01",
+              "count": 0
+            },
+            {
+              "le": "0.025",
+              "count": 0
+            },
+            {
+              "le": "0.05",
+              "count": 0
+            },
+            {
+              "le": "0.1",
+              "count": 0
+            },
+            {
+              "le": "0.25",
+              "count": 0
+            },
+            {
+              "le": "0.5",
+              "count": 0
+            },
+            {
+              "le": "1",
+              "count": 0
+            },
+            {
+              "le": "2.5",
+              "count": 0
+            },
+            {
+              "le": "5",
+              "count": 0
+            },
+            {
+              "le": "10",
+              "count": 0
+            },
+            {
+              "le": "+Inf",
+              "count": 0
+            }
+          ],
+          "count": 0,
+          "sum": 0
+        }
+      }
+    }
+  },
+  "replicaAttribution": {
+    "before": {
+      "point": "before",
+      "complete": false,
+      "deferredUntilMeasurementEnd": true
+    },
+    "after": {
+      "schema": "k4-measurement-attribution-v1",
+      "source": {
+        "runId": "issue86-multi-raw-20260814",
+        "sourceIdentity": "nginx:28c058bc575a658956eed6d2215beb9054f796074a00a154fd7b67d27d0a46ed:container-logs,backend:483e318a900dd16c1b452417dacd30e0c2c5c09d7a8e4cd6155be6d957a8672e:container-logs,backend:60fa809098ef445a6d5a1250e78b57a6db04d7891e47370b606cbca5e224280a:container-logs,backend:9d3bf2df99acb1b30d75da96badb21136efe675e0ba48eb707b0a7063865a5da:container-logs",
+        "sourceDigest": "sha256:bfb972af7bc6cb65624f66eb652b2c59b2f93c432815b2ee31039a41b43668e5",
+        "parserVersion": "k4-attribution-log-parser-v1",
+        "measurementStart": "2026-08-14T04:40:35.138Z",
+        "measurementEnd": "2026-08-14T04:41:08.315Z",
+        "truncated": false,
+        "rotationGap": false,
+        "parseDiagnostics": [],
+        "rawSources": [
+          {
+            "role": "nginx",
+            "target": "nginx",
+            "body": "2026-08-14T04:40:35.092712167Z 192.168.160.3 - - [14/Aug/2026:04:40:33 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.039 uct=0.000 uht=0.039 urt=0.039 upstream=192.168.176.6:3000 k4rid=k4-15-f3a7a831-73e5-44e2-9177-6b3ad14faaf2\n2026-08-14T04:40:35.092746099Z 192.168.160.3 - - [14/Aug/2026:04:40:33 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.029 uct=0.000 uht=0.029 urt=0.029 upstream=192.168.176.5:3000 k4rid=k4-16-ebf64e28-76ed-4d2c-9615-f4c57915600d\n2026-08-14T04:40:35.092751951Z 192.168.160.3 - - [14/Aug/2026:04:40:34 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.021 uct=0.000 uht=0.021 urt=0.021 upstream=192.168.176.5:3000 k4rid=k4-17-9e171dde-cdfa-47b6-88df-521c6e256d79\n2026-08-14T04:40:35.092755789Z 192.168.160.3 - - [14/Aug/2026:04:40:34 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.062 uct=0.000 uht=0.062 urt=0.062 upstream=192.168.176.5:3000 k4rid=k4-18-8b5c7a8e-4208-42c3-96e6-15408a146355\n2026-08-14T04:40:37.101615316Z 192.168.160.3 - - [14/Aug/2026:04:40:35 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.042 uct=0.000 uht=0.041 urt=0.041 upstream=192.168.176.6:3000 k4rid=k4-19-4ba0888a-ec69-4a3e-ac49-fc49b503fc63\n2026-08-14T04:40:40.327003986Z 192.168.160.3 - - [14/Aug/2026:04:40:38 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.110 uct=0.000 uht=0.110 urt=0.110 upstream=192.168.176.6:3000 k4rid=k4-0-1f4e6a6b-d983-45e2-a4d5-60cea7456fc7\n2026-08-14T04:40:40.327119719Z 192.168.160.3 - - [14/Aug/2026:04:40:38 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.073 uct=0.000 uht=0.072 urt=0.072 upstream=192.168.176.6:3000 k4rid=k4-1-8c935577-3a2a-4edb-b822-14f15c12680c\n2026-08-14T04:40:40.327126453Z 192.168.160.3 - - [14/Aug/2026:04:40:39 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.056 uct=0.000 uht=0.055 urt=0.055 upstream=192.168.176.5:3000 k4rid=k4-2-cb63479a-c4d1-474a-af5f-ac1e5ad58b15\n2026-08-14T04:40:40.327130311Z 192.168.160.3 - - [14/Aug/2026:04:40:39 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.066 uct=0.000 uht=0.065 urt=0.065 upstream=192.168.176.6:3000 k4rid=k4-3-2ebf2d9f-db04-46a7-a7aa-6493bfa483bf\n2026-08-14T04:40:40.327133037Z 192.168.160.3 - - [14/Aug/2026:04:40:40 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.155 uct=0.001 uht=0.155 urt=0.155 upstream=192.168.176.7:3000 k4rid=k4-4-4c564695-f3d3-479f-afc6-837e30af892d\n2026-08-14T04:40:42.727237310Z 192.168.160.3 - - [14/Aug/2026:04:40:40 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.059 uct=0.000 uht=0.059 urt=0.059 upstream=192.168.176.7:3000 k4rid=k4-5-7af32668-8683-4942-87c1-e446008938df\n2026-08-14T04:40:42.727281673Z 192.168.160.3 - - [14/Aug/2026:04:40:41 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.084 uct=0.001 uht=0.085 urt=0.085 upstream=192.168.176.5:3000 k4rid=k4-6-3ff8d09b-5a2f-48ea-9484-7aeacaa71f6f\n2026-08-14T04:40:42.727287786Z 192.168.160.3 - - [14/Aug/2026:04:40:41 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.094 uct=0.000 uht=0.071 urt=0.094 upstream=192.168.176.5:3000 k4rid=k4-7-5e4da92b-a3b3-4f2a-8ef9-f6126ffb39f9\n2026-08-14T04:40:42.727291614Z 192.168.160.3 - - [14/Aug/2026:04:40:42 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.026 uct=0.000 uht=0.026 urt=0.026 upstream=192.168.176.7:3000 k4rid=k4-8-045bb9d7-3ac9-4b60-af59-722e08d3c330\n2026-08-14T04:40:42.727294530Z 192.168.160.3 - - [14/Aug/2026:04:40:42 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.046 uct=0.000 uht=0.046 urt=0.046 upstream=192.168.176.6:3000 k4rid=k4-9-6c93d74c-9dab-46bf-ad53-b716714e50aa\n2026-08-14T04:40:45.205392996Z 192.168.160.3 - - [14/Aug/2026:04:40:43 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.037 uct=0.000 uht=0.037 urt=0.037 upstream=192.168.176.6:3000 k4rid=k4-10-4652712b-20d5-4747-8763-966eafa0ecd2\n2026-08-14T04:40:45.205427609Z 192.168.160.3 - - [14/Aug/2026:04:40:43 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.064 uct=0.000 uht=0.064 urt=0.064 upstream=192.168.176.5:3000 k4rid=k4-11-9f4b15c7-11b9-46ae-97d7-18ec9e4e785c\n2026-08-14T04:40:45.205431176Z 192.168.160.3 - - [14/Aug/2026:04:40:44 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.047 uct=0.000 uht=0.047 urt=0.047 upstream=192.168.176.7:3000 k4rid=k4-12-860d24a2-c6d2-4f60-b8dc-a323e51d4928\n2026-08-14T04:40:45.205433992Z 192.168.160.3 - - [14/Aug/2026:04:40:44 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.050 uct=0.000 uht=0.050 urt=0.050 upstream=192.168.176.6:3000 k4rid=k4-13-cc93bd14-e4a5-415e-b4eb-84679739133f\n2026-08-14T04:40:47.210130803Z 192.168.160.3 - - [14/Aug/2026:04:40:45 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.043 uct=0.000 uht=0.043 urt=0.043 upstream=192.168.176.7:3000 k4rid=k4-14-19ea621b-b061-45ee-a1ec-48c8f5d87000\n2026-08-14T04:40:47.210160776Z 192.168.160.3 - - [14/Aug/2026:04:40:45 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.062 uct=0.001 uht=0.062 urt=0.062 upstream=192.168.176.7:3000 k4rid=k4-15-e2154b89-0154-4451-bdf3-ad7ce8b9abfe\n2026-08-14T04:40:47.210164274Z 192.168.160.3 - - [14/Aug/2026:04:40:46 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.029 uct=0.001 uht=0.029 urt=0.029 upstream=192.168.176.5:3000 k4rid=k4-16-fa76f650-7c88-4184-910b-45829fadf02d\n2026-08-14T04:40:47.210166929Z 192.168.160.3 - - [14/Aug/2026:04:40:46 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.045 uct=0.000 uht=0.045 urt=0.045 upstream=192.168.176.5:3000 k4rid=k4-17-12b72942-8168-4733-a427-c054a1003ecd\n2026-08-14T04:40:47.210169405Z 192.168.160.3 - - [14/Aug/2026:04:40:47 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.026 uct=0.001 uht=0.027 urt=0.027 upstream=192.168.176.5:3000 k4rid=k4-18-bfe553f7-e877-45aa-b599-54d11d4f7978\n2026-08-14T04:40:49.721950666Z 192.168.160.3 - - [14/Aug/2026:04:40:47 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.052 uct=0.001 uht=0.052 urt=0.052 upstream=192.168.176.7:3000 k4rid=k4-19-45f00e5c-d870-482c-9244-279e1fd90198\n2026-08-14T04:40:49.721997393Z 192.168.160.3 - - [14/Aug/2026:04:40:48 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.100 uct=0.001 uht=0.099 urt=0.100 upstream=192.168.176.7:3000 k4rid=k4-20-2f61ffda-6ad1-42a0-bf55-879722881ec3\n2026-08-14T04:40:49.722002664Z 192.168.160.3 - - [14/Aug/2026:04:40:48 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.056 uct=0.000 uht=0.056 urt=0.056 upstream=192.168.176.7:3000 k4rid=k4-21-4950f188-350c-40c5-b554-3cbfe01187b3\n2026-08-14T04:40:49.722005801Z 192.168.160.3 - - [14/Aug/2026:04:40:49 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.086 uct=0.000 uht=0.086 urt=0.086 upstream=192.168.176.5:3000 k4rid=k4-22-d20521c8-f689-4e60-afe9-4d97cbcab630\n2026-08-14T04:40:51.771025331Z 192.168.160.3 - - [14/Aug/2026:04:40:49 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.097 uct=0.001 uht=0.097 urt=0.097 upstream=192.168.176.7:3000 k4rid=k4-23-cf09a9d7-ea18-488e-8ec7-384baa171f9e\n2026-08-14T04:40:51.771071447Z 192.168.160.3 - - [14/Aug/2026:04:40:50 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.010 uct=0.000 uht=0.010 urt=0.010 upstream=192.168.176.7:3000 k4rid=k4-24-b767d10a-1338-40f9-8333-8b5c16011b5b\n2026-08-14T04:40:51.771077389Z 192.168.160.3 - - [14/Aug/2026:04:40:50 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.086 uct=0.000 uht=0.086 urt=0.086 upstream=192.168.176.6:3000 k4rid=k4-25-fe8e8834-3688-45d6-b259-3d1155fe040e\n2026-08-14T04:40:51.771084424Z 192.168.160.3 - - [14/Aug/2026:04:40:51 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.004 uct=0.000 uht=0.004 urt=0.004 upstream=192.168.176.5:3000 k4rid=k4-26-a42ffcd7-2a7e-4369-bcbb-f354f338d539\n2026-08-14T04:40:51.771088442Z 192.168.160.3 - - [14/Aug/2026:04:40:51 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.059 uct=0.000 uht=0.059 urt=0.059 upstream=192.168.176.7:3000 k4rid=k4-27-20fb56d3-bd92-455b-83dd-ecef424db27c\n2026-08-14T04:40:54.168943460Z 192.168.160.3 - - [14/Aug/2026:04:40:52 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.002 uct=0.000 uht=0.002 urt=0.002 upstream=192.168.176.7:3000 k4rid=k4-28-d5c99e31-c496-4ec9-a682-5c657266efbf\n2026-08-14T04:40:54.168994376Z 192.168.160.3 - - [14/Aug/2026:04:40:52 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.043 uct=0.000 uht=0.043 urt=0.043 upstream=192.168.176.5:3000 k4rid=k4-29-59c89fc8-cf49-4339-a0cd-9ec84cde55c1\n2026-08-14T04:40:54.168997552Z 192.168.160.3 - - [14/Aug/2026:04:40:53 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.003 uct=0.000 uht=0.003 urt=0.003 upstream=192.168.176.5:3000 k4rid=k4-30-fa166190-f786-46c9-b7ed-b59a3c3f51b9\n2026-08-14T04:40:54.169000048Z 192.168.160.3 - - [14/Aug/2026:04:40:53 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.055 uct=0.000 uht=0.055 urt=0.055 upstream=192.168.176.7:3000 k4rid=k4-31-f9c7e12d-7d0d-4fcf-b1ab-ca224b4b335a\n2026-08-14T04:40:56.170913618Z 192.168.160.3 - - [14/Aug/2026:04:40:54 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.003 uct=0.000 uht=0.003 urt=0.003 upstream=192.168.176.5:3000 k4rid=k4-32-48020f81-3f3b-4b9b-8482-40ef561cdfef\n2026-08-14T04:40:56.170998786Z 192.168.160.3 - - [14/Aug/2026:04:40:54 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.114 uct=0.003 uht=0.114 urt=0.114 upstream=192.168.176.6:3000 k4rid=k4-33-232cda23-460b-440b-b4d5-82c1db9d816b\n2026-08-14T04:40:56.171009859Z 192.168.160.3 - - [14/Aug/2026:04:40:55 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.004 uct=0.001 uht=0.004 urt=0.004 upstream=192.168.176.5:3000 k4rid=k4-34-b2734445-9a82-43ea-b222-7919b3029625\n2026-08-14T04:40:56.171015080Z 192.168.160.3 - - [14/Aug/2026:04:40:55 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.068 uct=0.000 uht=0.068 urt=0.068 upstream=192.168.176.6:3000 k4rid=k4-35-16be35bc-22fd-4451-bb04-744e9bb2962f\n2026-08-14T04:40:56.171018727Z 192.168.160.3 - - [14/Aug/2026:04:40:56 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.004 uct=0.000 uht=0.004 urt=0.004 upstream=192.168.176.6:3000 k4rid=k4-36-31b30b14-b231-4927-9a77-26fb872bc1cc\n2026-08-14T04:40:58.723389796Z 192.168.160.3 - - [14/Aug/2026:04:40:56 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.056 uct=0.001 uht=0.056 urt=0.056 upstream=192.168.176.7:3000 k4rid=k4-37-9412f8f1-b3c6-4a21-8c63-f6659eee1b4a\n2026-08-14T04:40:58.723442542Z 192.168.160.3 - - [14/Aug/2026:04:40:57 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.007 uct=0.001 uht=0.006 urt=0.006 upstream=192.168.176.5:3000 k4rid=k4-38-7ae44e71-9b5b-4387-81d6-a66347dc8133\n2026-08-14T04:40:58.723447734Z 192.168.160.3 - - [14/Aug/2026:04:40:57 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.080 uct=0.000 uht=0.080 urt=0.080 upstream=192.168.176.7:3000 k4rid=k4-39-f93dc31a-95ca-44cd-9c41-3e74db036d77\n2026-08-14T04:40:58.723454779Z 192.168.160.3 - - [14/Aug/2026:04:40:58 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.004 uct=0.000 uht=0.004 urt=0.004 upstream=192.168.176.6:3000 k4rid=k4-40-b5818376-46c1-4091-8111-00fdd1b200b4\n2026-08-14T04:41:00.726115222Z 192.168.160.3 - - [14/Aug/2026:04:40:58 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.058 uct=0.000 uht=0.058 urt=0.058 upstream=192.168.176.6:3000 k4rid=k4-41-c7d32ff4-216a-44b6-98f7-efe9ca2db524\n2026-08-14T04:41:00.726161384Z 192.168.160.3 - - [14/Aug/2026:04:40:59 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.006 uct=0.001 uht=0.006 urt=0.006 upstream=192.168.176.7:3000 k4rid=k4-42-9cc8cece-1e8a-4d49-a378-a8611adf4862\n2026-08-14T04:41:00.726165172Z 192.168.160.3 - - [14/Aug/2026:04:40:59 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.069 uct=0.001 uht=0.069 urt=0.069 upstream=192.168.176.7:3000 k4rid=k4-43-d6a6349e-4899-48c7-b15d-c6d12cba090d\n2026-08-14T04:41:00.726167698Z 192.168.160.3 - - [14/Aug/2026:04:41:00 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.007 uct=0.001 uht=0.007 urt=0.007 upstream=192.168.176.6:3000 k4rid=k4-44-b0508a26-1b65-4e73-869d-2fec4779554f\n2026-08-14T04:41:02.729282032Z 192.168.160.3 - - [14/Aug/2026:04:41:00 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.062 uct=0.000 uht=0.062 urt=0.062 upstream=192.168.176.7:3000 k4rid=k4-45-0fdc9621-629e-4a92-b432-aae7fc5edc67\n2026-08-14T04:41:02.729320141Z 192.168.160.3 - - [14/Aug/2026:04:41:01 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.006 uct=0.000 uht=0.005 urt=0.005 upstream=192.168.176.6:3000 k4rid=k4-46-b2c13a1b-5bf3-4a84-af83-7e96565c15b3\n2026-08-14T04:41:02.729323488Z 192.168.160.3 - - [14/Aug/2026:04:41:01 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.048 uct=0.001 uht=0.048 urt=0.048 upstream=192.168.176.6:3000 k4rid=k4-47-f59066a0-2568-454c-bf79-b0e461c90a1e\n2026-08-14T04:41:02.729326024Z 192.168.160.3 - - [14/Aug/2026:04:41:02 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.005 uct=0.001 uht=0.005 urt=0.005 upstream=192.168.176.6:3000 k4rid=k4-48-69007256-89e1-44c3-b638-816469d2d9c2\n2026-08-14T04:41:04.732000467Z 192.168.160.3 - - [14/Aug/2026:04:41:02 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.064 uct=0.000 uht=0.064 urt=0.064 upstream=192.168.176.6:3000 k4rid=k4-49-2ea36f92-5347-48b0-9597-75dacec167de\n2026-08-14T04:41:04.732110968Z 192.168.160.3 - - [14/Aug/2026:04:41:03 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.010 uct=0.001 uht=0.010 urt=0.010 upstream=192.168.176.6:3000 k4rid=k4-50-ac9f6d63-4655-4e36-a72e-3785ca57f3c0\n2026-08-14T04:41:04.732115567Z 192.168.160.3 - - [14/Aug/2026:04:41:03 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.056 uct=0.000 uht=0.056 urt=0.056 upstream=192.168.176.5:3000 k4rid=k4-51-7b040c0c-3d20-40a5-a66d-5f4efe82b5c4\n2026-08-14T04:41:04.732119125Z 192.168.160.3 - - [14/Aug/2026:04:41:04 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.004 uct=0.000 uht=0.004 urt=0.004 upstream=192.168.176.7:3000 k4rid=k4-52-0f533198-5368-4bc8-a007-cd478c326e82\n2026-08-14T04:41:04.732121991Z 192.168.160.3 - - [14/Aug/2026:04:41:04 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.061 uct=0.000 uht=0.060 urt=0.060 upstream=192.168.176.5:3000 k4rid=k4-53-aa3063b2-6805-49b5-9c65-7627dcc3e68a\n2026-08-14T04:41:07.198505020Z 192.168.160.3 - - [14/Aug/2026:04:41:05 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.012 uct=0.008 uht=0.012 urt=0.012 upstream=192.168.176.7:3000 k4rid=k4-54-4d7180ea-e21c-4eaa-ad82-0ad26943b960\n2026-08-14T04:41:07.198533670Z 192.168.160.3 - - [14/Aug/2026:04:41:05 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.081 uct=0.001 uht=0.081 urt=0.081 upstream=192.168.176.7:3000 k4rid=k4-55-75227d6e-5ce1-4109-bc54-946b1281b7fc\n2026-08-14T04:41:07.198548170Z 192.168.160.3 - - [14/Aug/2026:04:41:06 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.005 uct=0.000 uht=0.005 urt=0.005 upstream=192.168.176.6:3000 k4rid=k4-56-5dc76526-b6be-4c4e-83df-e4af31db4fb1\n2026-08-14T04:41:07.198550916Z 192.168.160.3 - - [14/Aug/2026:04:41:06 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.134 uct=0.001 uht=0.134 urt=0.134 upstream=192.168.176.6:3000 k4rid=k4-57-62e5f79e-c647-42f7-9c16-7d372cc540a4\n2026-08-14T04:41:07.198553641Z 192.168.160.3 - - [14/Aug/2026:04:41:07 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 429 216 \"\" \"node\" rt=0.004 uct=0.000 uht=0.004 urt=0.004 upstream=192.168.176.6:3000 k4rid=k4-58-bad20c25-d927-4eeb-b79e-9a3fe5e829aa\n2026-08-14T04:41:09.777534092Z 192.168.160.3 - - [14/Aug/2026:04:41:07 +0000] \"GET /api/sidebar/conversations HTTP/1.1\" 200 1372 \"\" \"node\" rt=0.108 uct=0.000 uht=0.108 urt=0.108 upstream=192.168.176.7:3000 k4rid=k4-59-f551da38-3bf7-4794-a123-854a7bff43d3\n",
+            "sourceIdentity": "nginx:28c058bc575a658956eed6d2215beb9054f796074a00a154fd7b67d27d0a46ed:container-logs",
+            "sourceDigest": "sha256:70b7585db5f8677ec1b557b91691907cfade9d9fc192ec0d08cb7427ad780550"
+          },
+          {
+            "role": "backend",
+            "target": "backend-1",
+            "body": "2026-08-14T04:40:35.096252314Z {\"requestId\":\"k4-19-4ba0888a-ec69-4a3e-ac49-fc49b503fc63\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":40.33,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:35.095Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:35.603799400Z {\"requestId\":\"fe02ade7-f226-429e-9b20-a55f66775925\",\"method\":\"GET\",\"path\":\"/metrics\",\"status\":200,\"latencyMs\":2.65,\"timestamp\":\"2026-08-14T04:40:35.603Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:38.329500272Z {\"requestId\":\"k4-0-1f4e6a6b-d983-45e2-a4d5-60cea7456fc7\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":107.47,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:38.326Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:38.740697838Z {\"requestId\":\"k4-1-8c935577-3a2a-4edb-b822-14f15c12680c\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":71.74,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:38.740Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:39.738250813Z {\"requestId\":\"k4-3-2ebf2d9f-db04-46a7-a7aa-6493bfa483bf\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":67.84,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:39.736Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:41.978314081Z {\"requestId\":\"2d95e8bd-b06a-4902-a204-cc78450fe580\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":1.31,\"timestamp\":\"2026-08-14T04:40:41.977Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:42.714398807Z {\"requestId\":\"k4-9-6c93d74c-9dab-46bf-ad53-b716714e50aa\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":45.49,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:42.713Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:43.205661777Z {\"requestId\":\"k4-10-4652712b-20d5-4747-8763-966eafa0ecd2\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":36.53,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:43.205Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:44.718617207Z {\"requestId\":\"k4-13-cc93bd14-e4a5-415e-b4eb-84679739133f\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":50.01,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:44.718Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:50.752861567Z {\"requestId\":\"k4-25-fe8e8834-3688-45d6-b259-3d1155fe040e\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":84.71,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:50.752Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:52.054180237Z {\"requestId\":\"4b54d99b-c9eb-499b-84c1-60467fa1b451\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":1.47,\"timestamp\":\"2026-08-14T04:40:52.053Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:54.787664588Z {\"requestId\":\"k4-33-232cda23-460b-440b-b4d5-82c1db9d816b\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":110.63,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:54.782Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:55.735773049Z {\"requestId\":\"k4-35-16be35bc-22fd-4451-bb04-744e9bb2962f\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":66.78,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:55.735Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:56.171130761Z {\"requestId\":\"k4-36-31b30b14-b231-4927-9a77-26fb872bc1cc\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":3.55,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:56.170Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:58.173051786Z {\"requestId\":\"k4-40-b5818376-46c1-4091-8111-00fdd1b200b4\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":2.91,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:58.172Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:58.726749012Z {\"requestId\":\"k4-41-c7d32ff4-216a-44b6-98f7-efe9ca2db524\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":57.75,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:58.726Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:00.174089497Z {\"requestId\":\"k4-44-b0508a26-1b65-4e73-869d-2fec4779554f\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":4.45,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:00.173Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:01.174184317Z {\"requestId\":\"k4-46-b2c13a1b-5bf3-4a84-af83-7e96565c15b3\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":4.71,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:01.173Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:01.715285981Z {\"requestId\":\"k4-47-f59066a0-2568-454c-bf79-b0e461c90a1e\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":46.85,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:01.714Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:02.153791145Z {\"requestId\":\"43cb9235-2552-4694-a220-99447e53dce1\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":2.57,\"timestamp\":\"2026-08-14T04:41:02.153Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:02.172825395Z {\"requestId\":\"k4-48-69007256-89e1-44c3-b638-816469d2d9c2\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":3.54,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:02.172Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:02.732502174Z {\"requestId\":\"k4-49-2ea36f92-5347-48b0-9597-75dacec167de\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":63.52,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:02.732Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:03.176751157Z {\"requestId\":\"k4-50-ac9f6d63-4655-4e36-a72e-3785ca57f3c0\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":6.34,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:03.175Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:06.181553863Z {\"requestId\":\"k4-56-5dc76526-b6be-4c4e-83df-e4af31db4fb1\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":3.23,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:06.175Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:06.801037119Z {\"requestId\":\"k4-57-62e5f79e-c647-42f7-9c16-7d372cc540a4\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":132.55,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:06.800Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:07.171676611Z {\"requestId\":\"k4-58-bad20c25-d927-4eeb-b79e-9a3fe5e829aa\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":3.14,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:07.171Z\",\"level\":\"info\",\"event\":\"http_request\"}\n",
+            "sourceIdentity": "backend:483e318a900dd16c1b452417dacd30e0c2c5c09d7a8e4cd6155be6d957a8672e:container-logs",
+            "sourceDigest": "sha256:97c816104540ee1945c61edf1a64e5f11ddd3b40142b5358b883d5a68eae32d1"
+          },
+          {
+            "role": "backend",
+            "target": "backend-2",
+            "body": "2026-08-14T04:40:36.071170452Z {\"requestId\":\"4d13b207-c02c-4bc6-8481-6f327072b556\",\"method\":\"GET\",\"path\":\"/metrics\",\"status\":200,\"latencyMs\":5.43,\"timestamp\":\"2026-08-14T04:40:36.070Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:40.323862420Z {\"requestId\":\"k4-4-4c564695-f3d3-479f-afc6-837e30af892d\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":122.32,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:40.323Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:40.726542700Z {\"requestId\":\"k4-5-7af32668-8683-4942-87c1-e446008938df\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":58.25,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:40.726Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:42.193925129Z {\"requestId\":\"k4-8-045bb9d7-3ac9-4b60-af59-722e08d3c330\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":25.79,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:42.193Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:42.290159199Z {\"requestId\":\"3bd38526-a6e3-4f2e-9f7d-c1008d32e383\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":0.91,\"timestamp\":\"2026-08-14T04:40:42.289Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:44.215350371Z {\"requestId\":\"k4-12-860d24a2-c6d2-4f60-b8dc-a323e51d4928\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":45.97,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:44.214Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:45.211192379Z {\"requestId\":\"k4-14-19ea621b-b061-45ee-a1ec-48c8f5d87000\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":42.14,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:45.210Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:45.730745579Z {\"requestId\":\"k4-15-e2154b89-0154-4451-bdf3-ad7ce8b9abfe\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":61.72,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:45.730Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:47.719324122Z {\"requestId\":\"k4-19-45f00e5c-d870-482c-9244-279e1fd90198\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":50.56,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:47.719Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:48.277652551Z {\"requestId\":\"k4-20-2f61ffda-6ad1-42a0-bf55-879722881ec3\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":98.46,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:48.276Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:48.724236282Z {\"requestId\":\"k4-21-4950f188-350c-40c5-b554-3cbfe01187b3\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":54.9,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:48.722Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:49.772986467Z {\"requestId\":\"k4-23-cf09a9d7-ea18-488e-8ec7-384baa171f9e\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":85.76,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:49.769Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:50.178534851Z {\"requestId\":\"k4-24-b767d10a-1338-40f9-8333-8b5c16011b5b\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":5.46,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:50.177Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:51.726493340Z {\"requestId\":\"k4-27-20fb56d3-bd92-455b-83dd-ecef424db27c\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":58.47,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:51.726Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:52.169343875Z {\"requestId\":\"k4-28-d5c99e31-c496-4ec9-a682-5c657266efbf\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":1.66,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:52.168Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:52.343222100Z {\"requestId\":\"6a67f301-7743-4609-b425-c897081a627c\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":1.01,\"timestamp\":\"2026-08-14T04:40:52.342Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:53.723705868Z {\"requestId\":\"k4-31-f9c7e12d-7d0d-4fcf-b1ab-ca224b4b335a\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":54.56,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:53.723Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:56.726279474Z {\"requestId\":\"k4-37-9412f8f1-b3c6-4a21-8c63-f6659eee1b4a\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":54.8,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:56.722Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:57.748531493Z {\"requestId\":\"k4-39-f93dc31a-95ca-44cd-9c41-3e74db036d77\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":79.6,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:57.746Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:59.177188450Z {\"requestId\":\"k4-42-9cc8cece-1e8a-4d49-a378-a8611adf4862\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":5.09,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:59.176Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:59.741818793Z {\"requestId\":\"k4-43-d6a6349e-4899-48c7-b15d-c6d12cba090d\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":71.08,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:59.738Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:00.729558021Z {\"requestId\":\"k4-45-0fdc9621-629e-4a92-b432-aae7fc5edc67\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":60.89,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:00.728Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:02.402582571Z {\"requestId\":\"41da92f8-ddb5-4474-88ed-524864df22ab\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":1.21,\"timestamp\":\"2026-08-14T04:41:02.402Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:04.171552627Z {\"requestId\":\"k4-52-0f533198-5368-4bc8-a007-cd478c326e82\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":3.18,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:04.170Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:05.198309888Z {\"requestId\":\"k4-54-4d7180ea-e21c-4eaa-ad82-0ad26943b960\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":3.41,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:05.197Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:05.748915244Z {\"requestId\":\"k4-55-75227d6e-5ce1-4109-bc54-946b1281b7fc\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":80.3,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:05.748Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:07.776192676Z {\"requestId\":\"k4-59-f551da38-3bf7-4794-a123-854a7bff43d3\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":106.63,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:07.775Z\",\"level\":\"info\",\"event\":\"http_request\"}\n",
+            "sourceIdentity": "backend:60fa809098ef445a6d5a1250e78b57a6db04d7891e47370b606cbca5e224280a:container-logs",
+            "sourceDigest": "sha256:76bbe3e59532216d9b67ee5379fb10f1adee973aadd4bb1919c482ea0bcdb0d7"
+          },
+          {
+            "role": "backend",
+            "target": "backend-3",
+            "body": "2026-08-14T04:40:36.468055082Z {\"requestId\":\"04704846-de9b-442c-8ad6-1cd54993e915\",\"method\":\"GET\",\"path\":\"/metrics\",\"status\":200,\"latencyMs\":2.13,\"timestamp\":\"2026-08-14T04:40:36.467Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:39.225427209Z {\"requestId\":\"k4-2-cb63479a-c4d1-474a-af5f-ac1e5ad58b15\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":53.37,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:39.225Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:41.251496894Z {\"requestId\":\"k4-6-3ff8d09b-5a2f-48ea-9484-7aeacaa71f6f\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":82.62,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:41.251Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:41.772108501Z {\"requestId\":\"k4-7-5e4da92b-a3b3-4f2a-8ef9-f6126ffb39f9\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":93.12,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:41.765Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:41.772153696Z {\"requestId\":\"342e1415-a216-469f-a2cf-94d43341a6f1\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":1.61,\"timestamp\":\"2026-08-14T04:40:41.768Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:43.732081033Z {\"requestId\":\"k4-11-9f4b15c7-11b9-46ae-97d7-18ec9e4e785c\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":63.12,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:43.731Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:46.196141954Z {\"requestId\":\"k4-16-fa76f650-7c88-4184-910b-45829fadf02d\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":27.86,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:46.195Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:46.716353442Z {\"requestId\":\"k4-17-12b72942-8168-4733-a427-c054a1003ecd\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":44.01,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:46.713Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:47.193807510Z {\"requestId\":\"k4-18-bfe553f7-e877-45aa-b599-54d11d4f7978\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":25.43,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:47.193Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:49.259808690Z {\"requestId\":\"k4-22-d20521c8-f689-4e60-afe9-4d97cbcab630\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":85.88,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:49.258Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:51.171203437Z {\"requestId\":\"k4-26-a42ffcd7-2a7e-4369-bcbb-f354f338d539\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":2.9,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:51.170Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:51.876020845Z {\"requestId\":\"ac6cca90-ef2d-494d-a3c3-23ece8b89679\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":2.6,\"timestamp\":\"2026-08-14T04:40:51.875Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:52.710795433Z {\"requestId\":\"k4-29-59c89fc8-cf49-4339-a0cd-9ec84cde55c1\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":41.81,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:52.710Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:53.170673889Z {\"requestId\":\"k4-30-fa166190-f786-46c9-b7ed-b59a3c3f51b9\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":2.61,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:53.169Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:54.171395191Z {\"requestId\":\"k4-32-48020f81-3f3b-4b9b-8482-40ef561cdfef\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":2.8,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:54.170Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:55.185540246Z {\"requestId\":\"k4-34-b2734445-9a82-43ea-b222-7919b3029625\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":3.05,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:55.185Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:40:57.175557387Z {\"requestId\":\"k4-38-7ae44e71-9b5b-4387-81d6-a66347dc8133\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":429,\"latencyMs\":4.34,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:40:57.173Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:01.960899246Z {\"requestId\":\"8f428703-d887-401d-9250-1970c6b6ec68\",\"method\":\"GET\",\"path\":\"/healthz\",\"status\":200,\"latencyMs\":2.86,\"timestamp\":\"2026-08-14T04:41:01.960Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:03.723660741Z {\"requestId\":\"k4-51-7b040c0c-3d20-40a5-a66d-5f4efe82b5c4\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":55.27,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:03.723Z\",\"level\":\"info\",\"event\":\"http_request\"}\n2026-08-14T04:41:04.728916301Z {\"requestId\":\"k4-53-aa3063b2-6805-49b5-9c65-7627dcc3e68a\",\"method\":\"GET\",\"path\":\"/api/sidebar/conversations\",\"status\":200,\"latencyMs\":59.2,\"userId\":\"64a000000000000000000001\",\"timestamp\":\"2026-08-14T04:41:04.728Z\",\"level\":\"info\",\"event\":\"http_request\"}\n",
+            "sourceIdentity": "backend:9d3bf2df99acb1b30d75da96badb21136efe675e0ba48eb707b0a7063865a5da:container-logs",
+            "sourceDigest": "sha256:18ee8012798e131e374e35feb59d87b09394823dd49dfdf1d2cf2e1f7b0e28d9"
+          }
+        ]
+      },
+      "complete": true,
+      "incompleteReasons": [],
+      "replicas": [
+        "backend-1",
+        "backend-3",
+        "backend-2"
+      ],
+      "topologyNotExercised": false,
+      "claimEligible": true,
+      "supportingRecords": [
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-0-1f4e6a6b-d983-45e2-a4d5-60cea7456fc7",
+          "timestamp": "2026-08-14T04:40:38.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:40.327003986Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-1-8c935577-3a2a-4edb-b822-14f15c12680c",
+          "timestamp": "2026-08-14T04:40:38.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:40.327119719Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-2-cb63479a-c4d1-474a-af5f-ac1e5ad58b15",
+          "timestamp": "2026-08-14T04:40:39.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:40.327126453Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-3-2ebf2d9f-db04-46a7-a7aa-6493bfa483bf",
+          "timestamp": "2026-08-14T04:40:39.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:40.327130311Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-4-4c564695-f3d3-479f-afc6-837e30af892d",
+          "timestamp": "2026-08-14T04:40:40.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:40.327133037Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-5-7af32668-8683-4942-87c1-e446008938df",
+          "timestamp": "2026-08-14T04:40:40.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:42.727237310Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-6-3ff8d09b-5a2f-48ea-9484-7aeacaa71f6f",
+          "timestamp": "2026-08-14T04:40:41.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:42.727281673Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-7-5e4da92b-a3b3-4f2a-8ef9-f6126ffb39f9",
+          "timestamp": "2026-08-14T04:40:41.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:42.727287786Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-8-045bb9d7-3ac9-4b60-af59-722e08d3c330",
+          "timestamp": "2026-08-14T04:40:42.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:42.727291614Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-9-6c93d74c-9dab-46bf-ad53-b716714e50aa",
+          "timestamp": "2026-08-14T04:40:42.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:42.727294530Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-10-4652712b-20d5-4747-8763-966eafa0ecd2",
+          "timestamp": "2026-08-14T04:40:43.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:45.205392996Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-11-9f4b15c7-11b9-46ae-97d7-18ec9e4e785c",
+          "timestamp": "2026-08-14T04:40:43.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:45.205427609Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-12-860d24a2-c6d2-4f60-b8dc-a323e51d4928",
+          "timestamp": "2026-08-14T04:40:44.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:45.205431176Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-13-cc93bd14-e4a5-415e-b4eb-84679739133f",
+          "timestamp": "2026-08-14T04:40:44.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:45.205433992Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-14-19ea621b-b061-45ee-a1ec-48c8f5d87000",
+          "timestamp": "2026-08-14T04:40:45.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:47.210130803Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-15-e2154b89-0154-4451-bdf3-ad7ce8b9abfe",
+          "timestamp": "2026-08-14T04:40:45.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:47.210160776Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-16-fa76f650-7c88-4184-910b-45829fadf02d",
+          "timestamp": "2026-08-14T04:40:46.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:47.210164274Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-17-12b72942-8168-4733-a427-c054a1003ecd",
+          "timestamp": "2026-08-14T04:40:46.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:47.210166929Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-18-bfe553f7-e877-45aa-b599-54d11d4f7978",
+          "timestamp": "2026-08-14T04:40:47.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:47.210169405Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-19-45f00e5c-d870-482c-9244-279e1fd90198",
+          "timestamp": "2026-08-14T04:40:47.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:49.721950666Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-20-2f61ffda-6ad1-42a0-bf55-879722881ec3",
+          "timestamp": "2026-08-14T04:40:48.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:49.721997393Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-21-4950f188-350c-40c5-b554-3cbfe01187b3",
+          "timestamp": "2026-08-14T04:40:48.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:49.722002664Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-22-d20521c8-f689-4e60-afe9-4d97cbcab630",
+          "timestamp": "2026-08-14T04:40:49.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:49.722005801Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-23-cf09a9d7-ea18-488e-8ec7-384baa171f9e",
+          "timestamp": "2026-08-14T04:40:49.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:51.771025331Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-24-b767d10a-1338-40f9-8333-8b5c16011b5b",
+          "timestamp": "2026-08-14T04:40:50.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:51.771071447Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-25-fe8e8834-3688-45d6-b259-3d1155fe040e",
+          "timestamp": "2026-08-14T04:40:50.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:51.771077389Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-26-a42ffcd7-2a7e-4369-bcbb-f354f338d539",
+          "timestamp": "2026-08-14T04:40:51.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:51.771084424Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-27-20fb56d3-bd92-455b-83dd-ecef424db27c",
+          "timestamp": "2026-08-14T04:40:51.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:51.771088442Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-28-d5c99e31-c496-4ec9-a682-5c657266efbf",
+          "timestamp": "2026-08-14T04:40:52.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:54.168943460Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-29-59c89fc8-cf49-4339-a0cd-9ec84cde55c1",
+          "timestamp": "2026-08-14T04:40:52.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:54.168994376Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-30-fa166190-f786-46c9-b7ed-b59a3c3f51b9",
+          "timestamp": "2026-08-14T04:40:53.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:54.168997552Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-31-f9c7e12d-7d0d-4fcf-b1ab-ca224b4b335a",
+          "timestamp": "2026-08-14T04:40:53.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:54.169000048Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-32-48020f81-3f3b-4b9b-8482-40ef561cdfef",
+          "timestamp": "2026-08-14T04:40:54.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:56.170913618Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-33-232cda23-460b-440b-b4d5-82c1db9d816b",
+          "timestamp": "2026-08-14T04:40:54.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:56.170998786Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-34-b2734445-9a82-43ea-b222-7919b3029625",
+          "timestamp": "2026-08-14T04:40:55.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:56.171009859Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-35-16be35bc-22fd-4451-bb04-744e9bb2962f",
+          "timestamp": "2026-08-14T04:40:55.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:56.171015080Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-36-31b30b14-b231-4927-9a77-26fb872bc1cc",
+          "timestamp": "2026-08-14T04:40:56.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:56.171018727Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-37-9412f8f1-b3c6-4a21-8c63-f6659eee1b4a",
+          "timestamp": "2026-08-14T04:40:56.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:58.723389796Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-38-7ae44e71-9b5b-4387-81d6-a66347dc8133",
+          "timestamp": "2026-08-14T04:40:57.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:58.723442542Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-39-f93dc31a-95ca-44cd-9c41-3e74db036d77",
+          "timestamp": "2026-08-14T04:40:57.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:58.723447734Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-40-b5818376-46c1-4091-8111-00fdd1b200b4",
+          "timestamp": "2026-08-14T04:40:58.000Z",
+          "wrapperTimestamp": "2026-08-14T04:40:58.723454779Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-41-c7d32ff4-216a-44b6-98f7-efe9ca2db524",
+          "timestamp": "2026-08-14T04:40:58.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:00.726115222Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-42-9cc8cece-1e8a-4d49-a378-a8611adf4862",
+          "timestamp": "2026-08-14T04:40:59.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:00.726161384Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-43-d6a6349e-4899-48c7-b15d-c6d12cba090d",
+          "timestamp": "2026-08-14T04:40:59.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:00.726165172Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-44-b0508a26-1b65-4e73-869d-2fec4779554f",
+          "timestamp": "2026-08-14T04:41:00.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:00.726167698Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-45-0fdc9621-629e-4a92-b432-aae7fc5edc67",
+          "timestamp": "2026-08-14T04:41:00.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:02.729282032Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-46-b2c13a1b-5bf3-4a84-af83-7e96565c15b3",
+          "timestamp": "2026-08-14T04:41:01.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:02.729320141Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-47-f59066a0-2568-454c-bf79-b0e461c90a1e",
+          "timestamp": "2026-08-14T04:41:01.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:02.729323488Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-48-69007256-89e1-44c3-b638-816469d2d9c2",
+          "timestamp": "2026-08-14T04:41:02.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:02.729326024Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-49-2ea36f92-5347-48b0-9597-75dacec167de",
+          "timestamp": "2026-08-14T04:41:02.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:04.732000467Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-50-ac9f6d63-4655-4e36-a72e-3785ca57f3c0",
+          "timestamp": "2026-08-14T04:41:03.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:04.732110968Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-51-7b040c0c-3d20-40a5-a66d-5f4efe82b5c4",
+          "timestamp": "2026-08-14T04:41:03.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:04.732115567Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-52-0f533198-5368-4bc8-a007-cd478c326e82",
+          "timestamp": "2026-08-14T04:41:04.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:04.732119125Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.5:3000",
+          "requestId": "k4-53-aa3063b2-6805-49b5-9c65-7627dcc3e68a",
+          "timestamp": "2026-08-14T04:41:04.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:04.732121991Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-54-4d7180ea-e21c-4eaa-ad82-0ad26943b960",
+          "timestamp": "2026-08-14T04:41:05.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:07.198505020Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-55-75227d6e-5ce1-4109-bc54-946b1281b7fc",
+          "timestamp": "2026-08-14T04:41:05.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:07.198533670Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-56-5dc76526-b6be-4c4e-83df-e4af31db4fb1",
+          "timestamp": "2026-08-14T04:41:06.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:07.198548170Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-57-62e5f79e-c647-42f7-9c16-7d372cc540a4",
+          "timestamp": "2026-08-14T04:41:06.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:07.198550916Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        },
+        {
+          "upstreamAddr": "192.168.176.6:3000",
+          "requestId": "k4-58-bad20c25-d927-4eeb-b79e-9a3fe5e829aa",
+          "timestamp": "2026-08-14T04:41:07.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:07.198553641Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 429
+        },
+        {
+          "upstreamAddr": "192.168.176.7:3000",
+          "requestId": "k4-59-f551da38-3bf7-4794-a123-854a7bff43d3",
+          "timestamp": "2026-08-14T04:41:07.000Z",
+          "wrapperTimestamp": "2026-08-14T04:41:09.777534092Z",
+          "method": "GET",
+          "path": "/api/sidebar/conversations",
+          "status": 200
+        }
+      ]
+    }
+  },
+  "resource": {
+    "observations": {
+      "nginx": [
+        {
+          "timestamp": "2026-08-14T04:40:35.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 159702000,
+            "memoryUsageBytes": 27553792
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:36.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 163010000,
+            "memoryUsageBytes": 27598848
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:38.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 171156000,
+            "memoryUsageBytes": 28327936
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:40.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 189501000,
+            "memoryUsageBytes": 28209152
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:41.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 192899000,
+            "memoryUsageBytes": 27308032
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:42.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 194833000,
+            "memoryUsageBytes": 27938816
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:43.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 201410000,
+            "memoryUsageBytes": 27951104
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:44.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 204485000,
+            "memoryUsageBytes": 28581888
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:45.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 206867000,
+            "memoryUsageBytes": 28311552
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:46.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 209976000,
+            "memoryUsageBytes": 28237824
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:48.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 213052000,
+            "memoryUsageBytes": 27832320
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:50.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 215858000,
+            "memoryUsageBytes": 27971584
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:51.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 223568000,
+            "memoryUsageBytes": 27623424
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:54.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 227974000,
+            "memoryUsageBytes": 27860992
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:56.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 233948000,
+            "memoryUsageBytes": 27840512
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:58.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 236857000,
+            "memoryUsageBytes": 28495872
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:59.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 238797000,
+            "memoryUsageBytes": 28241920
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:00.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 243607000,
+            "memoryUsageBytes": 28749824
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:01.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 247294000,
+            "memoryUsageBytes": 27701248
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:02.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 258808000,
+            "memoryUsageBytes": 28233728
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:11.443Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 261808000,
+            "memoryUsageBytes": 27480064
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        }
+      ],
+      "backend-1": [
+        {
+          "timestamp": "2026-08-14T04:40:35.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6477081000,
+            "memoryUsageBytes": 67833856
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:36.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6686124000,
+            "memoryUsageBytes": 68882432
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:38.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6757462000,
+            "memoryUsageBytes": 68812800
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:40.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6848630000,
+            "memoryUsageBytes": 68370432
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:41.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6920718000,
+            "memoryUsageBytes": 71655424
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:42.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6982720000,
+            "memoryUsageBytes": 72187904
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:43.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6986857000,
+            "memoryUsageBytes": 72024064
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:44.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6989527000,
+            "memoryUsageBytes": 71716864
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:45.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 6995116000,
+            "memoryUsageBytes": 72130560
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:46.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7000566000,
+            "memoryUsageBytes": 71782400
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:48.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7134155000,
+            "memoryUsageBytes": 76238848
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:50.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7167829000,
+            "memoryUsageBytes": 76201984
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:51.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7396991000,
+            "memoryUsageBytes": 77201408
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:54.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7414177000,
+            "memoryUsageBytes": 76279808
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:56.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7486480000,
+            "memoryUsageBytes": 77451264
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:58.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7502726000,
+            "memoryUsageBytes": 76812288
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:59.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7592429000,
+            "memoryUsageBytes": 76947456
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:00.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7663212000,
+            "memoryUsageBytes": 77389824
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:01.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7673589000,
+            "memoryUsageBytes": 77017088
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:02.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7683450000,
+            "memoryUsageBytes": 77299712
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:11.443Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 7816450000,
+            "memoryUsageBytes": 78004224
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        }
+      ],
+      "backend-2": [
+        {
+          "timestamp": "2026-08-14T04:40:35.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3040031000,
+            "memoryUsageBytes": 61485056
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:36.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3047432000,
+            "memoryUsageBytes": 61964288
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:38.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3398106000,
+            "memoryUsageBytes": 63516672
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:40.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3465771000,
+            "memoryUsageBytes": 64700416
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:41.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3468912000,
+            "memoryUsageBytes": 63754240
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:42.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3522815000,
+            "memoryUsageBytes": 64950272
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:43.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3730296000,
+            "memoryUsageBytes": 66641920
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:44.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3732507000,
+            "memoryUsageBytes": 66170880
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:45.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3816142000,
+            "memoryUsageBytes": 69574656
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:46.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4093909000,
+            "memoryUsageBytes": 70774784
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:48.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4152989000,
+            "memoryUsageBytes": 69238784
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:50.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4252059000,
+            "memoryUsageBytes": 69877760
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:51.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4337539000,
+            "memoryUsageBytes": 69226496
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:54.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4410816000,
+            "memoryUsageBytes": 71168000
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:56.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4504291000,
+            "memoryUsageBytes": 72593408
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:58.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4743142000,
+            "memoryUsageBytes": 76300288
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:59.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4744563000,
+            "memoryUsageBytes": 75415552
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:00.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4772330000,
+            "memoryUsageBytes": 75468800
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:01.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4790026000,
+            "memoryUsageBytes": 75710464
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:02.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4894886000,
+            "memoryUsageBytes": 75661312
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:11.443Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 5121367000,
+            "memoryUsageBytes": 76599296
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        }
+      ],
+      "backend-3": [
+        {
+          "timestamp": "2026-08-14T04:40:35.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3636392000,
+            "memoryUsageBytes": 66625536
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:36.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3695961000,
+            "memoryUsageBytes": 67473408
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:38.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3808626000,
+            "memoryUsageBytes": 70365184
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:40.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 3910406000,
+            "memoryUsageBytes": 67559424
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:41.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4024231000,
+            "memoryUsageBytes": 67616768
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:42.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4027063000,
+            "memoryUsageBytes": 67182592
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:43.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4031090000,
+            "memoryUsageBytes": 67198976
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:44.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4162013000,
+            "memoryUsageBytes": 68308992
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:45.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4199359000,
+            "memoryUsageBytes": 68382720
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:46.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4306017000,
+            "memoryUsageBytes": 68562944
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:48.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4329220000,
+            "memoryUsageBytes": 68427776
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:50.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4414858000,
+            "memoryUsageBytes": 70017024
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:51.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4441096000,
+            "memoryUsageBytes": 68853760
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:54.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4454820000,
+            "memoryUsageBytes": 68956160
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:56.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4460078000,
+            "memoryUsageBytes": 68767744
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:58.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4466456000,
+            "memoryUsageBytes": 68767744
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:59.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4503590000,
+            "memoryUsageBytes": 70066176
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:00.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4524268000,
+            "memoryUsageBytes": 69447680
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:01.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4593484000,
+            "memoryUsageBytes": 69832704
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:02.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4733213000,
+            "memoryUsageBytes": 70795264
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:11.443Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 4800549000,
+            "memoryUsageBytes": 71294976
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        }
+      ],
+      "runner": [
+        {
+          "timestamp": "2026-08-14T04:40:35.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 769679000,
+            "memoryUsageBytes": 7766016
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:36.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1327095000,
+            "memoryUsageBytes": 24539136
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:38.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1351298000,
+            "memoryUsageBytes": 25198592
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:40.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1367327000,
+            "memoryUsageBytes": 25731072
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:41.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1373391000,
+            "memoryUsageBytes": 26202112
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:42.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1387651000,
+            "memoryUsageBytes": 26640384
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:43.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1394363000,
+            "memoryUsageBytes": 27164672
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:44.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1438868000,
+            "memoryUsageBytes": 23900160
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:45.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1447834000,
+            "memoryUsageBytes": 23941120
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:46.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1461844000,
+            "memoryUsageBytes": 24068096
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:48.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1473580000,
+            "memoryUsageBytes": 23830528
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:50.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1484913000,
+            "memoryUsageBytes": 24576000
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:51.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1496231000,
+            "memoryUsageBytes": 24936448
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:54.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1512967000,
+            "memoryUsageBytes": 25620480
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:56.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1532750000,
+            "memoryUsageBytes": 25141248
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:58.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1538804000,
+            "memoryUsageBytes": 25157632
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:40:59.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1545280000,
+            "memoryUsageBytes": 25448448
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:00.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1556922000,
+            "memoryUsageBytes": 26050560
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:01.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1560977000,
+            "memoryUsageBytes": 25763840
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:02.138Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1610031000,
+            "memoryUsageBytes": 26329088
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        },
+        {
+          "timestamp": "2026-08-14T04:41:11.443Z",
+          "status": "success",
+          "sample": {
+            "cpuUsageTotal": 1772657000,
+            "memoryUsageBytes": 7569408
+          },
+          "source": "k4-observer:issue86-multi-raw-20260814"
+        }
+      ]
+    }
+  },
+  "loadGenerator": {
+    "shortfall": null,
+    "runner": {
+      "status": "error",
+      "sourceIdentity": "observer-helper",
+      "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+      "slotTimestamp": "2026-08-14T04:41:11.473Z",
+      "samples": [
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:35.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:36.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:38.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:40.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:41.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:42.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:43.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:44.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:45.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:46.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:48.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:50.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:51.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:54.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:56.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:58.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:40:59.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:41:00.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:41:01.138Z"
+        },
+        {
+          "status": "error",
+          "sourceIdentity": "observer-helper",
+          "error": "docker compose --project-name kittachat-k4-issue86-multi-raw-20260814 --file D:\\Developer\\Projects\\shotter\\shot-chat-worktrees\\issue-86\\docker-compose.k4.yml exec -T observer node /opt/k4/observerRequest.js failed: observer request failed: observer helper runner-cgroup rejected: 400\n",
+          "slotTimestamp": "2026-08-14T04:41:02.138Z"
+        }
+      ]
+    }
+  },
+  "claimEvidence": {
+    "multiReplica": true
+  },
+  "qualificationFlags": []
+}

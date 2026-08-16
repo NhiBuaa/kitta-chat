@@ -1,0 +1,15 @@
+{
+  "risk_level": "high",
+  "change_kinds": [
+    "concurrency",
+    "configuration",
+    "logic",
+    "performance",
+    "schema",
+    "testing"
+  ],
+  "escalation_triggers": [],
+  "ticket_count": 1,
+  "ticket_ids": ["issue-85"],
+  "ticket_risk_levels": ["high"]
+}

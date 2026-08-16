@@ -2,7 +2,7 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { spawnSync } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const { parse } = require("yaml");
 
 const PROJECT_MARKER = "kittachat-k4";
@@ -38,6 +38,8 @@ function imageSetEnvironment(imageSetId) {
     K4_NGINX_IMAGE: `${IMAGE_SET_PREFIX}-nginx:${normalizedImageSetId}`,
     K4_BACKEND_IMAGE: `${IMAGE_SET_PREFIX}-backend:${normalizedImageSetId}`,
     K4_RUNNER_IMAGE: `${IMAGE_SET_PREFIX}-runner:${normalizedImageSetId}`,
+    K4_OBSERVER_IMAGE: `${IMAGE_SET_PREFIX}-observer:${normalizedImageSetId}`,
+    K4_OBSERVER_HELPER_IMAGE: `${IMAGE_SET_PREFIX}-observer-helper:${normalizedImageSetId}`,
   };
 }
 
@@ -99,6 +101,7 @@ function compareTopologyPlans(left, right) {
 const TOPOLOGY_ALLOWED_DIFFERENCES = ["backend_replica_count", "backend_upstream_membership"];
 const REQUIRED_EFFECTIVE_FIELDS = ["compose", "imageIdentities", "configFingerprints", "runnerTool", "backend_replica_count", "backend_upstream_membership"];
 const BACKEND_ONLY_SERVICES = ["backend", "mongo", "redis", "rabbitmq"];
+const OBSERVATION_SERVICES = ["observer", "observer-helper"];
 
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);
@@ -270,6 +273,14 @@ function assertEffectiveIngressTopology(effectiveSpec) {
     const networks = effectiveNetworkSet(services[name]);
     if ([...networks].some((network) => runnerNetworks.has(network))) throw new Error(`runner and ${name} share network`);
   }
+  if (services.observer || services["observer-helper"]) {
+    if (!services.observer || !services["observer-helper"]) throw new Error("required observation service evidence is incomplete");
+    const observerNetworks = effectiveNetworkSet(services.observer);
+    const helperNetworks = effectiveNetworkSet(services["observer-helper"]);
+    if (observerNetworks.size !== 1 || !observerNetworks.has("k4-observation")) throw new Error("observer must attach only the observation network");
+    if (helperNetworks.size !== 2 || !helperNetworks.has("k4-observation") || !helperNetworks.has("k4-backend")) throw new Error("observer helper network boundary is unresolved");
+    if ([...runnerNetworks].some((network) => observerNetworks.has(network) || helperNetworks.has(network))) throw new Error("runner shares an observation network");
+  }
   if ((services.backend.ports || []).length) throw new Error("backend exposes an alternate published ingress");
 }
 
@@ -280,7 +291,8 @@ function attestRuntimeTopology(snapshot) {
   const runtime = snapshot.runtime_attestation;
   if (!runtime?.networkSets || !Array.isArray(runtime.backendReplicas)) return { status: "NON-COMPARABLE", reason: "runtime attestation is missing or unresolved" };
   const expectedServices = snapshot.effective_spec.compose.services;
-  for (const name of ["runner", "nginx", ...BACKEND_ONLY_SERVICES.filter((name) => name !== "backend")]) {
+  const attestedServices = ["runner", "nginx", ...BACKEND_ONLY_SERVICES.filter((name) => name !== "backend"), ...OBSERVATION_SERVICES.filter((name) => expectedServices[name])];
+  for (const name of attestedServices) {
     const actual = runtime.networkSets[name];
     if (!Array.isArray(actual)) return { status: "NON-COMPARABLE", reason: `runtime network evidence is missing for ${name}` };
     const expected = [...effectiveNetworkSet(expectedServices[name])].sort();
@@ -342,7 +354,7 @@ function runtimeEnvironment(container) {
   }));
 }
 
-function runtimeComposeEnvironment(plan, options, backendContainer, runnerContainer) {
+function runtimeComposeEnvironment(plan, options, backendContainer, runnerContainer, observerContainer, helperContainer) {
   const backendEnvironment = runtimeEnvironment(backendContainer);
   const runnerEnvironment = runtimeEnvironment(runnerContainer);
   const jwtSecret = backendEnvironment.JWT_SECRET;
@@ -352,6 +364,10 @@ function runtimeComposeEnvironment(plan, options, backendContainer, runnerContai
   const benchmarkPassword = backendEnvironment.DEMO_SEED_PASSWORD;
   if (!benchmarkPassword || runnerEnvironment.K4_BENCHMARK_PASSWORD !== benchmarkPassword) {
     throw new Error("required runtime evidence is missing: K4 benchmark credential wiring cannot be recovered from the active backend and runner.");
+  }
+  const observerToken = runtimeEnvironment(observerContainer).K4_OBSERVER_TOKEN;
+  if (!observerToken || runtimeEnvironment(helperContainer).K4_OBSERVER_TOKEN !== observerToken) {
+    throw new Error("required runtime evidence is missing: K4 observer credential wiring cannot be recovered from the active observation plane.");
   }
   const nginxImage = options.nginxImage;
   const backendImage = options.backendImage || backendContainer?.Config?.Image;
@@ -366,8 +382,12 @@ function runtimeComposeEnvironment(plan, options, backendContainer, runnerContai
     K4_RESULT_DIR: plan.resultDirectory,
     K4_JWT_SECRET: jwtSecret,
     K4_BENCHMARK_PASSWORD: benchmarkPassword,
+    K4_OBSERVER_TOKEN: observerToken,
     K4_NGINX_IMAGE: nginxImage,
     K4_BACKEND_IMAGE: backendImage,
+    K4_RUNNER_IMAGE: runnerContainer.Config?.Image,
+    K4_OBSERVER_IMAGE: observerContainer.Config?.Image,
+    K4_OBSERVER_HELPER_IMAGE: helperContainer.Config?.Image,
   };
 }
 
@@ -418,9 +438,9 @@ function currentEffectiveTopologySnapshot(plan, options = {}) {
     if (service) (services[service] ||= []).push(container);
     return services;
   }, {});
-  const requiredServices = ["runner", "nginx", ...BACKEND_ONLY_SERVICES];
+  const requiredServices = ["runner", "nginx", ...BACKEND_ONLY_SERVICES, ...OBSERVATION_SERVICES];
   if (requiredServices.some((service) => !byService[service]?.length)) throw new Error("required runtime evidence is missing: one or more K4 services are unresolved.");
-  if (["runner", "nginx", "mongo", "redis", "rabbitmq"].some((service) => byService[service].length !== 1)) {
+  if (["runner", "nginx", "mongo", "redis", "rabbitmq", ...OBSERVATION_SERVICES].some((service) => byService[service].length !== 1)) {
     throw new Error("required runtime evidence is missing: singleton K4 service resolution is ambiguous.");
   }
   const selectedService = (service) => byService[service][0];
@@ -430,7 +450,7 @@ function currentEffectiveTopologySnapshot(plan, options = {}) {
   const composeEnvironment = runtimeComposeEnvironment(plan, {
     ...options,
     nginxImage: nginxImageReference,
-  }, backendContainers[0], selectedService("runner"));
+  }, backendContainers[0], selectedService("runner"), selectedService("observer"), selectedService("observer-helper"));
   const nginxImageSetId = imageSetIdFromReference(nginxImageReference);
   if (imageSetIdFromReference(backendImageReference) !== nginxImageSetId) {
     throw new Error("required runtime evidence is missing: nginx and backend image sets differ.");
@@ -497,16 +517,36 @@ function resultDirectoryIsOwned(resultDirectory, runId) {
 }
 
 function createResultDirectory(plan) {
+  if (fs.existsSync(plan.resultDirectory)) throw new Error("K4 result directory already exists and cannot be reused");
   fs.mkdirSync(plan.resultDirectory, { recursive: true });
   fs.writeFileSync(ownerFile(plan.resultDirectory), `${JSON.stringify({ project: PROJECT_MARKER, runId: plan.runId })}\n`, { flag: "wx" });
 }
 
-function docker(args, { execute = true, env = process.env, dockerCommand } = {}) {
+function docker(args, { execute = true, env = process.env, dockerCommand, input } = {}) {
   if (!execute) return { command: "docker", args };
-  if (dockerCommand) return dockerCommand(args, { env });
-  const result = spawnSync("docker", args, { cwd: REPOSITORY_ROOT, encoding: "utf8", windowsHide: true, env });
+  if (dockerCommand) return dockerCommand(args, { env, input });
+  const result = spawnSync("docker", args, { cwd: REPOSITORY_ROOT, encoding: "utf8", windowsHide: true, env, input });
   if (result.status !== 0) throw new Error(`docker ${args.join(" ")} failed: ${result.stderr || result.stdout}`);
   return result.stdout;
+}
+
+function dockerAsync(args, { env = process.env, dockerCommand, input } = {}) {
+  if (dockerCommand) return Promise.resolve(dockerCommand(args, { env, input }));
+  return new Promise((resolve, reject) => {
+    const child = spawn("docker", args, { cwd: REPOSITORY_ROOT, windowsHide: true, env, stdio: ["pipe", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.once("error", reject);
+    child.once("close", (code) => {
+      if (code !== 0) reject(new Error(`docker ${args.join(" ")} failed: ${stderr || stdout}`));
+      else resolve(stdout);
+    });
+    child.stdin.end(input);
+  });
 }
 
 function inspectDockerClass(targetClass, runId, options) {
@@ -539,7 +579,7 @@ function cleanup(runId, digest, options = {}) {
   for (const target of preview.targets.networks) docker(["network", "rm", target.id], options);
   for (const target of preview.targets.volumes) docker(["volume", "rm", target.id], options);
   const resultDirectory = preview.targets.resultDirectory[0]?.path;
-  if (resultDirectory && resultDirectoryIsOwned(resultDirectory, preview.runId)) fs.rmSync(resultDirectory, { recursive: true, force: false });
+  if (!options.preserveResultDirectory && resultDirectory && resultDirectoryIsOwned(resultDirectory, preview.runId)) fs.rmSync(resultDirectory, { recursive: true, force: false });
   return preview;
 }
 
@@ -593,10 +633,13 @@ function buildImageSet(imageSetId, options = {}) {
     K4_RUN_ID: buildPlan.runId,
     K4_RESULT_DIR: buildPlan.resultDirectory,
     K4_JWT_SECRET: options.jwtSecret || crypto.randomBytes(48).toString("hex"),
+    K4_BENCHMARK_EMAIL: "build-only@kittachat.invalid",
+    K4_BENCHMARK_PASSWORD: "build-only-not-a-runtime-credential",
+    K4_OBSERVER_TOKEN: "build-only-not-a-runtime-token",
   };
-  docker(composeArgs(buildPlan, ["build", "nginx", "backend", "runner"]), { ...options, env: environment });
-  const imageIdentities = Object.fromEntries(["nginx", "backend", "runner"].map((service) => {
-    const image = imageEnvironment[`K4_${service.toUpperCase()}_IMAGE`];
+  docker(composeArgs(buildPlan, ["build", "nginx", "backend", "runner", "observer", "observer-helper"]), { ...options, env: environment });
+  const imageIdentities = Object.fromEntries(["nginx", "backend", "runner", "observer", "observer-helper"].map((service) => {
+    const image = imageEnvironment[`K4_${service.toUpperCase().replaceAll("-", "_")}_IMAGE`];
     const identity = String(docker(["image", "inspect", "--format", "{{.Id}}", image], options)).trim();
     assertImmutableImageIdentity(identity, service);
     return [service, identity];
@@ -638,4 +681,4 @@ function runnerDiagnosticArgs(plan) {
   return composeArgs(plan, ["exec", "-T", "runner", "node", "-e", diagnostic]);
 }
 
-module.exports = { COMPOSE_FILE, PROJECT_LABEL, PROJECT_MARKER, RESULT_ROOT, RUN_LABEL, TARGET_CLASSES, assertImageSetId, attestRuntimeTopology, buildImageSet, captureEffectiveTopologySnapshot, cleanup, cleanupPreview, compareEffectiveTopologySnapshots, compareTopologyPlans, composeArgs, createResultDirectory, createRunPlan, currentEffectiveTopologySnapshot, docker, imageSetEnvironment, ownershipLabels, runnerDiagnosticArgs, selectOwnedTargets, startArgs, validateCleanupTarget };
+module.exports = { COMPOSE_FILE, PROJECT_LABEL, PROJECT_MARKER, RESULT_ROOT, RUN_LABEL, TARGET_CLASSES, assertImageSetId, attestRuntimeTopology, buildImageSet, captureEffectiveTopologySnapshot, cleanup, cleanupPreview, compareEffectiveTopologySnapshots, compareTopologyPlans, composeArgs, createResultDirectory, createRunPlan, currentEffectiveTopologySnapshot, docker, dockerAsync, imageSetEnvironment, ownershipLabels, runnerDiagnosticArgs, selectOwnedTargets, startArgs, validateCleanupTarget };

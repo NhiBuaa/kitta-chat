@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-issue-85-acceptance-passed-r3",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "issue-85",
+  "transition": "acceptance_completed",
+  "skill": "manual-acceptance",
+  "execution_revision": "k4-issue-85-r3",
+  "started_at": "2026-08-14T05:12:02Z",
+  "finished_at": "2026-08-14T05:25:00Z",
+  "status": "completed",
+  "retry_count": 0,
+  "input_digest": "44b97b50a77f080dc37c3e5f740238c1da3a383147b6ada838145b225cb5fe13",
+  "output_digest": "e7cd8f3e47b9b526c41f9302c6372ad4d7a15d1377cc84c54ae6216405bf34ab",
+  "evidence_references": [
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.evaluations.jsonl",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-r3-human-approval-20260814.json",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-review-cadence-evidence-r3.json",
+    ".scratch/issue85-manual-acceptance-r3.json"
+  ],
+  "verdict": "PASSED",
+  "human_approval": "approved",
+  "deferred_review": "feature-level-only after the complete K4 feature reaches its fixed point"
+}

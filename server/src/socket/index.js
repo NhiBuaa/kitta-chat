@@ -5,7 +5,7 @@ const { createAdapter } = require("@socket.io/redis-adapter");
 
 // Handlers
 const { registerPresenceHandlers } = require("./handlers/presenceHandler");
-const { registerMessageHandlers } = require("./handlers/messageHandler");
+const { createRegisterMessageHandlers, registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
 const { registerCallHandlers } = require("./handlers/call/index");
@@ -14,8 +14,9 @@ const { createSocketConnectionTracker } = require("./connectionMetrics");
 const { logger: defaultLogger } = require("../utils/logger");
 const { createIssue61AggregateMeasurementModule } = require("../observability/issue61");
 const { createBrowserOriginPolicy } = require("../config/browserOriginPolicy");
+const { k4Attribution } = require("../observability/k4Attribution");
 
-const NODE_NAME = process.env.NODE_NAME || "backend";
+const NODE_NAME = process.env.NODE_NAME || process.env.HOSTNAME || "backend";
 const logPrefix = `[Socket][node=${NODE_NAME}]`;
 const deliveryLogPrefix = `[Delivery][node=${NODE_NAME}]`;
 
@@ -34,7 +35,7 @@ if (!JWT_SECRET) {
  * @param {import("express").Application} app
  * @returns {Promise<import("socket.io").Server>} io
  */
-const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement } = {}) => {
+const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement, attribution = k4Attribution } = {}) => {
     const appMetrics = typeof app?.get === "function" ? app.get("metrics") : undefined;
     const appLogger = typeof app?.get === "function" ? app.get("logger") : undefined;
     const browserOriginPolicy = typeof app?.get === "function"
@@ -45,6 +46,9 @@ const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement
         metrics: metrics || appMetrics,
     });
     const callMeasurement = issue61Measurement || createIssue61AggregateMeasurementModule();
+    const registerConfiguredMessageHandlers = attribution === k4Attribution
+        ? registerMessageHandlers
+        : createRegisterMessageHandlers({ attribution });
     const io = new Server(httpServer, {
         cors: {
             origin(origin, callback) {
@@ -103,6 +107,15 @@ const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement
         const localCount = localReceiverSockets?.size || 0;
 
         if (localCount > 0) {
+            const correlationId = payload.correlationId;
+            attribution.messageReceiver({
+                correlationId,
+                actorRef: String(receiverId),
+                senderRef: senderId == null ? null : String(senderId),
+                replica: NODE_NAME,
+                messageId,
+                conversationId,
+            });
             console.log(
                 `${deliveryLogPrefix} RECEIVED receiver=${receiverId} sender=${senderId} messageId=${messageId || "n/a"} conv=${conversationId || "n/a"} localSockets=${localCount} originNode=${originNode || "unknown"}`
             );
@@ -144,18 +157,20 @@ const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement
     // =========================================================
     io.on("connection", (socket) => {
         const userId = socket.userId;
+        attribution.socketConnected({ actorRef: String(userId), socketId: socket.id, nodeName: NODE_NAME });
         console.log(`${logPrefix} CONNECT user=${userId} socket=${socket.id}`);
 
         connectionTracker.track(socket);
 
         socket.on("disconnect", (reason) => {
+            attribution.socketDisconnected({ actorRef: String(socket.userId), socketId: socket.id, nodeName: NODE_NAME, reason });
             console.log(`${logPrefix} DISCONNECT user=${socket.userId} socket=${socket.id} reason=${reason}`);
         });
 
         socket.emit("me", socket.id);
 
         registerPresenceHandlers(socket, io);
-        registerMessageHandlers(socket, io);
+        registerConfiguredMessageHandlers(socket, io);
         registerFriendHandlers(socket, io);
         registerTypingHandlers(socket, io);
         registerCallHandlers(socket, io, { measurement: callMeasurement });

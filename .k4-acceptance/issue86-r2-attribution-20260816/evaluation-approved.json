@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "run_id": "issue86-r2-attribution-20260816-approved",
+  "observed_at": "2026-08-16T03:50:00.000Z",
+  "executor": "Codex manual-acceptance",
+  "guide_revision": "k4-issue-86-r2",
+  "test_results": [
+    {
+      "id": "TC-86-01",
+      "outcome": "PASS",
+      "observation": "Fresh single- and multi-replica sidebar:2 runs used the approved nginx-only workload and retained 20 warm-up successes, 60 measurement opportunities, and measurement-bound attribution for all 60 request IDs.",
+      "evidence": [
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-runner.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-observation-final.raw.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-runner.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-observation-final.raw.json"
+      ]
+    },
+    {
+      "id": "TC-86-02",
+      "outcome": "PASS",
+      "observation": "The explicit matrix is EQUIVALENT with nonTopologyDrift=[]: commit SHA, complete hardware, dataset identity/size, workload bytes/digest, image/configuration, runner placement, and phase semantics match; only topology/replica count differs.",
+      "evidence": [
+        ".k4-acceptance/issue86-r2-attribution-20260816/comparison-matrix.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/manifest.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/manifest.json"
+      ]
+    },
+    {
+      "id": "TC-86-03",
+      "outcome": "PASS",
+      "observation": "Multi-replica attribution is complete across backend-1, backend-2, and backend-3 with claim eligibility true. The paired single run is complete on exactly one replica and uses existing TOPOLOGY_NOT_EXERCISED semantics; complete-zero semantics remain complete with no topology flag and no new taxonomy.",
+      "evidence": [
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-observation.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-observation.json",
+        "node --test scripts/test/k4/measurementAttribution.test.cjs -> complete-zero semantics pass"
+      ]
+    },
+    {
+      "id": "TC-86-04",
+      "outcome": "PASS",
+      "observation": "Both runs retain raw phase evidence, success/error partition, parent status axes, inventories, and completion markers without a scenario-owned report or duplicate provenance format.",
+      "evidence": [
+        ".k4-results/issue86-single-r2-attribution2-20260816/source-inventory.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/COMPLETED",
+        ".k4-results/issue86-multi-r2-attribution-20260816/source-inventory.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/COMPLETED",
+        "cleanup-preview for both run IDs -> empty targets"
+      ]
+    }
+  ],
+  "verdict": "PASSED",
+  "human_approval": "approved",
+  "approval_evidence": "User explicitly approved the final observed Issue #86 r2 Evaluation in the current task.",
+  "notes": "Append-only approval record. The preceding BLOCKED/pending observed Evaluation remains unchanged. No final review was performed per user instruction."
+}

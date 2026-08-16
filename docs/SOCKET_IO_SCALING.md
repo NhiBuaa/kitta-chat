@@ -175,6 +175,13 @@ The MongoDB `Message` document is saved before the realtime emit is considered
 successful. If the client later reconnects and suspects it missed a realtime
 event, it can call the REST sync endpoint using `last_message_id`.
 
+For the accepted K4 Issue #87 evidence slice, the existing callback `{ success,
+realId }` is only a validity gate. Recipient-delivery timing starts immediately
+before the `sendMessage` emit and ends when the recipient receives the matched
+`getMessage`; the acknowledgement timestamp is not a latency endpoint. The
+correlation also checks idempotency key, message identity, sender, recipient, and
+legacy `Message.conversationId` without changing this public Socket.IO contract.
+
 ## Presence, Heartbeat, Reconnect, And Offline Grace
 
 Presence is a Redis + Mongo write-through flow.
