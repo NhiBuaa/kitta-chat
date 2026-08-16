@@ -93,7 +93,8 @@ with `tc89-r4-treatment-comparison-20260816-approved` (`PASSED`/`approved`); no
 production-capacity, scalability, or topology claim is emitted. The implementation is integrated
 at `codex/k4-integration` head `e38cfff6ec69b4e8216fb1a322f44df024a363fa`; verification is green,
 and selective invalidation preserved the accepted r3/r4 Evaluations because no inputs, environment,
-or approved behavior changed. PR publication and the single final K4 feature review remain pending.
+or approved behavior changed. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) is open;
+the single final K4 feature review remains pending.
 
 The CLI seams are `baseline-matrix`, `execute-baseline`, `validate-baseline`, `baseline-report`,
 `prerequisite-freshness`, `prerequisite-set`, and `bottleneck-dossier`. Every run also retains `run-status.json` and lifecycle details in the

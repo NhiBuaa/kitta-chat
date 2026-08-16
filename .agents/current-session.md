@@ -27,8 +27,8 @@ at `e38cfff6ec69b4e8216fb1a322f44df024a363fa`. Integration verification passes K
 server attribution/read-model `13/13`, repository CI `132/132`, and `npm run ci:validate`.
 Selective invalidation decision: no acceptance input, authoritative guide/Evaluation, environment,
 or approved behavior changed during the fast-forward; the r3/r4 accepted Evaluations remain valid
-and no rerun is required. The Issue #89 worktree is retained; final feature review and merge remain
-deferred, and PR publication is the next action.
+and no rerun is required. The Issue #89 worktree is retained; [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
+is open against `main`. Final feature review and merge remain deferred.
 
 ## K4 Current Frontier Override
 

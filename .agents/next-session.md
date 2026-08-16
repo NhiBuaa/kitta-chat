@@ -32,8 +32,8 @@ ends with `tc89-r4-treatment-comparison-20260816-approved` (`verdict=PASSED`,
 artifact is `.k4-results/k4issue89r4-20260816-optimization-comparison.json`.
 Integration verification is complete on `e38cfff`; selective invalidation found no changed
 acceptance input, authoritative guide/Evaluation, environment, or approved behavior, so r3/r4
-Evaluations remain valid without rerun. Preserve all prior runs and guide revisions; the next valid
-transition is PR publication, while final review and merge remain deferred.
+Evaluations remain valid without rerun. Preserve all prior runs and guide revisions; [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
+is open against `main`, while final review and merge remain deferred.
 
 ## Current Parallel Frontier Override
 
@@ -97,10 +97,10 @@ this Issue #87 worktree.
 
 The accepted Issue #89 worktree is integrated into `codex/k4-integration` at
 `e38cfff6ec69b4e8216fb1a322f44df024a363fa`. Integration verification is green and the selective
-invalidation decision preserved all accepted Evaluations. The next valid transition is PR
-publication; the single final K4 feature review and merge remain deferred until the complete
-feature reaches its fixed point. Preserve all prior guide revisions, Evaluation records, and treated
-comparison artifacts.
+invalidation decision preserved all accepted Evaluations. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
+is open against `main`; the single final K4 feature review and merge remain deferred until the
+complete feature reaches its fixed point. Preserve all prior guide revisions, Evaluation records,
+and treated comparison artifacts.
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
