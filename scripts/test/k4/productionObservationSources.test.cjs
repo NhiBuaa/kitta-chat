@@ -32,6 +32,33 @@ test("production sources use typed helper and keep topology inventory distinct f
   assert.equal(source.identity.dockerManagement, false);
 });
 
+test("production sidebar attribution rejects a measured correlation bound to another endpoint", async () => {
+  const helper = {
+    logs: async ({ role }) => ({
+      sourceIdentity: role,
+      sourceDigest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      body: role === "nginx"
+        ? '2026-08-13T00:00:01Z 127.0.0.1 - - [13/Aug/2026:00:00:01 +0000] "GET /api/users/sidebar-list HTTP/1.1" 200 1 "" "k4" rt=0.1 uct=0.1 uht=0.1 urt=0.1 upstream=10.0.0.1:3000 k4rid=r1'
+        : "",
+      truncated: false,
+      rotationGap: false,
+    }),
+    identity: async () => ({ addresses: ["10.0.0.1"] }),
+    metrics: async () => ({ body: metrics }),
+  };
+  const source = createProductionObservationSources({ helper });
+  const attribution = await source.captureReplicaAttribution({
+    plan: { ...plan, workload: { scenario: "sidebar" } },
+    replicas: ["backend-1"],
+    measurementStart: "2026-08-13T00:00:00Z",
+    measurementEnd: "2026-08-13T00:00:10Z",
+    measurementOutput: { measuredRequestIds: ["r1"], replicaAddressMap: { "10.0.0.1:3000": "backend-1" } },
+  });
+  assert.equal(attribution.complete, false);
+  assert.equal(attribution.topologyNotExercised, false);
+  assert.match(attribution.incompleteReasons.join(" "), /sidebar request/);
+});
+
 test("histogram parser rejects an incomplete metric family", () => {
   assert.throws(() => parsePrometheusHistogram("nothing useful"), /absent or malformed/);
 });

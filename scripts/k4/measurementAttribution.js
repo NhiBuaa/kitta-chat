@@ -10,18 +10,37 @@ function completeSource(metadata) {
   return { complete: reasons.length === 0, reasons };
 }
 
+function isSidebarRecord(record) {
+  if (record?.method === undefined && record?.path === undefined) return true;
+  return record?.method === "GET" && record?.path === "/api/sidebar/conversations";
+}
+
 function sidebarAttribution({ records = [], requestIds = [], replicaAddressMap = {}, metadata }) {
   const source = completeSource(metadata);
   const measured = new Set(requestIds);
-  const relevant = records.filter((record) => measured.has(record.requestId));
+  const bound = records.filter((record) => measured.has(record.requestId));
+  const relevant = bound.filter(isSidebarRecord);
+  const nonSidebar = bound.filter((record) => !isSidebarRecord(record));
   const ambiguous = relevant.filter((record) => !replicaAddressMap[record.upstreamAddr]);
   const replicas = [...new Set(relevant.map((record) => replicaAddressMap[record.upstreamAddr]).filter(Boolean))];
-  const complete = source.complete && ambiguous.length === 0 && relevant.length === measured.size;
+  const duplicateRequestIds = measured.size !== requestIds.length;
+  const complete = source.complete
+    && !duplicateRequestIds
+    && nonSidebar.length === 0
+    && ambiguous.length === 0
+    && bound.length === measured.size
+    && relevant.length === measured.size;
   return {
     schema: ATTRIBUTION_SCHEMA,
     source: metadata,
     complete,
-    incompleteReasons: [...source.reasons, ...(ambiguous.length ? ["ambiguous upstream mapping"] : []), ...(relevant.length !== measured.size ? ["measured request binding incomplete"] : [])],
+    incompleteReasons: [
+      ...source.reasons,
+      ...(duplicateRequestIds ? ["duplicate measured request binding"] : []),
+      ...(nonSidebar.length ? ["measured request binding is not a sidebar request"] : []),
+      ...(ambiguous.length ? ["ambiguous upstream mapping"] : []),
+      ...(relevant.length !== measured.size ? ["measured request binding incomplete"] : []),
+    ],
     replicas,
     topologyNotExercised: complete && replicas.length === 1,
     claimEligible: complete && replicas.length >= 2,

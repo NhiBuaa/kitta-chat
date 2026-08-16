@@ -1,0 +1,38 @@
+{
+  "status": "FAILED_SETUP",
+  "phases": {
+    "setup/seed": {
+      "started": true,
+      "completed": false,
+      "qualified": false,
+      "publishable": false,
+      "error": "setup/preflight did not admit warm-up"
+    },
+    "teardown": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "attempted": true,
+        "released": true,
+        "targetDigest": "55e6e8e0e56e91acf85acca2d8d057be17452738a9fb310707ac5ef160cbef74"
+      },
+      "attempted": true
+    }
+  },
+  "teardown": {
+    "attempted": true,
+    "completed": true
+  },
+  "failure": {
+    "phase": "setup/seed",
+    "error": "setup/preflight did not admit warm-up"
+  },
+  "executionOutcome": "FAILED",
+  "artifactStatus": "RETAINED",
+  "qualification": {
+    "complete": false,
+    "qualified": false
+  }
+}

@@ -12,12 +12,13 @@ function createProductionPhaseExecutor({ setup, warmup, measure, teardown }) {
   };
 }
 
-async function runProductionPlan({ plan, phases, observation, intervalMs = 1000, executeRunFn = executeRun }) {
+async function runProductionPlan({ plan, phases, observation, artifactMetadata, intervalMs = 1000, executeRunFn = executeRun }) {
   if (!plan?.workload?.scenario || !plan?.topology) throw new Error("production run requires an approved resolved workload and topology");
   if (!observation) throw new Error("production run requires an injected production observation lifecycle");
   return executeRunFn(plan, {
     executePhase: createProductionPhaseExecutor(phases),
     observation,
+    artifactMetadata,
   });
 }
 

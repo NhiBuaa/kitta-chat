@@ -7,6 +7,7 @@ const { createProductionObservationSources } = require("./productionObservationS
 const { runProductionPlan } = require("./productionRun");
 const { executeRun } = require("./runner");
 const { normalizeFaultFixture } = require("./runner/faultFixtures");
+const { sanitize } = require("./runArtifacts");
 
 const APPROVED_SCENARIOS = Object.freeze(["sidebar", "message", "socket-concurrency"]);
 const WORKLOAD_TARGET = "http://nginx";
@@ -56,6 +57,33 @@ function parseJsonOutput(output, prerequisite) {
   }
 }
 
+function explicitTestMachineHardware(environment = {}) {
+  const hostname = String(environment.K4_TEST_MACHINE_HOSTNAME || "").trim();
+  const cpuModel = String(environment.K4_TEST_MACHINE_CPU_MODEL || "").trim();
+  const logicalProcessorsValue = Number(environment.K4_TEST_MACHINE_LOGICAL_PROCESSORS);
+  const memoryBytesValue = Number(environment.K4_TEST_MACHINE_MEMORY_BYTES);
+  const hardware = {
+    hostname: hostname || undefined,
+    cpuModel: cpuModel || undefined,
+    logicalProcessors: Number.isSafeInteger(logicalProcessorsValue) && logicalProcessorsValue > 0 ? logicalProcessorsValue : undefined,
+    memoryBytes: Number.isSafeInteger(memoryBytesValue) && memoryBytesValue > 0 ? memoryBytesValue : undefined,
+  };
+  return Object.values(hardware).some((value) => value !== undefined) ? hardware : undefined;
+}
+
+function datasetEvidence(observedDeclaration) {
+  const cardinalities = observedDeclaration?.cardinalities || null;
+  const totalDocuments = cardinalities
+    ? Object.values(cardinalities).reduce((total, count) => total + (Number.isFinite(count) ? count : 0), 0)
+    : null;
+  return sanitize({
+    identity: observedDeclaration?.fingerprint || "unresolved",
+    declared: K4_DATASET_DECLARATION,
+    observed: observedDeclaration || null,
+    size: { cardinalities, totalDocuments },
+  });
+}
+
 const waitForAuthRateLimit = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function runApprovedSetupPreflight({ plan, environment, dockerCommand = docker, wait = waitForAuthRateLimit }) {
@@ -73,7 +101,7 @@ async function runApprovedSetupPreflight({ plan, environment, dockerCommand = do
   }
   const verification = verifyDatasetContract(K4_DATASET_DECLARATION, observedDeclaration);
   if (verification.status !== "VERIFIED") {
-    return { status: "FAILED_SETUP", warmupAdmission: "NOT_ADMITTED", verification };
+    return { status: "FAILED_SETUP", warmupAdmission: "NOT_ADMITTED", verification, dataset: datasetEvidence(observedDeclaration) };
   }
   if (!benchmarkActors.alice?.token || !benchmarkActors.alice?.id) {
     throw new Error("production login did not return the authenticated benchmark actor");
@@ -100,6 +128,7 @@ async function runApprovedSetupPreflight({ plan, environment, dockerCommand = do
     status: "WARMUP_ADMITTED",
     warmupAdmission: "WARMUP_ADMITTED",
     verification,
+    dataset: datasetEvidence(observedDeclaration),
     benchmarkActors,
   };
 }
@@ -136,7 +165,7 @@ async function teardownOwnedRun({ plan, ownedResources, environment, cleanupPrev
   const ownsActiveRun = ownedResources.some((resource) => resource?.class === "run" && resource?.id === plan.runId);
   if (!ownsActiveRun) return { attempted: false, released: false };
   const preview = cleanupPreviewFn(plan.runId, { profile: plan.topology?.profile || plan.profile, env: environment });
-  cleanupFn(plan.runId, preview.digest, { profile: plan.topology?.profile || plan.profile, env: environment });
+  cleanupFn(plan.runId, preview.digest, { profile: plan.topology?.profile || plan.profile, env: environment, preserveResultDirectory: true });
   return { attempted: true, released: true, targetDigest: preview.digest };
 }
 
@@ -178,6 +207,7 @@ function createRuntimeComposition({
           status: result.status,
           warmupAdmission: result.warmupAdmission,
           verification: result.verification,
+          dataset: result.dataset,
           actors: Object.fromEntries(Object.entries(actorRefs).map(([name, actor]) => [name, actor])),
         },
       };
@@ -200,10 +230,24 @@ function createRuntimeComposition({
     const helper = observerBridgeFactory({ plan, environment: scopedEnvironment });
     const runtimePort = observationSourcesFactory({ helper });
     const observation = observationFactory({ intervalMs, environment: scopedEnvironment, runtimePort });
+    const hardware = explicitTestMachineHardware(scopedEnvironment);
+    const artifactMetadata = {
+      ...(scopedEnvironment.K4_COMMIT_SHA || scopedEnvironment.GIT_COMMIT_SHA ? { commitSha: scopedEnvironment.K4_COMMIT_SHA || scopedEnvironment.GIT_COMMIT_SHA } : {}),
+      ...(hardware ? { hardware } : {}),
+      imageSet: {
+        id: scopedEnvironment.K4_IMAGE_SET_ID,
+        nginx: scopedEnvironment.K4_NGINX_IMAGE,
+        backend: scopedEnvironment.K4_BACKEND_IMAGE,
+        runner: scopedEnvironment.K4_RUNNER_IMAGE,
+        observer: scopedEnvironment.K4_OBSERVER_IMAGE,
+        observerHelper: scopedEnvironment.K4_OBSERVER_HELPER_IMAGE,
+      },
+    };
     return runProductionPlan({
       plan,
       intervalMs,
       observation,
+      artifactMetadata,
       phases: { setup, warmup: () => executeWorkloadPhase("warm-up"), measure: () => executeWorkloadPhase("measurement"), teardown },
       executeRunFn,
     });

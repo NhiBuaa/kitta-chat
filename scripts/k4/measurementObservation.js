@@ -102,6 +102,7 @@ function createMeasurementObservation({ intervalMs, clock = () => new Date().toI
         histogram: raw.histogram,
         loadGenerator: raw.loadGenerator,
         activeSocketGauge: raw.activeSocketGauge,
+        replicaAttribution: raw.replicaAttribution,
         claimEvidence: raw.claimEvidence,
         qualificationFlags: raw.qualificationFlags,
       });

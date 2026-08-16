@@ -95,6 +95,79 @@ test("production observation promotes only proven run-level topology to qualific
   assert.deepEqual(result.qualificationFlags, ["TOPOLOGY_NOT_EXERCISED"]);
 });
 
+test("production observation retains complete replica attribution when resource coverage is incomplete", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-sidebar-attribution-resource-gap-"));
+  const attribution = {
+    schema: "k4-measurement-attribution-v1",
+    source: {
+      runId: "production-observation-resource-gap",
+      sourceIdentity: "nginx",
+      sourceDigest: "sha256:attribution",
+      parserVersion: "k4-attribution-log-parser-v1",
+      measurementStart: "2026-08-13T00:00:00.000Z",
+      measurementEnd: "2026-08-13T00:00:01.000Z",
+      truncated: false,
+      rotationGap: false,
+      parseDiagnostics: [],
+    },
+    complete: true,
+    claimEligible: true,
+    topologyNotExercised: false,
+    replicas: ["backend-1", "backend-2"],
+    supportingRecords: [{ requestId: "r1" }],
+  };
+  const observation = createProductionMeasurementObservation({
+    intervalMs: 1000,
+    runtimePort: {
+      ...runtimePort([]),
+      async captureReplicaAttribution({ point }) {
+        return point === "after" ? attribution : { point, complete: false, deferredUntilMeasurementEnd: true };
+      },
+      async collectResourceSamples({ requiredContainers, measurementStart }) {
+        return Object.fromEntries(requiredContainers
+          .filter((container) => container !== "backend-2")
+          .map((container) => [container, [{ timestamp: measurementStart, status: "success", sample: { container } }]]));
+      },
+    },
+    clock: (() => { const points = ["2026-08-13T00:00:00.000Z", "2026-08-13T00:00:01.000Z"]; return () => points.shift(); })(),
+  });
+  const result = await executeRun({
+    ...plan(["backend-1", "backend-2"], directory),
+    workload: { scenario: "sidebar" },
+  }, {
+    observation,
+    executePhase: async (phase) => phase === "setup/seed" ? { resourcesCreated: true } : phase === "measurement" ? { measuredRequestIds: ["r1"] } : {},
+  });
+  const derived = JSON.parse(fs.readFileSync(path.join(directory, "measurement-observation.json"), "utf8"));
+  assert.deepEqual(derived.replicaAttribution.after, attribution);
+  assert.deepEqual(derived.claimEvidence, { multiReplica: true });
+  assert.equal(derived.claimEligibility.multiReplica.eligible, true);
+  assert.deepEqual(derived.qualificationFlags, ["OBSERVATION_INCOMPLETE"]);
+  assert.deepEqual(result.qualificationFlags, ["OBSERVATION_INCOMPLETE"]);
+});
+
+test("production observation carries existing sidebar attribution qualification semantics", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-sidebar-qualification-"));
+  const observation = createProductionMeasurementObservation({
+    intervalMs: 1000,
+    runtimePort: {
+      ...runtimePort([]),
+      async captureReplicaAttribution({ point }) {
+        return point === "after"
+          ? { complete: true, claimEligible: false, topologyNotExercised: true, replicas: ["backend-1"] }
+          : { point, complete: false, deferredUntilMeasurementEnd: true };
+      },
+    },
+    clock: (() => { const points = ["2026-08-13T00:00:00.000Z", "2026-08-13T00:00:01.000Z"]; return () => points.shift(); })(),
+  });
+  const result = await executeRun({ ...plan(["backend-1"], directory), workload: { scenario: "sidebar" } }, {
+    observation,
+    executePhase: async (phase) => phase === "setup/seed" ? { resourcesCreated: true } : phase === "measurement" ? { opportunities: [], measuredRequestIds: [] } : {},
+  });
+  assert.deepEqual(result.qualificationFlags, ["TOPOLOGY_NOT_EXERCISED"]);
+  assert.equal(result.claimEligibility.multiReplica.eligible, false);
+});
+
 test("production observation retains partial raw evidence, fails measurement, and leaves teardown running when runtime capture fails", async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-production-observation-failure-"));
   const observation = createProductionMeasurementObservation({ intervalMs: 1000, runtimePort: runtimePort([], { failAfter: true }), clock: () => "2026-08-13T00:00:00.000Z" });

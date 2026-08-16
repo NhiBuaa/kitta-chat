@@ -20,6 +20,35 @@ test("sidebar attribution binds measured request ids to unique upstream replicas
   assert.equal(sidebarAttribution({ records: [], requestIds: ["r1"], metadata }).topologyNotExercised, false);
 });
 
+test("sidebar attribution keeps complete zero-exercise observation distinct from one-replica exercise", () => {
+  const empty = sidebarAttribution({ records: [], requestIds: [], metadata });
+  assert.equal(empty.complete, true);
+  assert.equal(empty.claimEligible, false);
+  assert.equal(empty.topologyNotExercised, false);
+
+  const one = sidebarAttribution({
+    records: [{ requestId: "r1", upstreamAddr: "10.0.0.1:3000", method: "GET", path: "/api/sidebar/conversations", status: 503 }],
+    requestIds: ["r1"],
+    replicaAddressMap: { "10.0.0.1:3000": "backend-1" },
+    metadata,
+  });
+  assert.equal(one.complete, true);
+  assert.equal(one.claimEligible, false);
+  assert.equal(one.topologyNotExercised, true);
+});
+
+test("sidebar attribution rejects a measured id bound to a non-sidebar request", () => {
+  const result = sidebarAttribution({
+    records: [{ requestId: "r1", upstreamAddr: "10.0.0.1:3000", method: "GET", path: "/api/users/sidebar-list", status: 200 }],
+    requestIds: ["r1"],
+    replicaAddressMap: { "10.0.0.1:3000": "backend-1" },
+    metadata,
+  });
+  assert.equal(result.complete, false);
+  assert.match(result.incompleteReasons.join(" "), /sidebar request/);
+  assert.equal(result.topologyNotExercised, false);
+});
+
 test("socket attribution reconstructs lifetimes overlapping measurement", () => {
   const result = socketAttribution({
     measurementStart: metadata.measurementStart,

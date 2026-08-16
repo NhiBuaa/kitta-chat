@@ -18,3 +18,24 @@ test("production entry invokes approved lifecycle and injects observation", asyn
   assert.deepEqual(trace, ["setup", "warmup", "observe:start", "measure", "teardown"]);
   assert.equal(result.executionOutcome, "MEASURED");
 });
+
+test("production entry forwards artifact provenance metadata to the parent runner seam", async () => {
+  let received;
+  const observation = { start: async () => {}, finalize: async () => ({ qualificationFlags: [], claimEligibility: {} }) };
+  await runProductionPlan({
+    plan: { runId: "run-86", workload: { scenario: "sidebar" }, topology: { backendUpstreamMembership: ["backend-1"] } },
+    observation,
+    artifactMetadata: { commitSha: "0123456789abcdef0123456789abcdef01234567", imageSet: { id: "fixed-images" } },
+    phases: {
+      setup: async () => ({ resourcesCreated: true }),
+      warmup: async () => ({}),
+      measure: async () => ({}),
+      teardown: async () => ({}),
+    },
+    executeRunFn: async (_plan, options) => {
+      received = options.artifactMetadata;
+      return { executionOutcome: "COMPLETED" };
+    },
+  });
+  assert.deepEqual(received, { commitSha: "0123456789abcdef0123456789abcdef01234567", imageSet: { id: "fixed-images" } });
+});

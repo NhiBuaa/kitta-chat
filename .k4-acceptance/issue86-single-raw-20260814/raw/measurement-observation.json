@@ -1,0 +1,1249 @@
+{
+  "resourceEvidence": {
+    "measurementWindow": {
+      "start": "2026-08-14T04:37:41.570Z",
+      "end": "2026-08-14T04:38:12.252Z",
+      "boundary": "[measurement_start, measurement_end)"
+    },
+    "intervalMs": 1000,
+    "expectedCount": 31,
+    "requiredContainers": [
+      "nginx",
+      "backend-1",
+      "runner"
+    ],
+    "byContainer": {
+      "nginx": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:41.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 240347000,
+                "memoryUsageBytes": 27967488
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:42.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 242912000,
+                "memoryUsageBytes": 28225536
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:43.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 244782000,
+                "memoryUsageBytes": 28246016
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:44.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 247066000,
+                "memoryUsageBytes": 28065792
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:45.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 249022000,
+                "memoryUsageBytes": 28704768
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:46.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 252592000,
+                "memoryUsageBytes": 28852224
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:37:47.570Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:48.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 255998000,
+                "memoryUsageBytes": 28200960
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:49.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 258018000,
+                "memoryUsageBytes": 27930624
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:50.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 260432000,
+                "memoryUsageBytes": 28422144
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:51.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 262028000,
+                "memoryUsageBytes": 28049408
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:52.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 263368000,
+                "memoryUsageBytes": 28315648
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:53.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 264810000,
+                "memoryUsageBytes": 28463104
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:54.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 268177000,
+                "memoryUsageBytes": 28332032
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:55.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 274030000,
+                "memoryUsageBytes": 28295168
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:56.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 275336000,
+                "memoryUsageBytes": 28557312
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:57.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 277479000,
+                "memoryUsageBytes": 28303360
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:58.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 278972000,
+                "memoryUsageBytes": 28565504
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:59.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 280441000,
+                "memoryUsageBytes": 28303360
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:00.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 284015000,
+                "memoryUsageBytes": 28446720
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:01.570Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:02.570Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:03.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 292847000,
+                "memoryUsageBytes": 28221440
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:04.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 294202000,
+                "memoryUsageBytes": 29003776
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:05.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 295829000,
+                "memoryUsageBytes": 28631040
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:06.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 297462000,
+                "memoryUsageBytes": 28368896
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:07.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 298993000,
+                "memoryUsageBytes": 28528640
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:08.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 300391000,
+                "memoryUsageBytes": 28962816
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:09.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 302168000,
+                "memoryUsageBytes": 28594176
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:10.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 303841000,
+                "memoryUsageBytes": 28606464
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:11.570Z"
+          }
+        ],
+        "counts": {
+          "successful": 27,
+          "error": 0,
+          "missing": 4,
+          "expected": 31
+        },
+        "errors": [],
+        "coverage": 0.8709677419354839,
+        "sufficient": false
+      },
+      "backend-1": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:41.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 9651031000,
+                "memoryUsageBytes": 77885440
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:42.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 9731874000,
+                "memoryUsageBytes": 78376960
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:43.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 9894352000,
+                "memoryUsageBytes": 78430208
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:44.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 9986560000,
+                "memoryUsageBytes": 80125952
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:45.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10111783000,
+                "memoryUsageBytes": 85635072
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:46.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10365749000,
+                "memoryUsageBytes": 90882048
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:37:47.570Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:48.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10525563000,
+                "memoryUsageBytes": 92532736
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:49.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10706354000,
+                "memoryUsageBytes": 92803072
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:50.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10792736000,
+                "memoryUsageBytes": 93097984
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:51.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10822086000,
+                "memoryUsageBytes": 92893184
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:52.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10897057000,
+                "memoryUsageBytes": 93282304
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:53.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 10939278000,
+                "memoryUsageBytes": 95383552
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:54.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11034860000,
+                "memoryUsageBytes": 95096832
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:55.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11067289000,
+                "memoryUsageBytes": 94998528
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:56.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11137367000,
+                "memoryUsageBytes": 94834688
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:57.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11253932000,
+                "memoryUsageBytes": 95940608
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:58.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11288410000,
+                "memoryUsageBytes": 94588928
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:59.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11319768000,
+                "memoryUsageBytes": 94449664
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:00.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11428151000,
+                "memoryUsageBytes": 94633984
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:01.570Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:02.570Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:03.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11600194000,
+                "memoryUsageBytes": 95113216
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:04.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11612532000,
+                "memoryUsageBytes": 94310400
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:05.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11632360000,
+                "memoryUsageBytes": 95182848
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:06.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11695203000,
+                "memoryUsageBytes": 94932992
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:07.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11742707000,
+                "memoryUsageBytes": 94945280
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:08.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11792195000,
+                "memoryUsageBytes": 94965760
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:09.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11840365000,
+                "memoryUsageBytes": 95088640
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:10.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 11865705000,
+                "memoryUsageBytes": 95182848
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:11.570Z"
+          }
+        ],
+        "counts": {
+          "successful": 27,
+          "error": 0,
+          "missing": 4,
+          "expected": 31
+        },
+        "errors": [],
+        "coverage": 0.8709677419354839,
+        "sufficient": false
+      },
+      "runner": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:41.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 732355000,
+                "memoryUsageBytes": 8237056
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:42.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 901025000,
+                "memoryUsageBytes": 35454976
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:43.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 909163000,
+                "memoryUsageBytes": 34902016
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:44.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 918350000,
+                "memoryUsageBytes": 35094528
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:45.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 928141000,
+                "memoryUsageBytes": 35434496
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:46.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 947704000,
+                "memoryUsageBytes": 36007936
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:37:47.570Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:48.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 961491000,
+                "memoryUsageBytes": 37126144
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:49.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 987656000,
+                "memoryUsageBytes": 34197504
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:50.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1019617000,
+                "memoryUsageBytes": 33185792
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:51.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1023815000,
+                "memoryUsageBytes": 33386496
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:52.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1027373000,
+                "memoryUsageBytes": 33398784
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:53.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1031166000,
+                "memoryUsageBytes": 33660928
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:54.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1035447000,
+                "memoryUsageBytes": 33476608
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:55.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1040019000,
+                "memoryUsageBytes": 33636352
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:56.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1044842000,
+                "memoryUsageBytes": 34209792
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:57.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1050749000,
+                "memoryUsageBytes": 34480128
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:58.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1054312000,
+                "memoryUsageBytes": 34582528
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:37:59.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1059422000,
+                "memoryUsageBytes": 34238464
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:00.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1082840000,
+                "memoryUsageBytes": 35217408
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:01.570Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:02.570Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:03.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1093179000,
+                "memoryUsageBytes": 34529280
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:04.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1094913000,
+                "memoryUsageBytes": 34787328
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:05.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1100401000,
+                "memoryUsageBytes": 34791424
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:06.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1106992000,
+                "memoryUsageBytes": 34758656
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:07.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1111936000,
+                "memoryUsageBytes": 35328000
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:08.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1116231000,
+                "memoryUsageBytes": 35069952
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:09.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1119775000,
+                "memoryUsageBytes": 35594240
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:38:10.570Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1124394000,
+                "memoryUsageBytes": 36118528
+              },
+              "source": "k4-observer:issue86-single-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:38:11.570Z"
+          }
+        ],
+        "counts": {
+          "successful": 27,
+          "error": 0,
+          "missing": 4,
+          "expected": 31
+        },
+        "errors": [],
+        "coverage": 0.8709677419354839,
+        "sufficient": false
+      }
+    },
+    "qualificationFlags": [
+      "OBSERVATION_INCOMPLETE"
+    ]
+  },
+  "histogramEvidence": {
+    "label": "histogram-derived",
+    "source": "per-replica",
+    "resolvedBackendReplicas": [
+      "backend-1"
+    ],
+    "perReplica": {
+      "backend-1": {
+        "buckets": [
+          {
+            "le": "0.001",
+            "count": 0
+          },
+          {
+            "le": "0.005",
+            "count": 0
+          },
+          {
+            "le": "0.01",
+            "count": 0
+          },
+          {
+            "le": "0.025",
+            "count": 0
+          },
+          {
+            "le": "0.05",
+            "count": 0
+          },
+          {
+            "le": "0.1",
+            "count": 0
+          },
+          {
+            "le": "0.25",
+            "count": 0
+          },
+          {
+            "le": "0.5",
+            "count": 0
+          },
+          {
+            "le": "1",
+            "count": 0
+          },
+          {
+            "le": "2.5",
+            "count": 0
+          },
+          {
+            "le": "5",
+            "count": 0
+          },
+          {
+            "le": "10",
+            "count": 0
+          },
+          {
+            "le": "+Inf",
+            "count": 0
+          }
+        ],
+        "count": 0,
+        "sum": 0
+      }
+    },
+    "aggregate": {
+      "buckets": [
+        {
+          "le": "0.001",
+          "count": 0
+        },
+        {
+          "le": "0.005",
+          "count": 0
+        },
+        {
+          "le": "0.01",
+          "count": 0
+        },
+        {
+          "le": "0.025",
+          "count": 0
+        },
+        {
+          "le": "0.05",
+          "count": 0
+        },
+        {
+          "le": "0.1",
+          "count": 0
+        },
+        {
+          "le": "0.25",
+          "count": 0
+        },
+        {
+          "le": "0.5",
+          "count": 0
+        },
+        {
+          "le": "1",
+          "count": 0
+        },
+        {
+          "le": "2.5",
+          "count": 0
+        },
+        {
+          "le": "5",
+          "count": 0
+        },
+        {
+          "le": "10",
+          "count": 0
+        },
+        {
+          "le": "+Inf",
+          "count": 0
+        }
+      ],
+      "count": 0,
+      "sum": 0
+    }
+  },
+  "loadGeneratorEvidence": {
+    "limited": false,
+    "reason": "NO_REQUESTED_LOAD_SHORTFALL"
+  },
+  "qualificationFlags": [
+    "TOPOLOGY_NOT_EXERCISED",
+    "OBSERVATION_INCOMPLETE"
+  ],
+  "claimEligibility": {
+    "persistenceHistogramDerivedLatency": {
+      "eligible": true
+    },
+    "endToEndDelivery": {
+      "eligible": false
+    },
+    "targetConcurrency": {
+      "eligible": false
+    },
+    "multiReplica": {
+      "eligible": false
+    },
+    "crossReplica": {
+      "eligible": false
+    },
+    "cpu": {
+      "eligible": false
+    },
+    "memory": {
+      "eligible": false
+    },
+    "bottleneckSutCeiling": {
+      "eligible": false
+    }
+  },
+  "lockedClaimTypes": [
+    "persistenceHistogramDerivedLatency",
+    "endToEndDelivery",
+    "targetConcurrency",
+    "multiReplica",
+    "crossReplica",
+    "cpu",
+    "memory",
+    "bottleneckSutCeiling"
+  ]
+}

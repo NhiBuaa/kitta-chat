@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "run_id": "issue86-r2-attribution-20260816",
+  "observed_at": "2026-08-16T03:48:52.8010757Z",
+  "executor": "Codex manual-acceptance",
+  "guide_revision": "k4-issue-86-r2",
+  "test_results": [
+    {
+      "id": "TC-86-01",
+      "outcome": "PASS",
+      "observation": "Fresh single- and multi-replica sidebar:2 runs used the approved GET /api/sidebar/conversations workload with page pagination, open-loop rate 2/s, 10-second warm-up, 30-second measurement, one authenticated actor, and runner target http://nginx. Each run retained 20 warm-up successes and 60 measurement opportunities (40 HTTP 200 and 20 HTTP 429 outcomes); measurement-bound nginx attribution records covered all 60 request IDs. Derived output uses the existing attribution evidence and adds no per-request contract.",
+      "evidence": [
+        ".k4-results/issue86-single-r2-attribution2-20260816/manifest.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/warm-up-runner.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-runner.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-observation-final.raw.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/manifest.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/warm-up-runner.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-runner.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-observation-final.raw.json",
+        "node --test scripts/test/k4/*.test.cjs -> 129/129 pass",
+        "secret scan over fresh .k4-acceptance/.k4-results artifacts -> SECRET_SCAN_CLEAR"
+      ]
+    },
+    {
+      "id": "TC-86-02",
+      "outcome": "PASS",
+      "observation": "The explicit comparison matrix is EQUIVALENT with nonTopologyDrift=[] after normalizing only run identity fields (runId, projectName, resultDirectory, ownership run label). Commit SHA, complete test-machine hardware, declared/observed dataset identity and size, byte-equivalent workload representation and digest, image set, nginx configuration, runner placement, dependencies, phase settings, actor allocation, request/pagination fields, load model, and all other non-topology configuration are equivalent. Only topology selector, replica count, and upstream membership differ.",
+      "evidence": [
+        ".k4-acceptance/issue86-r2-attribution-20260816/comparison-matrix.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/manifest.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/manifest.json",
+        "matrix derivation -> status=EQUIVALENT, nonTopologyDrift=[]"
+      ]
+    },
+    {
+      "id": "TC-86-03",
+      "outcome": "PASS",
+      "observation": "Complete measurement-bound attribution qualifies the multi-replica run across backend-1, backend-2, and backend-3 (60 supporting records, no truncation, rotation gap, or parser diagnostics), with claimEvidence.multiReplica=true and claimEligibility.multiReplica.eligible=true. The paired single run has complete attribution to exactly backend-1 and the existing TOPOLOGY_NOT_EXERCISED flag; no new zero-replica taxonomy was introduced. The existing complete-zero observation semantics remain covered by the attribution seam: complete=true, claimEligible=false, and TOPOLOGY_NOT_EXERCISED absent.",
+      "evidence": [
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-observation-final.raw.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-observation.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-observation-final.raw.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-observation.json",
+        "node --test scripts/test/k4/measurementAttribution.test.cjs -> complete-zero and one-replica semantics pass",
+        "node --test scripts/test/k4/productionMeasurementObservation.test.cjs -> 6/6 pass"
+      ]
+    },
+    {
+      "id": "TC-86-04",
+      "outcome": "PASS",
+      "observation": "Both runs retain raw warm-up and measurement phase evidence, measurement windows, every opportunity, HTTP success/error partition, observation raw/final artifacts, and parent status axes. Result inventories contain only the parent manifest/source inventory/bundle inventory/completion marker plus raw runner/observation artifacts; no scenario-owned report or duplicate provenance format was created. Both completion markers report artifact_status=COMPLETED and execution_outcome=MEASURED.",
+      "evidence": [
+        ".k4-results/issue86-single-r2-attribution2-20260816/warm-up-runner.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/measurement-runner.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/source-inventory.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/bundle-inventory.json",
+        ".k4-results/issue86-single-r2-attribution2-20260816/COMPLETED",
+        ".k4-results/issue86-multi-r2-attribution-20260816/warm-up-runner.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/measurement-runner.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/source-inventory.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/bundle-inventory.json",
+        ".k4-results/issue86-multi-r2-attribution-20260816/COMPLETED",
+        "cleanup-preview for both run IDs -> containers/networks/volumes/resultDirectory=[]"
+      ]
+    }
+  ],
+  "verdict": "BLOCKED",
+  "human_approval": "pending",
+  "notes": "All four required test cases observed PASS. The Evaluation remains BLOCKED pending explicit human approval of this final observed result; no Issue #86 acceptance or publication is claimed. Prior r2 Evaluation remains unchanged and append-only."
+}

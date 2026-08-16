@@ -1,0 +1,1854 @@
+{
+  "resourceEvidence": {
+    "measurementWindow": {
+      "start": "2026-08-14T04:40:35.138Z",
+      "end": "2026-08-14T04:41:08.315Z",
+      "boundary": "[measurement_start, measurement_end)"
+    },
+    "intervalMs": 1000,
+    "expectedCount": 34,
+    "requiredContainers": [
+      "nginx",
+      "backend-1",
+      "backend-2",
+      "backend-3",
+      "runner"
+    ],
+    "byContainer": {
+      "nginx": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 159702000,
+                "memoryUsageBytes": 27553792
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 163010000,
+                "memoryUsageBytes": 27598848
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:37.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 171156000,
+                "memoryUsageBytes": 28327936
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:39.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 189501000,
+                "memoryUsageBytes": 28209152
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 192899000,
+                "memoryUsageBytes": 27308032
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 194833000,
+                "memoryUsageBytes": 27938816
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 201410000,
+                "memoryUsageBytes": 27951104
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 204485000,
+                "memoryUsageBytes": 28581888
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 206867000,
+                "memoryUsageBytes": 28311552
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 209976000,
+                "memoryUsageBytes": 28237824
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:47.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 213052000,
+                "memoryUsageBytes": 27832320
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:49.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 215858000,
+                "memoryUsageBytes": 27971584
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 223568000,
+                "memoryUsageBytes": 27623424
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:52.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:53.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 227974000,
+                "memoryUsageBytes": 27860992
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:55.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 233948000,
+                "memoryUsageBytes": 27840512
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:57.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 236857000,
+                "memoryUsageBytes": 28495872
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 238797000,
+                "memoryUsageBytes": 28241920
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 243607000,
+                "memoryUsageBytes": 28749824
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 247294000,
+                "memoryUsageBytes": 27701248
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 258808000,
+                "memoryUsageBytes": 28233728
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:03.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:04.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:05.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:06.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:07.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:08.138Z"
+          }
+        ],
+        "counts": {
+          "successful": 20,
+          "error": 0,
+          "missing": 14,
+          "expected": 34
+        },
+        "errors": [],
+        "coverage": 0.5882352941176471,
+        "sufficient": false
+      },
+      "backend-1": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6477081000,
+                "memoryUsageBytes": 67833856
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6686124000,
+                "memoryUsageBytes": 68882432
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:37.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6757462000,
+                "memoryUsageBytes": 68812800
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:39.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6848630000,
+                "memoryUsageBytes": 68370432
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6920718000,
+                "memoryUsageBytes": 71655424
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6982720000,
+                "memoryUsageBytes": 72187904
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6986857000,
+                "memoryUsageBytes": 72024064
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6989527000,
+                "memoryUsageBytes": 71716864
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 6995116000,
+                "memoryUsageBytes": 72130560
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7000566000,
+                "memoryUsageBytes": 71782400
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:47.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7134155000,
+                "memoryUsageBytes": 76238848
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:49.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7167829000,
+                "memoryUsageBytes": 76201984
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7396991000,
+                "memoryUsageBytes": 77201408
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:52.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:53.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7414177000,
+                "memoryUsageBytes": 76279808
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:55.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7486480000,
+                "memoryUsageBytes": 77451264
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:57.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7502726000,
+                "memoryUsageBytes": 76812288
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7592429000,
+                "memoryUsageBytes": 76947456
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7663212000,
+                "memoryUsageBytes": 77389824
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7673589000,
+                "memoryUsageBytes": 77017088
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 7683450000,
+                "memoryUsageBytes": 77299712
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:03.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:04.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:05.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:06.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:07.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:08.138Z"
+          }
+        ],
+        "counts": {
+          "successful": 20,
+          "error": 0,
+          "missing": 14,
+          "expected": 34
+        },
+        "errors": [],
+        "coverage": 0.5882352941176471,
+        "sufficient": false
+      },
+      "backend-2": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3040031000,
+                "memoryUsageBytes": 61485056
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3047432000,
+                "memoryUsageBytes": 61964288
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:37.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3398106000,
+                "memoryUsageBytes": 63516672
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:39.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3465771000,
+                "memoryUsageBytes": 64700416
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3468912000,
+                "memoryUsageBytes": 63754240
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3522815000,
+                "memoryUsageBytes": 64950272
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3730296000,
+                "memoryUsageBytes": 66641920
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3732507000,
+                "memoryUsageBytes": 66170880
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3816142000,
+                "memoryUsageBytes": 69574656
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4093909000,
+                "memoryUsageBytes": 70774784
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:47.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4152989000,
+                "memoryUsageBytes": 69238784
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:49.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4252059000,
+                "memoryUsageBytes": 69877760
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4337539000,
+                "memoryUsageBytes": 69226496
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:52.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:53.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4410816000,
+                "memoryUsageBytes": 71168000
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:55.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4504291000,
+                "memoryUsageBytes": 72593408
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:57.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4743142000,
+                "memoryUsageBytes": 76300288
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4744563000,
+                "memoryUsageBytes": 75415552
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4772330000,
+                "memoryUsageBytes": 75468800
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4790026000,
+                "memoryUsageBytes": 75710464
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4894886000,
+                "memoryUsageBytes": 75661312
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:03.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:04.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:05.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:06.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:07.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:08.138Z"
+          }
+        ],
+        "counts": {
+          "successful": 20,
+          "error": 0,
+          "missing": 14,
+          "expected": 34
+        },
+        "errors": [],
+        "coverage": 0.5882352941176471,
+        "sufficient": false
+      },
+      "backend-3": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3636392000,
+                "memoryUsageBytes": 66625536
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3695961000,
+                "memoryUsageBytes": 67473408
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:37.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3808626000,
+                "memoryUsageBytes": 70365184
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:39.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 3910406000,
+                "memoryUsageBytes": 67559424
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4024231000,
+                "memoryUsageBytes": 67616768
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4027063000,
+                "memoryUsageBytes": 67182592
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4031090000,
+                "memoryUsageBytes": 67198976
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4162013000,
+                "memoryUsageBytes": 68308992
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4199359000,
+                "memoryUsageBytes": 68382720
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4306017000,
+                "memoryUsageBytes": 68562944
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:47.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4329220000,
+                "memoryUsageBytes": 68427776
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:49.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4414858000,
+                "memoryUsageBytes": 70017024
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4441096000,
+                "memoryUsageBytes": 68853760
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:52.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:53.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4454820000,
+                "memoryUsageBytes": 68956160
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:55.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4460078000,
+                "memoryUsageBytes": 68767744
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:57.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4466456000,
+                "memoryUsageBytes": 68767744
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4503590000,
+                "memoryUsageBytes": 70066176
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4524268000,
+                "memoryUsageBytes": 69447680
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4593484000,
+                "memoryUsageBytes": 69832704
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 4733213000,
+                "memoryUsageBytes": 70795264
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:03.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:04.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:05.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:06.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:07.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:08.138Z"
+          }
+        ],
+        "counts": {
+          "successful": 20,
+          "error": 0,
+          "missing": 14,
+          "expected": 34
+        },
+        "errors": [],
+        "coverage": 0.5882352941176471,
+        "sufficient": false
+      },
+      "runner": {
+        "slots": [
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:35.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 769679000,
+                "memoryUsageBytes": 7766016
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:36.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1327095000,
+                "memoryUsageBytes": 24539136
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:37.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:38.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1351298000,
+                "memoryUsageBytes": 25198592
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:39.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:40.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1367327000,
+                "memoryUsageBytes": 25731072
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:41.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1373391000,
+                "memoryUsageBytes": 26202112
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:42.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1387651000,
+                "memoryUsageBytes": 26640384
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:43.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1394363000,
+                "memoryUsageBytes": 27164672
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:44.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1438868000,
+                "memoryUsageBytes": 23900160
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:45.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1447834000,
+                "memoryUsageBytes": 23941120
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:46.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1461844000,
+                "memoryUsageBytes": 24068096
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:47.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:48.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1473580000,
+                "memoryUsageBytes": 23830528
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:49.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:50.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1484913000,
+                "memoryUsageBytes": 24576000
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:51.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1496231000,
+                "memoryUsageBytes": 24936448
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:52.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:53.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:54.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1512967000,
+                "memoryUsageBytes": 25620480
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:55.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:56.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1532750000,
+                "memoryUsageBytes": 25141248
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:40:57.138Z"
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:58.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1538804000,
+                "memoryUsageBytes": 25157632
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:40:59.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1545280000,
+                "memoryUsageBytes": 25448448
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:00.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1556922000,
+                "memoryUsageBytes": 26050560
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:01.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1560977000,
+                "memoryUsageBytes": 25763840
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "success",
+            "raw": {
+              "timestamp": "2026-08-14T04:41:02.138Z",
+              "status": "success",
+              "sample": {
+                "cpuUsageTotal": 1610031000,
+                "memoryUsageBytes": 26329088
+              },
+              "source": "k4-observer:issue86-multi-raw-20260814"
+            }
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:03.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:04.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:05.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:06.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:07.138Z"
+          },
+          {
+            "status": "missing",
+            "slotStart": "2026-08-14T04:41:08.138Z"
+          }
+        ],
+        "counts": {
+          "successful": 20,
+          "error": 0,
+          "missing": 14,
+          "expected": 34
+        },
+        "errors": [],
+        "coverage": 0.5882352941176471,
+        "sufficient": false
+      }
+    },
+    "qualificationFlags": [
+      "OBSERVATION_INCOMPLETE"
+    ]
+  },
+  "histogramEvidence": {
+    "label": "histogram-derived",
+    "source": "per-replica",
+    "resolvedBackendReplicas": [
+      "backend-1",
+      "backend-2",
+      "backend-3"
+    ],
+    "perReplica": {
+      "backend-1": {
+        "buckets": [
+          {
+            "le": "0.001",
+            "count": 0
+          },
+          {
+            "le": "0.005",
+            "count": 0
+          },
+          {
+            "le": "0.01",
+            "count": 0
+          },
+          {
+            "le": "0.025",
+            "count": 0
+          },
+          {
+            "le": "0.05",
+            "count": 0
+          },
+          {
+            "le": "0.1",
+            "count": 0
+          },
+          {
+            "le": "0.25",
+            "count": 0
+          },
+          {
+            "le": "0.5",
+            "count": 0
+          },
+          {
+            "le": "1",
+            "count": 0
+          },
+          {
+            "le": "2.5",
+            "count": 0
+          },
+          {
+            "le": "5",
+            "count": 0
+          },
+          {
+            "le": "10",
+            "count": 0
+          },
+          {
+            "le": "+Inf",
+            "count": 0
+          }
+        ],
+        "count": 0,
+        "sum": 0
+      },
+      "backend-2": {
+        "buckets": [
+          {
+            "le": "0.001",
+            "count": 0
+          },
+          {
+            "le": "0.005",
+            "count": 0
+          },
+          {
+            "le": "0.01",
+            "count": 0
+          },
+          {
+            "le": "0.025",
+            "count": 0
+          },
+          {
+            "le": "0.05",
+            "count": 0
+          },
+          {
+            "le": "0.1",
+            "count": 0
+          },
+          {
+            "le": "0.25",
+            "count": 0
+          },
+          {
+            "le": "0.5",
+            "count": 0
+          },
+          {
+            "le": "1",
+            "count": 0
+          },
+          {
+            "le": "2.5",
+            "count": 0
+          },
+          {
+            "le": "5",
+            "count": 0
+          },
+          {
+            "le": "10",
+            "count": 0
+          },
+          {
+            "le": "+Inf",
+            "count": 0
+          }
+        ],
+        "count": 0,
+        "sum": 0
+      },
+      "backend-3": {
+        "buckets": [
+          {
+            "le": "0.001",
+            "count": 0
+          },
+          {
+            "le": "0.005",
+            "count": 0
+          },
+          {
+            "le": "0.01",
+            "count": 0
+          },
+          {
+            "le": "0.025",
+            "count": 0
+          },
+          {
+            "le": "0.05",
+            "count": 0
+          },
+          {
+            "le": "0.1",
+            "count": 0
+          },
+          {
+            "le": "0.25",
+            "count": 0
+          },
+          {
+            "le": "0.5",
+            "count": 0
+          },
+          {
+            "le": "1",
+            "count": 0
+          },
+          {
+            "le": "2.5",
+            "count": 0
+          },
+          {
+            "le": "5",
+            "count": 0
+          },
+          {
+            "le": "10",
+            "count": 0
+          },
+          {
+            "le": "+Inf",
+            "count": 0
+          }
+        ],
+        "count": 0,
+        "sum": 0
+      }
+    },
+    "aggregate": {
+      "buckets": [
+        {
+          "le": "0.001",
+          "count": 0
+        },
+        {
+          "le": "0.005",
+          "count": 0
+        },
+        {
+          "le": "0.01",
+          "count": 0
+        },
+        {
+          "le": "0.025",
+          "count": 0
+        },
+        {
+          "le": "0.05",
+          "count": 0
+        },
+        {
+          "le": "0.1",
+          "count": 0
+        },
+        {
+          "le": "0.25",
+          "count": 0
+        },
+        {
+          "le": "0.5",
+          "count": 0
+        },
+        {
+          "le": "1",
+          "count": 0
+        },
+        {
+          "le": "2.5",
+          "count": 0
+        },
+        {
+          "le": "5",
+          "count": 0
+        },
+        {
+          "le": "10",
+          "count": 0
+        },
+        {
+          "le": "+Inf",
+          "count": 0
+        }
+      ],
+      "count": 0,
+      "sum": 0
+    }
+  },
+  "loadGeneratorEvidence": {
+    "limited": false,
+    "reason": "NO_REQUESTED_LOAD_SHORTFALL"
+  },
+  "qualificationFlags": [
+    "OBSERVATION_INCOMPLETE"
+  ],
+  "claimEligibility": {
+    "persistenceHistogramDerivedLatency": {
+      "eligible": true
+    },
+    "endToEndDelivery": {
+      "eligible": false
+    },
+    "targetConcurrency": {
+      "eligible": false
+    },
+    "multiReplica": {
+      "eligible": true
+    },
+    "crossReplica": {
+      "eligible": false
+    },
+    "cpu": {
+      "eligible": false
+    },
+    "memory": {
+      "eligible": false
+    },
+    "bottleneckSutCeiling": {
+      "eligible": false
+    }
+  },
+  "lockedClaimTypes": [
+    "persistenceHistogramDerivedLatency",
+    "endToEndDelivery",
+    "targetConcurrency",
+    "multiReplica",
+    "crossReplica",
+    "cpu",
+    "memory",
+    "bottleneckSutCeiling"
+  ]
+}

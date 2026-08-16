@@ -6,12 +6,15 @@ function sha256(value) {
   return `sha256:${crypto.createHash("sha256").update(String(value)).digest("hex")}`;
 }
 
-function parseNginxRecords(body) {
+function parseNginxRecords(body, { includeRequestDetails = false } = {}) {
   const records = [];
   const diagnostics = [];
   for (const line of String(body || "").split(/\r?\n/).filter(Boolean)) {
-    const match = line.match(/upstream=([^ ]+) k4rid=([^ ]+)$/);
-    if (!match) { diagnostics.push({ kind: "unparsed", digest: sha256(line) }); continue; }
+    const match = line.match(/upstream=([^ ]+) k4rid=([^ ]+)\s*$/);
+    if (!match) {
+      if (line.includes("k4rid=")) diagnostics.push({ kind: "unparsed", digest: sha256(line) });
+      continue;
+    }
     const wrapperTimestamp = line.match(/^(\d{4}-\d{2}-\d{2}T[^ ]+)/)?.[1];
     const accessTimestamp = line.match(/\[([^\]]+)\]/)?.[1];
     let timestamp;
@@ -23,7 +26,18 @@ function parseNginxRecords(body) {
         if (month !== undefined && Number.isFinite(instant)) timestamp = new Date(instant).toISOString();
       }
     }
-    if (match[2] !== "-") records.push({ upstreamAddr: match[1], requestId: match[2], ...(timestamp ? { timestamp } : {}), ...(wrapperTimestamp ? { wrapperTimestamp } : {}) });
+    if (match[2] !== "-") {
+      const record = { upstreamAddr: match[1], requestId: match[2], ...(timestamp ? { timestamp } : {}), ...(wrapperTimestamp ? { wrapperTimestamp } : {}) };
+      if (includeRequestDetails) {
+        const request = line.match(/"([A-Z]+) ([^ ]+) HTTP\/[^"]+"\s+(\d{3})\s+/);
+        if (request) {
+          record.method = request[1];
+          record.path = request[2].split("?", 1)[0];
+          record.status = Number(request[3]);
+        } else diagnostics.push({ kind: "malformed-request-line", digest: sha256(line) });
+      }
+      records.push(record);
+    }
   }
   return { records, diagnostics };
 }

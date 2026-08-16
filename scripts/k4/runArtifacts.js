@@ -1,3 +1,4 @@
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const {
@@ -11,6 +12,7 @@ const {
 
 const BUNDLE_INVENTORY_FILE = "bundle-inventory.json";
 const COMPLETED_MARKER_FILE = "COMPLETED";
+const COMPLETION_MARKER_FILE = COMPLETED_MARKER_FILE;
 const INCOMPLETE_STATUS = "INCOMPLETE";
 const COMPLETED_STATUS = "COMPLETED";
 const EXECUTION_OUTCOMES = Object.freeze(["MEASURED", "NOT_RUN", "FAILED_SETUP"]);
@@ -127,6 +129,236 @@ function validateRunArtifacts({ resultDirectory, expectedRunId, markerPath = COM
     claimEligibility: claims.claimEligibility,
     source,
     bundle,
+};
+}
+
+const REQUIRED_MACHINE_FIELDS = Object.freeze(["hostname", "cpuModel", "logicalProcessors", "memoryBytes"]);
+
+function stable(value) {
+  if (Array.isArray(value)) return value.map(stable);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])]));
+}
+
+function sha256(value) {
+  return `sha256:${crypto.createHash("sha256").update(value).digest("hex")}`;
+}
+
+function jsonBytes(value) {
+  return Buffer.from(`${JSON.stringify(stable(value), null, 2)}\n`, "utf8");
+}
+
+function sanitize(value, key = "") {
+  if (/(?:secret|password|token|authorization|cookie)/i.test(key)) return undefined;
+  if (Array.isArray(value)) return value.map((child) => sanitize(child));
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value)
+    .map(([childKey, child]) => [childKey, sanitize(child, childKey)])
+    .filter(([, child]) => child !== undefined));
+}
+
+function writeImmutable(directory, name, value) {
+  const bytes = jsonBytes(value);
+  fs.writeFileSync(path.join(directory, name), bytes, { flag: "wx" });
+  return bytes;
+}
+
+function machineHardware(explicit = {}) {
+  const supplied = explicit && typeof explicit === "object" ? { ...explicit } : {};
+  const unresolved = REQUIRED_MACHINE_FIELDS.filter((field) => supplied[field] === undefined || supplied[field] === null || supplied[field] === "");
+  return {
+    ...supplied,
+    evidenceStatus: unresolved.length ? "INCOMPLETE" : "COMPLETE",
+    unresolved,
+  };
+}
+
+function commitShaEvidence(plan, metadata = {}) {
+  const candidate = metadata.commitSha ?? plan.commitSha;
+  return /^[0-9a-f]{40}$/i.test(String(candidate || "")) ? String(candidate) : "unresolved";
+}
+
+function provenanceEvidence(commitSha, testMachine) {
+  const unresolved = [];
+  if (commitSha === "unresolved") unresolved.push("commitSha");
+  if (testMachine.evidenceStatus !== "COMPLETE") unresolved.push("testMachine");
+  return {
+    status: unresolved.length ? "INCOMPLETE" : "COMPLETE",
+    unresolved,
+  };
+}
+
+function runnerLimitsFromResult(result, directory) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(path.join(directory, "measurement-observation-final.raw.json"), "utf8"));
+    const runner = raw.loadGenerator?.runner;
+    if (!runner) return undefined;
+    return {
+      cgroupVersion: runner.cgroupVersion,
+      sourcePaths: runner.sourcePaths,
+      limits: runner.limits,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function totalCardinality(cardinalities) {
+  if (!cardinalities || typeof cardinalities !== "object") return undefined;
+  return Object.values(cardinalities).reduce((sum, count) => sum + (Number.isFinite(count) ? count : 0), 0);
+}
+
+function datasetEvidence(plan, result, metadata = {}) {
+  const setup = result.phases?.["setup/seed"]?.output?.setupPreflight;
+  const supplied = metadata.dataset || setup?.dataset || {};
+  const observed = supplied.observed || supplied;
+  const declared = supplied.declared;
+  const cardinalities = supplied.size?.cardinalities || observed.cardinalities || declared?.cardinalities;
+  const identity = supplied.identity || observed.fingerprint || declared?.fingerprint || plan.workload?.datasetIdentity;
+  return sanitize({
+    identity: identity || "unresolved",
+    fingerprint: observed.fingerprint || identity || "unresolved",
+    size: {
+      cardinalities: cardinalities || null,
+      totalDocuments: supplied.size?.totalDocuments ?? totalCardinality(cardinalities),
+    },
+    declared: declared || null,
+    observed: supplied.observed || (Object.keys(observed).length ? observed : null),
+  });
+}
+
+function workloadEvidence(plan) {
+  const workload = plan.workload || {};
+  return sanitize({
+    scenario: workload.scenario,
+    version: workload.version,
+    digest: workload.digest || workload.profileDigest,
+    snapshot: workload.snapshot || null,
+    representation: workload.representation || null,
+  });
+}
+
+function topologyEvidence(plan) {
+  const topology = plan.topology || {};
+  return {
+    profile: topology.profile || plan.profile,
+    backendReplicaCount: topology.backendReplicaCount ?? plan.backendReplicaCount,
+    backendUpstreamMembership: topology.backendUpstreamMembership || plan.backendUpstreamMembership || [],
+  };
+}
+
+function configurationEvidence(plan, metadata = {}) {
+  return sanitize({
+    projectName: plan.projectName,
+    composeFile: plan.composeFile,
+    profile: plan.profile,
+    phaseSettings: plan.phaseSettings,
+    nginx: plan.nginx,
+    backend: plan.backend,
+    dependencies: plan.dependencies,
+    runner: plan.runner,
+    resourceAllocation: plan.resourceAllocation,
+    networkIngress: plan.networkIngress,
+    imageSet: metadata.imageSet || plan.imageSet,
+  });
+}
+
+function statusAxes(result) {
+  const phases = result.phases || {};
+  const measurementStarted = phases.measurement?.started === true;
+  const measurementCompleted = phases.measurement?.completed === true;
+  const artifactStatus = !result.failure && phases.teardown?.completed !== false ? "COMPLETED" : "INCOMPLETE";
+  return {
+    artifact_status: artifactStatus,
+    execution_outcome: measurementCompleted || measurementStarted ? "MEASURED" : "FAILED_SETUP",
+    qualification_flags: [...new Set(result.qualificationFlags || [])],
+  };
+}
+
+function createRunManifest({ plan, result, metadata = {} }) {
+  const status = statusAxes(result);
+  const runnerLimits = metadata.runnerLimits || (plan.resultDirectory && runnerLimitsFromResult(result, plan.resultDirectory));
+  const commitSha = commitShaEvidence(plan, metadata);
+  const testMachine = machineHardware({ ...metadata.hardware, ...(runnerLimits ? { runnerLimits } : {}) });
+  return {
+    schema: "k4-run-manifest-v1",
+    runId: plan.runId,
+    plan: sanitize(plan),
+    commitSha,
+    testMachine: sanitize(testMachine),
+    provenance: provenanceEvidence(commitSha, testMachine),
+    workload: workloadEvidence(plan),
+    topology: topologyEvidence(plan),
+    dataset: datasetEvidence(plan, result, metadata),
+    configuration: configurationEvidence(plan, metadata),
+    ...status,
+  };
+}
+
+function walkFiles(directory, current = directory) {
+  return fs.readdirSync(current, { withFileTypes: true }).flatMap((entry) => {
+    const absolute = path.join(current, entry.name);
+    return entry.isDirectory() ? walkFiles(directory, absolute) : [absolute];
+  });
+}
+
+function artifactType(relativePath) {
+  if (relativePath === "manifest.json") return "manifest";
+  if (relativePath.endsWith(".raw.json") || relativePath.includes("runner.json")) return "raw";
+  return "derived";
+}
+
+function sourceEntries(directory) {
+  return walkFiles(directory)
+    .map((absolutePath) => ({ absolutePath, relativePath: path.relative(directory, absolutePath).replaceAll("\\", "/") }))
+    .filter(({ relativePath }) => ![SOURCE_INVENTORY_FILE, BUNDLE_INVENTORY_FILE, COMPLETION_MARKER_FILE].includes(relativePath))
+    .sort((left, right) => left.relativePath.localeCompare(right.relativePath))
+    .map(({ absolutePath, relativePath }) => {
+      const bytes = fs.readFileSync(absolutePath);
+      return { path: relativePath, type: artifactType(relativePath), bytes: bytes.length, sha256: sha256(bytes) };
+    });
+}
+
+function finalizeRunArtifacts({ plan, result, metadata = {} }) {
+  if (!plan.resultDirectory) return null;
+  fs.mkdirSync(plan.resultDirectory, { recursive: true });
+  const manifest = createRunManifest({ plan, result, metadata });
+  writeImmutable(plan.resultDirectory, "manifest.json", manifest);
+
+  const sourceInventory = {
+    schema: "k4-source-inventory-v1",
+    runId: plan.runId,
+    entries: sourceEntries(plan.resultDirectory),
+  };
+  const sourceBytes = writeImmutable(plan.resultDirectory, SOURCE_INVENTORY_FILE, sourceInventory);
+  const sourceDigest = sha256(sourceBytes);
+
+  const bundleInventory = {
+    schema: "k4-bundle-inventory-v1",
+    runId: plan.runId,
+    source_inventory_sha256: sourceDigest,
+    entries: [
+      { path: SOURCE_INVENTORY_FILE, type: "source-inventory", bytes: sourceBytes.length, sha256: sourceDigest },
+      ...sourceInventory.entries,
+    ],
+  };
+  const bundleBytes = writeImmutable(plan.resultDirectory, BUNDLE_INVENTORY_FILE, bundleInventory);
+  const bundleDigest = sha256(bundleBytes);
+  const axes = statusAxes(result);
+  writeImmutable(plan.resultDirectory, COMPLETION_MARKER_FILE, {
+    schema: "k4-completion-marker-v1",
+    runId: plan.runId,
+    ...axes,
+    source_inventory_sha256: sourceDigest,
+    bundle_inventory_sha256: bundleDigest,
+  });
+  return {
+    manifestPath: "manifest.json",
+    sourceInventoryPath: SOURCE_INVENTORY_FILE,
+    bundleInventoryPath: BUNDLE_INVENTORY_FILE,
+    completionMarkerPath: COMPLETION_MARKER_FILE,
+    sourceInventorySha256: sourceDigest,
+    bundleInventorySha256: bundleDigest,
   };
 }
 
@@ -140,4 +372,11 @@ module.exports = {
   finalizeRun,
   validateRunArtifacts,
   verifyBundle,
+  COMPLETION_MARKER_FILE,
+  SOURCE_INVENTORY_FILE,
+  createRunManifest,
+  finalizeRunArtifacts,
+  machineHardware,
+  sanitize,
+  statusAxes,
 };

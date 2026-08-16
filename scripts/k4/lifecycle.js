@@ -579,7 +579,7 @@ function cleanup(runId, digest, options = {}) {
   for (const target of preview.targets.networks) docker(["network", "rm", target.id], options);
   for (const target of preview.targets.volumes) docker(["volume", "rm", target.id], options);
   const resultDirectory = preview.targets.resultDirectory[0]?.path;
-  if (resultDirectory && resultDirectoryIsOwned(resultDirectory, preview.runId)) fs.rmSync(resultDirectory, { recursive: true, force: false });
+  if (!options.preserveResultDirectory && resultDirectory && resultDirectoryIsOwned(resultDirectory, preview.runId)) fs.rmSync(resultDirectory, { recursive: true, force: false });
   return preview;
 }
 

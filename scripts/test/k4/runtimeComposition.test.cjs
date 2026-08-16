@@ -7,6 +7,7 @@ const {
   createRuntimeComposition,
   executeRunnerWorkload,
   runnerPhaseArgs,
+  teardownOwnedRun,
 } = require("../../k4/runtimeComposition");
 
 function plan(scenario = "sidebar") {
@@ -94,6 +95,41 @@ test("production composition scopes secrets in memory and drives the approved li
   for (const entry of trace.filter((item) => item[0] === "warm-up" || item[0] === "measurement")) {
     assert.equal(entry[1], "http://nginx");
   }
+});
+
+test("production entry forwards explicit non-secret test-machine provenance metadata", async () => {
+  let received;
+  const runtime = createRuntimeComposition({
+    executeRunFn: async (_plan, options) => {
+      received = options.artifactMetadata;
+      return { executionOutcome: "COMPLETED" };
+    },
+    environment: {
+      K4_IMAGE_SET_ID: "fixed-images",
+      K4_COMMIT_SHA: "0123456789abcdef0123456789abcdef01234567",
+      K4_BENCHMARK_PASSWORD: "memory-only-password",
+      K4_TEST_MACHINE_HOSTNAME: "machine-86",
+      K4_TEST_MACHINE_CPU_MODEL: "CPU-86",
+      K4_TEST_MACHINE_LOGICAL_PROCESSORS: "12",
+      K4_TEST_MACHINE_MEMORY_BYTES: "16438382592",
+    },
+    setupPreflight: async () => ({ warmupAdmission: "WARMUP_ADMITTED", benchmarkActors: {} }),
+    executeRunnerWorkload: async () => ({}),
+    teardownOwnedRun: async () => ({}),
+    observationFactory: () => ({}),
+    observerBridgeFactory: () => ({}),
+    observationSourcesFactory: () => ({}),
+  });
+
+  await runtime.executeProduction({ plan: plan() });
+
+  assert.deepEqual(received.hardware, {
+    hostname: "machine-86",
+    cpuModel: "CPU-86",
+    logicalProcessors: 12,
+    memoryBytes: 16438382592,
+  });
+  assert.equal(JSON.stringify(received).includes("memory-only-password"), false);
 });
 
 test("production composition fails closed and uses the registered ownership ledger for teardown", async () => {
@@ -234,6 +270,29 @@ test("production setup authenticates every v2 message actor through nginx", asyn
   });
   assert.deepEqual(requestedEmails, ["alice@kittachat.test", "bob@kittachat.test"]);
   assert.deepEqual(Object.keys(result.benchmarkActors), ["alice", "bob"]);
+  assert.equal(result.dataset.identity, result.dataset.observed.fingerprint);
+  assert.deepEqual(result.dataset.size.cardinalities, result.dataset.observed.cardinalities);
+});
+
+test("production setup retains observed dataset evidence when verification fails", async () => {
+  const { K4_DATASET_DECLARATION } = require("../../k4/preflight");
+  const observed = { ...K4_DATASET_DECLARATION, fingerprint: "sha256:observed-but-mismatched" };
+  const result = await require("../../k4/runtimeComposition").runApprovedSetupPreflight({
+    plan: plan("sidebar"),
+    environment: { K4_BENCHMARK_EMAIL: "alice@kittachat.test", K4_BENCHMARK_PASSWORD: "memory-only" },
+    dockerCommand: (args) => {
+      const command = args.join(" ");
+      if (command.includes("k4VerifyDataset")) return JSON.stringify(observed);
+      if (command.includes("api/auth/login")) return JSON.stringify({ token: "alice-token", user: { id: "alice-id" } });
+      return "socket-authenticated";
+    },
+  });
+
+  assert.equal(result.status, "FAILED_SETUP");
+  assert.equal(result.warmupAdmission, "NOT_ADMITTED");
+  assert.deepEqual(result.dataset.observed, observed);
+  assert.deepEqual(result.dataset.declared, K4_DATASET_DECLARATION);
+  assert.equal(result.dataset.identity, observed.fingerprint);
 });
 
 test("runner phase persists raw phase output while keeping secrets outside artifacts", async () => {
@@ -256,6 +315,19 @@ test("runner phase persists raw phase output while keeping secrets outside artif
   assert.match(written.artifactPath, /measurement-runner\.json$/);
   assert.doesNotMatch(written.content, /memory-only-token/);
   assert.equal(written.options.flag, "wx");
+});
+
+test("owned teardown releases runtime resources while retaining the result artifact directory", async () => {
+  let cleanupOptions;
+  const result = await teardownOwnedRun({
+    plan: plan(),
+    ownedResources: [{ class: "run", id: "runtime-composition" }],
+    environment: {},
+    cleanupPreviewFn: () => ({ digest: "cleanup-digest" }),
+    cleanupFn: (_runId, _digest, options) => { cleanupOptions = options; },
+  });
+  assert.deepEqual(result, { attempted: true, released: true, targetDigest: "cleanup-digest" });
+  assert.equal(cleanupOptions.preserveResultDirectory, true);
 });
 
 test("production composition rejects non-executable v1 before setup", async () => {

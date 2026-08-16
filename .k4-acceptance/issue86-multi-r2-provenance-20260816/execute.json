@@ -1,0 +1,3731 @@
+
+> k4
+> node scripts/k4/cli.js execute --run-id issue86-multi-r2-provenance-20260816 --profile multi-replica --scenario sidebar --workload-version 2 --image-set-id issue86-20260814 --observation-interval-ms 1000
+
+{
+  "status": "WARMUP_ADMITTED",
+  "phases": {
+    "setup/seed": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "resourcesCreated": true,
+        "setupPreflight": {
+          "status": "WARMUP_ADMITTED",
+          "warmupAdmission": "WARMUP_ADMITTED",
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "dataset": {
+            "identity": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182",
+            "declared": {
+              "generatorVersion": "k4-fixture-v1",
+              "schemaVersion": "kittachat-schema-v1",
+              "contentSeed": "k4-content-seed-v1",
+              "cardinalities": {
+                "conversations": 24,
+                "files": 60,
+                "groups": 6,
+                "messages": 244,
+                "participants": 60,
+                "users": 19
+              },
+              "fingerprint": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182"
+            },
+            "observed": {
+              "generatorVersion": "k4-fixture-v1",
+              "schemaVersion": "kittachat-schema-v1",
+              "contentSeed": "k4-content-seed-v1",
+              "cardinalities": {
+                "conversations": 24,
+                "files": 60,
+                "groups": 6,
+                "messages": 244,
+                "participants": 60,
+                "users": 19
+              },
+              "fingerprint": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182"
+            },
+            "size": {
+              "cardinalities": {
+                "conversations": 24,
+                "files": 60,
+                "groups": 6,
+                "messages": 244,
+                "participants": 60,
+                "users": 19
+              },
+              "totalDocuments": 413
+            }
+          },
+          "actors": {
+            "alice": {
+              "id": "64a000000000000000000001",
+              "email": "alice@kittachat.test"
+            }
+          }
+        }
+      }
+    },
+    "warm-up": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "phaseStart": 1786850892854,
+        "phaseEnd": 1786850902854,
+        "opportunities": [
+          {
+            "opportunityId": 0,
+            "correlationId": "k4-0-2af95731-af89-48f4-9e03-6f684596b0cc",
+            "scheduledAt": 1786850892854,
+            "startedAt": 1786850892854,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-0-2af95731-af89-48f4-9e03-6f684596b0cc",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850892943,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 1,
+            "correlationId": "k4-1-ab76a9b8-fb63-44dd-9300-7861d4924c11",
+            "scheduledAt": 1786850893354,
+            "startedAt": 1786850893355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-1-ab76a9b8-fb63-44dd-9300-7861d4924c11",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850893435,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 2,
+            "correlationId": "k4-2-63fb2366-411e-4ff2-bad1-8e4019c3e89d",
+            "scheduledAt": 1786850893854,
+            "startedAt": 1786850893855,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-2-63fb2366-411e-4ff2-bad1-8e4019c3e89d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850893945,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 3,
+            "correlationId": "k4-3-4b03d601-c48e-4dda-84e0-914bc899ae68",
+            "scheduledAt": 1786850894354,
+            "startedAt": 1786850894355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-3-4b03d601-c48e-4dda-84e0-914bc899ae68",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850894408,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 4,
+            "correlationId": "k4-4-a282269d-8edf-42bd-ac5b-f1ff9ee1644e",
+            "scheduledAt": 1786850894854,
+            "startedAt": 1786850894855,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-4-a282269d-8edf-42bd-ac5b-f1ff9ee1644e",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850894891,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 5,
+            "correlationId": "k4-5-a9bd91bf-e35b-45cd-85a4-6772b4af449e",
+            "scheduledAt": 1786850895354,
+            "startedAt": 1786850895355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-5-a9bd91bf-e35b-45cd-85a4-6772b4af449e",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850895426,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 6,
+            "correlationId": "k4-6-61408d27-d2cd-4016-86bb-7ec5a45fa898",
+            "scheduledAt": 1786850895854,
+            "startedAt": 1786850895855,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-6-61408d27-d2cd-4016-86bb-7ec5a45fa898",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850895931,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 7,
+            "correlationId": "k4-7-c27bb764-b547-42dc-90cf-3669ce305990",
+            "scheduledAt": 1786850896354,
+            "startedAt": 1786850896355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-7-c27bb764-b547-42dc-90cf-3669ce305990",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850896410,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 8,
+            "correlationId": "k4-8-64887815-707f-49eb-8db0-ba613adc03b3",
+            "scheduledAt": 1786850896854,
+            "startedAt": 1786850896854,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-8-64887815-707f-49eb-8db0-ba613adc03b3",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850896877,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 9,
+            "correlationId": "k4-9-0082deda-7fc2-4d2c-8f7b-bfd50e1964e5",
+            "scheduledAt": 1786850897354,
+            "startedAt": 1786850897355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-9-0082deda-7fc2-4d2c-8f7b-bfd50e1964e5",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850897390,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 10,
+            "correlationId": "k4-10-a8752964-332a-4fb9-8043-ed99dda4b9d4",
+            "scheduledAt": 1786850897854,
+            "startedAt": 1786850897854,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-10-a8752964-332a-4fb9-8043-ed99dda4b9d4",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850897905,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 11,
+            "correlationId": "k4-11-1d46013e-5e22-45a2-bd24-fe45762c14d1",
+            "scheduledAt": 1786850898354,
+            "startedAt": 1786850898355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-11-1d46013e-5e22-45a2-bd24-fe45762c14d1",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850898390,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 12,
+            "correlationId": "k4-12-9954fd97-9ba3-4028-97d5-490d2c2292da",
+            "scheduledAt": 1786850898854,
+            "startedAt": 1786850898855,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-12-9954fd97-9ba3-4028-97d5-490d2c2292da",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850898914,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 13,
+            "correlationId": "k4-13-cec854dc-1c79-41db-a390-a45f8130e402",
+            "scheduledAt": 1786850899354,
+            "startedAt": 1786850899354,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-13-cec854dc-1c79-41db-a390-a45f8130e402",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850899382,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 14,
+            "correlationId": "k4-14-65e5db54-59ff-4b52-91d4-6522c9ab3082",
+            "scheduledAt": 1786850899854,
+            "startedAt": 1786850899855,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-14-65e5db54-59ff-4b52-91d4-6522c9ab3082",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850899879,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 15,
+            "correlationId": "k4-15-286728e6-b570-4856-a8cc-95f778473b90",
+            "scheduledAt": 1786850900354,
+            "startedAt": 1786850900355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-15-286728e6-b570-4856-a8cc-95f778473b90",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850900388,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 16,
+            "correlationId": "k4-16-dcc14a15-db25-4ec6-a242-7b82928810b2",
+            "scheduledAt": 1786850900854,
+            "startedAt": 1786850900854,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-16-dcc14a15-db25-4ec6-a242-7b82928810b2",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850900877,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 17,
+            "correlationId": "k4-17-9fcbafdd-015b-418c-99c4-26db88214f9b",
+            "scheduledAt": 1786850901354,
+            "startedAt": 1786850901355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-17-9fcbafdd-015b-418c-99c4-26db88214f9b",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850901403,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 18,
+            "correlationId": "k4-18-45cfac75-b157-400e-a456-502d6fa1d867",
+            "scheduledAt": 1786850901854,
+            "startedAt": 1786850901853,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-18-45cfac75-b157-400e-a456-502d6fa1d867",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850901905,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 19,
+            "correlationId": "k4-19-66037d50-f73d-4c15-8272-05e6c1bde893",
+            "scheduledAt": 1786850902354,
+            "startedAt": 1786850902355,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-19-66037d50-f73d-4c15-8272-05e6c1bde893",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850902385,
+            "outcome": "success",
+            "phase": "warm-up"
+          }
+        ],
+        "scenario": "sidebar",
+        "version": 2,
+        "phase": "warm-up",
+        "request": {
+          "method": "GET",
+          "path": "/api/sidebar/conversations"
+        },
+        "pagination": {
+          "mode": "page",
+          "pageSize": 20
+        },
+        "measuredRequestIds": [
+          "k4-0-2af95731-af89-48f4-9e03-6f684596b0cc",
+          "k4-1-ab76a9b8-fb63-44dd-9300-7861d4924c11",
+          "k4-2-63fb2366-411e-4ff2-bad1-8e4019c3e89d",
+          "k4-3-4b03d601-c48e-4dda-84e0-914bc899ae68",
+          "k4-4-a282269d-8edf-42bd-ac5b-f1ff9ee1644e",
+          "k4-5-a9bd91bf-e35b-45cd-85a4-6772b4af449e",
+          "k4-6-61408d27-d2cd-4016-86bb-7ec5a45fa898",
+          "k4-7-c27bb764-b547-42dc-90cf-3669ce305990",
+          "k4-8-64887815-707f-49eb-8db0-ba613adc03b3",
+          "k4-9-0082deda-7fc2-4d2c-8f7b-bfd50e1964e5",
+          "k4-10-a8752964-332a-4fb9-8043-ed99dda4b9d4",
+          "k4-11-1d46013e-5e22-45a2-bd24-fe45762c14d1",
+          "k4-12-9954fd97-9ba3-4028-97d5-490d2c2292da",
+          "k4-13-cec854dc-1c79-41db-a390-a45f8130e402",
+          "k4-14-65e5db54-59ff-4b52-91d4-6522c9ab3082",
+          "k4-15-286728e6-b570-4856-a8cc-95f778473b90",
+          "k4-16-dcc14a15-db25-4ec6-a242-7b82928810b2",
+          "k4-17-9fcbafdd-015b-418c-99c4-26db88214f9b",
+          "k4-18-45cfac75-b157-400e-a456-502d6fa1d867",
+          "k4-19-66037d50-f73d-4c15-8272-05e6c1bde893"
+        ],
+        "measuredActors": [
+          "alice"
+        ],
+        "measurementWindow": {
+          "start": "2026-08-16T03:28:12.854Z",
+          "end": "2026-08-16T03:28:22.854Z",
+          "boundary": "[phase_start, phase_end)"
+        },
+        "runnerShortfallSamples": []
+      }
+    },
+    "measurement": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "phaseStart": 1786850907020,
+        "phaseEnd": 1786850937020,
+        "opportunities": [
+          {
+            "opportunityId": 0,
+            "correlationId": "k4-0-5a31040e-a3d0-4644-81d4-d9d96afc544f",
+            "scheduledAt": 1786850907020,
+            "startedAt": 1786850907020,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-0-5a31040e-a3d0-4644-81d4-d9d96afc544f",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850907148,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 1,
+            "correlationId": "k4-1-4bf8e496-25a6-4b9d-891b-8ea9a0ec2a47",
+            "scheduledAt": 1786850907520,
+            "startedAt": 1786850907521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-1-4bf8e496-25a6-4b9d-891b-8ea9a0ec2a47",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850907613,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 2,
+            "correlationId": "k4-2-686e5d45-7007-4039-bcd2-2665d22f6dcc",
+            "scheduledAt": 1786850908020,
+            "startedAt": 1786850908021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-2-686e5d45-7007-4039-bcd2-2665d22f6dcc",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850908048,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 3,
+            "correlationId": "k4-3-f99c7f00-f9b1-42d6-8b73-9ca96d952b58",
+            "scheduledAt": 1786850908520,
+            "startedAt": 1786850908521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-3-f99c7f00-f9b1-42d6-8b73-9ca96d952b58",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850908559,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 4,
+            "correlationId": "k4-4-2a119eb6-b357-4971-846b-29bccc0a7968",
+            "scheduledAt": 1786850909020,
+            "startedAt": 1786850909027,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-4-2a119eb6-b357-4971-846b-29bccc0a7968",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850909162,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 5,
+            "correlationId": "k4-5-e7a8af29-8bf9-4e6e-b128-ea30fb0e6b1f",
+            "scheduledAt": 1786850909520,
+            "startedAt": 1786850909521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-5-e7a8af29-8bf9-4e6e-b128-ea30fb0e6b1f",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850909638,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 6,
+            "correlationId": "k4-6-296e56b3-2f63-4406-b6f1-abb28a375368",
+            "scheduledAt": 1786850910020,
+            "startedAt": 1786850910020,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-6-296e56b3-2f63-4406-b6f1-abb28a375368",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850910097,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 7,
+            "correlationId": "k4-7-c5440b00-3e5d-4420-bb59-d260e63fccbc",
+            "scheduledAt": 1786850910520,
+            "startedAt": 1786850910522,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-7-c5440b00-3e5d-4420-bb59-d260e63fccbc",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850910622,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 8,
+            "correlationId": "k4-8-570fd8a4-7fdc-49fd-a9a0-0c5f0ddcd0d2",
+            "scheduledAt": 1786850911020,
+            "startedAt": 1786850911021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-8-570fd8a4-7fdc-49fd-a9a0-0c5f0ddcd0d2",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850911063,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 9,
+            "correlationId": "k4-9-d3a87d24-22cf-4075-b8d5-619075bf1159",
+            "scheduledAt": 1786850911520,
+            "startedAt": 1786850911521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-9-d3a87d24-22cf-4075-b8d5-619075bf1159",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850911573,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 10,
+            "correlationId": "k4-10-45c3de83-0f39-4c6a-8f1b-bc481ef756ee",
+            "scheduledAt": 1786850912020,
+            "startedAt": 1786850912021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-10-45c3de83-0f39-4c6a-8f1b-bc481ef756ee",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850912050,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 11,
+            "correlationId": "k4-11-e6ef135b-56e5-44f0-a700-dd527a8b717c",
+            "scheduledAt": 1786850912520,
+            "startedAt": 1786850912519,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-11-e6ef135b-56e5-44f0-a700-dd527a8b717c",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850912581,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 12,
+            "correlationId": "k4-12-93ad54dd-2c38-413e-ab1a-68d33e073654",
+            "scheduledAt": 1786850913020,
+            "startedAt": 1786850913033,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-12-93ad54dd-2c38-413e-ab1a-68d33e073654",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850913130,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 13,
+            "correlationId": "k4-13-546d6739-18bf-4439-80c4-733da553dea5",
+            "scheduledAt": 1786850913520,
+            "startedAt": 1786850913521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-13-546d6739-18bf-4439-80c4-733da553dea5",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850913589,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 14,
+            "correlationId": "k4-14-cd65d723-0e89-46df-81fa-9507298601a5",
+            "scheduledAt": 1786850914020,
+            "startedAt": 1786850914021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-14-cd65d723-0e89-46df-81fa-9507298601a5",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850914051,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 15,
+            "correlationId": "k4-15-4584a0fc-3a98-4d90-8c1a-ec89fb808621",
+            "scheduledAt": 1786850914520,
+            "startedAt": 1786850914520,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-15-4584a0fc-3a98-4d90-8c1a-ec89fb808621",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850914562,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 16,
+            "correlationId": "k4-16-f58aac1d-486f-468e-87bc-658bf8317973",
+            "scheduledAt": 1786850915020,
+            "startedAt": 1786850915021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-16-f58aac1d-486f-468e-87bc-658bf8317973",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850915071,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 17,
+            "correlationId": "k4-17-1d124059-731e-41f7-8793-bb2241d68909",
+            "scheduledAt": 1786850915520,
+            "startedAt": 1786850915521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-17-1d124059-731e-41f7-8793-bb2241d68909",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850915591,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 18,
+            "correlationId": "k4-18-6d1294b5-1c57-4975-ac5a-54cc83e657ff",
+            "scheduledAt": 1786850916020,
+            "startedAt": 1786850916021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-18-6d1294b5-1c57-4975-ac5a-54cc83e657ff",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850916097,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 19,
+            "correlationId": "k4-19-5f460874-defc-40ba-84ae-3fb19da67f40",
+            "scheduledAt": 1786850916520,
+            "startedAt": 1786850916520,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-19-5f460874-defc-40ba-84ae-3fb19da67f40",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850916561,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 20,
+            "correlationId": "k4-20-8b866031-3ed8-4f1f-95ab-362fe4a6e2f8",
+            "scheduledAt": 1786850917020,
+            "startedAt": 1786850917020,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-20-8b866031-3ed8-4f1f-95ab-362fe4a6e2f8",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850917060,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 21,
+            "correlationId": "k4-21-55cf68f1-9a3e-4909-ab1f-00c26b96cdec",
+            "scheduledAt": 1786850917520,
+            "startedAt": 1786850917520,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-21-55cf68f1-9a3e-4909-ab1f-00c26b96cdec",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850917566,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 22,
+            "correlationId": "k4-22-bdd1a29f-0bba-4b66-b629-5403d3e40bc0",
+            "scheduledAt": 1786850918020,
+            "startedAt": 1786850918020,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-22-bdd1a29f-0bba-4b66-b629-5403d3e40bc0",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850918099,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 23,
+            "correlationId": "k4-23-c3be2adf-fed7-4c0e-a57e-d363f2bafb1b",
+            "scheduledAt": 1786850918520,
+            "startedAt": 1786850918524,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-23-c3be2adf-fed7-4c0e-a57e-d363f2bafb1b",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850918600,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 24,
+            "correlationId": "k4-24-f8f9b075-ef5a-4153-8d2d-9c7b006dbb8f",
+            "scheduledAt": 1786850919020,
+            "startedAt": 1786850919025,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-24-f8f9b075-ef5a-4153-8d2d-9c7b006dbb8f",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850919074,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 25,
+            "correlationId": "k4-25-0c22e54f-7e98-4b57-9b3a-3bea3bb65984",
+            "scheduledAt": 1786850919520,
+            "startedAt": 1786850919520,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-25-0c22e54f-7e98-4b57-9b3a-3bea3bb65984",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850919580,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 26,
+            "correlationId": "k4-26-b87c1f1b-253f-4323-872a-2211492db705",
+            "scheduledAt": 1786850920020,
+            "startedAt": 1786850920021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-26-b87c1f1b-253f-4323-872a-2211492db705",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850920074,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 27,
+            "correlationId": "k4-27-6cacee64-58de-41c8-8c13-048eaba00cc8",
+            "scheduledAt": 1786850920520,
+            "startedAt": 1786850920521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-27-6cacee64-58de-41c8-8c13-048eaba00cc8",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850920531,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 28,
+            "correlationId": "k4-28-0fb4007d-86e1-4f88-93a5-38ef75936885",
+            "scheduledAt": 1786850921020,
+            "startedAt": 1786850921021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-28-0fb4007d-86e1-4f88-93a5-38ef75936885",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850921119,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 29,
+            "correlationId": "k4-29-e6dbe445-0f49-4c6d-a9a5-99057a81d744",
+            "scheduledAt": 1786850921520,
+            "startedAt": 1786850921521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-29-e6dbe445-0f49-4c6d-a9a5-99057a81d744",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850921537,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 30,
+            "correlationId": "k4-30-81705d8c-d4db-48dd-b38d-96ba81c61e86",
+            "scheduledAt": 1786850922020,
+            "startedAt": 1786850922021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-30-81705d8c-d4db-48dd-b38d-96ba81c61e86",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850922068,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 31,
+            "correlationId": "k4-31-1a39101e-55ae-4a49-a0f6-b54218d27008",
+            "scheduledAt": 1786850922520,
+            "startedAt": 1786850922520,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-31-1a39101e-55ae-4a49-a0f6-b54218d27008",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850922530,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 32,
+            "correlationId": "k4-32-ae348e19-a6a3-4c71-ab7d-4985a2c13fc0",
+            "scheduledAt": 1786850923020,
+            "startedAt": 1786850923022,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-32-ae348e19-a6a3-4c71-ab7d-4985a2c13fc0",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850923096,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 33,
+            "correlationId": "k4-33-7345fcb0-9230-48cd-bf56-c2c40296091b",
+            "scheduledAt": 1786850923520,
+            "startedAt": 1786850923523,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-33-7345fcb0-9230-48cd-bf56-c2c40296091b",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850923536,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 34,
+            "correlationId": "k4-34-0bfe17f3-fb22-4dae-a29e-ac37e3499f62",
+            "scheduledAt": 1786850924020,
+            "startedAt": 1786850924019,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-34-0bfe17f3-fb22-4dae-a29e-ac37e3499f62",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850924082,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 35,
+            "correlationId": "k4-35-084f0c94-b81c-4d57-ac6a-50d098f25e42",
+            "scheduledAt": 1786850924520,
+            "startedAt": 1786850924521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-35-084f0c94-b81c-4d57-ac6a-50d098f25e42",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850924525,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 36,
+            "correlationId": "k4-36-53b43963-1b9b-48e1-8972-85f5cd3f1a7e",
+            "scheduledAt": 1786850925020,
+            "startedAt": 1786850925021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-36-53b43963-1b9b-48e1-8972-85f5cd3f1a7e",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850925079,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 37,
+            "correlationId": "k4-37-e639cce1-efdf-418f-89dc-b6eb1c2bf331",
+            "scheduledAt": 1786850925520,
+            "startedAt": 1786850925521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-37-e639cce1-efdf-418f-89dc-b6eb1c2bf331",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850925526,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 38,
+            "correlationId": "k4-38-833388ab-787e-4ae1-8274-b41b24984d8a",
+            "scheduledAt": 1786850926020,
+            "startedAt": 1786850926023,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-38-833388ab-787e-4ae1-8274-b41b24984d8a",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850926093,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 39,
+            "correlationId": "k4-39-eb0fbd3b-cd40-477a-b60a-d55455e36a4e",
+            "scheduledAt": 1786850926520,
+            "startedAt": 1786850926522,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-39-eb0fbd3b-cd40-477a-b60a-d55455e36a4e",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850926531,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 40,
+            "correlationId": "k4-40-9ea0efd7-5591-445a-8de1-6c63ea91934b",
+            "scheduledAt": 1786850927020,
+            "startedAt": 1786850927021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-40-9ea0efd7-5591-445a-8de1-6c63ea91934b",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850927045,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 41,
+            "correlationId": "k4-41-8c309c85-5dca-4d45-a2b5-14e16ca0605d",
+            "scheduledAt": 1786850927520,
+            "startedAt": 1786850927521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-41-8c309c85-5dca-4d45-a2b5-14e16ca0605d",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850927526,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 42,
+            "correlationId": "k4-42-1a4dcd33-6747-44c9-8538-4670524cd557",
+            "scheduledAt": 1786850928020,
+            "startedAt": 1786850928020,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-42-1a4dcd33-6747-44c9-8538-4670524cd557",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850928063,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 43,
+            "correlationId": "k4-43-da6881b1-1432-4c2f-90ef-21f0118a613b",
+            "scheduledAt": 1786850928520,
+            "startedAt": 1786850928521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-43-da6881b1-1432-4c2f-90ef-21f0118a613b",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850928524,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 44,
+            "correlationId": "k4-44-5deaf0d6-4296-4891-b89a-4e3c3ebacdda",
+            "scheduledAt": 1786850929020,
+            "startedAt": 1786850929021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-44-5deaf0d6-4296-4891-b89a-4e3c3ebacdda",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850929041,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 45,
+            "correlationId": "k4-45-3f0bacf4-f4e6-4c3e-b2e9-80ac18d99d19",
+            "scheduledAt": 1786850929520,
+            "startedAt": 1786850929522,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-45-3f0bacf4-f4e6-4c3e-b2e9-80ac18d99d19",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850929527,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 46,
+            "correlationId": "k4-46-f11f6f6d-d9d8-4af5-81b0-5737b9d0e65d",
+            "scheduledAt": 1786850930020,
+            "startedAt": 1786850930021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-46-f11f6f6d-d9d8-4af5-81b0-5737b9d0e65d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850930083,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 47,
+            "correlationId": "k4-47-28825f54-08c8-41b4-a29d-a1ae8fabdea8",
+            "scheduledAt": 1786850930520,
+            "startedAt": 1786850930521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-47-28825f54-08c8-41b4-a29d-a1ae8fabdea8",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850930524,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 48,
+            "correlationId": "k4-48-b48c735d-608f-4765-b280-65f1d7c60457",
+            "scheduledAt": 1786850931020,
+            "startedAt": 1786850931021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-48-b48c735d-608f-4765-b280-65f1d7c60457",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850931041,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 49,
+            "correlationId": "k4-49-567425c5-f4c5-4fd1-b8d6-f640bcd71b8f",
+            "scheduledAt": 1786850931520,
+            "startedAt": 1786850931521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-49-567425c5-f4c5-4fd1-b8d6-f640bcd71b8f",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850931525,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 50,
+            "correlationId": "k4-50-27816f53-89b5-468d-a25d-505ed2914735",
+            "scheduledAt": 1786850932020,
+            "startedAt": 1786850932021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-50-27816f53-89b5-468d-a25d-505ed2914735",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850932061,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 51,
+            "correlationId": "k4-51-a50a7153-8bfb-44ee-8f87-07035e7c6897",
+            "scheduledAt": 1786850932520,
+            "startedAt": 1786850932521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-51-a50a7153-8bfb-44ee-8f87-07035e7c6897",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850932526,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 52,
+            "correlationId": "k4-52-0a4c9412-84fc-4e69-b403-391ced9accdb",
+            "scheduledAt": 1786850933020,
+            "startedAt": 1786850933021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-52-0a4c9412-84fc-4e69-b403-391ced9accdb",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850933045,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 53,
+            "correlationId": "k4-53-f7c4f3dc-6371-4844-a158-2770b4cfb81e",
+            "scheduledAt": 1786850933520,
+            "startedAt": 1786850933521,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-53-f7c4f3dc-6371-4844-a158-2770b4cfb81e",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850933526,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 54,
+            "correlationId": "k4-54-cfb7c793-7e2e-4572-aa45-8e5d433f54a6",
+            "scheduledAt": 1786850934020,
+            "startedAt": 1786850934021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-54-cfb7c793-7e2e-4572-aa45-8e5d433f54a6",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850934058,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 55,
+            "correlationId": "k4-55-95b2d58a-de9d-4d35-91d5-a75b81cfbeab",
+            "scheduledAt": 1786850934520,
+            "startedAt": 1786850934519,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-55-95b2d58a-de9d-4d35-91d5-a75b81cfbeab",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850934523,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 56,
+            "correlationId": "k4-56-50017725-1911-493c-b1cc-252a4d32bb2a",
+            "scheduledAt": 1786850935020,
+            "startedAt": 1786850935021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-56-50017725-1911-493c-b1cc-252a4d32bb2a",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850935044,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 57,
+            "correlationId": "k4-57-75816bc5-ce68-42ba-ab20-adbb4da71f3b",
+            "scheduledAt": 1786850935520,
+            "startedAt": 1786850935520,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-57-75816bc5-ce68-42ba-ab20-adbb4da71f3b",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850935527,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 58,
+            "correlationId": "k4-58-389c0c75-f70a-4bbd-99c9-1b6b7600c53a",
+            "scheduledAt": 1786850936020,
+            "startedAt": 1786850936021,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-58-389c0c75-f70a-4bbd-99c9-1b6b7600c53a",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850936096,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 59,
+            "correlationId": "k4-59-f03e2aea-81ea-4b55-8f95-7107fe76a305",
+            "scheduledAt": 1786850936520,
+            "startedAt": 1786850936520,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-59-f03e2aea-81ea-4b55-8f95-7107fe76a305",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850936523,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          }
+        ],
+        "scenario": "sidebar",
+        "version": 2,
+        "phase": "measurement",
+        "request": {
+          "method": "GET",
+          "path": "/api/sidebar/conversations"
+        },
+        "pagination": {
+          "mode": "page",
+          "pageSize": 20
+        },
+        "measuredRequestIds": [
+          "k4-0-5a31040e-a3d0-4644-81d4-d9d96afc544f",
+          "k4-1-4bf8e496-25a6-4b9d-891b-8ea9a0ec2a47",
+          "k4-2-686e5d45-7007-4039-bcd2-2665d22f6dcc",
+          "k4-3-f99c7f00-f9b1-42d6-8b73-9ca96d952b58",
+          "k4-4-2a119eb6-b357-4971-846b-29bccc0a7968",
+          "k4-5-e7a8af29-8bf9-4e6e-b128-ea30fb0e6b1f",
+          "k4-6-296e56b3-2f63-4406-b6f1-abb28a375368",
+          "k4-7-c5440b00-3e5d-4420-bb59-d260e63fccbc",
+          "k4-8-570fd8a4-7fdc-49fd-a9a0-0c5f0ddcd0d2",
+          "k4-9-d3a87d24-22cf-4075-b8d5-619075bf1159",
+          "k4-10-45c3de83-0f39-4c6a-8f1b-bc481ef756ee",
+          "k4-11-e6ef135b-56e5-44f0-a700-dd527a8b717c",
+          "k4-12-93ad54dd-2c38-413e-ab1a-68d33e073654",
+          "k4-13-546d6739-18bf-4439-80c4-733da553dea5",
+          "k4-14-cd65d723-0e89-46df-81fa-9507298601a5",
+          "k4-15-4584a0fc-3a98-4d90-8c1a-ec89fb808621",
+          "k4-16-f58aac1d-486f-468e-87bc-658bf8317973",
+          "k4-17-1d124059-731e-41f7-8793-bb2241d68909",
+          "k4-18-6d1294b5-1c57-4975-ac5a-54cc83e657ff",
+          "k4-19-5f460874-defc-40ba-84ae-3fb19da67f40",
+          "k4-20-8b866031-3ed8-4f1f-95ab-362fe4a6e2f8",
+          "k4-21-55cf68f1-9a3e-4909-ab1f-00c26b96cdec",
+          "k4-22-bdd1a29f-0bba-4b66-b629-5403d3e40bc0",
+          "k4-23-c3be2adf-fed7-4c0e-a57e-d363f2bafb1b",
+          "k4-24-f8f9b075-ef5a-4153-8d2d-9c7b006dbb8f",
+          "k4-25-0c22e54f-7e98-4b57-9b3a-3bea3bb65984",
+          "k4-26-b87c1f1b-253f-4323-872a-2211492db705",
+          "k4-27-6cacee64-58de-41c8-8c13-048eaba00cc8",
+          "k4-28-0fb4007d-86e1-4f88-93a5-38ef75936885",
+          "k4-29-e6dbe445-0f49-4c6d-a9a5-99057a81d744",
+          "k4-30-81705d8c-d4db-48dd-b38d-96ba81c61e86",
+          "k4-31-1a39101e-55ae-4a49-a0f6-b54218d27008",
+          "k4-32-ae348e19-a6a3-4c71-ab7d-4985a2c13fc0",
+          "k4-33-7345fcb0-9230-48cd-bf56-c2c40296091b",
+          "k4-34-0bfe17f3-fb22-4dae-a29e-ac37e3499f62",
+          "k4-35-084f0c94-b81c-4d57-ac6a-50d098f25e42",
+          "k4-36-53b43963-1b9b-48e1-8972-85f5cd3f1a7e",
+          "k4-37-e639cce1-efdf-418f-89dc-b6eb1c2bf331",
+          "k4-38-833388ab-787e-4ae1-8274-b41b24984d8a",
+          "k4-39-eb0fbd3b-cd40-477a-b60a-d55455e36a4e",
+          "k4-40-9ea0efd7-5591-445a-8de1-6c63ea91934b",
+          "k4-41-8c309c85-5dca-4d45-a2b5-14e16ca0605d",
+          "k4-42-1a4dcd33-6747-44c9-8538-4670524cd557",
+          "k4-43-da6881b1-1432-4c2f-90ef-21f0118a613b",
+          "k4-44-5deaf0d6-4296-4891-b89a-4e3c3ebacdda",
+          "k4-45-3f0bacf4-f4e6-4c3e-b2e9-80ac18d99d19",
+          "k4-46-f11f6f6d-d9d8-4af5-81b0-5737b9d0e65d",
+          "k4-47-28825f54-08c8-41b4-a29d-a1ae8fabdea8",
+          "k4-48-b48c735d-608f-4765-b280-65f1d7c60457",
+          "k4-49-567425c5-f4c5-4fd1-b8d6-f640bcd71b8f",
+          "k4-50-27816f53-89b5-468d-a25d-505ed2914735",
+          "k4-51-a50a7153-8bfb-44ee-8f87-07035e7c6897",
+          "k4-52-0a4c9412-84fc-4e69-b403-391ced9accdb",
+          "k4-53-f7c4f3dc-6371-4844-a158-2770b4cfb81e",
+          "k4-54-cfb7c793-7e2e-4572-aa45-8e5d433f54a6",
+          "k4-55-95b2d58a-de9d-4d35-91d5-a75b81cfbeab",
+          "k4-56-50017725-1911-493c-b1cc-252a4d32bb2a",
+          "k4-57-75816bc5-ce68-42ba-ab20-adbb4da71f3b",
+          "k4-58-389c0c75-f70a-4bbd-99c9-1b6b7600c53a",
+          "k4-59-f03e2aea-81ea-4b55-8f95-7107fe76a305"
+        ],
+        "measuredActors": [
+          "alice"
+        ],
+        "measurementWindow": {
+          "start": "2026-08-16T03:28:27.020Z",
+          "end": "2026-08-16T03:28:57.020Z",
+          "boundary": "[phase_start, phase_end)"
+        },
+        "runnerShortfallSamples": [],
+        "observation": {
+          "resourceEvidence": {
+            "measurementWindow": {
+              "start": "2026-08-16T03:28:22.434Z",
+              "end": "2026-08-16T03:28:56.589Z",
+              "boundary": "[measurement_start, measurement_end)"
+            },
+            "intervalMs": 1000,
+            "expectedCount": 35,
+            "requiredContainers": [
+              "nginx",
+              "backend-1",
+              "backend-2",
+              "backend-3",
+              "runner"
+            ],
+            "byContainer": {
+              "nginx": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:22.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 136684000,
+                        "memoryUsageBytes": 27295744
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:23.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 139089000,
+                        "memoryUsageBytes": 27299840
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:24.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 141552000,
+                        "memoryUsageBytes": 28311552
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:25.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 145466000,
+                        "memoryUsageBytes": 27947008
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:26.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:27.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 147389000,
+                        "memoryUsageBytes": 27828224
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:28.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 149459000,
+                        "memoryUsageBytes": 28078080
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:29.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 159211000,
+                        "memoryUsageBytes": 27549696
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:30.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 161047000,
+                        "memoryUsageBytes": 27820032
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:31.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 163698000,
+                        "memoryUsageBytes": 28200960
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:32.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:33.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 168831000,
+                        "memoryUsageBytes": 27820032
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:34.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:35.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 171631000,
+                        "memoryUsageBytes": 27566080
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:36.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 174145000,
+                        "memoryUsageBytes": 27967488
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:37.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:38.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 177732000,
+                        "memoryUsageBytes": 27709440
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:39.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 179507000,
+                        "memoryUsageBytes": 28356608
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:40.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 180690000,
+                        "memoryUsageBytes": 28618752
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:41.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 183941000,
+                        "memoryUsageBytes": 27832320
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:42.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 185104000,
+                        "memoryUsageBytes": 28098560
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:43.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 187526000,
+                        "memoryUsageBytes": 28635136
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:44.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 187953000,
+                        "memoryUsageBytes": 28643328
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:45.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 189447000,
+                        "memoryUsageBytes": 28606464
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:46.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 190722000,
+                        "memoryUsageBytes": 28336128
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:47.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 191880000,
+                        "memoryUsageBytes": 28741632
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:48.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 193671000,
+                        "memoryUsageBytes": 28598272
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:49.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 194835000,
+                        "memoryUsageBytes": 27975680
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:50.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 196434000,
+                        "memoryUsageBytes": 27979776
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:51.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 200949000,
+                        "memoryUsageBytes": 28499968
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:52.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 201474000,
+                        "memoryUsageBytes": 27840512
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:53.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:54.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:55.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:56.434Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 27,
+                  "error": 0,
+                  "missing": 8,
+                  "expected": 35
+                },
+                "errors": [],
+                "coverage": 0.7714285714285715,
+                "sufficient": false
+              },
+              "backend-1": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:22.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6635272000,
+                        "memoryUsageBytes": 64040960
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:23.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6664927000,
+                        "memoryUsageBytes": 62439424
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:24.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6788935000,
+                        "memoryUsageBytes": 65138688
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:25.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6888682000,
+                        "memoryUsageBytes": 63721472
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:26.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:27.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6892439000,
+                        "memoryUsageBytes": 63393792
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:28.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6895122000,
+                        "memoryUsageBytes": 63299584
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:29.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6899161000,
+                        "memoryUsageBytes": 63520768
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:30.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6902237000,
+                        "memoryUsageBytes": 63299584
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:31.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6942599000,
+                        "memoryUsageBytes": 63709184
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:32.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:33.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6959818000,
+                        "memoryUsageBytes": 63836160
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:34.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:35.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6962958000,
+                        "memoryUsageBytes": 63332352
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:36.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6978939000,
+                        "memoryUsageBytes": 63295488
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:37.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:38.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7057847000,
+                        "memoryUsageBytes": 63954944
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:39.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7059829000,
+                        "memoryUsageBytes": 63340544
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:40.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7061991000,
+                        "memoryUsageBytes": 63340544
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:41.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7139640000,
+                        "memoryUsageBytes": 63934464
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:42.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7186248000,
+                        "memoryUsageBytes": 64573440
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:43.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7188873000,
+                        "memoryUsageBytes": 64208896
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:44.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7194430000,
+                        "memoryUsageBytes": 64180224
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:45.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7221256000,
+                        "memoryUsageBytes": 64352256
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:46.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7248042000,
+                        "memoryUsageBytes": 64741376
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:47.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7332829000,
+                        "memoryUsageBytes": 65769472
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:48.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7385974000,
+                        "memoryUsageBytes": 67129344
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:49.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7393465000,
+                        "memoryUsageBytes": 66572288
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:50.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7394965000,
+                        "memoryUsageBytes": 66322432
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:51.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7479541000,
+                        "memoryUsageBytes": 67588096
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:52.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7503084000,
+                        "memoryUsageBytes": 66945024
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:53.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:54.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:55.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:56.434Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 27,
+                  "error": 0,
+                  "missing": 8,
+                  "expected": 35
+                },
+                "errors": [],
+                "coverage": 0.7714285714285715,
+                "sufficient": false
+              },
+              "backend-2": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:22.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4524427000,
+                        "memoryUsageBytes": 67051520
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:23.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4596270000,
+                        "memoryUsageBytes": 66576384
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:24.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4598813000,
+                        "memoryUsageBytes": 66576384
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:25.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4738615000,
+                        "memoryUsageBytes": 68812800
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:26.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:27.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4840124000,
+                        "memoryUsageBytes": 67063808
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:28.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4960047000,
+                        "memoryUsageBytes": 67330048
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:29.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5025525000,
+                        "memoryUsageBytes": 68415488
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:30.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5031518000,
+                        "memoryUsageBytes": 68009984
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:31.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5273028000,
+                        "memoryUsageBytes": 69959680
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:32.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:33.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5400392000,
+                        "memoryUsageBytes": 69791744
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:34.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:35.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5438940000,
+                        "memoryUsageBytes": 70168576
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:36.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5449149000,
+                        "memoryUsageBytes": 70168576
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:37.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:38.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5514732000,
+                        "memoryUsageBytes": 70610944
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:39.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5678225000,
+                        "memoryUsageBytes": 72515584
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:40.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5687251000,
+                        "memoryUsageBytes": 72515584
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:41.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5746139000,
+                        "memoryUsageBytes": 72617984
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:42.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5785673000,
+                        "memoryUsageBytes": 72847360
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:43.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5809459000,
+                        "memoryUsageBytes": 74113024
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:44.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5810754000,
+                        "memoryUsageBytes": 74383360
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:45.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5837000000,
+                        "memoryUsageBytes": 74620928
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:46.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5841260000,
+                        "memoryUsageBytes": 75128832
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:47.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5845218000,
+                        "memoryUsageBytes": 75358208
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:48.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5848632000,
+                        "memoryUsageBytes": 75149312
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:49.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5850810000,
+                        "memoryUsageBytes": 74788864
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:50.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5887727000,
+                        "memoryUsageBytes": 78200832
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:51.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5924288000,
+                        "memoryUsageBytes": 79339520
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:52.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5964731000,
+                        "memoryUsageBytes": 79458304
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:53.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:54.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:55.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:56.434Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 27,
+                  "error": 0,
+                  "missing": 8,
+                  "expected": 35
+                },
+                "errors": [],
+                "coverage": 0.7714285714285715,
+                "sufficient": false
+              },
+              "backend-3": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:22.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4139200000,
+                        "memoryUsageBytes": 66482176
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:23.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4349909000,
+                        "memoryUsageBytes": 68718592
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:24.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4457043000,
+                        "memoryUsageBytes": 67248128
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:25.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4568690000,
+                        "memoryUsageBytes": 67301376
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:26.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:27.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4571087000,
+                        "memoryUsageBytes": 67301376
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:28.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4703322000,
+                        "memoryUsageBytes": 72495104
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:29.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4707358000,
+                        "memoryUsageBytes": 72081408
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:30.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4782451000,
+                        "memoryUsageBytes": 76091392
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:31.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 4831243000,
+                        "memoryUsageBytes": 75206656
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:32.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:33.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5208100000,
+                        "memoryUsageBytes": 75456512
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:34.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:35.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5323120000,
+                        "memoryUsageBytes": 75980800
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:36.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5443580000,
+                        "memoryUsageBytes": 76742656
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:37.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:38.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5447517000,
+                        "memoryUsageBytes": 76079104
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:39.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5459056000,
+                        "memoryUsageBytes": 76337152
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:40.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5461399000,
+                        "memoryUsageBytes": 76337152
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:41.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5503574000,
+                        "memoryUsageBytes": 77348864
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:42.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5509668000,
+                        "memoryUsageBytes": 76701696
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:43.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5560124000,
+                        "memoryUsageBytes": 77860864
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:44.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5564219000,
+                        "memoryUsageBytes": 77598720
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:45.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5571362000,
+                        "memoryUsageBytes": 76685312
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:46.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5574630000,
+                        "memoryUsageBytes": 76402688
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:47.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5577178000,
+                        "memoryUsageBytes": 76173312
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:48.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5579145000,
+                        "memoryUsageBytes": 76173312
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:49.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5615226000,
+                        "memoryUsageBytes": 77025280
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:50.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5619569000,
+                        "memoryUsageBytes": 76722176
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:51.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5628498000,
+                        "memoryUsageBytes": 76582912
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:52.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5667154000,
+                        "memoryUsageBytes": 77307904
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:53.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:54.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:55.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:56.434Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 27,
+                  "error": 0,
+                  "missing": 8,
+                  "expected": 35
+                },
+                "errors": [],
+                "coverage": 0.7714285714285715,
+                "sufficient": false
+              },
+              "runner": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:22.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 699048000,
+                        "memoryUsageBytes": 7573504
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:23.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1099117000,
+                        "memoryUsageBytes": 34430976
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:24.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1108054000,
+                        "memoryUsageBytes": 34521088
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:25.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1142238000,
+                        "memoryUsageBytes": 34889728
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:26.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:27.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1152785000,
+                        "memoryUsageBytes": 35381248
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:28.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1164918000,
+                        "memoryUsageBytes": 36102144
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:29.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1168537000,
+                        "memoryUsageBytes": 36151296
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:30.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1180570000,
+                        "memoryUsageBytes": 37027840
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:31.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1239834000,
+                        "memoryUsageBytes": 33103872
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:32.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:33.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1252621000,
+                        "memoryUsageBytes": 32423936
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:34.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:35.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1267852000,
+                        "memoryUsageBytes": 32923648
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:36.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1281961000,
+                        "memoryUsageBytes": 33562624
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:37.434Z"
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:38.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1295166000,
+                        "memoryUsageBytes": 33669120
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:39.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1304605000,
+                        "memoryUsageBytes": 34533376
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:40.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1306969000,
+                        "memoryUsageBytes": 34201600
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:41.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1335771000,
+                        "memoryUsageBytes": 34799616
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:42.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1337865000,
+                        "memoryUsageBytes": 34615296
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:43.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1343668000,
+                        "memoryUsageBytes": 34029568
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:44.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1344756000,
+                        "memoryUsageBytes": 34291712
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:45.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1351214000,
+                        "memoryUsageBytes": 34324480
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:46.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1355664000,
+                        "memoryUsageBytes": 34848768
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:47.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1358423000,
+                        "memoryUsageBytes": 35225600
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:48.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1363419000,
+                        "memoryUsageBytes": 35299328
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:49.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1366485000,
+                        "memoryUsageBytes": 34897920
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:50.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1369845000,
+                        "memoryUsageBytes": 35426304
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:51.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1374977000,
+                        "memoryUsageBytes": 35438592
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:28:52.434Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1386632000,
+                        "memoryUsageBytes": 7917568
+                      },
+                      "source": "k4-observer:issue86-multi-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:53.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:54.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:55.434Z"
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:28:56.434Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 27,
+                  "error": 0,
+                  "missing": 8,
+                  "expected": 35
+                },
+                "errors": [],
+                "coverage": 0.7714285714285715,
+                "sufficient": false
+              }
+            },
+            "qualificationFlags": [
+              "OBSERVATION_INCOMPLETE"
+            ]
+          },
+          "histogramEvidence": {
+            "label": "histogram-derived",
+            "source": "per-replica",
+            "resolvedBackendReplicas": [
+              "backend-1",
+              "backend-2",
+              "backend-3"
+            ],
+            "perReplica": {
+              "backend-1": {
+                "buckets": [
+                  {
+                    "le": "0.001",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.005",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.01",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.025",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.05",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.1",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.25",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "1",
+                    "count": 0
+                  },
+                  {
+                    "le": "2.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "5",
+                    "count": 0
+                  },
+                  {
+                    "le": "10",
+                    "count": 0
+                  },
+                  {
+                    "le": "+Inf",
+                    "count": 0
+                  }
+                ],
+                "count": 0,
+                "sum": 0
+              },
+              "backend-2": {
+                "buckets": [
+                  {
+                    "le": "0.001",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.005",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.01",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.025",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.05",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.1",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.25",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "1",
+                    "count": 0
+                  },
+                  {
+                    "le": "2.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "5",
+                    "count": 0
+                  },
+                  {
+                    "le": "10",
+                    "count": 0
+                  },
+                  {
+                    "le": "+Inf",
+                    "count": 0
+                  }
+                ],
+                "count": 0,
+                "sum": 0
+              },
+              "backend-3": {
+                "buckets": [
+                  {
+                    "le": "0.001",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.005",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.01",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.025",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.05",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.1",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.25",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "1",
+                    "count": 0
+                  },
+                  {
+                    "le": "2.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "5",
+                    "count": 0
+                  },
+                  {
+                    "le": "10",
+                    "count": 0
+                  },
+                  {
+                    "le": "+Inf",
+                    "count": 0
+                  }
+                ],
+                "count": 0,
+                "sum": 0
+              }
+            },
+            "aggregate": {
+              "buckets": [
+                {
+                  "le": "0.001",
+                  "count": 0
+                },
+                {
+                  "le": "0.005",
+                  "count": 0
+                },
+                {
+                  "le": "0.01",
+                  "count": 0
+                },
+                {
+                  "le": "0.025",
+                  "count": 0
+                },
+                {
+                  "le": "0.05",
+                  "count": 0
+                },
+                {
+                  "le": "0.1",
+                  "count": 0
+                },
+                {
+                  "le": "0.25",
+                  "count": 0
+                },
+                {
+                  "le": "0.5",
+                  "count": 0
+                },
+                {
+                  "le": "1",
+                  "count": 0
+                },
+                {
+                  "le": "2.5",
+                  "count": 0
+                },
+                {
+                  "le": "5",
+                  "count": 0
+                },
+                {
+                  "le": "10",
+                  "count": 0
+                },
+                {
+                  "le": "+Inf",
+                  "count": 0
+                }
+              ],
+              "count": 0,
+              "sum": 0
+            }
+          },
+          "loadGeneratorEvidence": {
+            "limited": false,
+            "reason": "NO_REQUESTED_LOAD_SHORTFALL"
+          },
+          "qualificationFlags": [
+            "OBSERVATION_INCOMPLETE"
+          ],
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true
+            },
+            "endToEndDelivery": {
+              "eligible": false
+            },
+            "targetConcurrency": {
+              "eligible": false
+            },
+            "multiReplica": {
+              "eligible": false
+            },
+            "crossReplica": {
+              "eligible": false
+            },
+            "cpu": {
+              "eligible": false
+            },
+            "memory": {
+              "eligible": false
+            },
+            "bottleneckSutCeiling": {
+              "eligible": false
+            }
+          },
+          "lockedClaimTypes": [
+            "persistenceHistogramDerivedLatency",
+            "endToEndDelivery",
+            "targetConcurrency",
+            "multiReplica",
+            "crossReplica",
+            "cpu",
+            "memory",
+            "bottleneckSutCeiling"
+          ]
+        },
+        "qualificationFlags": [
+          "OBSERVATION_INCOMPLETE"
+        ],
+        "claimEligibility": {
+          "persistenceHistogramDerivedLatency": {
+            "eligible": true
+          },
+          "endToEndDelivery": {
+            "eligible": false
+          },
+          "targetConcurrency": {
+            "eligible": false
+          },
+          "multiReplica": {
+            "eligible": false
+          },
+          "crossReplica": {
+            "eligible": false
+          },
+          "cpu": {
+            "eligible": false
+          },
+          "memory": {
+            "eligible": false
+          },
+          "bottleneckSutCeiling": {
+            "eligible": false
+          }
+        }
+      }
+    },
+    "teardown": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "attempted": true,
+        "released": true,
+        "targetDigest": "06f7c885c225e312f1e18dd6d2e01637346c9c3efa538f76b76dbdabcb7286e2"
+      },
+      "attempted": true
+    }
+  },
+  "teardown": {
+    "attempted": true,
+    "completed": true
+  },
+  "executionOutcome": "COMPLETED",
+  "artifactStatus": "RETAINED",
+  "qualification": {
+    "complete": false,
+    "qualified": false
+  },
+  "qualificationFlags": [
+    "OBSERVATION_INCOMPLETE"
+  ],
+  "claimEligibility": {
+    "persistenceHistogramDerivedLatency": {
+      "eligible": true
+    },
+    "endToEndDelivery": {
+      "eligible": false
+    },
+    "targetConcurrency": {
+      "eligible": false
+    },
+    "multiReplica": {
+      "eligible": false
+    },
+    "crossReplica": {
+      "eligible": false
+    },
+    "cpu": {
+      "eligible": false
+    },
+    "memory": {
+      "eligible": false
+    },
+    "bottleneckSutCeiling": {
+      "eligible": false
+    }
+  },
+  "artifacts": {
+    "manifestPath": "manifest.json",
+    "sourceInventoryPath": "source-inventory.json",
+    "bundleInventoryPath": "bundle-inventory.json",
+    "completionMarkerPath": "COMPLETED",
+    "sourceInventorySha256": "sha256:54a1e24237cbc62f08c2ef6842de8c2a15651652640904c8cddeba127bdd0a31",
+    "bundleInventorySha256": "sha256:7fe45d5006f498d22cf4e6b06972d005e5f16dac6afd31e07800000c5950e588"
+  }
+}
