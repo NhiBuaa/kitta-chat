@@ -1,0 +1,211 @@
+{
+  "measurementStart": "2026-08-14T04:40:35.138Z",
+  "start": {
+    "histogram": {
+      "resolvedBackendReplicas": [
+        "backend-1",
+        "backend-2",
+        "backend-3"
+      ],
+      "snapshots": {
+        "backend-1": {
+          "before": {
+            "metric": "kittachat_message_persistence_duration_seconds",
+            "labels": {
+              "outcome": "success"
+            },
+            "buckets": [
+              {
+                "le": "0.001",
+                "count": 0
+              },
+              {
+                "le": "0.005",
+                "count": 0
+              },
+              {
+                "le": "0.01",
+                "count": 0
+              },
+              {
+                "le": "0.025",
+                "count": 0
+              },
+              {
+                "le": "0.05",
+                "count": 0
+              },
+              {
+                "le": "0.1",
+                "count": 0
+              },
+              {
+                "le": "0.25",
+                "count": 0
+              },
+              {
+                "le": "0.5",
+                "count": 0
+              },
+              {
+                "le": "1",
+                "count": 0
+              },
+              {
+                "le": "2.5",
+                "count": 0
+              },
+              {
+                "le": "5",
+                "count": 0
+              },
+              {
+                "le": "10",
+                "count": 0
+              },
+              {
+                "le": "+Inf",
+                "count": 0
+              }
+            ],
+            "count": 0,
+            "sum": 0
+          }
+        },
+        "backend-2": {
+          "before": {
+            "metric": "kittachat_message_persistence_duration_seconds",
+            "labels": {
+              "outcome": "success"
+            },
+            "buckets": [
+              {
+                "le": "0.001",
+                "count": 0
+              },
+              {
+                "le": "0.005",
+                "count": 0
+              },
+              {
+                "le": "0.01",
+                "count": 0
+              },
+              {
+                "le": "0.025",
+                "count": 0
+              },
+              {
+                "le": "0.05",
+                "count": 0
+              },
+              {
+                "le": "0.1",
+                "count": 0
+              },
+              {
+                "le": "0.25",
+                "count": 0
+              },
+              {
+                "le": "0.5",
+                "count": 0
+              },
+              {
+                "le": "1",
+                "count": 0
+              },
+              {
+                "le": "2.5",
+                "count": 0
+              },
+              {
+                "le": "5",
+                "count": 0
+              },
+              {
+                "le": "10",
+                "count": 0
+              },
+              {
+                "le": "+Inf",
+                "count": 0
+              }
+            ],
+            "count": 0,
+            "sum": 0
+          }
+        },
+        "backend-3": {
+          "before": {
+            "metric": "kittachat_message_persistence_duration_seconds",
+            "labels": {
+              "outcome": "success"
+            },
+            "buckets": [
+              {
+                "le": "0.001",
+                "count": 0
+              },
+              {
+                "le": "0.005",
+                "count": 0
+              },
+              {
+                "le": "0.01",
+                "count": 0
+              },
+              {
+                "le": "0.025",
+                "count": 0
+              },
+              {
+                "le": "0.05",
+                "count": 0
+              },
+              {
+                "le": "0.1",
+                "count": 0
+              },
+              {
+                "le": "0.25",
+                "count": 0
+              },
+              {
+                "le": "0.5",
+                "count": 0
+              },
+              {
+                "le": "1",
+                "count": 0
+              },
+              {
+                "le": "2.5",
+                "count": 0
+              },
+              {
+                "le": "5",
+                "count": 0
+              },
+              {
+                "le": "10",
+                "count": 0
+              },
+              {
+                "le": "+Inf",
+                "count": 0
+              }
+            ],
+            "count": 0,
+            "sum": 0
+          }
+        }
+      }
+    },
+    "replicaAttribution": {
+      "point": "before",
+      "complete": false,
+      "deferredUntilMeasurementEnd": true
+    }
+  }
+}

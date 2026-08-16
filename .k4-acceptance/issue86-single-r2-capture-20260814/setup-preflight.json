@@ -1,0 +1,13 @@
+{
+  "action": "setup-preflight",
+  "verification": {
+    "status": "VERIFIED"
+  },
+  "warmupAdmission": "WARMUP_ADMITTED",
+  "evidenceScan": {
+    "status": "CLEAR",
+    "scannedArtifacts": 2,
+    "matches": 0,
+    "inventoryFingerprint": "sha256:2b16ff1e23f6ec7b8bac9f68729dc9e18717d1154ab785e131b389accb40af00"
+  }
+}

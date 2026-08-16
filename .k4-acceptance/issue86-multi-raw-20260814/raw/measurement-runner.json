@@ -1,0 +1,1060 @@
+{
+  "phaseStart": 1786682438165,
+  "phaseEnd": 1786682468165,
+  "opportunities": [
+    {
+      "opportunityId": 0,
+      "correlationId": "k4-0-1f4e6a6b-d983-45e2-a4d5-60cea7456fc7",
+      "scheduledAt": 1786682438165,
+      "startedAt": 1786682438166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-0-1f4e6a6b-d983-45e2-a4d5-60cea7456fc7",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682438352,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 1,
+      "correlationId": "k4-1-8c935577-3a2a-4edb-b822-14f15c12680c",
+      "scheduledAt": 1786682438665,
+      "startedAt": 1786682438666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-1-8c935577-3a2a-4edb-b822-14f15c12680c",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682438742,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 2,
+      "correlationId": "k4-2-cb63479a-c4d1-474a-af5f-ac1e5ad58b15",
+      "scheduledAt": 1786682439165,
+      "startedAt": 1786682439165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-2-cb63479a-c4d1-474a-af5f-ac1e5ad58b15",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682439224,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 3,
+      "correlationId": "k4-3-2ebf2d9f-db04-46a7-a7aa-6493bfa483bf",
+      "scheduledAt": 1786682439665,
+      "startedAt": 1786682439666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-3-2ebf2d9f-db04-46a7-a7aa-6493bfa483bf",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682439738,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 4,
+      "correlationId": "k4-4-4c564695-f3d3-479f-afc6-837e30af892d",
+      "scheduledAt": 1786682440165,
+      "startedAt": 1786682440166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-4-4c564695-f3d3-479f-afc6-837e30af892d",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682440324,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 5,
+      "correlationId": "k4-5-7af32668-8683-4942-87c1-e446008938df",
+      "scheduledAt": 1786682440665,
+      "startedAt": 1786682440665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-5-7af32668-8683-4942-87c1-e446008938df",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682440734,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 6,
+      "correlationId": "k4-6-3ff8d09b-5a2f-48ea-9484-7aeacaa71f6f",
+      "scheduledAt": 1786682441165,
+      "startedAt": 1786682441165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-6-3ff8d09b-5a2f-48ea-9484-7aeacaa71f6f",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682441253,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 7,
+      "correlationId": "k4-7-5e4da92b-a3b3-4f2a-8ef9-f6126ffb39f9",
+      "scheduledAt": 1786682441665,
+      "startedAt": 1786682441670,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-7-5e4da92b-a3b3-4f2a-8ef9-f6126ffb39f9",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682441767,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 8,
+      "correlationId": "k4-8-045bb9d7-3ac9-4b60-af59-722e08d3c330",
+      "scheduledAt": 1786682442165,
+      "startedAt": 1786682442166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-8-045bb9d7-3ac9-4b60-af59-722e08d3c330",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682442195,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 9,
+      "correlationId": "k4-9-6c93d74c-9dab-46bf-ad53-b716714e50aa",
+      "scheduledAt": 1786682442665,
+      "startedAt": 1786682442665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-9-6c93d74c-9dab-46bf-ad53-b716714e50aa",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682442715,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 10,
+      "correlationId": "k4-10-4652712b-20d5-4747-8763-966eafa0ecd2",
+      "scheduledAt": 1786682443165,
+      "startedAt": 1786682443166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-10-4652712b-20d5-4747-8763-966eafa0ecd2",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682443206,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 11,
+      "correlationId": "k4-11-9f4b15c7-11b9-46ae-97d7-18ec9e4e785c",
+      "scheduledAt": 1786682443665,
+      "startedAt": 1786682443666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-11-9f4b15c7-11b9-46ae-97d7-18ec9e4e785c",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682443733,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 12,
+      "correlationId": "k4-12-860d24a2-c6d2-4f60-b8dc-a323e51d4928",
+      "scheduledAt": 1786682444165,
+      "startedAt": 1786682444166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-12-860d24a2-c6d2-4f60-b8dc-a323e51d4928",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682444216,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 13,
+      "correlationId": "k4-13-cc93bd14-e4a5-415e-b4eb-84679739133f",
+      "scheduledAt": 1786682444665,
+      "startedAt": 1786682444666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-13-cc93bd14-e4a5-415e-b4eb-84679739133f",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682444719,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 14,
+      "correlationId": "k4-14-19ea621b-b061-45ee-a1ec-48c8f5d87000",
+      "scheduledAt": 1786682445165,
+      "startedAt": 1786682445165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-14-19ea621b-b061-45ee-a1ec-48c8f5d87000",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682445211,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 15,
+      "correlationId": "k4-15-e2154b89-0154-4451-bdf3-ad7ce8b9abfe",
+      "scheduledAt": 1786682445665,
+      "startedAt": 1786682445666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-15-e2154b89-0154-4451-bdf3-ad7ce8b9abfe",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682445735,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 16,
+      "correlationId": "k4-16-fa76f650-7c88-4184-910b-45829fadf02d",
+      "scheduledAt": 1786682446165,
+      "startedAt": 1786682446165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-16-fa76f650-7c88-4184-910b-45829fadf02d",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682446196,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 17,
+      "correlationId": "k4-17-12b72942-8168-4733-a427-c054a1003ecd",
+      "scheduledAt": 1786682446665,
+      "startedAt": 1786682446666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-17-12b72942-8168-4733-a427-c054a1003ecd",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682446717,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 18,
+      "correlationId": "k4-18-bfe553f7-e877-45aa-b599-54d11d4f7978",
+      "scheduledAt": 1786682447165,
+      "startedAt": 1786682447165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-18-bfe553f7-e877-45aa-b599-54d11d4f7978",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682447194,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 19,
+      "correlationId": "k4-19-45f00e5c-d870-482c-9244-279e1fd90198",
+      "scheduledAt": 1786682447665,
+      "startedAt": 1786682447666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-19-45f00e5c-d870-482c-9244-279e1fd90198",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682447720,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 20,
+      "correlationId": "k4-20-2f61ffda-6ad1-42a0-bf55-879722881ec3",
+      "scheduledAt": 1786682448165,
+      "startedAt": 1786682448174,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-20-2f61ffda-6ad1-42a0-bf55-879722881ec3",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682448277,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 21,
+      "correlationId": "k4-21-4950f188-350c-40c5-b554-3cbfe01187b3",
+      "scheduledAt": 1786682448665,
+      "startedAt": 1786682448665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-21-4950f188-350c-40c5-b554-3cbfe01187b3",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682448724,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 22,
+      "correlationId": "k4-22-d20521c8-f689-4e60-afe9-4d97cbcab630",
+      "scheduledAt": 1786682449165,
+      "startedAt": 1786682449166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-22-d20521c8-f689-4e60-afe9-4d97cbcab630",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682449259,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 23,
+      "correlationId": "k4-23-cf09a9d7-ea18-488e-8ec7-384baa171f9e",
+      "scheduledAt": 1786682449665,
+      "startedAt": 1786682449672,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-23-cf09a9d7-ea18-488e-8ec7-384baa171f9e",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682449771,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 24,
+      "correlationId": "k4-24-b767d10a-1338-40f9-8333-8b5c16011b5b",
+      "scheduledAt": 1786682450165,
+      "startedAt": 1786682450165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-24-b767d10a-1338-40f9-8333-8b5c16011b5b",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682450178,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 25,
+      "correlationId": "k4-25-fe8e8834-3688-45d6-b259-3d1155fe040e",
+      "scheduledAt": 1786682450665,
+      "startedAt": 1786682450665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-25-fe8e8834-3688-45d6-b259-3d1155fe040e",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682450753,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 26,
+      "correlationId": "k4-26-a42ffcd7-2a7e-4369-bcbb-f354f338d539",
+      "scheduledAt": 1786682451165,
+      "startedAt": 1786682451165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-26-a42ffcd7-2a7e-4369-bcbb-f354f338d539",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682451171,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 27,
+      "correlationId": "k4-27-20fb56d3-bd92-455b-83dd-ecef424db27c",
+      "scheduledAt": 1786682451665,
+      "startedAt": 1786682451665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-27-20fb56d3-bd92-455b-83dd-ecef424db27c",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682451727,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 28,
+      "correlationId": "k4-28-d5c99e31-c496-4ec9-a682-5c657266efbf",
+      "scheduledAt": 1786682452165,
+      "startedAt": 1786682452165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-28-d5c99e31-c496-4ec9-a682-5c657266efbf",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682452169,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 29,
+      "correlationId": "k4-29-59c89fc8-cf49-4339-a0cd-9ec84cde55c1",
+      "scheduledAt": 1786682452665,
+      "startedAt": 1786682452666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-29-59c89fc8-cf49-4339-a0cd-9ec84cde55c1",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682452711,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 30,
+      "correlationId": "k4-30-fa166190-f786-46c9-b7ed-b59a3c3f51b9",
+      "scheduledAt": 1786682453165,
+      "startedAt": 1786682453165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-30-fa166190-f786-46c9-b7ed-b59a3c3f51b9",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682453170,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 31,
+      "correlationId": "k4-31-f9c7e12d-7d0d-4fcf-b1ab-ca224b4b335a",
+      "scheduledAt": 1786682453665,
+      "startedAt": 1786682453666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-31-f9c7e12d-7d0d-4fcf-b1ab-ca224b4b335a",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682453724,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 32,
+      "correlationId": "k4-32-48020f81-3f3b-4b9b-8482-40ef561cdfef",
+      "scheduledAt": 1786682454165,
+      "startedAt": 1786682454166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-32-48020f81-3f3b-4b9b-8482-40ef561cdfef",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682454171,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 33,
+      "correlationId": "k4-33-232cda23-460b-440b-b4d5-82c1db9d816b",
+      "scheduledAt": 1786682454665,
+      "startedAt": 1786682454665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-33-232cda23-460b-440b-b4d5-82c1db9d816b",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682454783,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 34,
+      "correlationId": "k4-34-b2734445-9a82-43ea-b222-7919b3029625",
+      "scheduledAt": 1786682455165,
+      "startedAt": 1786682455179,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-34-b2734445-9a82-43ea-b222-7919b3029625",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682455185,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 35,
+      "correlationId": "k4-35-16be35bc-22fd-4451-bb04-744e9bb2962f",
+      "scheduledAt": 1786682455665,
+      "startedAt": 1786682455666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-35-16be35bc-22fd-4451-bb04-744e9bb2962f",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682455736,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 36,
+      "correlationId": "k4-36-31b30b14-b231-4927-9a77-26fb872bc1cc",
+      "scheduledAt": 1786682456165,
+      "startedAt": 1786682456165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-36-31b30b14-b231-4927-9a77-26fb872bc1cc",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682456171,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 37,
+      "correlationId": "k4-37-9412f8f1-b3c6-4a21-8c63-f6659eee1b4a",
+      "scheduledAt": 1786682456665,
+      "startedAt": 1786682456666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-37-9412f8f1-b3c6-4a21-8c63-f6659eee1b4a",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682456724,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 38,
+      "correlationId": "k4-38-7ae44e71-9b5b-4387-81d6-a66347dc8133",
+      "scheduledAt": 1786682457165,
+      "startedAt": 1786682457166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-38-7ae44e71-9b5b-4387-81d6-a66347dc8133",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682457174,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 39,
+      "correlationId": "k4-39-f93dc31a-95ca-44cd-9c41-3e74db036d77",
+      "scheduledAt": 1786682457665,
+      "startedAt": 1786682457665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-39-f93dc31a-95ca-44cd-9c41-3e74db036d77",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682457748,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 40,
+      "correlationId": "k4-40-b5818376-46c1-4091-8111-00fdd1b200b4",
+      "scheduledAt": 1786682458165,
+      "startedAt": 1786682458166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-40-b5818376-46c1-4091-8111-00fdd1b200b4",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682458175,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 41,
+      "correlationId": "k4-41-c7d32ff4-216a-44b6-98f7-efe9ca2db524",
+      "scheduledAt": 1786682458665,
+      "startedAt": 1786682458666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-41-c7d32ff4-216a-44b6-98f7-efe9ca2db524",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682458727,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 42,
+      "correlationId": "k4-42-9cc8cece-1e8a-4d49-a378-a8611adf4862",
+      "scheduledAt": 1786682459165,
+      "startedAt": 1786682459168,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-42-9cc8cece-1e8a-4d49-a378-a8611adf4862",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682459177,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 43,
+      "correlationId": "k4-43-d6a6349e-4899-48c7-b15d-c6d12cba090d",
+      "scheduledAt": 1786682459665,
+      "startedAt": 1786682459666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-43-d6a6349e-4899-48c7-b15d-c6d12cba090d",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682459736,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 44,
+      "correlationId": "k4-44-b0508a26-1b65-4e73-869d-2fec4779554f",
+      "scheduledAt": 1786682460165,
+      "startedAt": 1786682460165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-44-b0508a26-1b65-4e73-869d-2fec4779554f",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682460174,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 45,
+      "correlationId": "k4-45-0fdc9621-629e-4a92-b432-aae7fc5edc67",
+      "scheduledAt": 1786682460665,
+      "startedAt": 1786682460665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-45-0fdc9621-629e-4a92-b432-aae7fc5edc67",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682460729,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 46,
+      "correlationId": "k4-46-b2c13a1b-5bf3-4a84-af83-7e96565c15b3",
+      "scheduledAt": 1786682461165,
+      "startedAt": 1786682461167,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-46-b2c13a1b-5bf3-4a84-af83-7e96565c15b3",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682461174,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 47,
+      "correlationId": "k4-47-f59066a0-2568-454c-bf79-b0e461c90a1e",
+      "scheduledAt": 1786682461665,
+      "startedAt": 1786682461666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-47-f59066a0-2568-454c-bf79-b0e461c90a1e",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682461716,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 48,
+      "correlationId": "k4-48-69007256-89e1-44c3-b638-816469d2d9c2",
+      "scheduledAt": 1786682462165,
+      "startedAt": 1786682462167,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-48-69007256-89e1-44c3-b638-816469d2d9c2",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682462173,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 49,
+      "correlationId": "k4-49-2ea36f92-5347-48b0-9597-75dacec167de",
+      "scheduledAt": 1786682462665,
+      "startedAt": 1786682462666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-49-2ea36f92-5347-48b0-9597-75dacec167de",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682462733,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 50,
+      "correlationId": "k4-50-ac9f6d63-4655-4e36-a72e-3785ca57f3c0",
+      "scheduledAt": 1786682463165,
+      "startedAt": 1786682463165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-50-ac9f6d63-4655-4e36-a72e-3785ca57f3c0",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682463189,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 51,
+      "correlationId": "k4-51-7b040c0c-3d20-40a5-a66d-5f4efe82b5c4",
+      "scheduledAt": 1786682463665,
+      "startedAt": 1786682463665,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-51-7b040c0c-3d20-40a5-a66d-5f4efe82b5c4",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682463726,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 52,
+      "correlationId": "k4-52-0f533198-5368-4bc8-a007-cd478c326e82",
+      "scheduledAt": 1786682464165,
+      "startedAt": 1786682464165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-52-0f533198-5368-4bc8-a007-cd478c326e82",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682464171,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 53,
+      "correlationId": "k4-53-aa3063b2-6805-49b5-9c65-7627dcc3e68a",
+      "scheduledAt": 1786682464665,
+      "startedAt": 1786682464666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-53-aa3063b2-6805-49b5-9c65-7627dcc3e68a",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682464729,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 54,
+      "correlationId": "k4-54-4d7180ea-e21c-4eaa-ad82-0ad26943b960",
+      "scheduledAt": 1786682465165,
+      "startedAt": 1786682465166,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-54-4d7180ea-e21c-4eaa-ad82-0ad26943b960",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682465200,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 55,
+      "correlationId": "k4-55-75227d6e-5ce1-4109-bc54-946b1281b7fc",
+      "scheduledAt": 1786682465665,
+      "startedAt": 1786682465666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-55-75227d6e-5ce1-4109-bc54-946b1281b7fc",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682465749,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 56,
+      "correlationId": "k4-56-5dc76526-b6be-4c4e-83df-e4af31db4fb1",
+      "scheduledAt": 1786682466165,
+      "startedAt": 1786682466168,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-56-5dc76526-b6be-4c4e-83df-e4af31db4fb1",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682466175,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 57,
+      "correlationId": "k4-57-62e5f79e-c647-42f7-9c16-7d372cc540a4",
+      "scheduledAt": 1786682466665,
+      "startedAt": 1786682466666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-57-62e5f79e-c647-42f7-9c16-7d372cc540a4",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682466807,
+      "outcome": "success",
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 58,
+      "correlationId": "k4-58-bad20c25-d927-4eeb-b79e-9a3fe5e829aa",
+      "scheduledAt": 1786682467165,
+      "startedAt": 1786682467165,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-58-bad20c25-d927-4eeb-b79e-9a3fe5e829aa",
+        "status": 429,
+        "ok": false,
+        "outcome": "error",
+        "error": "sidebar request failed with 429"
+      },
+      "completedAt": 1786682467185,
+      "outcome": "error",
+      "error": "sidebar request failed with 429",
+      "responseStatus": 429,
+      "phase": "measurement"
+    },
+    {
+      "opportunityId": 59,
+      "correlationId": "k4-59-f551da38-3bf7-4794-a123-854a7bff43d3",
+      "scheduledAt": 1786682467665,
+      "startedAt": 1786682467666,
+      "status": "started",
+      "evidence": {
+        "requestId": "k4-59-f551da38-3bf7-4794-a123-854a7bff43d3",
+        "status": 200,
+        "ok": true
+      },
+      "completedAt": 1786682467777,
+      "outcome": "success",
+      "phase": "measurement"
+    }
+  ],
+  "scenario": "sidebar",
+  "version": 2,
+  "phase": "measurement",
+  "request": {
+    "method": "GET",
+    "path": "/api/sidebar/conversations"
+  },
+  "pagination": {
+    "mode": "page",
+    "pageSize": 20
+  },
+  "measuredRequestIds": [
+    "k4-0-1f4e6a6b-d983-45e2-a4d5-60cea7456fc7",
+    "k4-1-8c935577-3a2a-4edb-b822-14f15c12680c",
+    "k4-2-cb63479a-c4d1-474a-af5f-ac1e5ad58b15",
+    "k4-3-2ebf2d9f-db04-46a7-a7aa-6493bfa483bf",
+    "k4-4-4c564695-f3d3-479f-afc6-837e30af892d",
+    "k4-5-7af32668-8683-4942-87c1-e446008938df",
+    "k4-6-3ff8d09b-5a2f-48ea-9484-7aeacaa71f6f",
+    "k4-7-5e4da92b-a3b3-4f2a-8ef9-f6126ffb39f9",
+    "k4-8-045bb9d7-3ac9-4b60-af59-722e08d3c330",
+    "k4-9-6c93d74c-9dab-46bf-ad53-b716714e50aa",
+    "k4-10-4652712b-20d5-4747-8763-966eafa0ecd2",
+    "k4-11-9f4b15c7-11b9-46ae-97d7-18ec9e4e785c",
+    "k4-12-860d24a2-c6d2-4f60-b8dc-a323e51d4928",
+    "k4-13-cc93bd14-e4a5-415e-b4eb-84679739133f",
+    "k4-14-19ea621b-b061-45ee-a1ec-48c8f5d87000",
+    "k4-15-e2154b89-0154-4451-bdf3-ad7ce8b9abfe",
+    "k4-16-fa76f650-7c88-4184-910b-45829fadf02d",
+    "k4-17-12b72942-8168-4733-a427-c054a1003ecd",
+    "k4-18-bfe553f7-e877-45aa-b599-54d11d4f7978",
+    "k4-19-45f00e5c-d870-482c-9244-279e1fd90198",
+    "k4-20-2f61ffda-6ad1-42a0-bf55-879722881ec3",
+    "k4-21-4950f188-350c-40c5-b554-3cbfe01187b3",
+    "k4-22-d20521c8-f689-4e60-afe9-4d97cbcab630",
+    "k4-23-cf09a9d7-ea18-488e-8ec7-384baa171f9e",
+    "k4-24-b767d10a-1338-40f9-8333-8b5c16011b5b",
+    "k4-25-fe8e8834-3688-45d6-b259-3d1155fe040e",
+    "k4-26-a42ffcd7-2a7e-4369-bcbb-f354f338d539",
+    "k4-27-20fb56d3-bd92-455b-83dd-ecef424db27c",
+    "k4-28-d5c99e31-c496-4ec9-a682-5c657266efbf",
+    "k4-29-59c89fc8-cf49-4339-a0cd-9ec84cde55c1",
+    "k4-30-fa166190-f786-46c9-b7ed-b59a3c3f51b9",
+    "k4-31-f9c7e12d-7d0d-4fcf-b1ab-ca224b4b335a",
+    "k4-32-48020f81-3f3b-4b9b-8482-40ef561cdfef",
+    "k4-33-232cda23-460b-440b-b4d5-82c1db9d816b",
+    "k4-34-b2734445-9a82-43ea-b222-7919b3029625",
+    "k4-35-16be35bc-22fd-4451-bb04-744e9bb2962f",
+    "k4-36-31b30b14-b231-4927-9a77-26fb872bc1cc",
+    "k4-37-9412f8f1-b3c6-4a21-8c63-f6659eee1b4a",
+    "k4-38-7ae44e71-9b5b-4387-81d6-a66347dc8133",
+    "k4-39-f93dc31a-95ca-44cd-9c41-3e74db036d77",
+    "k4-40-b5818376-46c1-4091-8111-00fdd1b200b4",
+    "k4-41-c7d32ff4-216a-44b6-98f7-efe9ca2db524",
+    "k4-42-9cc8cece-1e8a-4d49-a378-a8611adf4862",
+    "k4-43-d6a6349e-4899-48c7-b15d-c6d12cba090d",
+    "k4-44-b0508a26-1b65-4e73-869d-2fec4779554f",
+    "k4-45-0fdc9621-629e-4a92-b432-aae7fc5edc67",
+    "k4-46-b2c13a1b-5bf3-4a84-af83-7e96565c15b3",
+    "k4-47-f59066a0-2568-454c-bf79-b0e461c90a1e",
+    "k4-48-69007256-89e1-44c3-b638-816469d2d9c2",
+    "k4-49-2ea36f92-5347-48b0-9597-75dacec167de",
+    "k4-50-ac9f6d63-4655-4e36-a72e-3785ca57f3c0",
+    "k4-51-7b040c0c-3d20-40a5-a66d-5f4efe82b5c4",
+    "k4-52-0f533198-5368-4bc8-a007-cd478c326e82",
+    "k4-53-aa3063b2-6805-49b5-9c65-7627dcc3e68a",
+    "k4-54-4d7180ea-e21c-4eaa-ad82-0ad26943b960",
+    "k4-55-75227d6e-5ce1-4109-bc54-946b1281b7fc",
+    "k4-56-5dc76526-b6be-4c4e-83df-e4af31db4fb1",
+    "k4-57-62e5f79e-c647-42f7-9c16-7d372cc540a4",
+    "k4-58-bad20c25-d927-4eeb-b79e-9a3fe5e829aa",
+    "k4-59-f551da38-3bf7-4794-a123-854a7bff43d3"
+  ],
+  "measuredActors": [
+    "alice"
+  ],
+  "measurementWindow": {
+    "start": "2026-08-14T04:40:38.165Z",
+    "end": "2026-08-14T04:41:08.165Z",
+    "boundary": "[phase_start, phase_end)"
+  },
+  "runnerShortfallSamples": []
+}

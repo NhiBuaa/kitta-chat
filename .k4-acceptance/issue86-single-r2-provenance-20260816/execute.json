@@ -1,0 +1,2907 @@
+
+> k4
+> node scripts/k4/cli.js execute --run-id issue86-single-r2-provenance-20260816 --profile single-replica --scenario sidebar --workload-version 2 --image-set-id issue86-20260814 --observation-interval-ms 1000
+
+{
+  "status": "WARMUP_ADMITTED",
+  "phases": {
+    "setup/seed": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "resourcesCreated": true,
+        "setupPreflight": {
+          "status": "WARMUP_ADMITTED",
+          "warmupAdmission": "WARMUP_ADMITTED",
+          "verification": {
+            "status": "VERIFIED"
+          },
+          "dataset": {
+            "identity": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182",
+            "declared": {
+              "generatorVersion": "k4-fixture-v1",
+              "schemaVersion": "kittachat-schema-v1",
+              "contentSeed": "k4-content-seed-v1",
+              "cardinalities": {
+                "conversations": 24,
+                "files": 60,
+                "groups": 6,
+                "messages": 244,
+                "participants": 60,
+                "users": 19
+              },
+              "fingerprint": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182"
+            },
+            "observed": {
+              "generatorVersion": "k4-fixture-v1",
+              "schemaVersion": "kittachat-schema-v1",
+              "contentSeed": "k4-content-seed-v1",
+              "cardinalities": {
+                "conversations": 24,
+                "files": 60,
+                "groups": 6,
+                "messages": 244,
+                "participants": 60,
+                "users": 19
+              },
+              "fingerprint": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182"
+            },
+            "size": {
+              "cardinalities": {
+                "conversations": 24,
+                "files": 60,
+                "groups": 6,
+                "messages": 244,
+                "participants": 60,
+                "users": 19
+              },
+              "totalDocuments": 413
+            }
+          },
+          "actors": {
+            "alice": {
+              "id": "64a000000000000000000001",
+              "email": "alice@kittachat.test"
+            }
+          }
+        }
+      }
+    },
+    "warm-up": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "phaseStart": 1786850755904,
+        "phaseEnd": 1786850765904,
+        "opportunities": [
+          {
+            "opportunityId": 0,
+            "correlationId": "k4-0-853f8c8b-cf41-4298-adf6-495b20f062a6",
+            "scheduledAt": 1786850755904,
+            "startedAt": 1786850755904,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-0-853f8c8b-cf41-4298-adf6-495b20f062a6",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850755976,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 1,
+            "correlationId": "k4-1-8ef967c8-44d8-42d0-ad6d-27bc82e8252c",
+            "scheduledAt": 1786850756404,
+            "startedAt": 1786850756405,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-1-8ef967c8-44d8-42d0-ad6d-27bc82e8252c",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850756439,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 2,
+            "correlationId": "k4-2-256b59f5-f80b-4a84-bf13-ccdb377cb25c",
+            "scheduledAt": 1786850756904,
+            "startedAt": 1786850756905,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-2-256b59f5-f80b-4a84-bf13-ccdb377cb25c",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850756936,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 3,
+            "correlationId": "k4-3-1c088184-a5f9-4689-b750-9e062ce5fdf5",
+            "scheduledAt": 1786850757404,
+            "startedAt": 1786850757405,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-3-1c088184-a5f9-4689-b750-9e062ce5fdf5",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850757453,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 4,
+            "correlationId": "k4-4-6209c187-5fba-4eef-a284-198f8e2c2bad",
+            "scheduledAt": 1786850757904,
+            "startedAt": 1786850757904,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-4-6209c187-5fba-4eef-a284-198f8e2c2bad",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850757935,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 5,
+            "correlationId": "k4-5-3f3dbe81-c5b7-4bf4-b830-13eeb9f7426d",
+            "scheduledAt": 1786850758404,
+            "startedAt": 1786850758405,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-5-3f3dbe81-c5b7-4bf4-b830-13eeb9f7426d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850758429,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 6,
+            "correlationId": "k4-6-9a24df8b-bf7a-4685-8483-8d84dc2eeef8",
+            "scheduledAt": 1786850758904,
+            "startedAt": 1786850758905,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-6-9a24df8b-bf7a-4685-8483-8d84dc2eeef8",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850758931,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 7,
+            "correlationId": "k4-7-5acfea21-b253-4bb4-9a24-14b9e67fcd22",
+            "scheduledAt": 1786850759404,
+            "startedAt": 1786850759405,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-7-5acfea21-b253-4bb4-9a24-14b9e67fcd22",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850759428,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 8,
+            "correlationId": "k4-8-7045ed1a-9e41-434e-aa93-738965f9ca9a",
+            "scheduledAt": 1786850759904,
+            "startedAt": 1786850759904,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-8-7045ed1a-9e41-434e-aa93-738965f9ca9a",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850759925,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 9,
+            "correlationId": "k4-9-740a020b-47b1-4967-bc35-6310adb068b1",
+            "scheduledAt": 1786850760404,
+            "startedAt": 1786850760404,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-9-740a020b-47b1-4967-bc35-6310adb068b1",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850760426,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 10,
+            "correlationId": "k4-10-0b9cd3c5-1f1f-45ea-8a10-40a08dfeb031",
+            "scheduledAt": 1786850760904,
+            "startedAt": 1786850760904,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-10-0b9cd3c5-1f1f-45ea-8a10-40a08dfeb031",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850760926,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 11,
+            "correlationId": "k4-11-92a4a31f-b20f-4abe-9a53-a7c6e522c9ce",
+            "scheduledAt": 1786850761404,
+            "startedAt": 1786850761405,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-11-92a4a31f-b20f-4abe-9a53-a7c6e522c9ce",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850761434,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 12,
+            "correlationId": "k4-12-e39d99ae-0a2a-4226-bc90-fba2d615414b",
+            "scheduledAt": 1786850761904,
+            "startedAt": 1786850761904,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-12-e39d99ae-0a2a-4226-bc90-fba2d615414b",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850761936,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 13,
+            "correlationId": "k4-13-15e2bca8-b6d8-4517-ae15-b1baf7a66e0a",
+            "scheduledAt": 1786850762404,
+            "startedAt": 1786850762403,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-13-15e2bca8-b6d8-4517-ae15-b1baf7a66e0a",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850762434,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 14,
+            "correlationId": "k4-14-e8223bb2-1fc7-4c32-8386-f90d4e3a608f",
+            "scheduledAt": 1786850762904,
+            "startedAt": 1786850762905,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-14-e8223bb2-1fc7-4c32-8386-f90d4e3a608f",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850762926,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 15,
+            "correlationId": "k4-15-6c784d6f-e4be-4795-acfe-ca5b5cb666f3",
+            "scheduledAt": 1786850763404,
+            "startedAt": 1786850763405,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-15-6c784d6f-e4be-4795-acfe-ca5b5cb666f3",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850763423,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 16,
+            "correlationId": "k4-16-db9e1ad9-de3f-463c-989c-e2d2f07ae590",
+            "scheduledAt": 1786850763904,
+            "startedAt": 1786850763905,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-16-db9e1ad9-de3f-463c-989c-e2d2f07ae590",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850763927,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 17,
+            "correlationId": "k4-17-f9ae3c66-a003-4ffc-947d-14e7299077b0",
+            "scheduledAt": 1786850764404,
+            "startedAt": 1786850764405,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-17-f9ae3c66-a003-4ffc-947d-14e7299077b0",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850764429,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 18,
+            "correlationId": "k4-18-e8b94350-b7b8-4b88-bb50-23a1fd43acb6",
+            "scheduledAt": 1786850764904,
+            "startedAt": 1786850764905,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-18-e8b94350-b7b8-4b88-bb50-23a1fd43acb6",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850764927,
+            "outcome": "success",
+            "phase": "warm-up"
+          },
+          {
+            "opportunityId": 19,
+            "correlationId": "k4-19-c81a7a93-f02c-4a75-9546-230b1711937d",
+            "scheduledAt": 1786850765404,
+            "startedAt": 1786850765404,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-19-c81a7a93-f02c-4a75-9546-230b1711937d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850765443,
+            "outcome": "success",
+            "phase": "warm-up"
+          }
+        ],
+        "scenario": "sidebar",
+        "version": 2,
+        "phase": "warm-up",
+        "request": {
+          "method": "GET",
+          "path": "/api/sidebar/conversations"
+        },
+        "pagination": {
+          "mode": "page",
+          "pageSize": 20
+        },
+        "measuredRequestIds": [
+          "k4-0-853f8c8b-cf41-4298-adf6-495b20f062a6",
+          "k4-1-8ef967c8-44d8-42d0-ad6d-27bc82e8252c",
+          "k4-2-256b59f5-f80b-4a84-bf13-ccdb377cb25c",
+          "k4-3-1c088184-a5f9-4689-b750-9e062ce5fdf5",
+          "k4-4-6209c187-5fba-4eef-a284-198f8e2c2bad",
+          "k4-5-3f3dbe81-c5b7-4bf4-b830-13eeb9f7426d",
+          "k4-6-9a24df8b-bf7a-4685-8483-8d84dc2eeef8",
+          "k4-7-5acfea21-b253-4bb4-9a24-14b9e67fcd22",
+          "k4-8-7045ed1a-9e41-434e-aa93-738965f9ca9a",
+          "k4-9-740a020b-47b1-4967-bc35-6310adb068b1",
+          "k4-10-0b9cd3c5-1f1f-45ea-8a10-40a08dfeb031",
+          "k4-11-92a4a31f-b20f-4abe-9a53-a7c6e522c9ce",
+          "k4-12-e39d99ae-0a2a-4226-bc90-fba2d615414b",
+          "k4-13-15e2bca8-b6d8-4517-ae15-b1baf7a66e0a",
+          "k4-14-e8223bb2-1fc7-4c32-8386-f90d4e3a608f",
+          "k4-15-6c784d6f-e4be-4795-acfe-ca5b5cb666f3",
+          "k4-16-db9e1ad9-de3f-463c-989c-e2d2f07ae590",
+          "k4-17-f9ae3c66-a003-4ffc-947d-14e7299077b0",
+          "k4-18-e8b94350-b7b8-4b88-bb50-23a1fd43acb6",
+          "k4-19-c81a7a93-f02c-4a75-9546-230b1711937d"
+        ],
+        "measuredActors": [
+          "alice"
+        ],
+        "measurementWindow": {
+          "start": "2026-08-16T03:25:55.904Z",
+          "end": "2026-08-16T03:26:05.904Z",
+          "boundary": "[phase_start, phase_end)"
+        },
+        "runnerShortfallSamples": []
+      }
+    },
+    "measurement": {
+      "started": true,
+      "completed": true,
+      "qualified": true,
+      "publishable": false,
+      "output": {
+        "phaseStart": 1786850766623,
+        "phaseEnd": 1786850796623,
+        "opportunities": [
+          {
+            "opportunityId": 0,
+            "correlationId": "k4-0-3a913acf-4e16-4117-a453-cad66fe979ca",
+            "scheduledAt": 1786850766623,
+            "startedAt": 1786850766624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-0-3a913acf-4e16-4117-a453-cad66fe979ca",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850766662,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 1,
+            "correlationId": "k4-1-4cb15f28-7912-4535-a7c8-ca3e22ee3a05",
+            "scheduledAt": 1786850767123,
+            "startedAt": 1786850767123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-1-4cb15f28-7912-4535-a7c8-ca3e22ee3a05",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850767142,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 2,
+            "correlationId": "k4-2-2c85fa63-1a78-4707-a162-5fbd69472866",
+            "scheduledAt": 1786850767623,
+            "startedAt": 1786850767623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-2-2c85fa63-1a78-4707-a162-5fbd69472866",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850767671,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 3,
+            "correlationId": "k4-3-5f8b03b2-0921-4264-b4b2-f08938f19cb1",
+            "scheduledAt": 1786850768123,
+            "startedAt": 1786850768124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-3-5f8b03b2-0921-4264-b4b2-f08938f19cb1",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850768152,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 4,
+            "correlationId": "k4-4-7f480032-2ce3-44ef-b7db-3e43118ccfd0",
+            "scheduledAt": 1786850768623,
+            "startedAt": 1786850768625,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-4-7f480032-2ce3-44ef-b7db-3e43118ccfd0",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850768659,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 5,
+            "correlationId": "k4-5-d401fa47-1d2f-4307-a71e-277799d8a9b7",
+            "scheduledAt": 1786850769123,
+            "startedAt": 1786850769123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-5-d401fa47-1d2f-4307-a71e-277799d8a9b7",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850769146,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 6,
+            "correlationId": "k4-6-1c0c07c8-ab63-4586-bf0e-9d9877ad3d5d",
+            "scheduledAt": 1786850769623,
+            "startedAt": 1786850769623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-6-1c0c07c8-ab63-4586-bf0e-9d9877ad3d5d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850769658,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 7,
+            "correlationId": "k4-7-a8ed3150-a6c9-45cc-831e-9de6c7da363e",
+            "scheduledAt": 1786850770123,
+            "startedAt": 1786850770123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-7-a8ed3150-a6c9-45cc-831e-9de6c7da363e",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850770154,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 8,
+            "correlationId": "k4-8-dea715f8-66da-4874-aae5-7f786adc194c",
+            "scheduledAt": 1786850770623,
+            "startedAt": 1786850770625,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-8-dea715f8-66da-4874-aae5-7f786adc194c",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850770682,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 9,
+            "correlationId": "k4-9-f5f16227-a43d-4bb4-a6a6-6f6caf1e6563",
+            "scheduledAt": 1786850771123,
+            "startedAt": 1786850771125,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-9-f5f16227-a43d-4bb4-a6a6-6f6caf1e6563",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850771171,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 10,
+            "correlationId": "k4-10-eec082e9-27f7-4a55-a310-c905b4f845c8",
+            "scheduledAt": 1786850771623,
+            "startedAt": 1786850771623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-10-eec082e9-27f7-4a55-a310-c905b4f845c8",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850771676,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 11,
+            "correlationId": "k4-11-b4f91afb-9843-45ef-8815-a2396c76e737",
+            "scheduledAt": 1786850772123,
+            "startedAt": 1786850772123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-11-b4f91afb-9843-45ef-8815-a2396c76e737",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850772217,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 12,
+            "correlationId": "k4-12-80b442ce-9844-4eee-aed5-d2dd871d2307",
+            "scheduledAt": 1786850772623,
+            "startedAt": 1786850772624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-12-80b442ce-9844-4eee-aed5-d2dd871d2307",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850772722,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 13,
+            "correlationId": "k4-13-2d34e3c3-0ca8-4f96-ad53-75179a90b7f0",
+            "scheduledAt": 1786850773123,
+            "startedAt": 1786850773128,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-13-2d34e3c3-0ca8-4f96-ad53-75179a90b7f0",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850773195,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 14,
+            "correlationId": "k4-14-b968c4c6-8eed-44cc-8a43-32e364a587d7",
+            "scheduledAt": 1786850773623,
+            "startedAt": 1786850773624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-14-b968c4c6-8eed-44cc-8a43-32e364a587d7",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850773674,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 15,
+            "correlationId": "k4-15-1bc4b6e6-a2b5-48e8-948b-b8f7aaefb157",
+            "scheduledAt": 1786850774123,
+            "startedAt": 1786850774124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-15-1bc4b6e6-a2b5-48e8-948b-b8f7aaefb157",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850774148,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 16,
+            "correlationId": "k4-16-30340290-03d9-4aa3-9c8d-52e9587bb4f1",
+            "scheduledAt": 1786850774623,
+            "startedAt": 1786850774624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-16-30340290-03d9-4aa3-9c8d-52e9587bb4f1",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850774652,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 17,
+            "correlationId": "k4-17-b1515bd8-21af-435e-81f7-cfc7af1ce707",
+            "scheduledAt": 1786850775123,
+            "startedAt": 1786850775123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-17-b1515bd8-21af-435e-81f7-cfc7af1ce707",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850775152,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 18,
+            "correlationId": "k4-18-63f998aa-f684-4764-9c5e-e1b187a52eeb",
+            "scheduledAt": 1786850775623,
+            "startedAt": 1786850775625,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-18-63f998aa-f684-4764-9c5e-e1b187a52eeb",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850775673,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 19,
+            "correlationId": "k4-19-8f395e7e-3d28-4b9c-9e85-72dc9d7eb438",
+            "scheduledAt": 1786850776123,
+            "startedAt": 1786850776124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-19-8f395e7e-3d28-4b9c-9e85-72dc9d7eb438",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850776145,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 20,
+            "correlationId": "k4-20-8fa1cfdc-f954-4277-9148-4deb637a5d17",
+            "scheduledAt": 1786850776623,
+            "startedAt": 1786850776624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-20-8fa1cfdc-f954-4277-9148-4deb637a5d17",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850776637,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 21,
+            "correlationId": "k4-21-d5a54f84-904d-4a42-b866-5a985172808e",
+            "scheduledAt": 1786850777123,
+            "startedAt": 1786850777123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-21-d5a54f84-904d-4a42-b866-5a985172808e",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850777153,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 22,
+            "correlationId": "k4-22-3cc9600e-81ce-4f1a-908b-2eb017571161",
+            "scheduledAt": 1786850777623,
+            "startedAt": 1786850777625,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-22-3cc9600e-81ce-4f1a-908b-2eb017571161",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850777630,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 23,
+            "correlationId": "k4-23-b0422fda-0c30-4d10-957f-6f32b73e2162",
+            "scheduledAt": 1786850778123,
+            "startedAt": 1786850778124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-23-b0422fda-0c30-4d10-957f-6f32b73e2162",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850778145,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 24,
+            "correlationId": "k4-24-7a9c7c67-d877-4a64-ab8e-1e879fb76a2a",
+            "scheduledAt": 1786850778623,
+            "startedAt": 1786850778626,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-24-7a9c7c67-d877-4a64-ab8e-1e879fb76a2a",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850778633,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 25,
+            "correlationId": "k4-25-f024a7c4-a62b-4c16-9847-85961fe4e065",
+            "scheduledAt": 1786850779123,
+            "startedAt": 1786850779124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-25-f024a7c4-a62b-4c16-9847-85961fe4e065",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850779153,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 26,
+            "correlationId": "k4-26-105c02f3-24a6-47c1-a7cc-39e2c9bc1ed1",
+            "scheduledAt": 1786850779623,
+            "startedAt": 1786850779624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-26-105c02f3-24a6-47c1-a7cc-39e2c9bc1ed1",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850779631,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 27,
+            "correlationId": "k4-27-47a8ae0a-76fa-4b5a-8852-767896b1a87f",
+            "scheduledAt": 1786850780123,
+            "startedAt": 1786850780124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-27-47a8ae0a-76fa-4b5a-8852-767896b1a87f",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850780151,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 28,
+            "correlationId": "k4-28-49bbd1db-0138-4a61-a23e-7d4983ee57ee",
+            "scheduledAt": 1786850780623,
+            "startedAt": 1786850780623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-28-49bbd1db-0138-4a61-a23e-7d4983ee57ee",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850780631,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 29,
+            "correlationId": "k4-29-064acccc-871e-4568-8af4-10024897b3d9",
+            "scheduledAt": 1786850781123,
+            "startedAt": 1786850781123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-29-064acccc-871e-4568-8af4-10024897b3d9",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850781147,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 30,
+            "correlationId": "k4-30-22338d93-1902-4fb4-aec9-a65203cd50cd",
+            "scheduledAt": 1786850781623,
+            "startedAt": 1786850781623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-30-22338d93-1902-4fb4-aec9-a65203cd50cd",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850781627,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 31,
+            "correlationId": "k4-31-21a263a7-9d38-443f-a512-9f50e0f1ccff",
+            "scheduledAt": 1786850782123,
+            "startedAt": 1786850782124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-31-21a263a7-9d38-443f-a512-9f50e0f1ccff",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850782141,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 32,
+            "correlationId": "k4-32-2fa699bb-6cbe-45b2-bc5e-166567a7d6d6",
+            "scheduledAt": 1786850782623,
+            "startedAt": 1786850782623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-32-2fa699bb-6cbe-45b2-bc5e-166567a7d6d6",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850782628,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 33,
+            "correlationId": "k4-33-793d5c74-1186-465a-8467-e72d7bb6b23f",
+            "scheduledAt": 1786850783123,
+            "startedAt": 1786850783123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-33-793d5c74-1186-465a-8467-e72d7bb6b23f",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850783173,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 34,
+            "correlationId": "k4-34-edc6041f-cf14-4bcd-ab90-932e2f6dd225",
+            "scheduledAt": 1786850783623,
+            "startedAt": 1786850783623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-34-edc6041f-cf14-4bcd-ab90-932e2f6dd225",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850783629,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 35,
+            "correlationId": "k4-35-e1d09d6e-41bc-4ea6-9507-0f766d43dc63",
+            "scheduledAt": 1786850784123,
+            "startedAt": 1786850784124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-35-e1d09d6e-41bc-4ea6-9507-0f766d43dc63",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850784169,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 36,
+            "correlationId": "k4-36-2b7dd858-6851-486c-aa08-a9132bd87ba2",
+            "scheduledAt": 1786850784623,
+            "startedAt": 1786850784623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-36-2b7dd858-6851-486c-aa08-a9132bd87ba2",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850784632,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 37,
+            "correlationId": "k4-37-f44d2aa6-9353-4e06-8608-a271493d95a0",
+            "scheduledAt": 1786850785123,
+            "startedAt": 1786850785125,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-37-f44d2aa6-9353-4e06-8608-a271493d95a0",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850785191,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 38,
+            "correlationId": "k4-38-d26ba06d-8db1-45ea-ac7e-c1edea056044",
+            "scheduledAt": 1786850785623,
+            "startedAt": 1786850785622,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-38-d26ba06d-8db1-45ea-ac7e-c1edea056044",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850785638,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 39,
+            "correlationId": "k4-39-9d04e72e-80da-4775-80c5-36f80974a59d",
+            "scheduledAt": 1786850786123,
+            "startedAt": 1786850786128,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-39-9d04e72e-80da-4775-80c5-36f80974a59d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850786188,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 40,
+            "correlationId": "k4-40-c551d958-8ef6-40d0-829e-ebec636cec36",
+            "scheduledAt": 1786850786623,
+            "startedAt": 1786850786624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-40-c551d958-8ef6-40d0-829e-ebec636cec36",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850786629,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 41,
+            "correlationId": "k4-41-220c4e20-4830-4715-aa77-b8fbb5479f63",
+            "scheduledAt": 1786850787123,
+            "startedAt": 1786850787123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-41-220c4e20-4830-4715-aa77-b8fbb5479f63",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850787145,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 42,
+            "correlationId": "k4-42-c2ae5da9-6826-466e-b9d9-851344298c97",
+            "scheduledAt": 1786850787623,
+            "startedAt": 1786850787623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-42-c2ae5da9-6826-466e-b9d9-851344298c97",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850787626,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 43,
+            "correlationId": "k4-43-f90ed0bc-60f8-4a4a-987f-503f6260c2dc",
+            "scheduledAt": 1786850788123,
+            "startedAt": 1786850788123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-43-f90ed0bc-60f8-4a4a-987f-503f6260c2dc",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850788147,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 44,
+            "correlationId": "k4-44-41232899-e64b-479c-ba6e-77d175137ea9",
+            "scheduledAt": 1786850788623,
+            "startedAt": 1786850788623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-44-41232899-e64b-479c-ba6e-77d175137ea9",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850788628,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 45,
+            "correlationId": "k4-45-f17268c3-3614-4939-b536-cb505b8678e3",
+            "scheduledAt": 1786850789123,
+            "startedAt": 1786850789124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-45-f17268c3-3614-4939-b536-cb505b8678e3",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850789147,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 46,
+            "correlationId": "k4-46-e6aba4fa-10f2-4e91-8237-55eadd007d94",
+            "scheduledAt": 1786850789623,
+            "startedAt": 1786850789624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-46-e6aba4fa-10f2-4e91-8237-55eadd007d94",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850789629,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 47,
+            "correlationId": "k4-47-dddcc4ca-d126-45ef-b20a-9fd1b4e44fc8",
+            "scheduledAt": 1786850790123,
+            "startedAt": 1786850790124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-47-dddcc4ca-d126-45ef-b20a-9fd1b4e44fc8",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850790141,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 48,
+            "correlationId": "k4-48-d464e6e9-71ba-4677-a9a3-b80fcf8424f0",
+            "scheduledAt": 1786850790623,
+            "startedAt": 1786850790624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-48-d464e6e9-71ba-4677-a9a3-b80fcf8424f0",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850790629,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 49,
+            "correlationId": "k4-49-a42e8616-a44a-42a9-a654-065c3990c462",
+            "scheduledAt": 1786850791123,
+            "startedAt": 1786850791124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-49-a42e8616-a44a-42a9-a654-065c3990c462",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850791141,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 50,
+            "correlationId": "k4-50-ed0be0f5-e2e4-485d-8eee-12d62dbc20ea",
+            "scheduledAt": 1786850791623,
+            "startedAt": 1786850791623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-50-ed0be0f5-e2e4-485d-8eee-12d62dbc20ea",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850791627,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 51,
+            "correlationId": "k4-51-a8764437-ab58-446c-8982-686280b41dcf",
+            "scheduledAt": 1786850792123,
+            "startedAt": 1786850792123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-51-a8764437-ab58-446c-8982-686280b41dcf",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850792140,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 52,
+            "correlationId": "k4-52-b4936dd6-b521-4c8b-b553-005a0c475427",
+            "scheduledAt": 1786850792623,
+            "startedAt": 1786850792622,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-52-b4936dd6-b521-4c8b-b553-005a0c475427",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850792627,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 53,
+            "correlationId": "k4-53-5ca3b74f-60b8-4a32-bce2-bc804a6aa18d",
+            "scheduledAt": 1786850793123,
+            "startedAt": 1786850793124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-53-5ca3b74f-60b8-4a32-bce2-bc804a6aa18d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850793148,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 54,
+            "correlationId": "k4-54-fc99120a-d4a4-48b5-8c81-49a7b243a905",
+            "scheduledAt": 1786850793623,
+            "startedAt": 1786850793624,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-54-fc99120a-d4a4-48b5-8c81-49a7b243a905",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850793629,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 55,
+            "correlationId": "k4-55-b573d287-b900-490b-8a8f-b92493d7876d",
+            "scheduledAt": 1786850794123,
+            "startedAt": 1786850794123,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-55-b573d287-b900-490b-8a8f-b92493d7876d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850794147,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 56,
+            "correlationId": "k4-56-7855fe54-c191-4422-8c3f-dfdca2b9bdde",
+            "scheduledAt": 1786850794623,
+            "startedAt": 1786850794623,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-56-7855fe54-c191-4422-8c3f-dfdca2b9bdde",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850794627,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 57,
+            "correlationId": "k4-57-97439dd4-4393-4716-8ce5-d8130e3cd13d",
+            "scheduledAt": 1786850795123,
+            "startedAt": 1786850795124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-57-97439dd4-4393-4716-8ce5-d8130e3cd13d",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850795160,
+            "outcome": "success",
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 58,
+            "correlationId": "k4-58-aa0031f3-70ac-4d51-90f4-65bb4164ec94",
+            "scheduledAt": 1786850795623,
+            "startedAt": 1786850795626,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-58-aa0031f3-70ac-4d51-90f4-65bb4164ec94",
+              "status": 429,
+              "ok": false,
+              "outcome": "error",
+              "error": "sidebar request failed with 429"
+            },
+            "completedAt": 1786850795634,
+            "outcome": "error",
+            "error": "sidebar request failed with 429",
+            "responseStatus": 429,
+            "phase": "measurement"
+          },
+          {
+            "opportunityId": 59,
+            "correlationId": "k4-59-8d00d905-abad-4e53-b1d6-09dc95a50526",
+            "scheduledAt": 1786850796123,
+            "startedAt": 1786850796124,
+            "status": "started",
+            "evidence": {
+              "requestId": "k4-59-8d00d905-abad-4e53-b1d6-09dc95a50526",
+              "status": 200,
+              "ok": true
+            },
+            "completedAt": 1786850796172,
+            "outcome": "success",
+            "phase": "measurement"
+          }
+        ],
+        "scenario": "sidebar",
+        "version": 2,
+        "phase": "measurement",
+        "request": {
+          "method": "GET",
+          "path": "/api/sidebar/conversations"
+        },
+        "pagination": {
+          "mode": "page",
+          "pageSize": 20
+        },
+        "measuredRequestIds": [
+          "k4-0-3a913acf-4e16-4117-a453-cad66fe979ca",
+          "k4-1-4cb15f28-7912-4535-a7c8-ca3e22ee3a05",
+          "k4-2-2c85fa63-1a78-4707-a162-5fbd69472866",
+          "k4-3-5f8b03b2-0921-4264-b4b2-f08938f19cb1",
+          "k4-4-7f480032-2ce3-44ef-b7db-3e43118ccfd0",
+          "k4-5-d401fa47-1d2f-4307-a71e-277799d8a9b7",
+          "k4-6-1c0c07c8-ab63-4586-bf0e-9d9877ad3d5d",
+          "k4-7-a8ed3150-a6c9-45cc-831e-9de6c7da363e",
+          "k4-8-dea715f8-66da-4874-aae5-7f786adc194c",
+          "k4-9-f5f16227-a43d-4bb4-a6a6-6f6caf1e6563",
+          "k4-10-eec082e9-27f7-4a55-a310-c905b4f845c8",
+          "k4-11-b4f91afb-9843-45ef-8815-a2396c76e737",
+          "k4-12-80b442ce-9844-4eee-aed5-d2dd871d2307",
+          "k4-13-2d34e3c3-0ca8-4f96-ad53-75179a90b7f0",
+          "k4-14-b968c4c6-8eed-44cc-8a43-32e364a587d7",
+          "k4-15-1bc4b6e6-a2b5-48e8-948b-b8f7aaefb157",
+          "k4-16-30340290-03d9-4aa3-9c8d-52e9587bb4f1",
+          "k4-17-b1515bd8-21af-435e-81f7-cfc7af1ce707",
+          "k4-18-63f998aa-f684-4764-9c5e-e1b187a52eeb",
+          "k4-19-8f395e7e-3d28-4b9c-9e85-72dc9d7eb438",
+          "k4-20-8fa1cfdc-f954-4277-9148-4deb637a5d17",
+          "k4-21-d5a54f84-904d-4a42-b866-5a985172808e",
+          "k4-22-3cc9600e-81ce-4f1a-908b-2eb017571161",
+          "k4-23-b0422fda-0c30-4d10-957f-6f32b73e2162",
+          "k4-24-7a9c7c67-d877-4a64-ab8e-1e879fb76a2a",
+          "k4-25-f024a7c4-a62b-4c16-9847-85961fe4e065",
+          "k4-26-105c02f3-24a6-47c1-a7cc-39e2c9bc1ed1",
+          "k4-27-47a8ae0a-76fa-4b5a-8852-767896b1a87f",
+          "k4-28-49bbd1db-0138-4a61-a23e-7d4983ee57ee",
+          "k4-29-064acccc-871e-4568-8af4-10024897b3d9",
+          "k4-30-22338d93-1902-4fb4-aec9-a65203cd50cd",
+          "k4-31-21a263a7-9d38-443f-a512-9f50e0f1ccff",
+          "k4-32-2fa699bb-6cbe-45b2-bc5e-166567a7d6d6",
+          "k4-33-793d5c74-1186-465a-8467-e72d7bb6b23f",
+          "k4-34-edc6041f-cf14-4bcd-ab90-932e2f6dd225",
+          "k4-35-e1d09d6e-41bc-4ea6-9507-0f766d43dc63",
+          "k4-36-2b7dd858-6851-486c-aa08-a9132bd87ba2",
+          "k4-37-f44d2aa6-9353-4e06-8608-a271493d95a0",
+          "k4-38-d26ba06d-8db1-45ea-ac7e-c1edea056044",
+          "k4-39-9d04e72e-80da-4775-80c5-36f80974a59d",
+          "k4-40-c551d958-8ef6-40d0-829e-ebec636cec36",
+          "k4-41-220c4e20-4830-4715-aa77-b8fbb5479f63",
+          "k4-42-c2ae5da9-6826-466e-b9d9-851344298c97",
+          "k4-43-f90ed0bc-60f8-4a4a-987f-503f6260c2dc",
+          "k4-44-41232899-e64b-479c-ba6e-77d175137ea9",
+          "k4-45-f17268c3-3614-4939-b536-cb505b8678e3",
+          "k4-46-e6aba4fa-10f2-4e91-8237-55eadd007d94",
+          "k4-47-dddcc4ca-d126-45ef-b20a-9fd1b4e44fc8",
+          "k4-48-d464e6e9-71ba-4677-a9a3-b80fcf8424f0",
+          "k4-49-a42e8616-a44a-42a9-a654-065c3990c462",
+          "k4-50-ed0be0f5-e2e4-485d-8eee-12d62dbc20ea",
+          "k4-51-a8764437-ab58-446c-8982-686280b41dcf",
+          "k4-52-b4936dd6-b521-4c8b-b553-005a0c475427",
+          "k4-53-5ca3b74f-60b8-4a32-bce2-bc804a6aa18d",
+          "k4-54-fc99120a-d4a4-48b5-8c81-49a7b243a905",
+          "k4-55-b573d287-b900-490b-8a8f-b92493d7876d",
+          "k4-56-7855fe54-c191-4422-8c3f-dfdca2b9bdde",
+          "k4-57-97439dd4-4393-4716-8ce5-d8130e3cd13d",
+          "k4-58-aa0031f3-70ac-4d51-90f4-65bb4164ec94",
+          "k4-59-8d00d905-abad-4e53-b1d6-09dc95a50526"
+        ],
+        "measuredActors": [
+          "alice"
+        ],
+        "measurementWindow": {
+          "start": "2026-08-16T03:26:06.623Z",
+          "end": "2026-08-16T03:26:36.623Z",
+          "boundary": "[phase_start, phase_end)"
+        },
+        "runnerShortfallSamples": [],
+        "observation": {
+          "resourceEvidence": {
+            "measurementWindow": {
+              "start": "2026-08-16T03:26:05.480Z",
+              "end": "2026-08-16T03:26:36.211Z",
+              "boundary": "[measurement_start, measurement_end)"
+            },
+            "intervalMs": 1000,
+            "expectedCount": 31,
+            "requiredContainers": [
+              "nginx",
+              "backend-1",
+              "runner"
+            ],
+            "byContainer": {
+              "nginx": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:05.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 120822000,
+                        "memoryUsageBytes": 28545024
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:06.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 123225000,
+                        "memoryUsageBytes": 28000256
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:07.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 124189000,
+                        "memoryUsageBytes": 27848704
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:08.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 127010000,
+                        "memoryUsageBytes": 28872704
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:09.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 128654000,
+                        "memoryUsageBytes": 28639232
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:10.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 130854000,
+                        "memoryUsageBytes": 28397568
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:11.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 135578000,
+                        "memoryUsageBytes": 28147712
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:12.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 137537000,
+                        "memoryUsageBytes": 27750400
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:13.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 139089000,
+                        "memoryUsageBytes": 28286976
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:14.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 140803000,
+                        "memoryUsageBytes": 28270592
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:15.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 142176000,
+                        "memoryUsageBytes": 28413952
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:16.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 143763000,
+                        "memoryUsageBytes": 27918336
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:17.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 145234000,
+                        "memoryUsageBytes": 27869184
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:18.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 146704000,
+                        "memoryUsageBytes": 27860992
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:19.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 148054000,
+                        "memoryUsageBytes": 27750400
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:20.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 149344000,
+                        "memoryUsageBytes": 28143616
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:21.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 150571000,
+                        "memoryUsageBytes": 28004352
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:22.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 152499000,
+                        "memoryUsageBytes": 27865088
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:23.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 154233000,
+                        "memoryUsageBytes": 27611136
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:24.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 160957000,
+                        "memoryUsageBytes": 27611136
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:25.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 162932000,
+                        "memoryUsageBytes": 27615232
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:26.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 164312000,
+                        "memoryUsageBytes": 28139520
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:27.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 166083000,
+                        "memoryUsageBytes": 28037120
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:28.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 167577000,
+                        "memoryUsageBytes": 28139520
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:29.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 169018000,
+                        "memoryUsageBytes": 28143616
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:30.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 170231000,
+                        "memoryUsageBytes": 28389376
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:31.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 171646000,
+                        "memoryUsageBytes": 28532736
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:32.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 173178000,
+                        "memoryUsageBytes": 28180480
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:33.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 174473000,
+                        "memoryUsageBytes": 27770880
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:34.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 175976000,
+                        "memoryUsageBytes": 27361280
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:26:35.480Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 30,
+                  "error": 0,
+                  "missing": 1,
+                  "expected": 31
+                },
+                "errors": [],
+                "coverage": 0.967741935483871,
+                "sufficient": true
+              },
+              "backend-1": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:05.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5183549000,
+                        "memoryUsageBytes": 79499264
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:06.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5273274000,
+                        "memoryUsageBytes": 80224256
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:07.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5334734000,
+                        "memoryUsageBytes": 81788928
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:08.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5472966000,
+                        "memoryUsageBytes": 81379328
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:09.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5590632000,
+                        "memoryUsageBytes": 85319680
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:10.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5677662000,
+                        "memoryUsageBytes": 87900160
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:11.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5932122000,
+                        "memoryUsageBytes": 92405760
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:12.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 5978320000,
+                        "memoryUsageBytes": 92790784
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:13.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6073527000,
+                        "memoryUsageBytes": 93978624
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:14.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6141754000,
+                        "memoryUsageBytes": 93310976
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:15.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6171524000,
+                        "memoryUsageBytes": 93536256
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:16.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6244173000,
+                        "memoryUsageBytes": 92913664
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:17.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6277116000,
+                        "memoryUsageBytes": 93536256
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:18.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6336997000,
+                        "memoryUsageBytes": 94314496
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:19.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6398329000,
+                        "memoryUsageBytes": 96649216
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:20.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6438548000,
+                        "memoryUsageBytes": 95027200
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:21.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6461389000,
+                        "memoryUsageBytes": 94683136
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:22.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6616539000,
+                        "memoryUsageBytes": 94879744
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:23.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6670132000,
+                        "memoryUsageBytes": 94523392
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:24.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6734950000,
+                        "memoryUsageBytes": 95387648
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:25.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6779539000,
+                        "memoryUsageBytes": 94429184
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:26.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6803186000,
+                        "memoryUsageBytes": 95244288
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:27.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6831569000,
+                        "memoryUsageBytes": 94957568
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:28.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6860174000,
+                        "memoryUsageBytes": 95076352
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:29.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6936409000,
+                        "memoryUsageBytes": 95809536
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:30.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6957706000,
+                        "memoryUsageBytes": 95981568
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:31.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 6987611000,
+                        "memoryUsageBytes": 94814208
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:32.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7026989000,
+                        "memoryUsageBytes": 95264768
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:33.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7061789000,
+                        "memoryUsageBytes": 95129600
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:34.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 7103307000,
+                        "memoryUsageBytes": 95088640
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:26:35.480Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 30,
+                  "error": 0,
+                  "missing": 1,
+                  "expected": 31
+                },
+                "errors": [],
+                "coverage": 0.967741935483871,
+                "sufficient": true
+              },
+              "runner": {
+                "slots": [
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:05.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 735437000,
+                        "memoryUsageBytes": 7864320
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:06.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 898525000,
+                        "memoryUsageBytes": 26615808
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:07.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 902430000,
+                        "memoryUsageBytes": 25583616
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:08.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 909937000,
+                        "memoryUsageBytes": 26284032
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:09.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 919351000,
+                        "memoryUsageBytes": 26808320
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:10.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 928514000,
+                        "memoryUsageBytes": 27099136
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:11.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 939075000,
+                        "memoryUsageBytes": 26439680
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:12.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 945797000,
+                        "memoryUsageBytes": 28016640
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:13.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 951597000,
+                        "memoryUsageBytes": 28024832
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:14.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 997498000,
+                        "memoryUsageBytes": 24064000
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:15.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1003013000,
+                        "memoryUsageBytes": 23937024
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:16.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1007378000,
+                        "memoryUsageBytes": 24760320
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:17.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1010802000,
+                        "memoryUsageBytes": 24150016
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:18.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1015450000,
+                        "memoryUsageBytes": 24313856
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:19.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1019338000,
+                        "memoryUsageBytes": 24838144
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:20.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1023607000,
+                        "memoryUsageBytes": 25202688
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:21.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1026966000,
+                        "memoryUsageBytes": 25341952
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:22.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1032335000,
+                        "memoryUsageBytes": 25333760
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:23.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1037271000,
+                        "memoryUsageBytes": 25321472
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:24.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1050751000,
+                        "memoryUsageBytes": 25694208
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:25.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1057156000,
+                        "memoryUsageBytes": 25235456
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:26.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1060833000,
+                        "memoryUsageBytes": 25235456
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:27.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1064182000,
+                        "memoryUsageBytes": 25239552
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:28.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1069175000,
+                        "memoryUsageBytes": 25239552
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:29.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1074318000,
+                        "memoryUsageBytes": 25755648
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:30.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1079829000,
+                        "memoryUsageBytes": 26095616
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:31.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1083253000,
+                        "memoryUsageBytes": 25899008
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:32.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1087278000,
+                        "memoryUsageBytes": 25452544
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:33.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1090240000,
+                        "memoryUsageBytes": 25460736
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "success",
+                    "raw": {
+                      "timestamp": "2026-08-16T03:26:34.480Z",
+                      "status": "success",
+                      "sample": {
+                        "cpuUsageTotal": 1093861000,
+                        "memoryUsageBytes": 25468928
+                      },
+                      "source": "k4-observer:issue86-single-r2-provenance-20260816"
+                    }
+                  },
+                  {
+                    "status": "missing",
+                    "slotStart": "2026-08-16T03:26:35.480Z"
+                  }
+                ],
+                "counts": {
+                  "successful": 30,
+                  "error": 0,
+                  "missing": 1,
+                  "expected": 31
+                },
+                "errors": [],
+                "coverage": 0.967741935483871,
+                "sufficient": true
+              }
+            },
+            "qualificationFlags": []
+          },
+          "histogramEvidence": {
+            "label": "histogram-derived",
+            "source": "per-replica",
+            "resolvedBackendReplicas": [
+              "backend-1"
+            ],
+            "perReplica": {
+              "backend-1": {
+                "buckets": [
+                  {
+                    "le": "0.001",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.005",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.01",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.025",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.05",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.1",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.25",
+                    "count": 0
+                  },
+                  {
+                    "le": "0.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "1",
+                    "count": 0
+                  },
+                  {
+                    "le": "2.5",
+                    "count": 0
+                  },
+                  {
+                    "le": "5",
+                    "count": 0
+                  },
+                  {
+                    "le": "10",
+                    "count": 0
+                  },
+                  {
+                    "le": "+Inf",
+                    "count": 0
+                  }
+                ],
+                "count": 0,
+                "sum": 0
+              }
+            },
+            "aggregate": {
+              "buckets": [
+                {
+                  "le": "0.001",
+                  "count": 0
+                },
+                {
+                  "le": "0.005",
+                  "count": 0
+                },
+                {
+                  "le": "0.01",
+                  "count": 0
+                },
+                {
+                  "le": "0.025",
+                  "count": 0
+                },
+                {
+                  "le": "0.05",
+                  "count": 0
+                },
+                {
+                  "le": "0.1",
+                  "count": 0
+                },
+                {
+                  "le": "0.25",
+                  "count": 0
+                },
+                {
+                  "le": "0.5",
+                  "count": 0
+                },
+                {
+                  "le": "1",
+                  "count": 0
+                },
+                {
+                  "le": "2.5",
+                  "count": 0
+                },
+                {
+                  "le": "5",
+                  "count": 0
+                },
+                {
+                  "le": "10",
+                  "count": 0
+                },
+                {
+                  "le": "+Inf",
+                  "count": 0
+                }
+              ],
+              "count": 0,
+              "sum": 0
+            }
+          },
+          "loadGeneratorEvidence": {
+            "limited": false,
+            "reason": "NO_REQUESTED_LOAD_SHORTFALL"
+          },
+          "qualificationFlags": [
+            "TOPOLOGY_NOT_EXERCISED"
+          ],
+          "claimEligibility": {
+            "persistenceHistogramDerivedLatency": {
+              "eligible": true
+            },
+            "endToEndDelivery": {
+              "eligible": false
+            },
+            "targetConcurrency": {
+              "eligible": false
+            },
+            "multiReplica": {
+              "eligible": false
+            },
+            "crossReplica": {
+              "eligible": false
+            },
+            "cpu": {
+              "eligible": true
+            },
+            "memory": {
+              "eligible": true
+            },
+            "bottleneckSutCeiling": {
+              "eligible": true
+            }
+          },
+          "lockedClaimTypes": [
+            "persistenceHistogramDerivedLatency",
+            "endToEndDelivery",
+            "targetConcurrency",
+            "multiReplica",
+            "crossReplica",
+            "cpu",
+            "memory",
+            "bottleneckSutCeiling"
+          ]
+        },
+        "qualificationFlags": [
+          "TOPOLOGY_NOT_EXERCISED"
+        ],
+        "claimEligibility": {
+          "persistenceHistogramDerivedLatency": {
+            "eligible": true
+          },
+          "endToEndDelivery": {
+            "eligible": false
+          },
+          "targetConcurrency": {
+            "eligible": false
+          },
+          "multiReplica": {
+            "eligible": false
+          },
+          "crossReplica": {
+            "eligible": false
+          },
+          "cpu": {
+            "eligible": true
+          },
+          "memory": {
+            "eligible": true
+          },
+          "bottleneckSutCeiling": {
+            "eligible": true
+          }
+        }
+      }
+    },
+    "teardown": {
+      "started": true,
+      "completed": true,
+      "qualified": false,
+      "publishable": false,
+      "output": {
+        "attempted": true,
+        "released": true,
+        "targetDigest": "a6b2da312f461820615ffb10bae4b6e4ca557c295ca13f3dffb3c24339785c85"
+      },
+      "attempted": true
+    }
+  },
+  "teardown": {
+    "attempted": true,
+    "completed": true
+  },
+  "executionOutcome": "COMPLETED",
+  "artifactStatus": "RETAINED",
+  "qualification": {
+    "complete": true,
+    "qualified": true
+  },
+  "qualificationFlags": [
+    "TOPOLOGY_NOT_EXERCISED"
+  ],
+  "claimEligibility": {
+    "persistenceHistogramDerivedLatency": {
+      "eligible": true
+    },
+    "endToEndDelivery": {
+      "eligible": false
+    },
+    "targetConcurrency": {
+      "eligible": false
+    },
+    "multiReplica": {
+      "eligible": false
+    },
+    "crossReplica": {
+      "eligible": false
+    },
+    "cpu": {
+      "eligible": true
+    },
+    "memory": {
+      "eligible": true
+    },
+    "bottleneckSutCeiling": {
+      "eligible": true
+    }
+  },
+  "artifacts": {
+    "manifestPath": "manifest.json",
+    "sourceInventoryPath": "source-inventory.json",
+    "bundleInventoryPath": "bundle-inventory.json",
+    "completionMarkerPath": "COMPLETED",
+    "sourceInventorySha256": "sha256:78e2f067ab76cf336aaf759c3a874d81711f6ef225cc05edd5e730aac393e60d",
+    "bundleInventorySha256": "sha256:2403baf287950ed417091b0180577be873c67dcdcc5f461f7a6404601eaafab8"
+  }
+}
