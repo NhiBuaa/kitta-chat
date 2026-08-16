@@ -64,6 +64,13 @@ conversationParticipantSchema.index({
 });
 conversationParticipantSchema.index({
   userId: 1,
+  leftAt: 1,
+  "state.pinnedAt": 1,
+  "state.lastMessageAt": -1,
+  conversationId: -1,
+});
+conversationParticipantSchema.index({
+  userId: 1,
   "state.archivedAt": 1,
   "state.pinnedAt": -1,
   "state.lastMessageAt": -1,

@@ -84,6 +84,13 @@ test("ConversationParticipant approved indexes exist", () => {
     "state.pinnedAt": -1,
     "state.lastMessageAt": -1,
   });
+  const sidebarQueryPlanIndex = indexByFields(ConversationParticipant, {
+    userId: 1,
+    leftAt: 1,
+    "state.pinnedAt": 1,
+    "state.lastMessageAt": -1,
+    conversationId: -1,
+  });
   const archiveIndex = indexByFields(ConversationParticipant, {
     userId: 1,
     "state.archivedAt": 1,
@@ -105,6 +112,7 @@ test("ConversationParticipant approved indexes exist", () => {
 
   assert.equal(uniqueParticipantIndex[1].unique, true);
   assert.ok(activeSidebarIndex);
+  assert.ok(sidebarQueryPlanIndex);
   assert.ok(archiveIndex);
   assert.ok(unreadIndex);
   assert.ok(legacyUserIndex);
