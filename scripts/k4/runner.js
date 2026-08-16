@@ -1,3 +1,5 @@
+const { finalizeRunArtifacts } = require("./runArtifacts");
+
 /**
  * Execute a resolved K4 run plan through its lifecycle. The phase executor is
  * intentionally injectable for deterministic tests; production callers supply
@@ -14,7 +16,7 @@ function canonicalArtifactStatus(output) {
   return status === "COMPLETED" ? "COMPLETED" : "INCOMPLETE";
 }
 
-async function executeRun(plan, { executePhase, observation } = {}) {
+async function executeRun(plan, { executePhase, observation, artifactMetadata } = {}) {
   if (!plan || typeof plan !== "object") throw new Error("run plan is required");
   if (typeof executePhase !== "function") throw new Error("executePhase seam is required");
   const phases = {};
@@ -103,6 +105,8 @@ async function executeRun(plan, { executePhase, observation } = {}) {
     result.qualificationFlags = context.observation.qualificationFlags;
     result.claimEligibility = context.observation.claimEligibility;
   }
+  const artifacts = finalizeRunArtifacts({ plan, result, metadata: artifactMetadata });
+  if (artifacts) result.artifacts = artifacts;
   return result;
 }
 

@@ -1,5 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const { executeRun } = require("../../k4/runner");
 
 function plan() { return { runId: "runner-test", workload: { scenario: "message", digest: "abc" }, phaseSettings: ["setup/seed", "warm-up", "measurement", "teardown"] }; }
@@ -147,4 +151,92 @@ test("runner normalizes legacy measurement markers onto the canonical final axes
   assert.equal(result.artifact_status, "INCOMPLETE");
   assert.equal(["MEASURED", "NOT_RUN", "FAILED_SETUP"].includes(result.execution_outcome), true);
   assert.equal(["COMPLETED", "INCOMPLETE"].includes(result.artifact_status), true);
+});
+
+test("completed run persists a provenance manifest, inventories, and non-inventoried completion marker", async () => {
+  const resultDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-run-artifacts-"));
+  const dataset = {
+    generatorVersion: "k4-fixture-v1",
+    schemaVersion: "kittachat-schema-v1",
+    contentSeed: "k4-content-seed-v1",
+    cardinalities: { users: 2, messages: 3 },
+    fingerprint: "sha256:dataset-fingerprint",
+    password: "must-not-be-retained",
+  };
+  const result = await executeRun({
+    runId: "artifact-run",
+    resultDirectory,
+    profile: "single-replica",
+    backendReplicaCount: 1,
+    backendUpstreamMembership: ["backend-1"],
+    topology: { profile: "single-replica", backendUpstreamMembership: ["backend-1"] },
+    workload: {
+      scenario: "sidebar",
+      version: 2,
+      digest: "profile-digest",
+      snapshot: { scenario: "sidebar", version: 2, request: { method: "GET", path: "/api/sidebar/conversations" } },
+    },
+    credentials: { password: "must-not-be-retained" },
+  }, {
+    artifactMetadata: {
+      commitSha: "0123456789abcdef0123456789abcdef01234567",
+      hardware: { hostname: "runner-host", cpuModel: "CPU", logicalProcessors: 12, memoryBytes: 16384 },
+      runnerLimits: { cgroupVersion: "v2", limits: { cpu: "2", memory: "1GiB" } },
+    },
+    executePhase: async (phase) => {
+      if (phase === "setup/seed") return { resourcesCreated: true, setupPreflight: { verification: { status: "VERIFIED" }, dataset } };
+      if (phase === "measurement") return { numbers: { requests: 1 } };
+      return { phase };
+    },
+  });
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(resultDirectory, "manifest.json"), "utf8"));
+  const sourceInventory = JSON.parse(fs.readFileSync(path.join(resultDirectory, "source-inventory.json"), "utf8"));
+  const bundleInventory = JSON.parse(fs.readFileSync(path.join(resultDirectory, "bundle-inventory.json"), "utf8"));
+  const marker = JSON.parse(fs.readFileSync(path.join(resultDirectory, "COMPLETED"), "utf8"));
+
+  assert.equal(manifest.runId, "artifact-run");
+  assert.equal(manifest.commitSha, "0123456789abcdef0123456789abcdef01234567");
+  assert.equal(manifest.testMachine.hostname, "runner-host");
+  assert.equal(manifest.testMachine.runnerLimits.limits.cpu, "2");
+  assert.equal(manifest.dataset.identity, dataset.fingerprint);
+  assert.deepEqual(manifest.dataset.size.cardinalities, dataset.cardinalities);
+  assert.equal(manifest.plan.runId, "artifact-run");
+  assert.equal(manifest.plan.credentials.password, undefined);
+  assert.equal(manifest.dataset.observed.password, undefined);
+  assert.equal(manifest.topology.profile, "single-replica");
+  assert.equal(manifest.workload.digest, "profile-digest");
+  assert.equal(JSON.stringify(manifest).includes("password"), false);
+  assert.equal(sourceInventory.entries.some(({ path: entryPath }) => entryPath === "manifest.json"), true);
+  assert.equal(sourceInventory.entries.some(({ path: entryPath }) => ["source-inventory.json", "bundle-inventory.json", "COMPLETED"].includes(entryPath)), false);
+  assert.equal(bundleInventory.entries.some(({ path: entryPath }) => entryPath === "source-inventory.json"), true);
+  const digest = (name) => `sha256:${crypto.createHash("sha256").update(fs.readFileSync(path.join(resultDirectory, name))).digest("hex")}`;
+  assert.equal(marker.source_inventory_sha256, digest("source-inventory.json"));
+  assert.equal(marker.bundle_inventory_sha256, digest("bundle-inventory.json"));
+  assert.equal(fs.existsSync(path.join(resultDirectory, "COMPLETED")), true);
+  assert.equal(result.artifacts.sourceInventoryPath, "source-inventory.json");
+});
+
+test("manifest records unresolved commit and machine provenance when metadata is not injected", async () => {
+  const resultDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-run-unresolved-provenance-"));
+  const result = await executeRun({
+    runId: "unresolved-provenance-run",
+    resultDirectory,
+    topology: { profile: "single-replica", backendUpstreamMembership: ["backend-1"] },
+    workload: { scenario: "sidebar", version: 2, digest: "profile-digest" },
+  }, {
+    executePhase: async (phase) => {
+      if (phase === "setup/seed") return { resourcesCreated: true };
+      if (phase === "measurement") return { numbers: { requests: 1 } };
+      return { phase };
+    },
+  });
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(resultDirectory, "manifest.json"), "utf8"));
+
+  assert.equal(manifest.commitSha, "unresolved");
+  assert.equal(manifest.testMachine.evidenceStatus, "INCOMPLETE");
+  assert.deepEqual(manifest.testMachine.unresolved, ["hostname", "cpuModel", "logicalProcessors", "memoryBytes"]);
+  assert.equal(manifest.provenance.status, "INCOMPLETE");
+  assert.deepEqual(manifest.provenance.unresolved, ["commitSha", "testMachine"]);
 });

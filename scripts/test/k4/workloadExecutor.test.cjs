@@ -69,6 +69,32 @@ test("sidebar phase sends the locked request through nginx with per-opportunity 
   assert.equal(result.opportunities.length, 2);
 });
 
+test("sidebar phase retains HTTP errors as raw outcomes and binds every started request", async () => {
+  let now = 0;
+  const requests = [];
+  const executor = createWorkloadExecutor({
+    clock: () => now,
+    sleep: async (delay) => { now += delay; },
+    fetch: async (url, options) => {
+      requests.push([url, options]);
+      return { ok: false, status: 503 };
+    },
+    correlationId: (index) => `sidebar-error-${index}`,
+  });
+  const result = await executor.execute({
+    phase: "measurement", target: "http://nginx",
+    profile: { scenario: "sidebar", loadModel: { type: "open-loop", ratePerSecond: 1 }, measurement: { durationSeconds: 1 }, pagination: { mode: "page", pageSize: 20 } },
+    actorSecrets: { alice: { token: "secret" } },
+  });
+
+  assert.equal(requests.length, 1);
+  assert.equal(result.phase, "measurement");
+  assert.equal(result.opportunities[0].status, "started");
+  assert.equal(result.opportunities[0].outcome, "error");
+  assert.equal(result.opportunities[0].responseStatus, 503);
+  assert.deepEqual(result.measuredRequestIds, ["sidebar-error-0"]);
+});
+
 class FakeSocket {
   constructor(id, clock, mode = "message") {
     this.id = id;

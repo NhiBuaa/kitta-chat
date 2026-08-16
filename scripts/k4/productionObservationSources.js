@@ -80,7 +80,8 @@ function createProductionObservationSources({ helper } = {}) {
     const nginxRaw = await helper.logs({ ...base(plan, "nginx", "nginx"), measurementStart, measurementEnd: flushEnd });
     const backendRaw = await Promise.all(replicas.map(async (replica) => [replica, await helper.logs({ ...base(plan, "backend", replica), measurementStart, measurementEnd: flushEnd })]));
     const inWindow = (timestamp) => timestamp && Date.parse(timestamp) >= Date.parse(measurementStart) && Date.parse(timestamp) < Date.parse(measurementEnd);
-    const nginxParsed = parseNginxRecords(nginxRaw.body);
+    const scenario = plan.workload?.scenario || plan.workload?.snapshot?.scenario;
+    const nginxParsed = parseNginxRecords(nginxRaw.body, { includeRequestDetails: scenario === "sidebar" });
     nginxParsed.records = nginxParsed.records.filter((record) => !record.timestamp || inWindow(record.timestamp));
     const prior = new Map(preWindowSources.get(plan.runId) || []);
     preWindowSources.delete(plan.runId);
@@ -113,7 +114,6 @@ function createProductionObservationSources({ helper } = {}) {
       parseDiagnostics: diagnostics,
       rawSources,
     };
-    const scenario = plan.workload?.scenario || plan.workload?.snapshot?.scenario;
     if (scenario === "sidebar") {
       const replicaAddressMap = measurementOutput?.replicaAddressMap || Object.fromEntries((await Promise.all(replicas.map(async (replica) => {
         const identity = await helper.identity(base(plan, "backend", replica));

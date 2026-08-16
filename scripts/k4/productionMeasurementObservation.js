@@ -114,6 +114,13 @@ function createProductionMeasurementObservation({ intervalMs, runtimePort, clock
   });
 }
 
+function qualificationFlagsFromAttribution(inheritedFlags = [], attribution) {
+  const flags = new Set(Array.isArray(inheritedFlags) ? inheritedFlags : []);
+  if (attribution?.complete === false) flags.add("OBSERVATION_INCOMPLETE");
+  if (attribution?.topologyNotExercised === true) flags.add("TOPOLOGY_NOT_EXERCISED");
+  return [...flags];
+}
+
 function mergeResourceSamples(samples, finalObservations, requiredContainers) {
   return Object.fromEntries(requiredContainers.map((container) => [container, [
     ...samples.flatMap((sample) => sample.value?.resources?.[container] || []),
@@ -151,4 +158,4 @@ function claimEvidenceFromMeasurement({ plan, measurementOutput, attribution }) 
   return evidence;
 }
 
-module.exports = { captureActiveSocketGauge, createProductionMeasurementObservation, resolvedTopology, mergeResourceSamples, claimEvidenceFromMeasurement };
+module.exports = { captureActiveSocketGauge, createProductionMeasurementObservation, resolvedTopology, mergeResourceSamples, claimEvidenceFromMeasurement, qualificationFlagsFromAttribution };

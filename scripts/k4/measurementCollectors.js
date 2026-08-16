@@ -211,7 +211,7 @@ function claimEligibility({ qualificationFlags, histogram, claimEvidence = {} })
   };
 }
 
-function collectMeasurementEvidence({ topology, resource, histogram, loadGenerator, activeSocketGauge, claimEvidence, qualificationFlags: inheritedQualificationFlags = [] }) {
+function collectMeasurementEvidence({ topology, resource, histogram, loadGenerator, activeSocketGauge, replicaAttribution, claimEvidence, qualificationFlags: inheritedQualificationFlags = [] }) {
   const requiredContainers = requiredContainersForTopology(topology);
   const resourceEvidence = deriveResourceQualification({ ...resource, requiredContainers });
   const histogramEvidence = deriveHistogramEvidence(histogram);
@@ -228,6 +228,8 @@ function collectMeasurementEvidence({ topology, resource, histogram, loadGenerat
     histogramEvidence,
     ...(activeSocketGauge ? { activeSocketGaugeEvidence } : {}),
     loadGeneratorEvidence,
+    replicaAttribution: replicaAttribution || null,
+    claimEvidence: claimEvidence || null,
     qualificationFlags,
     claimEligibility: claimEligibility({ qualificationFlags, histogram: histogramEvidence, claimEvidence }),
     lockedClaimTypes: LOCKED_CLAIM_TYPES,

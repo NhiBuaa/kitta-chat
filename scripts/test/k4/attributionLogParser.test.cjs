@@ -41,3 +41,25 @@ test("nginx attribution uses access-log event time for window binding and retain
   }]);
   assert.deepEqual(parsed.diagnostics, []);
 });
+
+test("nginx parser can expose request details for the existing sidebar attribution seam", () => {
+  const parsed = parseNginxRecords('2026-08-14T02:03:10.231586117Z 192.168.160.3 - - [14/Aug/2026:02:03:08 +0000] "GET /api/sidebar/conversations?page=1&limit=20 HTTP/1.1" 503 1372 "" "node" rt=0.04 uct=0.00 uht=0.04 urt=0.04 upstream=10.0.0.2:3000 k4rid=req-58', { includeRequestDetails: true });
+  assert.deepEqual(parsed.records[0], {
+    upstreamAddr: "10.0.0.2:3000",
+    requestId: "req-58",
+    method: "GET",
+    path: "/api/sidebar/conversations",
+    status: 503,
+    timestamp: "2026-08-14T02:03:08.000Z",
+    wrapperTimestamp: "2026-08-14T02:03:10.231586117Z",
+  });
+});
+
+test("nginx parser ignores unbound access traffic but diagnoses malformed measured bindings", () => {
+  const parsed = parseNginxRecords([
+    "line without a k4 binding",
+    "line upstream=10.0.0.2:3000 k4rid=req-1",
+  ].join("\n"), { includeRequestDetails: true });
+  assert.equal(parsed.records.length, 1);
+  assert.equal(parsed.diagnostics[0].kind, "malformed-request-line");
+});

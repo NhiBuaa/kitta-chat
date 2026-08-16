@@ -8,6 +8,10 @@ function sleepMs(delay) {
   return new Promise((resolve) => setTimeout(resolve, delay));
 }
 
+function boundedError(error) {
+  return String(error?.message || error || "operation failed").slice(0, 256);
+}
+
 function randomCorrelationId(index) {
   return `k4-${index}-${crypto.randomUUID()}`;
 }
@@ -26,7 +30,7 @@ async function openLoopSlots({ ratePerSecond, durationSeconds, startOpportunity,
     const actual = clock();
     const id = correlationId(index);
     if (actual >= slotClosesAt) {
-      opportunities.push({ opportunityId: index, correlationId: id, scheduledAt, slotClosesAt, status: "not-started", reason: "slot-deadline-missed" });
+      opportunities.push({ opportunityId: index, correlationId: id, scheduledAt, slotClosesAt, status: "not-started", outcome: "not-started", reason: "slot-deadline-missed" });
       continue;
     }
     const startedAt = clock();
@@ -39,8 +43,21 @@ async function openLoopSlots({ ratePerSecond, durationSeconds, startOpportunity,
       operation = Promise.reject(error);
     }
     inFlight.push(Promise.resolve(operation)
-      .then((evidence) => { record.evidence = evidence; record.completedAt = clock(); })
-      .catch((error) => { record.status = "failed"; record.error = error.message; record.completedAt = clock(); }));
+      .then((evidence) => {
+        record.evidence = evidence;
+        record.completedAt = clock();
+        record.outcome = evidence?.ok === false || evidence?.outcome === "error" ? "error" : "success";
+        if (record.outcome === "error") {
+          record.error = boundedError(evidence?.error);
+          if (Number.isInteger(evidence?.status)) record.responseStatus = evidence.status;
+        }
+      })
+      .catch((error) => {
+        record.status = "failed";
+        record.error = boundedError(error);
+        record.outcome = "error";
+        record.completedAt = clock();
+      }));
   }
   await Promise.all(inFlight);
   opportunities.sort((left, right) => left.opportunityId - right.opportunityId);
@@ -134,20 +151,37 @@ function createWorkloadExecutor({ fetch = globalThis.fetch, createSocket, clock 
 
   async function executeSidebar({ phase, target, profile, actorSecrets }) {
     const durationSeconds = profile[phase === "warm-up" ? "warmup" : "measurement"].durationSeconds;
+    const request = {
+      method: profile.request?.method || "GET",
+      path: profile.request?.path || "/api/sidebar/conversations",
+    };
     const result = await openLoopSlots({
       ratePerSecond: profile.loadModel.ratePerSecond, durationSeconds, clock, sleep, correlationId,
       startOpportunity: async ({ correlationId: requestId }) => {
-        const response = await fetch(`${target}/api/sidebar/conversations?page=1&limit=${profile.pagination.pageSize}`, {
-          method: "GET",
+        const response = await fetch(`${target}${request.path}?page=1&limit=${profile.pagination.pageSize}`, {
+          method: request.method,
           headers: { authorization: `Bearer ${actorSecrets.alice.token}`, "x-request-id": requestId },
         });
-        if (!response.ok) throw new Error(`sidebar request failed with ${response.status}`);
-        return { requestId, status: response.status };
+        if (!response.ok) {
+          return {
+            requestId,
+            status: response.status,
+            ok: false,
+            outcome: "error",
+            error: `sidebar request failed with ${response.status}`,
+          };
+        }
+        return { requestId, status: response.status, ok: true };
       },
     });
     return decorateFixedRateEvidence(result, profile, phase, {
+      scenario: profile.scenario,
+      version: profile.version,
+      phase,
+      request,
+      pagination: profile.pagination,
       measuredRequestIds: result.opportunities
-        .filter(({ evidence, completedAt }) => evidence?.status === 200 && completedAt < result.phaseEnd)
+        .filter(({ status, completedAt }) => status === "started" && Number.isFinite(completedAt) && completedAt >= result.phaseStart && completedAt < result.phaseEnd)
         .map(({ correlationId: id }) => id),
       measuredActors: ["alice"],
     });
@@ -271,7 +305,18 @@ function decorateFixedRateEvidence(result, profile, phase, additional) {
     requested,
     achieved: started.length,
   }] : [];
-  return { ...result, ...additional, runnerShortfallSamples };
+  return {
+    ...result,
+    ...additional,
+    phase,
+    opportunities: result.opportunities.map((opportunity) => ({ ...opportunity, phase })),
+    measurementWindow: {
+      start: new Date(result.phaseStart).toISOString(),
+      end: new Date(result.phaseEnd).toISOString(),
+      boundary: "[phase_start, phase_end)",
+    },
+    runnerShortfallSamples,
+  };
 }
 
 function decodeBase64Json(value, name) {
