@@ -9,6 +9,8 @@ const { ALLOWED_FAULT_FIXTURES, normalizeFaultFixture } = require("./runner/faul
 const { buildSourceInventory, deriveReport } = require("./provenance");
 const { finalizeRun, validateRunArtifacts } = require("./runArtifacts");
 const { validateExperimentComparison } = require("./experimentValidator");
+const { buildBaselineReport, createBaselineMatrix, executeBaselineEvidenceChain, normalizeBaselineRecord, validateBaselineMatrix, validatePrerequisiteEvidenceSet, validatePrerequisiteFreshness } = require("./baselineEvidence");
+const { buildBottleneckDossier } = require("./bottleneckDossier");
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -22,6 +24,15 @@ function print(value) {
 function printHelp() {
   return print({
     usage: "npm run k4 -- execute --run-id <id> --profile <profile> --scenario message --workload-version 2 [--fault-fixture <fixture>]",
+    issue89: {
+      baselineMatrix: "npm run k4 -- baseline-matrix [--run-id-prefix <prefix>]",
+      executeBaseline: "npm run k4 -- execute-baseline --run-id-prefix <prefix> --dataset-json <json> [--provenance-json <json>] [--candidates-json <json>]",
+      validateBaseline: "npm run k4 -- validate-baseline --matrix-json <json>",
+      baselineReport: "npm run k4 -- baseline-report --matrix-json <json>",
+      dossier: "npm run k4 -- bottleneck-dossier --candidates-json <json>",
+      freshness: "npm run k4 -- prerequisite-freshness --prerequisite-json <json>",
+      freshnessSet: "npm run k4 -- prerequisite-set --prerequisites-json <json> --current-json <json>",
+    },
     faultFixtures: ALLOWED_FAULT_FIXTURES,
     note: "Fault fixtures are runner-only, measurement-phase options and are disabled unless explicitly selected.",
   });
@@ -59,6 +70,67 @@ function jsonArgument(name, fallback) {
 
 function resultDirectoryArgument() {
   return argument("--result-dir") || planFromArguments().resultDirectory;
+}
+
+function attachRunArtifactBoundary(result, plan) {
+  const artifacts = result?.artifacts || {};
+  const readJson = (name) => {
+    const location = path.isAbsolute(name) ? name : path.join(plan.resultDirectory, name);
+    if (!fs.existsSync(location)) return undefined;
+    try { return JSON.parse(fs.readFileSync(location, "utf8")); } catch { return undefined; }
+  };
+  const marker = readJson(artifacts.completionMarkerPath || "COMPLETED");
+  const bundle = readJson(artifacts.bundleInventoryPath || "bundle-inventory.json");
+  const sourceInventory = readJson(artifacts.sourceInventoryPath || "source-inventory.json");
+  const manifest = readJson("manifest.json");
+  return {
+    ...result,
+    ...(marker ? { marker } : {}),
+    ...(bundle ? { bundle } : {}),
+    ...(sourceInventory ? { sourceInventory } : {}),
+    ...(manifest ? { manifest } : {}),
+    artifacts: { ...artifacts, ...(marker ? { marker } : {}), ...(bundle ? { bundle } : {}), ...(sourceInventory ? { sourceInventory } : {}), ...(manifest ? { manifest } : {}) },
+  };
+}
+
+async function executeBaseline({ executeProduction, runIdPrefix = "k4-issue89", intervalMs = 1000, multiReplicaUnavailableReason, dataset, provenance, candidates: suppliedCandidates = [], candidateFactory } = {}) {
+  if (typeof executeProduction !== "function") throw new Error("baseline execution requires the production composition seam");
+  const matrix = createBaselineMatrix({ runIdPrefix, dataset, provenance });
+  let equivalenceReference;
+  let datasetReference;
+  const chain = await executeBaselineEvidenceChain({
+    matrix,
+    runCell: async (cell) => {
+      if (cell.topology === "multi-replica" && multiReplicaUnavailableReason) {
+        return {
+          outcome: "NOT_RUN",
+          artifact_status: "INCOMPLETE",
+          execution_outcome: "NOT_RUN",
+          qualification_flags: [],
+          reason: multiReplicaUnavailableReason,
+          dataset: cell.dataset || datasetReference,
+          provenance: equivalenceReference || cell.provenance,
+        };
+      }
+      const plan = createRunPlan({ runId: cell.attemptId, profile: cell.topology });
+      plan.workload = approvedWorkloadProfile(cell.scenario, 2);
+      const result = attachRunArtifactBoundary(await executeProduction({ plan, intervalMs }), plan);
+      if (cell.topology === "single-replica") equivalenceReference = normalizeBaselineRecord({ ...cell, ...result }).provenance;
+      const setupDataset = result?.phases?.["setup/seed"]?.output?.setupPreflight?.dataset;
+      if (cell.topology === "single-replica") datasetReference = result?.dataset || setupDataset || cell.dataset;
+      return {
+        ...result,
+        dataset: result?.dataset || setupDataset || cell.dataset,
+        topologyEvidence: result?.topologyEvidence || { replicaCount: plan.backendReplicaCount, upstreamMembership: plan.backendUpstreamMembership },
+      };
+    },
+  });
+  const candidates = typeof candidateFactory === "function" ? (await candidateFactory({ matrix: chain.matrix, report: chain.report }) || []) : (suppliedCandidates?.candidates || suppliedCandidates || []);
+  if (candidates.length) {
+    chain.dossier = buildBottleneckDossier({ candidates, baselineMatrix: chain.report.baselineMatrix, claimMatrix: chain.report.claims });
+    chain.status = chain.matrix.valid ? chain.dossier.status : "BLOCKED";
+  }
+  return chain;
 }
 
 function runSetupPreflight({
@@ -105,6 +177,41 @@ async function main({ executeProduction } = {}) {
   const action = process.argv[2];
   if (action === "help" || process.argv.includes("--help") || process.argv.includes("-h")) return printHelp();
   if (action === "resolve") return print(planFromArguments({ inspection: true }));
+  if (action === "baseline-matrix") {
+    return print({ status: "READY", matrix: createBaselineMatrix({ runIdPrefix: argument("--run-id-prefix") || argument("--run-id") || "k4-issue89" }) });
+  }
+  if (action === "execute-baseline") {
+    rejectWorkloadChannels(action);
+    return print(await executeBaseline({
+      executeProduction,
+      runIdPrefix: argument("--run-id-prefix") || "k4-issue89",
+      intervalMs: Number(argument("--observation-interval-ms") || 1000),
+      multiReplicaUnavailableReason: argument("--multi-replica-unavailable-reason"),
+      dataset: jsonArgument("--dataset-json", undefined),
+      provenance: jsonArgument("--provenance-json", undefined),
+      candidates: jsonArgument("--candidates-json", []),
+    }));
+  }
+  if (action === "validate-baseline") {
+    const matrix = jsonArgument("--matrix-json");
+    return print(validateBaselineMatrix(matrix?.cells || matrix));
+  }
+  if (action === "baseline-report") {
+    const matrix = jsonArgument("--matrix-json");
+    return print(buildBaselineReport({ matrix: matrix?.cells || matrix, claimsByCell: jsonArgument("--claims-by-cell-json", {}) }));
+  }
+  if (action === "prerequisite-freshness") return print(validatePrerequisiteFreshness(jsonArgument("--prerequisite-json", {})));
+  if (action === "prerequisite-set") return print(validatePrerequisiteEvidenceSet({ prerequisites: jsonArgument("--prerequisites-json", []), current: jsonArgument("--current-json", undefined) }));
+  if (action === "bottleneck-dossier") {
+    const candidates = jsonArgument("--candidates-json", []);
+    const baseline = jsonArgument("--baseline-json", {});
+    return print(buildBottleneckDossier({
+      candidates: candidates?.candidates || candidates,
+      selectedCandidateId: argument("--selected-candidate-id"),
+      baselineMatrix: baseline?.baselineMatrix,
+      claimMatrix: baseline?.claims,
+    }));
+  }
   if (action === "compare") {
     const leftRunId = argument("--left-run-id");
     const rightRunId = argument("--right-run-id");
@@ -237,11 +344,11 @@ async function main({ executeProduction } = {}) {
     return print(validateCleanupTarget(argument("--class"), target, argument("--run-id")));
   }
   if (action === "cleanup") return print(cleanup(argument("--run-id"), argument("--confirm-digest")));
-  throw new Error("usage: k4 <resolve|compare|provenance|derive-report|finalize|validate|compare-experiment|diagnose-runner|build-image-set|execute|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
+  throw new Error("usage: k4 <resolve|baseline-matrix|execute-baseline|validate-baseline|baseline-report|prerequisite-freshness|prerequisite-set|bottleneck-dossier|compare|provenance|derive-report|finalize|validate|compare-experiment|diagnose-runner|build-image-set|execute|start|setup-preflight|cleanup-preview|validate-cleanup-target|cleanup> --run-id <id> [--profile <profile>] [--image-set-id <id>]");
 }
 
 if (require.main === module) {
   main({ executeProduction: require("./runtimeComposition").executeProduction }).catch((error) => { process.stderr.write(`${error.message}\n`); process.exitCode = 1; });
 }
 
-module.exports = { main, planFromArguments, resolveBenchmarkPassword, runSetupPreflight };
+module.exports = { executeBaseline, main, planFromArguments, resolveBenchmarkPassword, runSetupPreflight };

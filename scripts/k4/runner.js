@@ -16,7 +16,14 @@ function canonicalArtifactStatus(output) {
   return status === "COMPLETED" ? "COMPLETED" : "INCOMPLETE";
 }
 
-async function executeRun(plan, { executePhase, observation, artifactMetadata } = {}) {
+function phaseTimestamp(clock) {
+  const value = clock();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "number") return new Date(value).toISOString();
+  return String(value);
+}
+
+async function executeRun(plan, { executePhase, observation, artifactMetadata, clock = () => new Date() } = {}) {
   if (!plan || typeof plan !== "object") throw new Error("run plan is required");
   if (typeof executePhase !== "function") throw new Error("executePhase seam is required");
   const phases = {};
@@ -38,6 +45,7 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata } 
 
   const runPhase = async (name) => {
     const started = true;
+    const startedAt = phaseTimestamp(clock);
     try {
       if (name === "measurement" && observation) await observation.start(plan);
       const output = await executePhase(name, context);
@@ -53,17 +61,17 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata } 
           ? { complete: !measurementOutput.qualificationFlags.includes("OBSERVATION_INCOMPLETE"), qualified: !measurementOutput.qualificationFlags.includes("OBSERVATION_INCOMPLETE") }
           : (measurementOutput.qualificationFlags || { complete: true, qualified: true }))
         : qualification;
-      phases[name] = { started, completed: true, qualified: name === "measurement" && qualification.qualified === true, publishable: false, output: measurementOutput };
+      phases[name] = { started, startedAt, completed: true, completedAt: phaseTimestamp(clock), qualified: name === "measurement" && qualification.qualified === true, publishable: false, output: measurementOutput };
       if (name === "measurement") {
         artifactStatus = canonicalArtifactStatus(measurementOutput);
         executionOutcome = canonicalMeasurementOutcome(measurementOutput);
       }
       context = { ...context, ...measurementOutput };
       if (name === "setup/seed" && measurementOutput?.resourcesCreated === true) registerOwnedResource({ class: "run", id: plan.runId });
-      if (name === "measurement") publishable = measurementOutput?.numbers === undefined ? undefined : { numbers: measurementOutput.numbers };
+      if (name === "measurement" && executionOutcome === "MEASURED") publishable = measurementOutput?.numbers === undefined ? undefined : { numbers: measurementOutput.numbers };
       return true;
     } catch (error) {
-      phases[name] = { started, completed: false, qualified: false, publishable: false, error: error.message };
+      phases[name] = { started, startedAt, completed: false, completedAt: phaseTimestamp(clock), qualified: false, publishable: false, error: error.message };
       if (!failed) failed = { phase: name, error: error.message };
       if (name === "setup/seed" || name === "warm-up") executionOutcome = "FAILED_SETUP";
       if (name === "measurement") executionOutcome = "NOT_RUN";
@@ -83,7 +91,9 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata } 
     }
   }
 
-  const shouldTeardown = resourcesCreated;
+  // Every attempted run retains cleanup evidence. Production teardown remains
+  // ownership-aware, so invoking it after an early setup failure is safe.
+  const shouldTeardown = setupOk || Boolean(failed);
   if (shouldTeardown) {
     const teardownOk = await runPhase("teardown");
     phases.teardown.attempted = true;
@@ -92,7 +102,8 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata } 
     phases.teardown = { attempted: false, completed: false, qualified: false, publishable: false };
   }
 
-  const result = { status, phases, teardown: { attempted: shouldTeardown, completed: phases.teardown.completed, ...(phases.teardown.teardownError ? { error: phases.teardown.teardownError } : {}) } };
+  const cleanup = { attempted: shouldTeardown, completed: phases.teardown.completed, ...(phases.teardown.teardownError ? { error: phases.teardown.teardownError } : {}) };
+  const result = { status, phases, teardown: cleanup, cleanup };
   if (publishable && qualification.complete !== false && qualification.qualified !== false) result.publishable = publishable;
   if (rawMeasurement) result.rawMeasurement = rawMeasurement;
   if (failed) result.failure = failed;
