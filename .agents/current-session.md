@@ -22,6 +22,13 @@ metadata on branch `codex/k4-issue87-closeout`.
   Review cadence and the three required high-tier external reviews are recorded in the Issue #85
   acceptance artifacts; final K4 review remains governed by the complete feature fixed point.
 
+## Issue #88 Closeout Override
+
+This worktree contains the delegated Issue #88 Socket.IO concurrency implementation on branch
+`codex/k4-issue88`. Guide `k4-issue-88-r3` is locked and human-approved; Evaluation
+`tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. Final code review
+is intentionally deferred until all K4 Issues reach the complete feature fixed point.
+
 ## Status
 
 - K3 Observability is complete. Issue #44 and implementation Issues #45–#52 are closed.

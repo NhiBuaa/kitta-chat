@@ -21,9 +21,103 @@ test("sidebar attribution binds measured request ids to unique upstream replicas
 });
 
 test("socket attribution reconstructs lifetimes overlapping measurement", () => {
-  const result = socketAttribution({ measurementStart: metadata.measurementStart, measurementEnd: metadata.measurementEnd, measuredActors: ["a", "b"], metadata, lifecycles: [{ actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-12T23:59:59Z", disconnectedAt: "2026-08-13T00:00:05Z" }, { actorRef: "b", socketId: "s2", nodeName: "backend-2", authenticatedAt: "2026-08-13T00:00:02Z", disconnectedAt: null }] });
+  const result = socketAttribution({
+    measurementStart: metadata.measurementStart,
+    measurementEnd: metadata.measurementEnd,
+    measuredActors: ["a", "b"],
+    measuredConnections: [{ actorRef: "a", socketId: "s1" }, { actorRef: "b", socketId: "s2" }],
+    metadata,
+    lifecycles: [{ actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-12T23:59:59Z", disconnectedAt: "2026-08-13T00:00:05Z" }, { actorRef: "b", socketId: "s2", nodeName: "backend-2", authenticatedAt: "2026-08-13T00:00:02Z", disconnectedAt: null }],
+  });
   assert.equal(result.claimEligible, true);
   assert.deepEqual(result.replicas, ["backend-1", "backend-2"]);
+});
+
+test("socket attribution fails closed without an authoritative connection binding", () => {
+  const result = socketAttribution({
+    measurementStart: metadata.measurementStart,
+    measurementEnd: metadata.measurementEnd,
+    measuredActors: ["a", "b"],
+    metadata,
+    lifecycles: [{ actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-13T00:00:01Z", disconnectedAt: null }],
+  });
+  assert.equal(result.complete, false);
+  assert.equal(result.claimEligible, false);
+  assert.equal(result.incompleteReasons.includes("measured connection binding missing"), true);
+});
+
+test("socket attribution rejects duplicate, missing, extra, and actor-mismatched socket lifecycles", () => {
+  const base = {
+    measurementStart: metadata.measurementStart,
+    measurementEnd: metadata.measurementEnd,
+    measuredActors: ["a", "b"],
+    measuredConnections: [{ actorRef: "a", socketId: "s1" }, { actorRef: "b", socketId: "s2" }],
+    metadata,
+  };
+  const mismatch = socketAttribution({ ...base, lifecycles: [
+    { actorRef: "b", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-13T00:00:01Z", disconnectedAt: null },
+    { actorRef: "b", socketId: "s2", nodeName: "backend-2", authenticatedAt: "2026-08-13T00:00:01Z", disconnectedAt: null },
+  ] });
+  assert.equal(mismatch.complete, false);
+  assert.equal(mismatch.incompleteReasons.includes("measured actor binding mismatch"), true);
+
+  const duplicate = socketAttribution({ ...base, measuredConnections: [{ actorRef: "a", socketId: "s1" }, { actorRef: "b", socketId: "s1" }], lifecycles: [
+    { actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-13T00:00:01Z", disconnectedAt: null },
+  ] });
+  assert.equal(duplicate.complete, false);
+  assert.equal(duplicate.incompleteReasons.includes("duplicate measured socket binding"), true);
+
+  const extra = socketAttribution({ ...base, lifecycles: [
+    { actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-13T00:00:01Z", disconnectedAt: null },
+    { actorRef: "b", socketId: "s2", nodeName: "backend-2", authenticatedAt: "2026-08-13T00:00:01Z", disconnectedAt: null },
+    { actorRef: "a", socketId: "s3", nodeName: "backend-3", authenticatedAt: "2026-08-13T00:00:01Z", disconnectedAt: null },
+  ] });
+  assert.equal(extra.complete, false);
+  assert.equal(extra.incompleteReasons.includes("measured socket lifecycle incomplete"), true);
+});
+
+test("socket attribution records malformed and ambiguous lifecycle timestamps as incomplete diagnostics", () => {
+  const result = socketAttribution({
+    measurementStart: metadata.measurementStart,
+    measurementEnd: metadata.measurementEnd,
+    measuredActors: ["a", "b"],
+    measuredConnections: [{ actorRef: "a", socketId: "s1" }, { actorRef: "b", socketId: "s2" }],
+    metadata,
+    lifecycles: [
+      { actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "not-a-time", disconnectedAt: null },
+      { actorRef: "b", socketId: "s2", nodeName: "backend-2", authenticatedAt: "2026-08-13T00:00:02Z", disconnectedAt: "2026-08-13T00:00:02Z" },
+    ],
+  });
+  assert.equal(result.complete, false);
+  assert.equal(result.diagnostics.length >= 2, true);
+});
+
+test("socket attribution requires every measured socket and distinguishes one-replica exercise", () => {
+  const oneReplica = socketAttribution({
+    measurementStart: metadata.measurementStart,
+    measurementEnd: metadata.measurementEnd,
+    measuredActors: ["a", "a"],
+    measuredConnections: [{ actorRef: "a", socketId: "s1" }, { actorRef: "a", socketId: "s2" }],
+    metadata,
+    lifecycles: [
+      { actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-13T00:00:02Z", disconnectedAt: null },
+      { actorRef: "a", socketId: "s2", nodeName: "backend-1", authenticatedAt: "2026-08-13T00:00:02Z", disconnectedAt: null },
+    ],
+  });
+  assert.equal(oneReplica.complete, true);
+  assert.equal(oneReplica.topologyNotExercised, true);
+  assert.equal(oneReplica.claimEligible, false);
+
+  const incomplete = socketAttribution({
+    measurementStart: metadata.measurementStart,
+    measurementEnd: metadata.measurementEnd,
+    measuredActors: ["a", "a"],
+    measuredConnections: [{ actorRef: "a", socketId: "s1" }, { actorRef: "a", socketId: "s2" }],
+    metadata,
+    lifecycles: [{ actorRef: "a", socketId: "s1", nodeName: "backend-1", authenticatedAt: "2026-08-13T00:00:02Z", disconnectedAt: null }],
+  });
+  assert.equal(incomplete.complete, false);
+  assert.equal(incomplete.topologyNotExercised, false);
 });
 
 test("cross-replica attribution requires one correlation, measured actors, ack and delivery", () => {

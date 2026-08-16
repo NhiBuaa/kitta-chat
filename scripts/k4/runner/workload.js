@@ -1,4 +1,5 @@
 const crypto = require("node:crypto");
+const { executeSocketConcurrency: executeSocketConcurrencyScenario } = require("./socketConcurrency");
 const { FAULT_FIXTURES, normalizeFaultFixture } = require("./faultFixtures");
 
 const DEFAULT_TARGET = "http://nginx";
@@ -241,43 +242,19 @@ function createWorkloadExecutor({ fetch = globalThis.fetch, createSocket, clock 
     }
   }
 
-  async function executeSocketConcurrency({ target, profile, actorRefs, actorSecrets }) {
-    if (typeof createSocket !== "function") throw new Error("socket concurrency adapter is required");
-    const allocation = Object.entries(profile.actorAllocation).flatMap(([name, count]) => Array.from({ length: count }, () => name));
-    const rampStartedAt = clock();
-    let connections = [];
-    try {
-      await Promise.all(allocation.map((name) => connectActor({
-        createSocket, target, actor: actorRefs[name], token: actorSecrets[name].token,
-        timeoutMs: profile.ramp.timeoutMs, clock,
-      }).then((connection) => { connections.push(connection); })));
-      const targetReachedAt = clock();
-      await sleep(profile.settling.durationMs);
-      if (connections.some(({ socket }) => !socket.connected)) throw new Error("socket disconnected during settling");
-      const measurementStart = clock();
-      await sleep(profile.plateau.durationMs);
-      if (connections.some(({ socket }) => !socket.connected)) throw new Error("socket disconnected during plateau");
-      const measurementEnd = clock();
-      return {
-        rampStartedAt, targetReachedAt, measurementStart, measurementEnd,
-        targetConcurrency: allocation.length,
-        measuredActors: allocation.map((name) => actorRefs[name].id),
-        runnerShortfallSamples: [],
-        connections: disconnectAll(connections, clock),
-      };
-    } catch (error) {
-      disconnectAll(connections, clock);
-      throw error;
-    }
-  }
-
   async function execute({ phase, target = DEFAULT_TARGET, profile, actorRefs, actorSecrets, faultFixture }) {
     if (target !== DEFAULT_TARGET) throw new Error("workload target must be nginx");
     const normalizedFaultFixture = normalizeFaultFixture(faultFixture);
     if (normalizedFaultFixture && profile.scenario !== "message") throw new Error("K4 fault fixtures require the message scenario");
     if (profile.scenario === "sidebar") return executeSidebar({ phase, target, profile, actorRefs, actorSecrets });
     if (profile.scenario === "message") return executeMessage({ phase, target, profile, actorRefs, actorSecrets, faultFixture: normalizedFaultFixture });
-    if (profile.scenario === "socket-concurrency") return executeSocketConcurrency({ phase, target, profile, actorRefs, actorSecrets });
+    if (profile.scenario === "socket-concurrency") {
+      if (typeof createSocket !== "function") throw new Error("socket concurrency adapter is required");
+      return executeSocketConcurrencyScenario({
+        phase, target, profile, actorRefs, actorSecrets, createSocket, clock, sleep,
+        correlationId, setTimeoutFn, clearTimeoutFn,
+      });
+    }
     throw new Error(`unsupported workload scenario: ${profile.scenario}`);
   }
 

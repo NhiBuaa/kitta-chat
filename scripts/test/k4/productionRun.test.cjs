@@ -16,5 +16,5 @@ test("production entry invokes approved lifecycle and injects observation", asyn
     },
   });
   assert.deepEqual(trace, ["setup", "warmup", "observe:start", "measure", "teardown"]);
-  assert.equal(result.executionOutcome, "COMPLETED");
+  assert.equal(result.executionOutcome, "MEASURED");
 });

@@ -6,6 +6,14 @@ Issue #84 and #87 are complete. Issue #87 is fully integrated through PR #99; th
 records its closeout metadata on branch `codex/k4-issue87-closeout`. Issues #85, #86, and #88
 must be handled in their own worktrees.
 
+## Issue #88 Completion Checkpoint
+
+Issue #88 implementation and manual acceptance are complete in this dedicated worktree. Guide
+`k4-issue-88-r3` remains immutable; Evaluation
+`tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. The branch must
+be reconciled with the latest `main`, published through a PR, and final code review remains
+deferred until the complete K4 feature fixed point.
+
 ## Issue #87 Closeout Checkpoint
 
 Issue #87 implementation and TC-87-03 remediation were completed on `codex/k4-issue87`, then

@@ -22,6 +22,15 @@ test("malformed relevant attribution record produces completeness diagnostics", 
   assert.equal(parsed.diagnostics[0].kind, "malformed-k4-record");
 });
 
+test("socket disconnect records without timestamps remain explicitly incomplete", () => {
+  const backend = parseBackendRecords([
+    '{"schema":"k4-attribution-v1","event":"socket_authenticated_connect","actorRef":"actor-1","socketId":"s1","nodeName":"node-a","timestamp":"2026-08-13T00:00:01Z"}',
+    '{"schema":"k4-attribution-v1","event":"socket_disconnect","actorRef":"actor-1","socketId":"s1","nodeName":"node-a"}',
+  ].join("\n"));
+  const reconstructed = reconstructSocketLifecycles(backend.records);
+  assert.equal(reconstructed.lifecycles[0].disconnectedTimestampMissing, true);
+});
+
 test("nginx attribution uses access-log event time for window binding and retains Docker wrapper time", () => {
   const parsed = parseNginxRecords('2026-08-14T02:03:10.231586117Z 192.168.160.3 - - [14/Aug/2026:02:03:08 +0000] "GET /api/sidebar/conversations HTTP/1.1" 200 1372 "" "node" rt=0.04 uct=0.00 uht=0.04 urt=0.04 upstream=10.0.0.2:3000 k4rid=req-58');
   assert.deepEqual(parsed.records, [{

@@ -8,6 +8,7 @@ const metrics = [
   'kittachat_message_persistence_duration_seconds_bucket{outcome="success",le="+Inf"} 2',
   'kittachat_message_persistence_duration_seconds_sum{outcome="success"} 0.2',
   'kittachat_message_persistence_duration_seconds_count{outcome="success"} 2',
+  'kittachat_socket_active_connections 2',
 ].join("\n");
 
 test("production sources use typed helper and keep topology inventory distinct from traffic attribution", async () => {
@@ -19,6 +20,8 @@ test("production sources use typed helper and keep topology inventory distinct f
     runnerCgroup: async () => ({ cgroupVersion: "v2", memoryEvents: {} }),
   };
   const source = createProductionObservationSources({ helper });
+  assert.equal((await source.snapshotPersistenceHistogram({ plan, replica: "backend-1" })).count, 2);
+  assert.equal((await source.snapshotActiveSocketGauge({ plan: { ...plan, workload: { scenario: "socket-concurrency" } }, replica: "backend-1" })).activeConnections, 2);
   const histogram = await source.snapshotPersistenceHistogram({ plan, replica: "backend-1" });
   assert.equal(histogram.count, 2);
   assert.deepEqual(histogram.source, { sourceIdentity: "backend-metrics", sourceDigest: "sha256:metrics" });

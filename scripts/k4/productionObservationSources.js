@@ -2,6 +2,7 @@ const { crossReplicaAttribution, sidebarAttribution, socketAttribution } = requi
 const { PARSER_VERSION, parseBackendRecords, parseNginxRecords, reconstructSocketLifecycles, sha256 } = require("./attributionLogParser");
 
 const PERSISTENCE_METRIC = "kittachat_message_persistence_duration_seconds";
+const ACTIVE_SOCKET_METRIC = "kittachat_socket_active_connections";
 
 function parsePrometheusHistogram(text) {
   const buckets = [];
@@ -30,6 +31,12 @@ function parsePrometheusHistogram(text) {
   return { metric: PERSISTENCE_METRIC, labels: { outcome: "success" }, buckets, count, sum };
 }
 
+function parsePrometheusActiveSocketGauge(text) {
+  const samples = String(text).split(/\r?\n/).map((line) => line.match(new RegExp(`^${ACTIVE_SOCKET_METRIC}\\s+([0-9.eE+-]+)$`))).filter(Boolean);
+  if (samples.length !== 1 || !Number.isFinite(Number(samples[0][1]))) throw new Error("active socket gauge is absent or malformed");
+  return Number(samples[0][1]);
+}
+
 function base(plan, role, target) {
   return { runId: plan.runId, project: plan.projectName, role, target };
 }
@@ -46,6 +53,15 @@ function createProductionObservationSources({ helper } = {}) {
         sourceIdentity: response.sourceIdentity || `metrics:${replica}`,
         sourceDigest: response.sourceDigest || sha256(response.body),
       },
+    };
+  }
+  async function snapshotActiveSocketGauge({ plan, replica }) {
+    const response = await helper.metrics(base(plan, "backend", replica));
+    return {
+      replica,
+      activeConnections: parsePrometheusActiveSocketGauge(response.body),
+      sourceIdentity: response.sourceIdentity,
+      sourceDigest: response.sourceDigest || sha256(response.body),
     };
   }
   async function captureTopologyInventory({ plan, point, replicas }) {
@@ -109,7 +125,7 @@ function createProductionObservationSources({ helper } = {}) {
     if (scenario === "socket-concurrency") {
       const reconstructed = reconstructSocketLifecycles(backendRecords);
       metadata.parseDiagnostics.push(...reconstructed.diagnostics);
-      return socketAttribution({ lifecycles: reconstructed.lifecycles, measuredActors: measurementOutput?.measuredActors, metadata, measurementStart, measurementEnd });
+      return socketAttribution({ lifecycles: reconstructed.lifecycles, measuredActors: measurementOutput?.measuredActors, measuredConnections: measurementOutput?.measuredConnections, metadata, measurementStart, measurementEnd });
     }
     if (scenario === "message") {
       const correlations = measurementOutput?.correlationIds || [];
@@ -172,7 +188,7 @@ function createProductionObservationSources({ helper } = {}) {
     }));
     return samples.length === 1 ? samples[0] : samples;
   }
-  return { snapshotPersistenceHistogram, captureTopologyInventory, captureReplicaAttribution, collectResourceSamples, captureRunnerCgroupEvidence, captureRunnerShortfall, identity: { principal: "k4-observer", dockerManagement: false, workloadCapability: false, routingMutation: false, helperPolicy: "k4-observer-helper-v1" } };
+  return { snapshotPersistenceHistogram, snapshotActiveSocketGauge, captureTopologyInventory, captureReplicaAttribution, collectResourceSamples, captureRunnerCgroupEvidence, captureRunnerShortfall, identity: { principal: "k4-observer", dockerManagement: false, workloadCapability: false, routingMutation: false, helperPolicy: "k4-observer-helper-v1" } };
 }
 
-module.exports = { createProductionObservationSources, parsePrometheusHistogram };
+module.exports = { ACTIVE_SOCKET_METRIC, createProductionObservationSources, parsePrometheusActiveSocketGauge, parsePrometheusHistogram };

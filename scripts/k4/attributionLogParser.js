@@ -51,7 +51,14 @@ function reconstructSocketLifecycles(records) {
       const connected = open.get(record.socketId);
       if (!connected) diagnostics.push({ kind: "unmatched-disconnect", socketId: record.socketId });
       else {
-        lifecycles.push({ actorRef: connected.actorRef, socketId: connected.socketId, nodeName: connected.nodeName, authenticatedAt: connected.timestamp, disconnectedAt: record.timestamp });
+        lifecycles.push({
+          actorRef: connected.actorRef,
+          socketId: connected.socketId,
+          nodeName: connected.nodeName,
+          authenticatedAt: connected.timestamp,
+          disconnectedAt: record.timestamp,
+          ...(record.timestamp == null ? { disconnectedTimestampMissing: true } : {}),
+        });
         open.delete(record.socketId);
       }
     }
