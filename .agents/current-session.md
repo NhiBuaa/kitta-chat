@@ -2,6 +2,36 @@
 
 ## K4 Current Frontier Override
 
+Issues #85, #86, #87, and #88 are complete and integrated. Issue #89 is the only open K4
+frontier, a child of locked Issue #80. This worktree is reserved for #89 on branch
+`codex/k4-issue89`, with integration branch `codex/k4-integration`.
+
+Issue #89 manual-acceptance guides `k4-issue-89-r1` and `k4-issue-89-r2` remain immutable and
+unapproved. Revision `k4-issue-89-r3` is now locked and human-approved at
+`.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r3.md`
+(`2026-08-16T11:52:30+07:00`, approved by `user`). Revision `k4-issue-89-r4` is also locked and
+human-approved at `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.md`
+(`2026-08-16T13:30:07+07:00`, approved by `user`). Issue #89 implementation and r4 execution are complete.
+
+Issue #89 delegated implementation is complete in this worktree. Focused tests pass 13/13;
+full K4 plus server attribution passes 193/193; `npm run test:ci` passes 132/132; and
+`npm run ci:validate` passes. Locked r3 manual execution observed TC-89-01 through TC-89-04 as
+PASS. The r3 append-only Evaluation history retains its original `BLOCKED`/pending record and
+approved append-only record `tc89-r3-baseline-20260816-approved`. The r4 Evaluation history now
+ends with `tc89-r4-treatment-comparison-20260816-approved` (`PASSED`/`approved`) after the prior
+`BLOCKED`/pending observation. The valid comparison artifact is
+`.k4-results/k4issue89r4-20260816-optimization-comparison.json`; the treated run completed the
+full lifecycle and was cleaned to zero owned resources. The accepted implementation is now
+committed as `b4e3c49`, `e8c8fb6`, and `e38cfff` and fast-forwarded into `codex/k4-integration`
+at `e38cfff6ec69b4e8216fb1a322f44df024a363fa`. Integration verification passes K4 `190/190`,
+server attribution/read-model `13/13`, repository CI `132/132`, and `npm run ci:validate`.
+Selective invalidation decision: no acceptance input, authoritative guide/Evaluation, environment,
+or approved behavior changed during the fast-forward; the r3/r4 accepted Evaluations remain valid
+and no rerun is required. The Issue #89 worktree is retained; [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
+is open against `main`. Final feature review and merge remain deferred.
+
+## K4 Current Frontier Override
+
 Issue #84 is closed after the accepted K4 measurement-observation delivery. Issue #85 is
 implemented and manually accepted. Issue #87 is fully integrated after implementation, bounded
 remediation, manual acceptance, final review, and PR #99 publication. Issue #86 implementation
@@ -103,6 +133,9 @@ is intentionally deferred until all K4 Issues reach the complete feature fixed p
 - K4 Issue #87 delivery summary: `docs/k4-performance-evidence.md`
 - K4 Issue #87 acceptance guide: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md` (locked and approved)
 - K4 Issue #87 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl` (latest PASSED run `tc87-r2-acceptance-20260814`)
+- K4 Issue #89 r4 treatment guide: `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.md` (locked and approved; r1–r3 immutable)
+- K4 Issue #89 r4 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.evaluations.jsonl` (latest `tc89-r4-treatment-comparison-20260816-approved`, PASSED/approved)
+- K4 Issue #89 comparison artifact: `.k4-results/k4issue89r4-20260816-optimization-comparison.json`
 
 ## Publication History
 

@@ -64,6 +64,43 @@ containers, networks, volumes, or result-directory cleanup targets.
 These results verify the evidence boundary and retained artifacts. They do not turn incomplete
 resource coverage into a publishable end-to-end or cross-replica performance claim.
 
+## Issue #89: Baseline evidence chain and bottleneck dossier
+
+Issue #89 adds the repository-owned baseline interpretation seam in
+`scripts/k4/baselineEvidence.js` and `scripts/k4/bottleneckDossier.js`. The baseline matrix is
+closed to the six required cells: `sidebar:2`, `message:2`, and `socket-concurrency:2`, each at
+`single-replica` and `multi-replica`. Each cell receives an attempt identity before execution and
+must retain `MEASURED`, `FAILED_SETUP`, or `NOT_RUN`; there is no selected-profile or implicit
+topology skip.
+
+Measured cells must retain `setup/seed` → `warm-up` → `measurement` → `teardown`, a measurement
+window, and measurement evidence. `FAILED_SETUP` stops at the actual setup/warm-up failure and
+retains its reason plus cleanup evidence. `NOT_RUN` retains its cell/attempt identity and concrete
+reason and cannot contribute a measurement claim. Topology pairs compare exact profile/workload,
+dataset, commit, hardware, runner placement, and non-topology configuration identities; only the
+declared topology/replica count may differ.
+
+The chain emits a baseline report with per-cell claim eligibility and limitations. Prerequisite
+negative-state evidence is reusable only after its guide/Evaluation/implementation identity,
+claim-eligibility/report-validator contract, source digests, and Issue #89 HEAD lineage pass the
+freshness gate; a changed relevant path requires a passed regression. The dossier is fail-closed:
+it names one eligible primary bottleneck candidate and exactly one proposed treatment, or returns
+`FAIL`/`BLOCKED` with the optimization gate closed. The locked r4 guide was approved, the single
+approved treatment is the targeted sidebar query-plan index, and one bounded
+post-treatment/optimization-comparison rerun is retained at
+`.k4-results/k4issue89r4-20260816-optimization-comparison.json`. Its append-only Evaluation ends
+with `tc89-r4-treatment-comparison-20260816-approved` (`PASSED`/`approved`); no
+production-capacity, scalability, or topology claim is emitted. The implementation is integrated
+at `codex/k4-integration` head `e38cfff6ec69b4e8216fb1a322f44df024a363fa`; verification is green,
+and selective invalidation preserved the accepted r3/r4 Evaluations because no inputs, environment,
+or approved behavior changed. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) is open;
+the single final K4 feature review remains pending.
+
+The CLI seams are `baseline-matrix`, `execute-baseline`, `validate-baseline`, `baseline-report`,
+`prerequisite-freshness`, `prerequisite-set`, and `bottleneck-dossier`. Every run also retains `run-status.json` and lifecycle details in the
+manifest so setup failure and unavailable attempts remain auditable without turning marker
+presence into claim eligibility.
+
 ## Authorities
 
 - [K4 specification — Issue #80](https://github.com/NhiBuaa/kitta-chat/issues/80)

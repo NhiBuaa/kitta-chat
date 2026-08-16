@@ -119,6 +119,13 @@ function validateRunArtifacts({ resultDirectory, expectedRunId, markerPath = COM
   if (!fs.existsSync(reportLocation.absolute)) throw new Error("derived report is missing");
   const report = JSON.parse(fs.readFileSync(reportLocation.absolute, "utf8"));
   if (report.source_inventory_sha256 !== source.sourceInventorySha256) throw new Error("report source inventory digest mismatch");
+  const reportFlags = [...new Set(report.qualification_flags || report.qualificationFlags || [])].sort();
+  const markerFlags = [...new Set(marker.qualification_flags || [])].sort();
+  if ((report.artifact_status || report.artifactStatus) !== marker.artifact_status
+    || (report.execution_outcome || report.executionOutcome) !== marker.execution_outcome
+    || JSON.stringify(reportFlags) !== JSON.stringify(markerFlags)) {
+    return { status: "UNPUBLISHABLE", publishable: false, reason: "report status axes do not match the completion marker", marker, report, source, bundle };
+  }
   const claims = validateReportClaims({ report, claims: report.claims || [] });
   if (!claims.publishable) return { status: "UNPUBLISHABLE", publishable: false, marker, report, claimEligibility: claims.claimEligibility, source, bundle };
   return {
@@ -265,12 +272,17 @@ function configurationEvidence(plan, metadata = {}) {
 
 function statusAxes(result) {
   const phases = result.phases || {};
-  const measurementStarted = phases.measurement?.started === true;
   const measurementCompleted = phases.measurement?.completed === true;
-  const artifactStatus = !result.failure && phases.teardown?.completed !== false ? "COMPLETED" : "INCOMPLETE";
+  const failurePhase = result.failure?.phase;
+  const executionOutcome = result.execution_outcome || result.executionOutcome
+    || (failurePhase === "setup/seed" || failurePhase === "warm-up"
+      ? "FAILED_SETUP"
+      : (measurementCompleted ? "MEASURED" : "NOT_RUN"));
+  const artifactStatus = result.artifact_status || result.artifactStatus
+    || (!result.failure && phases.teardown?.completed === true ? "COMPLETED" : "INCOMPLETE");
   return {
     artifact_status: artifactStatus,
-    execution_outcome: measurementCompleted || measurementStarted ? "MEASURED" : "FAILED_SETUP",
+    execution_outcome: executionOutcome,
     qualification_flags: [...new Set(result.qualificationFlags || [])],
   };
 }
@@ -291,6 +303,12 @@ function createRunManifest({ plan, result, metadata = {} }) {
     topology: topologyEvidence(plan),
     dataset: datasetEvidence(plan, result, metadata),
     configuration: configurationEvidence(plan, metadata),
+    lifecycle: sanitize({
+      phases: result.phases,
+      failure: result.failure,
+      cleanup: result.cleanup || result.teardown,
+      qualification: result.qualification,
+    }),
     ...status,
   };
 }
@@ -322,6 +340,17 @@ function sourceEntries(directory) {
 function finalizeRunArtifacts({ plan, result, metadata = {} }) {
   if (!plan.resultDirectory) return null;
   fs.mkdirSync(plan.resultDirectory, { recursive: true });
+  writeImmutable(plan.resultDirectory, "run-status.json", sanitize({
+    schema: "k4-run-status-v1",
+    runId: plan.runId,
+    artifact_status: result.artifact_status || result.artifactStatus,
+    execution_outcome: result.execution_outcome || result.executionOutcome,
+    qualification_flags: result.qualificationFlags || [],
+    phases: result.phases,
+    failure: result.failure,
+    cleanup: result.cleanup || result.teardown,
+    rawMeasurement: result.rawMeasurement,
+  }));
   const manifest = createRunManifest({ plan, result, metadata });
   writeImmutable(plan.resultDirectory, "manifest.json", manifest);
 

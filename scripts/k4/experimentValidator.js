@@ -15,6 +15,12 @@ const TOPOLOGY_FIELDS = Object.freeze([
   "runnerPlacement",
   "nonTreatmentConfiguration",
 ]);
+const {
+  claimEligibilityForCell,
+  validateBaselineCell,
+  validateBaselineMatrix,
+  validatePrerequisiteFreshness,
+} = require("./baselineEvidence");
 
 function valueAt(run, field) {
   if (run?.[field] !== undefined) return run[field];
@@ -100,6 +106,10 @@ module.exports = {
   OPTIMIZATION_FIELDS,
   TOPOLOGY_FIELDS,
   validateExperimentComparison,
+  claimEligibilityForCell,
+  validateBaselineCell,
+  validateBaselineMatrix,
+  validatePrerequisiteFreshness,
   validateOptimization,
   validateTopology,
 };
