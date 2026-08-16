@@ -4,9 +4,9 @@
 
 Issue #84 is closed after the accepted K4 measurement-observation delivery. Issue #85 is
 implemented and manually accepted. Issue #87 is fully integrated after implementation, bounded
-remediation, manual acceptance, final review, and PR #99 publication. Issues #86 and #88 remain
-independent K4 children in their own worktrees. This worktree retains the Issue #87 closeout
-metadata on branch `codex/k4-issue87-closeout`.
+remediation, manual acceptance, final review, and PR #99 publication. Issue #86 implementation
+and locked-r2 acceptance are complete on branch `codex/k4-issue86`; Issue #88 remains an
+independent K4 child in its own worktree.
 
 - Issue #87 implementation and bounded TC-87-03 remediation are complete in this worktree.
 - Automated evidence is green: Issue #87 focused K4 136/136; combined post-reconcile K4 143/143;
@@ -28,6 +28,19 @@ This worktree contains the delegated Issue #88 Socket.IO concurrency implementat
 `codex/k4-issue88`. Guide `k4-issue-88-r3` is locked and human-approved; Evaluation
 `tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. Final code review
 is intentionally deferred until all K4 Issues reach the complete feature fixed point.
+
+- Issue #86 manual-acceptance guide `k4-issue-86-r1` remains immutable and unapproved. Revision
+  `k4-issue-86-r2` is locked and human-approved at
+  `.agents/manual-tests/k4-performance-evidence/issue-86-sidebar-scenario-r2.md`. The parent
+  artifact boundary and hardware provenance fixes are implemented; focused attribution/observation
+  tests pass 11/11, the full K4 suite passes 129/129, and `npm run test:ci` passes 42/42.
+- Fresh manual acceptance execution `issue86-r2-attribution-20260816` is appended to
+  `.agents/manual-tests/k4-performance-evidence/issue-86-sidebar-scenario-r2.evaluations.jsonl`
+  with an observed `BLOCKED`/`human_approval=pending` record followed by the approved append-only
+  record `issue86-r2-attribution-20260816-approved` (`PASSED`/`approved`). TC-86-01 through
+  TC-86-04 all pass, including the explicit full topology-equivalence matrix, complete one-replica
+  `TOPOLOGY_NOT_EXERCISED` semantics, and complete three-replica attribution. Final review is
+  intentionally pending per user instruction and was not performed.
 
 ## Status
 

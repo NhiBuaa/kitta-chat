@@ -1,0 +1,172 @@
+{
+  "schema": "k4-issue86-tc86-02-equivalence-matrix-v1",
+  "leftRunId": "issue86-single-r2-attribution2-20260816",
+  "rightRunId": "issue86-multi-r2-attribution-20260816",
+  "onlyPermittedDifference": [
+    "topology selector",
+    "backend replica count",
+    "backend upstream membership"
+  ],
+  "runScopedNormalization": [
+    "runId",
+    "configuration.projectName",
+    "resultDirectory",
+    "ownership run label"
+  ],
+  "rows": [
+    {
+      "field": "commitSha",
+      "single": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+      "multi": "1d332ee637746cffcc2bb60a70c03a46e3127b40",
+      "relation": "EQUIVALENT",
+      "allowedDifference": false
+    },
+    {
+      "field": "testMachine",
+      "single": {
+        "hostname": "NHIBUAA",
+        "cpuModel": "AMD Ryzen 5 7640HS w/ Radeon 760M Graphics",
+        "logicalProcessors": 12,
+        "memoryBytes": 33618251776,
+        "runnerLimits": {},
+        "evidenceStatus": "COMPLETE",
+        "unresolved": []
+      },
+      "multi": {
+        "hostname": "NHIBUAA",
+        "cpuModel": "AMD Ryzen 5 7640HS w/ Radeon 760M Graphics",
+        "logicalProcessors": 12,
+        "memoryBytes": 33618251776,
+        "runnerLimits": {},
+        "evidenceStatus": "COMPLETE",
+        "unresolved": []
+      },
+      "relation": "EQUIVALENT",
+      "allowedDifference": false
+    },
+    {
+      "field": "dataset.identity-and-size",
+      "single": {
+        "fingerprint": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182",
+        "totalDocuments": 413,
+        "cardinalities": {
+          "conversations": 24,
+          "files": 60,
+          "groups": 6,
+          "messages": 244,
+          "participants": 60,
+          "users": 19
+        }
+      },
+      "multi": {
+        "fingerprint": "sha256:30ef6b591e3efc5716c8f7ec17ca26844fb2a38b0225caa05088b46b7252c182",
+        "totalDocuments": 413,
+        "cardinalities": {
+          "conversations": 24,
+          "files": 60,
+          "groups": 6,
+          "messages": 244,
+          "participants": 60,
+          "users": 19
+        }
+      },
+      "relation": "EQUIVALENT",
+      "allowedDifference": false
+    },
+    {
+      "field": "workload.snapshot-representation-digest",
+      "single": {
+        "digest": "dc4610a45e136aa0efa52b4481c236d5911c82634d2c2302a0049a83adc34bdd",
+        "scenario": "sidebar",
+        "version": 2,
+        "request": {
+          "method": "GET",
+          "path": "/api/sidebar/conversations"
+        },
+        "pagination": {
+          "mode": "page",
+          "pageSize": 20
+        },
+        "actorAllocation": {
+          "alice": 1
+        },
+        "loadModel": {
+          "type": "open-loop",
+          "ratePerSecond": 2
+        },
+        "warmupSeconds": 10,
+        "measurementSeconds": 30,
+        "connectionReuse": "http-keep-alive-per-phase"
+      },
+      "multi": {
+        "digest": "dc4610a45e136aa0efa52b4481c236d5911c82634d2c2302a0049a83adc34bdd",
+        "scenario": "sidebar",
+        "version": 2,
+        "request": {
+          "method": "GET",
+          "path": "/api/sidebar/conversations"
+        },
+        "pagination": {
+          "mode": "page",
+          "pageSize": 20
+        },
+        "actorAllocation": {
+          "alice": 1
+        },
+        "loadModel": {
+          "type": "open-loop",
+          "ratePerSecond": 2
+        },
+        "warmupSeconds": 10,
+        "measurementSeconds": 30,
+        "connectionReuse": "http-keep-alive-per-phase"
+      },
+      "relation": "EQUIVALENT",
+      "allowedDifference": false
+    },
+    {
+      "field": "image-set-nginx-runner-placement-config-and-phases",
+      "single": {
+        "imageSet": "issue86-20260814",
+        "workloadTarget": "http://nginx",
+        "networkIngress": "k4-internal-nginx-only",
+        "resourceAllocation": "compose-default",
+        "phaseSettings": ["setup/seed", "warm-up", "measurement", "teardown"],
+        "runnerDockerManagement": false,
+        "composeFile": "docker-compose.k4.yml",
+        "nginxConfiguration": "repository-nginx/Dockerfile+nginx/nginx.conf",
+        "dependencies": ["mongo:7", "rabbitmq:3-management-alpine", "redis:alpine"]
+      },
+      "multi": {
+        "imageSet": "issue86-20260814",
+        "workloadTarget": "http://nginx",
+        "networkIngress": "k4-internal-nginx-only",
+        "resourceAllocation": "compose-default",
+        "phaseSettings": ["setup/seed", "warm-up", "measurement", "teardown"],
+        "runnerDockerManagement": false,
+        "composeFile": "docker-compose.k4.yml",
+        "nginxConfiguration": "repository-nginx/Dockerfile+nginx/nginx.conf",
+        "dependencies": ["mongo:7", "rabbitmq:3-management-alpine", "redis:alpine"]
+      },
+      "relation": "EQUIVALENT",
+      "allowedDifference": false
+    },
+    {
+      "field": "topology-and-replica-count",
+      "single": {
+        "profile": "single-replica",
+        "backendReplicaCount": 1,
+        "backendUpstreamMembership": ["backend-1"]
+      },
+      "multi": {
+        "profile": "multi-replica",
+        "backendReplicaCount": 3,
+        "backendUpstreamMembership": ["backend-1", "backend-2", "backend-3"]
+      },
+      "relation": "ALLOWED_DIFFERENCE",
+      "allowedDifference": true
+    }
+  ],
+  "nonTopologyDrift": [],
+  "status": "EQUIVALENT"
+}

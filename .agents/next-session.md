@@ -2,9 +2,20 @@
 
 ## Current Parallel Frontier Override
 
-Issue #84 and #87 are complete. Issue #87 is fully integrated through PR #99; this worktree
-records its closeout metadata on branch `codex/k4-issue87-closeout`. Issues #85, #86, and #88
-must be handled in their own worktrees.
+Issue #84, #85, #86, and #87 are complete. Issue #87 is fully integrated through PR #99;
+Issue #86 is delivered from branch `codex/k4-issue86`; Issue #88 remains a separate frontier
+in its own worktree.
+
+## Issue #86 Completion Checkpoint
+
+Manual guide revision `k4-issue-86-r2` is locked and human-approved at
+`.agents/manual-tests/k4-performance-evidence/issue-86-sidebar-scenario-r2.md`; r1 remains
+immutable and unapproved. Implementation and automated verification are complete. Fresh execution
+`issue86-r2-attribution-20260816` observed TC-86-01 through TC-86-04 PASS; its pending record was
+followed by approved append-only Evaluation `issue86-r2-attribution-20260816-approved`. The
+explicit TC-86-02 matrix proves identical commit SHA, hardware, dataset, workload,
+runner/configuration, and only topology/replica-count differences. Final review remains pending
+and must not be run until the entire Issue delivery is resolved.
 
 ## Issue #88 Completion Checkpoint
 
@@ -49,6 +60,11 @@ and evidence remain preserved here as a separate parallel frontier; do not selec
 this Issue #87 worktree.
 
 ## Current State
+
+The next valid transition for this worktree is governed delivery: commit the approved implementation
+and acceptance state, create/merge the Issue #86 PR when repository gates are satisfied, synchronize
+main, and leave final review for the post-resolution step requested by the user. Preserve all prior
+guide revisions and Evaluation records.
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
