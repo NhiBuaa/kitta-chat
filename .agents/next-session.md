@@ -2,10 +2,10 @@
 
 ## Current Frontier Override
 
-Issues #85–#88 are complete and integrated. Issue #89 is the only open frontier. This worktree
-is reserved exclusively for the baseline evidence-chain and bottleneck-dossier slice. Its
-integration branch is `codex/k4-integration`, based at `9bbd99fa0cdd1663ade6d54937d1fb41e2880ea1`
-and currently integrated at `e38cfff6ec69b4e8216fb1a322f44df024a363fa`.
+Issues #81–#89 are complete, closed, and integrated into `main`. Issue #89 was published by PR
+#103, merged at `8871adeb6ad2913f435dc7d2272a6b650b61677d`; the integration branch head before
+merge was `4609fcf`. The only remaining K4 transition is the single final feature review at the
+complete fixed point.
 
 ## Issue #89 Acceptance Checkpoint
 
@@ -33,12 +33,12 @@ artifact is `.k4-results/k4issue89r4-20260816-optimization-comparison.json`.
 Integration verification is complete on `e38cfff`; selective invalidation found no changed
 acceptance input, authoritative guide/Evaluation, environment, or approved behavior, so r3/r4
 Evaluations remain valid without rerun. Preserve all prior runs and guide revisions; [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
-is open against `main`, while final review and merge remain deferred.
+is `MERGED` into `main`, and GitHub Issue #89 is `CLOSED`. Final review remains deferred.
 
 ## Current Parallel Frontier Override
 
-Issues #84–#88 are complete and integrated; Issue #89 remains the current frontier in this
-dedicated worktree. Final K4 review is deferred until the complete feature fixed point.
+Issues #81–#89 are complete and integrated; no implementation frontier remains. Final K4 review is
+deferred until the complete feature fixed point.
 
 ## Issue #86 Completion Checkpoint
 
@@ -48,16 +48,15 @@ immutable and unapproved. Implementation and automated verification are complete
 `issue86-r2-attribution-20260816` observed TC-86-01 through TC-86-04 PASS; its pending record was
 followed by approved append-only Evaluation `issue86-r2-attribution-20260816-approved`. The
 explicit TC-86-02 matrix proves identical commit SHA, hardware, dataset, workload,
-runner/configuration, and only topology/replica-count differences. Final review remains pending
-and must not be run until the entire Issue delivery is resolved.
+runner/configuration, and only topology/replica-count differences. Issue #86 was published by PR
+#102 and is closed; final K4 review remains deferred until the complete fixed point.
 
 ## Issue #88 Completion Checkpoint
 
-Issue #88 implementation and manual acceptance are complete in this dedicated worktree. Guide
+Issue #88 implementation and manual acceptance are complete and integrated by PR #101. Guide
 `k4-issue-88-r3` remains immutable; Evaluation
-`tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. The branch must
-be reconciled with the latest `main`, published through a PR, and final code review remains
-deferred until the complete K4 feature fixed point.
+`tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. Final K4 feature
+review remains deferred until the complete fixed point.
 
 ## Issue #87 Closeout Checkpoint
 
@@ -67,7 +66,7 @@ The locked `k4-issue-87-r2` guide and append-only Evaluation history are retaine
 TC-87-05 all pass, and `tc87-r2-acceptance-20260814` is `PASSED` with explicit human approval.
 GitHub Issue #87 is closed; do not reopen or extend this slice from this worktree.
 
-## Issue #85 Completion Checkpoint (parallel frontier)
+## Issue #85 Completion Checkpoint
 
 Manual guide revision `k4-issue-85-r3` is locked and human-approved at
 `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`; r1
@@ -89,28 +88,26 @@ K4 tests pass 12/12 and `npm run test:ci` passes 132/132. The append-only manual
 TC-85-08 observations as PASS; explicit human approval is recorded by
 `tc85r3-human-approved-20260814`.
 
-Next valid transition for the Issue #85 worktree was completion after acceptance. Its implementation
-and evidence remain preserved here as a separate parallel frontier; do not select Issue #86 from
-this Issue #87 worktree.
+Issue #85 implementation and acceptance are complete. Its implementation and evidence remain
+preserved here as historical K4 evidence; it has no additional implementation scope and is not a
+parallel frontier.
 
 ## Current State
 
-The accepted Issue #89 worktree is integrated into `codex/k4-integration` at
-`e38cfff6ec69b4e8216fb1a322f44df024a363fa`. Integration verification is green and the selective
-invalidation decision preserved all accepted Evaluations. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
-is open against `main`; the single final K4 feature review and merge remain deferred until the
-complete feature reaches its fixed point. Preserve all prior guide revisions, Evaluation records,
-and treated comparison artifacts.
+The accepted Issue #89 worktree was integrated into `codex/k4-integration` at `4609fcf` and merged
+into `main` by [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) at
+`8871adeb6ad2913f435dc7d2272a6b650b61677d`. GitHub Issue #89 is `CLOSED`; the single final K4
+feature review remains deferred until the complete fixed point. Preserve all prior guide revisions,
+Evaluation records, and treated comparison artifacts.
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89; Issue #89 implementation, r4 acceptance, and integration are complete. PR
-publication, final K4 review, and merge remain governed by the approved dependency graph and
-complete-feature fixed point.
+Issues #81–#89; implementation, acceptance, integration, publication, and closure are complete.
+Final K4 review remains governed by the approved dependency graph and complete-feature fixed point.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
-delegation, evidence, and issue state; it does not implement an issue itself. This worktree is not
-an implementation target for the remaining K4 frontiers.
+delegation, evidence, and issue state; it does not implement an issue itself. No implementation
+frontier remains after Issue #89 publication.
 
 Manual-acceptance guide revision `k4-issue-81-r4` is locked at
 `.agents/manual-tests/k4-performance-evidence/issue-81-topology-lifecycle-r4.md`; r1 through r3
@@ -137,12 +134,12 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 
 ## Session Stop State
 
-1. Preserve accepted Issue #81–#85 and #87 implementations, immutable guide revisions, and
-   append-only Evaluation histories. These slices have no additional implementation scope.
-2. Issue #87 is acceptance-complete, fixed-point reviewed APPROVE, and integrated by PR #99 at
-   `cfd1bf90c490dfcfe3349107f841269d1b6aa720`; keep the current accepted artifacts immutable.
-3. Issues #86 and #88 remain separate K4 frontiers in their own worktrees. Do not start them
-   from this Issue #87 worktree.
+1. Preserve all accepted Issue #81–#89 implementations, immutable guide revisions, and append-only
+   Evaluation histories; no ticket has additional implementation scope.
+2. Issue #89 is integrated and published by PR #103 at merge commit
+   `8871adeb6ad2913f435dc7d2272a6b650b61677d`; GitHub Issues #81–#89 are closed.
+3. The only remaining K4 transition is the single final feature review at the complete fixed point;
+   do not run it until the governed review cadence and complete-feature evidence are ready.
 
 ## Issue #87 Fixed Point
 
@@ -197,6 +194,9 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 - Locked Issue #87 guide: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md`
 - Issue #87 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.evaluations.jsonl`
 - Issue #87 publication: PR #99, merge commit `cfd1bf90c490dfcfe3349107f841269d1b6aa720`
+- Locked Issue #89 guide: `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.md`
+- Issue #89 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.evaluations.jsonl`
+- Issue #89 publication: PR #103, merge commit `8871adeb6ad2913f435dc7d2272a6b650b61677d`
 - Current World Model: `.agents/CONTEXT.md`
 - Current workflow state: `.agents/current-session.md` and `.agents/feature-delivery-events/events.jsonl`;
   create a fresh Resume Contract only when suspending this workflow.
