@@ -1,10 +1,41 @@
 # Next Session — K4 Leader Continuation
 
+## Current Frontier Override
+
+Issues #85–#88 are complete and integrated. Issue #89 is the only open frontier. This worktree
+is reserved exclusively for the baseline evidence-chain and bottleneck-dossier slice. Its
+integration branch is `codex/k4-integration`, pinned at `9bbd99fa0cdd1663ade6d54937d1fb41e2880ea1`.
+
+## Issue #89 Acceptance Checkpoint
+
+Manual guide revisions `k4-issue-89-r1` and `k4-issue-89-r2` remain immutable and unapproved.
+Revision `k4-issue-89-r3` is locked and human-approved at
+`.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r3.md`
+(`2026-08-16T11:52:30+07:00`, approved by `user`). Issue #89 implementation and manual acceptance
+execution are complete for r3. Revision `k4-issue-89-r4` is locked and human-approved at
+`.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.md`
+(`2026-08-16T13:30:07+07:00`, approved by `user`); r4 execution is now complete but its Evaluation
+is now `PASSED` with explicit human approval in append-only record
+`tc89-r4-treatment-comparison-20260816-approved`.
+
+The r3 baseline remains accepted with focused Issue #89 tests 13/13, full K4 plus server
+attribution 193/193, `npm run test:ci` 132/132, and `npm run ci:validate` passing. The r3
+append-only Evaluation
+`.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r3.evaluations.jsonl`
+contains the original `tc89-r3-baseline-20260816` with `verdict=BLOCKED` and
+`human_approval=pending`, followed by append-only `tc89-r3-baseline-20260816-approved` with
+`verdict=PASSED` and `human_approval=approved`. The r4 append-only Evaluation
+`.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.evaluations.jsonl`
+ends with `tc89-r4-treatment-comparison-20260816-approved` (`verdict=PASSED`,
+`human_approval=approved`) after the prior BLOCKED/pending observation. The valid comparison
+artifact is `.k4-results/k4issue89r4-20260816-optimization-comparison.json`. The next valid
+transition is integration; preserve all prior runs and guide revisions and do not run final review,
+commit, merge, or publication before the integration gates are satisfied.
+
 ## Current Parallel Frontier Override
 
-Issue #84, #85, #86, and #87 are complete. Issue #87 is fully integrated through PR #99;
-Issue #86 is delivered from branch `codex/k4-issue86`; Issue #88 remains a separate frontier
-in its own worktree.
+Issues #84–#88 are complete and integrated; Issue #89 remains the current frontier in this
+dedicated worktree. Final K4 review is deferred until the complete feature fixed point.
 
 ## Issue #86 Completion Checkpoint
 
@@ -61,16 +92,17 @@ this Issue #87 worktree.
 
 ## Current State
 
-The next valid transition for this worktree is governed delivery: commit the approved implementation
-and acceptance state, create/merge the Issue #86 PR when repository gates are satisfied, synchronize
-main, and leave final review for the post-resolution step requested by the user. Preserve all prior
-guide revisions and Evaluation records.
+The next valid transition for this worktree is integration of the accepted Issue #89 worktree into
+the current K4 integration head. Reconcile the dirty worktree, run integration verification, derive
+selective acceptance invalidation, and only then advance the integration head; the single final K4
+feature review remains deferred until the complete feature reaches its fixed point. Preserve all
+prior guide revisions, Evaluation records, and treated comparison artifacts.
 
 K4 Reproducible Performance Evidence remains active under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
-Issues #81–#89. Issues #81–#85 and #87 have completed their implementation/acceptance milestones.
-Issues #86 and #88 remain separate frontiers; later dependent issues remain governed by the
-approved dependency graph.
+Issues #81–#89; Issue #89 implementation is complete and r4 acceptance is awaiting its explicit
+Evaluation approval. Final K4 review and publication remain governed by the approved dependency
+graph and complete-feature fixed point.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
 delegation, evidence, and issue state; it does not implement an issue itself. This worktree is not
@@ -181,5 +213,5 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
   all K3/K3.1 completion contracts.
 - K4 must use separate Compose project, ports, volumes, databases, Redis, RabbitMQ, test target,
   and result directory from Issue #61.
-- No targeted optimization implementation ticket exists before Issue #89 baseline evidence and a
-  separate human approval of exactly one evidence-backed candidate.
+- The approved single treatment and one post-treatment/optimization-comparison rerun are retained;
+  no second optimization or rerun is authorized without a new explicit human gate.
