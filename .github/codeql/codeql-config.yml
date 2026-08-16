@@ -1,0 +1,17 @@
+name: "Issue #61 canonical rate-limit query replacement"
+
+# Keep the default CodeQL suite. Replace only the stock missing-rate-limiting
+# rule with the repository-owned equivalent below.
+queries:
+  - name: "Issue #61 canonical rate-limit query"
+    uses: ./.github/codeql/issue61-rate-limit/queries/KittaChatMissingRateLimiting.ql
+
+query-filters:
+  - exclude:
+      id: js/missing-rate-limiting
+
+# The JavaScript files here are disposable negative controls for the local fixture gate, not
+# application source. Keep them out of repository code-scanning results while the gate continues
+# to analyze them directly from its dedicated fixture source root.
+paths-ignore:
+  - .github/codeql/issue61-rate-limit/tests/**
