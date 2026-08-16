@@ -90,6 +90,24 @@ the fixed Compose project `kittachat-k3-1`, keeps backend and Prometheus ports i
 publishes only Grafana at `127.0.0.1:3001`. The normal application stack and `npm run demo` remain
 separate; they do not need to run at the same time. See `docs/observability/README.md`.
 
+## K4 Performance Evidence Boundary
+
+K4 benchmarks run in a separate, K4-owned Compose project. The pinned runner sends all measured
+traffic through nginx and has no direct backend route or Docker-management privilege. The
+observation plane reads typed metrics, attribution, and resource evidence from K4-owned services;
+it never creates workload.
+
+Issue #87 adds evidence handling for message persistence and recipient delivery without changing
+the public REST or Socket.IO contracts. Persistence latency is derived from acknowledged-Mongo
+histogram snapshots. Recipient-delivery duration runs from the timestamp immediately before the
+`sendMessage` emit to the matched recipient `getMessage` receipt. The acknowledgement remains the
+existing `{ success, realId }` validity gate.
+
+Cross-replica eligibility requires complete measurement-phase correlation and distinct measured
+sender and recipient replicas. A same-replica sample is only sample-level ineligible; the run-level
+`TOPOLOGY_NOT_EXERCISED` flag requires complete proof that all measured activity used one replica.
+See [K4 Performance Evidence](k4-performance-evidence.md) and [ADR-015](adr/015-k4-performance-evidence-boundary.md).
+
 ## API Reference
 
 See `docs/API.md` for the current REST endpoint surface, auth requirements, request/response examples, request ID behavior, and honest limitations.

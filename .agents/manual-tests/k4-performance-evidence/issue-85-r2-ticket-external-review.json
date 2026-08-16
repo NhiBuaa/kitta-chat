@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "review_id": "k4-issue-85-r2-ticket-external-review",
+  "surface": "ticket",
+  "ticket_id": "issue-85",
+  "guide_revision": "k4-issue-85-r2",
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "reviewer": "/root/issue85_ticket_review",
+  "reviewed_artifacts": [
+    ".agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r2.md",
+    "https://github.com/NhiBuaa/kitta-chat/issues/80",
+    "https://github.com/NhiBuaa/kitta-chat/issues/85",
+    "docs/adr/015-k4-performance-evidence-boundary.md"
+  ],
+  "guide_sha256": "66e773b7a19741d57e1545de97bb2106b075d49f162d1cb76f2d4f341f49a309"
+}

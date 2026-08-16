@@ -54,6 +54,7 @@ Người dùng cần ...
 ## Active Specs
 
 - [Recruiter-Facing README](./active/recruiter-facing-readme.md)
+- [K4 Reproducible Performance Evidence](https://github.com/NhiBuaa/kitta-chat/issues/80) — tracker-owned specification; Issues #81–#85 have completed their approved implementation and acceptance transitions. Remaining K4 slices continue independently; this session stops at Issue #85.
 
 ## Done Specs
 

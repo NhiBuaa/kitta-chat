@@ -145,7 +145,7 @@ function claimEvidenceFromMeasurement({ plan, measurementOutput, attribution }) 
       && !flags.has("OBSERVATION_INCOMPLETE");
   }
   if (scenario === "message") {
-    evidence.endToEndDelivery = attribution?.claimEligible === true;
+    evidence.endToEndDelivery = attribution?.deliveryEligible === true || attribution?.claimEligible === true;
     evidence.crossReplica = attribution?.claimEligible === true;
   }
   return evidence;

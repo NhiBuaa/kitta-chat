@@ -51,6 +51,27 @@ exec/path, or lifecycle mutation. The runner has neither route nor credential to
 Direct replica `/metrics` access over an observation-only internal network is preferred. Failure
 to prove the privilege boundary sets `OBSERVATION_INCOMPLETE` and prohibits helper-derived claims.
 
+## Amendment: provenance, report claims, and comparison validation
+
+Authority: [Issue #80](https://github.com/NhiBuaa/kitta-chat/issues/80), [Issue #85](https://github.com/NhiBuaa/kitta-chat/issues/85), and the locked `k4-issue-85-r3` acceptance guide.
+
+The default source-inventory representation is the complete exact persisted bytes of the
+source-inventory artifact on disk. An independent verifier hashes those bytes directly with
+SHA-256; it does not parse, reserialize, canonicalize, or normalize them. A contract that uses a
+different representation or a non-self-referential boundary must name an authoritative schema or
+contract. The implementation must not invent that boundary.
+
+Reports must state hardware limits and the measured workload/topology scope. A report may publish
+`scalable`, `high-performance`, or `production-ready` only when the applicable profile or
+environment manifest, source inventory, and raw-result artifacts are provenance-linked and the
+claim stays inside the measured scope. Missing provenance or extrapolation makes the claim
+unpublishable; it does not erase unrelated retained latency/error evidence.
+
+Optimization and topology comparisons are separate contracts. Optimization permits one declared
+treatment after linked bottleneck evidence while keeping non-treatment conditions equivalent.
+Topology comparison permits only the declared topology or replica-count difference. Undeclared
+condition changes are rejected rather than silently treated as the allowed difference.
+
 ## Considered Options
 
 - Host-based or direct-backend workload: rejected because runner placement and ingress behavior would differ from the measured topology and could conflict with parallel work.

@@ -38,3 +38,8 @@ KittaChat application stack does not need to run at the same time.
 
 Hosted Prometheus/Grafana, outbound alert delivery, centralized logs, tracing, benchmarks and
 production deployment remain outside K3/K3.1. They require a new approved issue or specification.
+
+K4 is the separately approved performance-evidence milestone. Its benchmark workload and
+observation boundaries are not K3/K3.1 contracts. See [K4 Performance Evidence](../k4-performance-evidence.md)
+and [ADR-015](../adr/015-k4-performance-evidence-boundary.md) for the accepted Issue #87 message
+persistence and recipient-delivery evidence slice.

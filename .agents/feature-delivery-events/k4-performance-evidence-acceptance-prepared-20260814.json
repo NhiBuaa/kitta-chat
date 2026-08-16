@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-performance-evidence-acceptance-prepared-20260814",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "87",
+  "transition": "acceptance_prepared",
+  "skill": "manual-acceptance",
+  "execution_revision": "k4-issue-87-r2",
+  "started_at": "2026-08-14T11:00:42+07:00",
+  "finished_at": "2026-08-14T11:00:50+07:00",
+  "status": "completed",
+  "retry_count": 0,
+  "input_digest": "sha256:B40E2910295FAC6400C12C4803789E2891B8495A6CBCE304DA0E179B3919171F",
+  "output_digest": "sha256:7C228FC88849C0725B908466F8DDBFD334C62E657286880428BC56A8A28F254A",
+  "evidence_references": [
+    "D:/Developer/Projects/shotter/shot-chat-worktrees/issue-87/.agents/manual-tests/k4-performance-evidence/issue-87-message-persistence-recipient-delivery-r2.md",
+    "C:/Users/Nhi/AppData/Local/Temp/agent-handoffs/k4-issue-87-parallel.json"
+  ]
+}

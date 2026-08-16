@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "k4-issue-85-external-reviews-r2",
+  "workflow_id": "feature-delivery:k4-performance-evidence",
+  "feature_id": "k4-performance-evidence",
+  "ticket_id": "issue-85",
+  "transition": "review_completed",
+  "skill": "feature-delivery",
+  "execution_revision": "k4-issue-85-r2",
+  "started_at": "2026-08-14T04:07:00Z",
+  "finished_at": "2026-08-14T04:18:20Z",
+  "status": "completed",
+  "retry_count": 1,
+  "input_digest": "78e519931b5fdb4ce0d0f3e0cb01007ecfc6f13d3a79045b16e9c4827cbe8d36",
+  "output_digest": "5176f567bc6feb7eab3c25c23b788e9cca1730802f58abdac94ddf5b2d590bba",
+  "evidence_references": [
+    ".agents/manual-tests/k4-performance-evidence/issue-85-r2-spec-design-external-review.json",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-r2-ticket-external-review.json",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-r2-manual-guide-external-review.json",
+    ".agents/manual-tests/k4-performance-evidence/issue-85-review-cadence-evidence-r2.json"
+  ]
+}

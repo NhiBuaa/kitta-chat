@@ -21,10 +21,10 @@ function socketPlan(replicas, directory) {
   };
 }
 
-function runtimePort(calls, { failAfter = false } = {}) {
+function runtimePort(calls, { failAfter = false, attribution = null } = {}) {
   return {
     async snapshotPersistenceHistogram({ replica, point }) { calls.push(["histogram", replica, point]); if (failAfter && point === "after") throw new Error("metrics read unavailable"); return histogram(point === "before" ? 1 : 2); },
-    async captureReplicaAttribution(input) { calls.push(["attribution", input.point, input.replicas]); return { point: input.point, replicas: input.replicas }; },
+    async captureReplicaAttribution(input) { calls.push(["attribution", input.point, input.replicas]); return { point: input.point, replicas: input.replicas, ...(input.point === "after" && attribution ? attribution : {}) }; },
     async collectResourceSamples({ requiredContainers, measurementStart }) { calls.push(["resources", requiredContainers]); return Object.fromEntries(requiredContainers.map((container) => [container, [{ timestamp: measurementStart, status: "success", sample: { container } }]])); },
     async captureRunnerCgroupEvidence() { calls.push(["cgroup"]); return { cgroupVersion: "v2", sourcePaths: { cpuStat: "/sys/fs/cgroup/cpu.stat", cpuMax: "/sys/fs/cgroup/cpu.max", memoryEvents: "/sys/fs/cgroup/memory.events" }, limits: { cpu: "1", cpuset: "0", memory: "512MiB" }, cpuSamples: [], memoryEvents: { oomDelta: 0, oomKillDelta: 0 } }; },
     async captureRunnerShortfall() { calls.push(["shortfall"]); return null; },
@@ -38,6 +38,9 @@ test("claim eligibility derives each topology claim from the matching observatio
 
   const message = claimEvidenceFromMeasurement({ plan: { workload: { scenario: "message" } }, measurementOutput: {}, attribution: { claimEligible: true } });
   assert.deepEqual(message, { multiReplica: true, endToEndDelivery: true, crossReplica: true });
+
+  const sameReplicaDelivery = claimEvidenceFromMeasurement({ plan: { workload: { scenario: "message" } }, measurementOutput: {}, attribution: { deliveryEligible: true, claimEligible: false } });
+  assert.deepEqual(sameReplicaDelivery, { multiReplica: false, endToEndDelivery: true, crossReplica: false });
 
   const incomplete = claimEvidenceFromMeasurement({ plan: { workload: { scenario: "message" } }, measurementOutput: {}, attribution: { claimEligible: false } });
   assert.deepEqual(incomplete, { multiReplica: false, endToEndDelivery: false, crossReplica: false });
@@ -79,6 +82,17 @@ test("production observation maps runtime-port captures into topology-scoped per
   assert.deepEqual(raw.replicaAttribution.before.replicas, ["backend-1", "backend-2"]);
   assert.deepEqual(raw.replicaAttribution.after.replicas, ["backend-1", "backend-2"]);
   assert.equal(result.claimEligibility.endToEndDelivery.eligible, true);
+});
+
+test("production observation promotes only proven run-level topology to qualification flags", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-production-topology-"));
+  const observation = createProductionMeasurementObservation({
+    intervalMs: 1000,
+    runtimePort: runtimePort([], { attribution: { topologyNotExercised: true, claimEligible: false } }),
+    clock: (() => { const points = ["2026-08-13T00:00:00.000Z", "2026-08-13T00:00:01.000Z"]; return () => points.shift(); })(),
+  });
+  const result = await executeRun(plan(["backend-1"], directory), { observation, executePhase: async (phase) => phase === "setup/seed" ? { resourcesCreated: true } : {} });
+  assert.deepEqual(result.qualificationFlags, ["TOPOLOGY_NOT_EXERCISED"]);
 });
 
 test("production observation retains partial raw evidence, fails measurement, and leaves teardown running when runtime capture fails", async () => {

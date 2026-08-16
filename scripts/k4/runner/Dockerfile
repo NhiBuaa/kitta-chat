@@ -5,5 +5,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY workload.js ./workload.js
 COPY socketConcurrency.js ./socketConcurrency.js
+COPY faultFixtures.js ./faultFixtures.js
 
 ENV NODE_PATH=/opt/k4/node_modules
