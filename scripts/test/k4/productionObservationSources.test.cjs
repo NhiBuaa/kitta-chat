@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const { createProductionObservationSources, parsePrometheusHistogram } = require("../../k4/productionObservationSources");
 
 const plan = { projectName: "kittachat-k4", runId: "run1", workload: { scenario: "sidebar" } };
@@ -15,7 +16,7 @@ test("production sources use typed helper and keep topology inventory distinct f
   const helper = {
     metrics: async () => ({ body: metrics, sourceIdentity: "backend-metrics", sourceDigest: "sha256:metrics" }),
     identity: async ({ target }) => ({ target, containerId: "id" }),
-    logs: async () => ({ sourceIdentity: "nginx", sourceDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", body: '127.0.0.1 - - [13/Aug/2026:00:00:01 +0000] "GET /api/sidebar/conversations HTTP/1.1" 200 1 "-" "k4" rt=0.1 uct=0.1 uht=0.1 urt=0.1 upstream=10.0.0.1:3000 k4rid=r1', truncated: false, rotationGap: false }),
+    logs: async () => ({ sourceIdentity: "nginx", sourceDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", body: '127.0.0.1 - - [13/Aug/2026:00:00:01 +0000] "GET /api/sidebar/conversations HTTP/1.1" 200 1 "-" "k4" rt=0.1 uct=0.1 uht=0.1 urt=0.1 upstream=10.0.0.1:3000 k4rid=r1', truncated: false, rotationGap: false, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] }),
     stats: async () => ({ helperIdentity: "k4-observer:run1", sample: { CPUPerc: "1%" } }),
     runnerCgroup: async () => ({ cgroupVersion: "v2", memoryEvents: {} }),
   };
@@ -32,6 +33,64 @@ test("production sources use typed helper and keep topology inventory distinct f
   assert.equal(source.identity.dockerManagement, false);
 });
 
+test("production attribution fails closed when helper omits completeness fields", async () => {
+  const helper = {
+    logs: async ({ role }) => ({
+      sourceIdentity: role,
+      sourceDigest: "sha256:omitted-completeness",
+      body: role === "nginx"
+        ? '2026-08-13T00:00:01Z 127.0.0.1 - - [13/Aug/2026:00:00:01 +0000] "GET /api/sidebar/conversations HTTP/1.1" 200 1 "" "k4" upstream=10.0.0.1:3000 k4rid=r1'
+        : "",
+    }),
+    identity: async () => ({ addresses: ["10.0.0.1"] }),
+  };
+  const source = createProductionObservationSources({ helper });
+  const attribution = await source.captureReplicaAttribution({
+    plan: { ...plan, workload: { scenario: "sidebar" } },
+    replicas: ["backend-1"],
+    measurementStart: "2026-08-13T00:00:00Z",
+    measurementEnd: "2026-08-13T00:00:10Z",
+    measurementOutput: { measuredRequestIds: ["r1"], replicaAddressMap: { "10.0.0.1:3000": "backend-1" } },
+  });
+  assert.equal(attribution.complete, false);
+  assert.equal(attribution.claimEligible, false);
+  assert.ok(attribution.source.parseDiagnostics.some((entry) => entry.kind === "missing-completeness-field"));
+  const nginx = attribution.source.rawSources.find((entry) => entry.role === "nginx");
+  assert.equal(Object.prototype.hasOwnProperty.call(nginx, "truncated"), false);
+});
+
+test("production sidebar attribution uses measured request identity for window admission", async () => {
+  const helper = {
+    logs: async ({ role }) => ({
+      sourceIdentity: role,
+      sourceDigest: "sha256:wrapper-window",
+      body: role === "nginx"
+        ? '2026-08-13T00:00:01.500Z 127.0.0.1 - - [13/Aug/2026:00:00:00 +0000] "GET /api/sidebar/conversations HTTP/1.1" 200 1 "" "k4" rt=0.1 uct=0.1 uht=0.1 urt=0.1 upstream=10.0.0.1:3000 k4rid=r1'
+        : "",
+      truncated: false,
+      rotationGap: false,
+      ambiguousClock: false,
+      coverageGaps: [],
+      parseDiagnostics: [],
+      ambiguousClock: false,
+      coverageGaps: [],
+      parseDiagnostics: [],
+    }),
+    identity: async () => ({ addresses: ["10.0.0.1"] }),
+  };
+  const source = createProductionObservationSources({ helper });
+  const attribution = await source.captureReplicaAttribution({
+    plan: { ...plan, workload: { scenario: "sidebar" } },
+    replicas: ["backend-1"],
+    measurementStart: "2026-08-13T00:00:01.000Z",
+    measurementEnd: "2026-08-13T00:00:02.000Z",
+    measurementOutput: { measuredRequestIds: ["r1"], replicaAddressMap: { "10.0.0.1:3000": "backend-1" } },
+  });
+  assert.equal(attribution.complete, true);
+  assert.equal(attribution.topologyNotExercised, true);
+  assert.equal(attribution.supportingRecords[0].timestamp, "2026-08-13T00:00:00.000Z");
+});
+
 test("production sidebar attribution rejects a measured correlation bound to another endpoint", async () => {
   const helper = {
     logs: async ({ role }) => ({
@@ -42,6 +101,12 @@ test("production sidebar attribution rejects a measured correlation bound to ano
         : "",
       truncated: false,
       rotationGap: false,
+      ambiguousClock: false,
+      coverageGaps: [],
+      parseDiagnostics: [],
+      ambiguousClock: false,
+      coverageGaps: [],
+      parseDiagnostics: [],
     }),
     identity: async () => ({ addresses: ["10.0.0.1"] }),
     metrics: async () => ({ body: metrics }),
@@ -93,8 +158,8 @@ test("message attribution separates sample same-replica ineligibility from run-l
     metrics: async () => ({ body: metrics, sourceIdentity: "backend-metrics", sourceDigest: "sha256:metrics" }),
     identity: async () => ({ addresses: [] }),
     logs: async ({ role }) => role === "backend"
-      ? { sourceIdentity: "backend", sourceDigest: "sha256:backend", body: backendLog, truncated: false, rotationGap: false }
-      : { sourceIdentity: "nginx", sourceDigest: "sha256:nginx", body: "", truncated: false, rotationGap: false },
+      ? { sourceIdentity: "backend", sourceDigest: "sha256:backend", body: backendLog, truncated: false, rotationGap: false, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] }
+      : { sourceIdentity: "nginx", sourceDigest: "sha256:nginx", body: "", truncated: false, rotationGap: false, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] },
     stats: async () => ({ helperIdentity: "k4-observer:run1", sample: {} }),
     runnerCgroup: async () => ({ cgroupVersion: "v2", memoryEvents: {} }),
   };
@@ -118,4 +183,80 @@ test("message attribution separates sample same-replica ineligibility from run-l
     measurementOutput: { ...output, attemptedCorrelationIds: ["c1"], attributionComplete: true },
   });
   assert.equal(completeRun.topologyNotExercised, true);
+});
+
+test("production socket attribution recomputes combined pre-window source digests", async () => {
+  const preWindowBody = `${JSON.stringify({ schema: "k4-attribution-v1", timestamp: "2026-08-13T00:00:00.500Z", event: "socket_authenticated", socketId: "s1", actorRef: "alice", nodeName: "backend-1" })}\n`;
+  const measurementBody = `${JSON.stringify({ schema: "k4-attribution-v1", timestamp: "2026-08-13T00:00:01.500Z", event: "socket_disconnected", socketId: "s1", actorRef: "alice", nodeName: "backend-1" })}\n`;
+  const digest = (body) => `sha256:${crypto.createHash("sha256").update(body).digest("hex")}`;
+  const helper = {
+    logs: async ({ measurementStart }) => measurementStart === "1970-01-01T00:00:00.000Z"
+      ? { sourceIdentity: "backend-1:pre-window", sourceDigest: "sha256:helper-pre", body: preWindowBody, truncated: false, rotationGap: false, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] }
+      : { sourceIdentity: "backend-1:measurement", sourceDigest: "sha256:helper-measurement", body: measurementBody, truncated: false, rotationGap: false, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] },
+    metrics: async () => ({ body: metrics }),
+    identity: async () => ({ addresses: [] }),
+  };
+  const source = createProductionObservationSources({ helper });
+  const plan = { projectName: "kittachat-k4", runId: "socket-digest", workload: { scenario: "socket-concurrency", digest: "sha256:workload" } };
+  await source.captureReplicaAttribution({ plan, replicas: ["backend-1"], measurementStart: "2026-08-13T00:00:01Z" });
+  const attribution = await source.captureReplicaAttribution({
+    plan,
+    replicas: ["backend-1"],
+    measurementStart: "2026-08-13T00:00:01Z",
+    measurementEnd: "2026-08-13T00:00:02Z",
+    measurementOutput: { measuredActors: ["alice"], measuredConnections: [{ socketId: "s1", actorRef: "alice" }] },
+  });
+  const raw = attribution.source.rawSources.find((entry) => entry.target === "backend-1");
+  assert.equal(raw.body, `${preWindowBody}\n${measurementBody}`);
+  assert.equal(raw.sourceDigest, digest(raw.body));
+  assert.equal(raw.helperSourceDigest, "sha256:helper-measurement");
+  assert.equal(attribution.source.sourceDigest, digest(attribution.source.rawSources.map((entry) => entry.sourceDigest).join("\n")));
+});
+
+test("production socket attribution preserves pre-window completeness gaps and fails closed", async () => {
+  const preWindowBody = `${JSON.stringify({ schema: "k4-attribution-v1", timestamp: "2026-08-13T00:00:00.500Z", event: "socket_authenticated", socketId: "s-gap", actorRef: "alice", nodeName: "backend-1" })}\n`;
+  const measurementBody = `${JSON.stringify({ schema: "k4-attribution-v1", timestamp: "2026-08-13T00:00:01.500Z", event: "socket_disconnected", socketId: "s-gap", actorRef: "alice", nodeName: "backend-1" })}\n`;
+  const helper = {
+    logs: async ({ measurementStart }) => measurementStart === "1970-01-01T00:00:00.000Z"
+      ? { sourceIdentity: "backend-1:pre-window", sourceDigest: "sha256:helper-pre", body: preWindowBody, truncated: false, rotationGap: true, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] }
+      : { sourceIdentity: "backend-1:measurement", sourceDigest: "sha256:helper-measurement", body: measurementBody, truncated: false, rotationGap: false, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] },
+    metrics: async () => ({ body: metrics }),
+    identity: async () => ({ addresses: [] }),
+  };
+  const source = createProductionObservationSources({ helper });
+  const plan = { projectName: "kittachat-k4", runId: "socket-gap", workload: { scenario: "socket-concurrency", digest: "sha256:workload" } };
+  await source.captureReplicaAttribution({ plan, replicas: ["backend-1"], measurementStart: "2026-08-13T00:00:01Z" });
+  const attribution = await source.captureReplicaAttribution({
+    plan,
+    replicas: ["backend-1"],
+    measurementStart: "2026-08-13T00:00:01Z",
+    measurementEnd: "2026-08-13T00:00:02Z",
+    measurementOutput: { measuredActors: ["alice"], measuredConnections: [{ socketId: "s-gap", actorRef: "alice" }] },
+  });
+  const raw = attribution.source.rawSources.find((entry) => entry.target === "backend-1");
+  assert.equal(raw.rotationGap, true);
+  assert.equal(attribution.source.rotationGap, true);
+  assert.equal(attribution.complete, false);
+  assert.match(attribution.incompleteReasons.join(" "), /source window is incomplete/);
+});
+
+test("production socket reconstruction retains diagnostics in raw and aggregate sources", async () => {
+  const body = `${JSON.stringify({ schema: "k4-attribution-v1", timestamp: "2026-08-13T00:00:01.500Z", event: "socket_disconnect", socketId: "s-unmatched", nodeName: "backend-1" })}\n`;
+  const helper = {
+    logs: async () => ({ sourceIdentity: "backend-1", sourceDigest: "sha256:backend", body, truncated: false, rotationGap: false, ambiguousClock: false, coverageGaps: [], parseDiagnostics: [] }),
+    metrics: async () => ({ body: metrics }),
+    identity: async () => ({ addresses: [] }),
+  };
+  const source = createProductionObservationSources({ helper });
+  const attribution = await source.captureReplicaAttribution({
+    plan: { projectName: "kittachat-k4", runId: "socket-diagnostics", workload: { scenario: "socket-concurrency", digest: "sha256:workload" } },
+    replicas: ["backend-1"],
+    measurementStart: "2026-08-13T00:00:01Z",
+    measurementEnd: "2026-08-13T00:00:02Z",
+    measurementOutput: { measuredActors: ["alice"], measuredConnections: [{ socketId: "s-unmatched", actorRef: "alice" }] },
+  });
+  const rawDiagnostics = attribution.source.rawSources.flatMap((raw) => raw.parseDiagnostics);
+  assert.ok(rawDiagnostics.some((entry) => entry.kind === "socket-reconstruction:unmatched-disconnect"));
+  assert.deepEqual(attribution.source.parseDiagnostics, rawDiagnostics);
+  assert.equal(attribution.complete, false);
 });

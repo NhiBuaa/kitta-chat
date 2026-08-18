@@ -1,5 +1,133 @@
 # Next Session — K4 Leader Continuation
 
+## Current fixed point — 2026-08-18 final11g
+
+The final bounded Issue #89 cleanup remediation is implemented but uncommitted on
+`nhibuaa/k4-remediation-final`. Ownership is registered before setup/resource creation after fresh
+admission; teardown reports exact no-resource/released/unsafe outcomes from the owned target set.
+Verification is lifecycle/cleanup `30/30`, full K4 `252/252`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, `git diff --check` exit `0`, with retained final11 evidence
+revalidated. No benchmark rerun is required. Pin the new exact descriptor, rerun final Standards
+and feature review, then fresh acceptance/cadence; only after those gates commit/PR/merge/sync.
+
+## Current fixed point — 2026-08-18 final11f
+
+The last approved Issue #89 evidence-integrity hardening is implemented but uncommitted on
+`nhibuaa/k4-remediation-final`. `verifyBundle` now enforces exact source-inventory/report/declared
+derived-artifact membership and rejects extra, missing, duplicate, or path-alias entries. No K4
+benchmark semantics or retained measurement inputs changed. Verification is focused `72/72`, full
+K4 `248/248`, repository CI `132/132`, `npm run ci:validate` exit `0`, and `git diff --check`
+exit `0`.
+
+Next valid transition: pin the refreshed descriptor, rerun final exact-diff reviews, record fresh
+acceptance/cadence evidence, then commit/PR/merge and synchronize `main`. Stop on any new
+Critical/Major finding or benchmark-semantic ambiguity.
+
+## Current fixed point — 2026-08-18 final11d
+
+Issue #89’s approved bounded remediation is present but intentionally uncommitted on
+`nhibuaa/k4-remediation-final` at
+`D:\Developer\Projects\shotter\shot-chat-worktrees\k4-remediation-final`, based on
+`4609fcf8a0cb445855d625f5998130721f30a70d`. Exact fixed-point descriptor:
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260818-final11d.json`;
+binary diff SHA-256 is
+`sha256:a8573abee62e94a4640648fe977fd55ed551420dc6e059fbff6697de6978ce4a`.
+
+The hardening is limited to fail-closed bundle source membership, exact sidebar measured-request
+attribution coverage, and required comparison metadata validation. No scenario, topology,
+workload, measurement, treatment, Issue #80/ADR-015, guide, prior Evaluation, or raw artifact
+was changed. Fresh final11 retained evidence remains valid: six baseline cells plus the approved
+sidebar treatment are `COMPLETED + MEASURED`; matrix/report/dossier/comparison revalidation passes.
+
+Verification is focused `71/71`, full K4 `247/247`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, and `git diff --check` exit `0`. The next valid transition is
+fresh exact-fixed-point acceptance and cadence evidence after independent spec, ticket, and manual
+guide reviews, followed only then by commit/PR/merge and local `main` synchronization. Stop on any
+Critical/Major finding or benchmark-semantic ambiguity.
+
+## Current fixed point — 2026-08-18
+
+The approved bounded Issue #89 remediation is implemented but remains uncommitted on
+`nhibuaa/k4-remediation-final` at
+`D:\Developer\Projects\shotter\shot-chat-worktrees\k4-remediation-final`. Fresh final5
+retained artifacts satisfy the six-cell baseline and one approved sidebar treatment pair.
+Derived dossier `.k4-results/k4r5-20260818-final5-bottleneck-dossier-v3.json` is
+`READY_FOR_HUMAN_GATE`; derived comparison
+`.k4-results/k4r5-20260818-final5-optimization-comparison.json` is `ACCEPTED` with no validator
+diagnostics. The treatment remains exactly
+`profile-and-optimize-sidebar-query-plan`, implementation digest
+`sha256:4d090905bac048576ac311572f90c85ebdd52997d1b273a52a27cf9992258ff1`.
+
+Verification: changed-surface K4 `150/150`, full K4 `242/242`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, and `git diff --check` exit `0`.
+
+Next valid transition: create the fresh exact-diff descriptor, then coordinate three independent
+reviews (spec/design, ticket/decomposition, manual guide/acceptance). Any Critical/Major finding
+or benchmark-semantic ambiguity stops the workflow and returns to the user. If all three reviews
+approve, run the cadence evidence gate and request/record the required human acceptance; only
+then may the user authorize commit/merge/publish. Do not mutate Issue #80/ADR-015, locked guides,
+append-only Evaluations, raw source artifacts, or add optimization scope.
+
+## Current checkpoint — r5 selective rerun blocked at bottleneck eligibility
+
+The user approved selective invalidation of the accepted r3/r4 measured inputs and a fresh rerun.
+Current code fixes are uncommitted and verified by focused `103/103`, full K4 `236/236`,
+repository CI `132/132`, `ci:validate` exit `0`, and `git diff --check` exit `0`. Historical
+artifacts and locked guides/Evaluations remain immutable. Locked guide:
+`.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r5.md`.
+The append-only r5 Evaluation records a `BLOCKED` result at TC-89-R5-03: the fresh six-cell matrix
+is `VALID`, but canonical sidebar resource coverage is not bound to the declared half-open window
+(expected 31 versus cadence-derived 30), so the bottleneck claim is ineligible. The fresh treatment
+pair remains preserved, and no optimization comparison/dossier is publishable. No commit, merge,
+publish, guide mutation, or Evaluation rewrite is allowed.
+
+## Approved bounded remediation — 2026-08-17 canonical outcomes/effective provenance
+
+The user approved only the two final spec findings `K4-SD-FINAL-V4-001` and
+`K4-SD-FINAL-V4-002`. The current uncommitted worktree includes outcome-aware canonical loading
+for persisted `FAILED_SETUP`/`NOT_RUN` artifacts and effective runtime provenance bound to actual
+Compose/container inspection, runner isolation diagnostics, and observer-helper handshake evidence.
+Missing proof is retained and qualifies measured evidence with `OBSERVATION_INCOMPLETE`; plan-only
+values cannot produce `ATTESTED` provenance. Verification is focused `103/103`, full K4 `236/236`,
+repository CI `132/132`, `ci:validate` exit `0`, and `git diff --check` exit `0`.
+
+Fixed-point descriptor: `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260817-final-v8.json`;
+it is the sole authority for the exact fixed-point diff. Manual acceptance is currently BLOCKED at
+the bottleneck prerequisite; the next valid transition requires a new explicit approval for the
+resource-window remediation. Do not start independent reviews, commit, merge, publish, mutate
+guides, or rewrite append-only Evaluations while this blocker remains.
+
+## Approved bounded remediation — 2026-08-17 resource/provenance
+
+The user approved the two bounded Major fixes: recompute resource cadence expected-count from
+the retained measurement window and interval, and wire complete non-secret provenance metadata
+from production composition into measured manifests. Verification is changed-surface `76/76`,
+full K4 `227/227`, repository CI `132/132`, `npm run ci:validate` exit `0`, and `git diff --check`
+exit `0`. Refresh the fixed-point descriptor and rerun exactly three independent reviews; stop
+on any Critical/Major finding. No commit, merge, publish, guide/Evaluation mutation, or authority
+change is allowed.
+
+## Approved bounded remediation — 2026-08-17 pre-window completeness
+
+The user approved the final bounded remediation for the remaining Major finding in the K4 Issue
+#89 remediation fixed point. The change is limited to preserving pre-window socket
+`truncated`/`rotationGap` flags in raw and aggregate attribution evidence plus its regression.
+Verification is changed-surface `74/74`, full K4 `225/225`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, and `git diff --check` exit `0`. Refresh the fixed-point
+descriptor and rerun exactly three independent reviews; stop on any Critical/Major finding.
+No commit, merge, publish, guide/Evaluation mutation, or authority change is allowed.
+
+## Remediation handoff checkpoint — 2026-08-16
+
+The K4 remediation implementation plus bounded external-review fixes is present but intentionally uncommitted on branch
+`nhibuaa/k4-remediation-final` at
+`D:\Developer\Projects\shotter\shot-chat-worktrees\k4-remediation-final`. Current verification
+is K4 `224/224`, repository CI `132/132`, `npm run ci:validate` exit `0`, and `git diff --check`
+exit `0`. The independent reviews of the previous descriptor returned `REQUEST_CHANGES` and are
+retained as remediation inputs; they do not approve the refreshed diff. Do not commit, merge,
+publish, or mutate locked guides/Evaluations until refreshed independent reviews are complete and
+the cadence validator returns `ready`.
+
 ## Current Frontier Override
 
 Issues #81–#89 are complete, closed, and integrated into `main`. Issue #89 was published by PR

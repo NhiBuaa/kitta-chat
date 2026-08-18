@@ -46,6 +46,69 @@ function materializeSlots(samples, measurementStart, measurementEnd, intervalMs)
   });
 }
 
+function declaredMeasurementWindow(measurementOutput, fallbackStart, fallbackEnd) {
+  const declared = measurementOutput?.measurementWindow
+    || (measurementOutput?.measurementStart !== undefined && measurementOutput?.measurementEnd !== undefined
+      ? {
+        start: measurementOutput.measurementStart,
+        end: measurementOutput.measurementEnd,
+        boundary: "[phase_start, phase_end)",
+      }
+      : undefined);
+  if (declared === undefined || declared === null) return {
+    start: fallbackStart,
+    end: fallbackEnd,
+    source: "observation",
+  };
+  const normalizeTimestamp = (value, field) => {
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) throw new Error(`measurement output ${field} must be a valid timestamp`);
+      return new Date(value).toISOString();
+    }
+    if (value instanceof Date) {
+      if (!Number.isFinite(value.getTime())) throw new Error(`measurement output ${field} must be a valid timestamp`);
+      return value.toISOString();
+    }
+    if (typeof value === "string" && value.trim()) {
+      const parsed = Date.parse(value);
+      if (Number.isFinite(parsed)) return value;
+    }
+    throw new Error(`measurement output ${field} must be a valid timestamp`);
+  };
+  const normalizedStart = normalizeTimestamp(declared.start, "start");
+  const normalizedEnd = normalizeTimestamp(declared.end, "end");
+  const start = Date.parse(normalizedStart);
+  const end = Date.parse(normalizedEnd);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+    throw new Error("measurement output measurementWindow must have valid positive timestamps");
+  }
+  return {
+    start: normalizedStart,
+    end: normalizedEnd,
+    ...(declared.boundary ? { boundary: declared.boundary } : {}),
+    source: "runner",
+  };
+}
+
+function rebaseSamples(samples, measurementStart, measurementEnd, intervalMs) {
+  const start = Date.parse(measurementStart);
+  const end = Date.parse(measurementEnd);
+  const byIndex = new Map();
+  for (const sample of samples) {
+    const timestamp = Date.parse(sample?.timestamp);
+    if (!Number.isFinite(timestamp) || timestamp < start || timestamp >= end) continue;
+    const slotIndex = Math.floor((timestamp - start) / intervalMs);
+    const candidate = {
+      ...sample,
+      slotIndex,
+      observationSlotIndex: sample?.slotIndex,
+    };
+    const previous = byIndex.get(slotIndex);
+    if (!previous || (previous.status !== "success" && candidate.status === "success")) byIndex.set(slotIndex, candidate);
+  }
+  return [...byIndex.values()].sort((left, right) => left.slotIndex - right.slotIndex);
+}
+
 function createMeasurementObservation({ intervalMs, clock = () => new Date().toISOString(), captureStart, captureSample, captureEnd, setIntervalFn = setInterval, clearIntervalFn = clearInterval }) {
   if (!Number.isFinite(intervalMs) || intervalMs <= 0) throw new Error("observation intervalMs must be positive");
   if (typeof captureStart !== "function" || typeof captureEnd !== "function") throw new Error("measurement observation capture functions are required");
@@ -84,21 +147,39 @@ function createMeasurementObservation({ intervalMs, clock = () => new Date().toI
     },
     async finalize(plan, measurementOutput) {
       if (!started) throw new Error("measurement observation was not initialized");
-      const measurementEnd = clock();
+      const observationEnd = clock();
       if (sampler) { clearIntervalFn(sampler); sampler = undefined; }
       if (inFlight) await inFlight;
-      samples = materializeSlots(samples, started.measurementStart, measurementEnd, intervalMs);
+      const measurementWindow = declaredMeasurementWindow(measurementOutput, started.measurementStart, observationEnd);
+      const observationSamples = samples;
+      samples = materializeSlots(
+        rebaseSamples(observationSamples, measurementWindow.start, measurementWindow.end, intervalMs),
+        measurementWindow.start,
+        measurementWindow.end,
+        intervalMs,
+      );
       let end;
       try {
-        end = await captureEnd(plan, { measurementStart: started.measurementStart, measurementEnd, measurementOutput, samples }) || {};
+        end = await captureEnd(plan, {
+          measurementStart: measurementWindow.start,
+          measurementEnd: measurementWindow.end,
+          observationWindow: { start: started.measurementStart, end: observationEnd },
+          measurementOutput,
+          samples,
+        }) || {};
       } catch (error) {
-        writeArtifact(plan.resultDirectory, "measurement-observation.error.json", { measurementStart: started.measurementStart, measurementEnd, error: error.message });
+        writeArtifact(plan.resultDirectory, "measurement-observation.error.json", {
+          measurementStart: measurementWindow.start,
+          measurementEnd: measurementWindow.end,
+          observationWindow: { start: started.measurementStart, end: observationEnd },
+          error: error.message,
+        });
         throw error;
       }
       const raw = mergeCapture(started.capture, end);
       const evidence = collectMeasurementEvidence({
         topology: plan.topology || { backendUpstreamMembership: plan.backendUpstreamMembership },
-        resource: { measurementStart: started.measurementStart, measurementEnd, intervalMs, ...(raw.resource || {}) },
+        resource: { measurementStart: measurementWindow.start, measurementEnd: measurementWindow.end, intervalMs, ...(raw.resource || {}) },
         histogram: raw.histogram,
         loadGenerator: raw.loadGenerator,
         activeSocketGauge: raw.activeSocketGauge,
@@ -106,11 +187,19 @@ function createMeasurementObservation({ intervalMs, clock = () => new Date().toI
         claimEvidence: raw.claimEvidence,
         qualificationFlags: raw.qualificationFlags,
       });
-      writeArtifact(plan.resultDirectory, "measurement-observation-final.raw.json", { measurementStart: started.measurementStart, measurementEnd, samples, ...raw });
+      writeArtifact(plan.resultDirectory, "measurement-observation-final.raw.json", {
+        measurementStart: measurementWindow.start,
+        measurementEnd: measurementWindow.end,
+        measurementWindow,
+        observationWindow: { start: started.measurementStart, end: observationEnd },
+        observationSamples,
+        samples,
+        ...raw,
+      });
       writeArtifact(plan.resultDirectory, "measurement-observation.json", evidence);
       return evidence;
     },
   };
 }
 
-module.exports = { createMeasurementObservation, materializeSlots };
+module.exports = { createMeasurementObservation, declaredMeasurementWindow, materializeSlots, rebaseSamples };

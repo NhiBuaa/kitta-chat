@@ -30,7 +30,15 @@ function resolveInside(root, candidate) {
 
 function bundleEntries({ resultDirectory, sourceInventoryPath = SOURCE_INVENTORY_FILE, reportPath = REPORT_FILE, derivedArtifacts = [] }) {
   const root = path.resolve(resultDirectory || "");
-  const candidates = [sourceInventoryPath, reportPath, ...derivedArtifacts];
+  const inventoryLocation = resolveInside(root, sourceInventoryPath);
+  let sourceMembers = [];
+  if (fs.existsSync(inventoryLocation.absolute)) {
+    try {
+      const inventory = JSON.parse(fs.readFileSync(inventoryLocation.absolute, "utf8"));
+      sourceMembers = (inventory.entries || []).map((entry) => ({ path: entry.path, type: entry.type || "source-artifact" }));
+    } catch { sourceMembers = []; }
+  }
+  const candidates = [sourceInventoryPath, reportPath, ...sourceMembers, ...derivedArtifacts];
   const seen = new Set();
   return candidates.map((candidate) => {
     const location = resolveInside(root, typeof candidate === "string" ? candidate : candidate.path);
@@ -52,10 +60,11 @@ function assertStatusAxes({ artifactStatus, executionOutcome, qualificationFlags
 function finalizeRun({ resultDirectory, runId, sourceInventoryPath = SOURCE_INVENTORY_FILE, sourceInventorySha256, reportPath = REPORT_FILE, derivedArtifacts = [], artifactStatus, executionOutcome, qualificationFlags, report, reportClaims }) {
   if (!runId) throw new Error("run ID is required for finalization");
   const root = path.resolve(resultDirectory || "");
-  const source = verifySourceInventory({ resultDirectory: root, inventoryPath: sourceInventoryPath, expectedDigest: sourceInventorySha256 });
+  const source = verifySourceInventory({ resultDirectory: root, inventoryPath: sourceInventoryPath, expectedDigest: sourceInventorySha256, expectedRunId: runId });
   let resolvedReportPath = reportPath;
   let reportEvidence;
-  if (report) {
+  const requestedIncomplete = artifactStatus === INCOMPLETE_STATUS || (executionOutcome && executionOutcome !== "MEASURED");
+  if (report && !requestedIncomplete) {
     const derived = deriveReport({ resultDirectory: root, sourceInventoryPath, sourceInventorySha256: source.sourceInventorySha256, reportPath, report, claims: reportClaims });
     resolvedReportPath = derived.reportPath;
     reportEvidence = derived.report;
@@ -64,8 +73,25 @@ function finalizeRun({ resultDirectory, runId, sourceInventoryPath = SOURCE_INVE
   const finalExecutionOutcome = executionOutcome || reportEvidence?.execution_outcome || "MEASURED";
   const finalQualificationFlags = qualificationFlags || reportEvidence?.qualification_flags || [];
   assertStatusAxes({ artifactStatus: finalArtifactStatus, executionOutcome: finalExecutionOutcome, qualificationFlags: finalQualificationFlags });
-  const entries = bundleEntries({ resultDirectory: root, sourceInventoryPath, reportPath: resolvedReportPath, derivedArtifacts });
-  const bundle = { schema: "k4-bundle-inventory-v1", runId: String(runId), entries };
+  if ((finalArtifactStatus !== COMPLETED_STATUS || finalExecutionOutcome !== "MEASURED") && reportEvidence) throw new Error("incomplete finalization cannot include report.json");
+  const includeReport = finalArtifactStatus === COMPLETED_STATUS && finalExecutionOutcome === "MEASURED";
+  const entries = includeReport
+    ? bundleEntries({ resultDirectory: root, sourceInventoryPath, reportPath: resolvedReportPath, derivedArtifacts })
+    : [
+      { path: sourceInventoryPath, type: "source-inventory", ...(() => { const bytes = fs.readFileSync(path.join(root, sourceInventoryPath)); return { byteSize: bytes.byteLength, sha256: digestBytes(bytes) }; })() },
+      ...source.entries,
+      ...derivedArtifacts.map((candidate) => {
+        const location = resolveInside(root, typeof candidate === "string" ? candidate : candidate.path);
+        const bytes = fs.readFileSync(location.absolute);
+        return { path: location.relative, type: typeof candidate === "string" ? "derived-artifact" : (candidate.type || "derived-artifact"), byteSize: bytes.byteLength, sha256: digestBytes(bytes) };
+      }),
+    ];
+  const bundle = {
+    schema: "k4-bundle-inventory-v1",
+    runId: String(runId),
+    source_inventory_sha256: source.sourceInventorySha256,
+    entries,
+  };
   const bundlePath = path.join(root, BUNDLE_INVENTORY_FILE);
   immutableJson(bundlePath, bundle);
   const bundleInventorySha256 = digestBytes(fs.readFileSync(bundlePath));
@@ -83,42 +109,181 @@ function finalizeRun({ resultDirectory, runId, sourceInventoryPath = SOURCE_INVE
   return { status: COMPLETED_STATUS, bundle, bundlePath, bundleInventorySha256, sourceInventorySha256: source.sourceInventorySha256, marker, markerPath };
 }
 
-function verifyBundle({ resultDirectory, marker, bundlePath = BUNDLE_INVENTORY_FILE }) {
+function verifyBundle({ resultDirectory, marker, expectedRunId, bundlePath = BUNDLE_INVENTORY_FILE, sourceInventoryPath = SOURCE_INVENTORY_FILE, requireReport = false, reportPath = REPORT_FILE }) {
   const root = path.resolve(resultDirectory || "");
   const loadedPath = path.isAbsolute(bundlePath) ? bundlePath : path.join(root, bundlePath);
   if (!fs.existsSync(loadedPath)) throw new Error("bundle inventory is missing");
   let bundle;
   try { bundle = JSON.parse(fs.readFileSync(loadedPath, "utf8")); } catch { throw new Error("bundle inventory is not valid JSON"); }
+  if (expectedRunId && bundle.runId !== String(expectedRunId)) throw new Error("bundle inventory run ID does not match the requested run");
+  const source = verifySourceInventory({ resultDirectory: root, inventoryPath: sourceInventoryPath, expectedRunId });
+  if (bundle.source_inventory_sha256 !== source.sourceInventorySha256) throw new Error("bundle inventory source digest does not match the verified source inventory");
+  const entries = Array.isArray(bundle.entries) ? bundle.entries : [];
+  if (requireReport && entries.length === 0) throw new Error("bundle inventory must contain source and derived members");
+  const requiredMembers = requireReport
+    ? [resolveInside(root, sourceInventoryPath).relative, resolveInside(root, reportPath).relative]
+    : [];
+  if (requiredMembers.some((member) => !entries.some((entry) => entry?.path === member))) throw new Error("bundle inventory must include source inventory and derived report");
+  const sourceMembers = [
+    resolveInside(root, sourceInventoryPath).relative,
+    ...source.entries.map((entry) => resolveInside(root, entry.path).relative),
+  ];
+  const allowedMembers = new Set(sourceMembers);
+  const reportLocation = resolveInside(root, reportPath);
+  if (fs.existsSync(reportLocation.absolute)) {
+    allowedMembers.add(reportLocation.relative);
+    try {
+      const persistedReport = JSON.parse(fs.readFileSync(reportLocation.absolute, "utf8"));
+      const declaredDerived = [
+        persistedReport.profileArtifact || persistedReport.profile_artifact || persistedReport.environmentManifestArtifact || persistedReport.environment_manifest,
+        ...(Array.isArray(persistedReport.rawResultArtifacts || persistedReport.raw_result_artifacts || persistedReport.rawArtifacts)
+          ? (persistedReport.rawResultArtifacts || persistedReport.raw_result_artifacts || persistedReport.rawArtifacts)
+          : []),
+        ...(Array.isArray(persistedReport.derivedArtifacts || persistedReport.derived_artifacts)
+          ? (persistedReport.derivedArtifacts || persistedReport.derived_artifacts)
+          : []),
+      ].filter(Boolean);
+      for (const member of declaredDerived) allowedMembers.add(resolveInside(root, typeof member === "string" ? member : member.path).relative);
+    } catch {
+      // validateRunArtifacts reports an invalid report after bundle membership is checked.
+    }
+  }
+  const bundledMembers = new Set(entries.map((entry) => entry?.path));
+  const missingSourceMembers = sourceMembers.filter((member) => !bundledMembers.has(member));
+  if (missingSourceMembers.length) throw new Error(`bundle inventory is missing source-inventory member: ${missingSourceMembers[0]}`);
   const seen = new Set();
-  for (const entry of bundle.entries || []) {
+  for (const entry of entries) {
     const location = resolveInside(root, entry.path);
+    if (entry.path !== location.relative) throw new Error(`bundle member path is not canonical: ${entry.path}`);
     if (seen.has(location.relative)) throw new Error(`duplicate bundle member: ${location.relative}`);
     seen.add(location.relative);
+    if (!allowedMembers.has(location.relative)) throw new Error(`bundle member is undeclared: ${location.relative}`);
     if ([BUNDLE_INVENTORY_FILE, COMPLETED_MARKER_FILE].includes(location.relative)) throw new Error("bundle inventory must exclude itself and COMPLETED");
     if (!fs.existsSync(location.absolute)) throw new Error(`bundle member is missing: ${location.relative}`);
     const bytes = fs.readFileSync(location.absolute);
-    if (entry.byteSize !== bytes.byteLength || entry.sha256 !== digestBytes(bytes)) throw new Error(`bundle member integrity mismatch: ${location.relative}`);
+    const byteSize = entry.byteSize ?? entry.byte_size ?? entry.bytes;
+    if (byteSize !== bytes.byteLength || entry.sha256 !== digestBytes(bytes)) throw new Error(`bundle member integrity mismatch: ${location.relative}`);
   }
   const digest = digestBytes(fs.readFileSync(loadedPath));
   if (marker?.bundle_inventory_sha256 !== digest) throw new Error("bundle inventory digest does not match COMPLETED marker");
   return { status: "VERIFIED", bundle, digest, bundlePath: loadedPath };
 }
 
-function validateRunArtifacts({ resultDirectory, expectedRunId, markerPath = COMPLETED_MARKER_FILE, sourceInventoryPath = SOURCE_INVENTORY_FILE, reportPath = REPORT_FILE }) {
+function verifyNonMeasuredRunArtifacts({ root, marker, expectedRunId, markerPath, sourceInventoryPath, bundlePath = BUNDLE_INVENTORY_FILE }) {
+  const resolvedRunId = String(expectedRunId || marker.runId || "");
+  if (!resolvedRunId || String(marker.runId) !== resolvedRunId) throw new Error("non-measured marker run ID is missing or does not match the requested run");
+  if (![COMPLETED_STATUS, INCOMPLETE_STATUS].includes(marker.artifact_status)) throw new Error("non-measured artifact status is invalid");
+  if (!["FAILED_SETUP", "NOT_RUN"].includes(marker.execution_outcome)) throw new Error("canonical loading requires FAILED_SETUP or NOT_RUN outcome");
+  if (!Array.isArray(marker.qualification_flags)) throw new Error("non-measured marker qualification flags are missing");
+  const result = {
+    status: marker.artifact_status === COMPLETED_STATUS ? "VERIFIED" : INCOMPLETE_STATUS,
+    artifactStatus: marker.artifact_status,
+    executionOutcome: marker.execution_outcome,
+    qualificationFlags: marker.qualification_flags,
+    publishable: false,
+    incompleteVerified: true,
+    outcomeOnlyVerified: true,
+    marker,
+    markerPath,
+  };
+  const sourceLocation = resolveInside(root, sourceInventoryPath);
+  const bundleLocation = resolveInside(root, bundlePath);
+  if (!fs.existsSync(sourceLocation.absolute)) throw new Error("non-measured source inventory is missing");
+  if (!fs.existsSync(bundleLocation.absolute)) throw new Error("non-measured bundle inventory is missing");
+  result.source = verifySourceInventory({ resultDirectory: root, inventoryPath: sourceInventoryPath, expectedDigest: marker.source_inventory_sha256, expectedRunId: resolvedRunId });
+  result.bundle = verifyBundle({ resultDirectory: root, marker, expectedRunId: resolvedRunId, bundlePath });
+  const sourceEntries = new Map(result.source.entries.map((entry) => [entry.path, entry]));
+  const sourceMember = (relativePath) => {
+    if (!sourceEntries.has(relativePath)) throw new Error(`non-measured source inventory is missing ${relativePath}`);
+    const location = resolveInside(root, relativePath);
+    try { return JSON.parse(fs.readFileSync(location.absolute, "utf8")); }
+    catch { throw new Error(`non-measured retained artifact is not valid JSON: ${relativePath}`); }
+  };
+  const manifest = sourceMember("manifest.json");
+  const runStatus = sourceMember("run-status.json");
+  for (const [label, artifact] of [["manifest", manifest], ["run status", runStatus]]) {
+    if (String(artifact.runId) !== resolvedRunId) throw new Error(`non-measured ${label} run ID does not match the requested run`);
+    if (artifact.artifact_status !== marker.artifact_status || artifact.execution_outcome !== marker.execution_outcome || JSON.stringify([...(artifact.qualification_flags || [])].sort()) !== JSON.stringify([...marker.qualification_flags].sort())) {
+      throw new Error(`non-measured ${label} status axes do not match the completion marker`);
+    }
+  }
+  if (!result.bundle.bundle.entries.some((entry) => entry.path === sourceInventoryPath)) throw new Error("non-measured bundle inventory must include source inventory");
+  const cleanup = runStatus.cleanup || runStatus.teardown;
+  if (!cleanup || cleanup.attempted !== true || typeof cleanup.completed !== "boolean" || cleanup.ownershipSafe !== true) throw new Error("non-measured run cleanup evidence is missing or unsafe");
+  const failure = runStatus.failure;
+  const reason = runStatus.reason || failure?.reason || failure?.error || runStatus.phases?.measurement?.output?.reason;
+  if (typeof reason !== "string" || !reason.trim()) throw new Error("non-measured run failure reason is missing");
+  if (marker.execution_outcome === "FAILED_SETUP" && (!failure?.phase || !["setup/seed", "warm-up"].includes(failure.phase))) throw new Error("FAILED_SETUP failure point is missing or invalid");
+  result.manifest = manifest;
+  result.runStatus = runStatus;
+  result.report = null;
+  return result;
+}
+
+function verifyIncompleteRunArtifacts({ root, marker, expectedRunId, markerPath, sourceInventoryPath, bundlePath = BUNDLE_INVENTORY_FILE }) {
+  const resolvedRunId = String(expectedRunId || marker.runId || "");
+  if (!resolvedRunId || String(marker.runId) !== resolvedRunId) throw new Error("incomplete marker run ID is missing or does not match the requested run");
+  if (marker.artifact_status !== INCOMPLETE_STATUS) throw new Error("incomplete artifact verification requires artifact_status INCOMPLETE");
+  const result = {
+    status: INCOMPLETE_STATUS,
+    artifactStatus: marker.artifact_status,
+    executionOutcome: marker.execution_outcome,
+    qualificationFlags: marker.qualification_flags,
+    publishable: false,
+    incompleteVerified: true,
+    marker,
+    markerPath,
+  };
+  const sourceLocation = resolveInside(root, sourceInventoryPath);
+  const bundleLocation = resolveInside(root, bundlePath);
+  if (fs.existsSync(sourceLocation.absolute)) result.source = verifySourceInventory({ resultDirectory: root, inventoryPath: sourceInventoryPath, expectedDigest: marker.source_inventory_sha256, expectedRunId: resolvedRunId });
+  if (fs.existsSync(bundleLocation.absolute)) result.bundle = verifyBundle({ resultDirectory: root, marker, expectedRunId: resolvedRunId, bundlePath });
+  return result;
+}
+
+function validateRunArtifacts({ resultDirectory, expectedRunId, markerPath = COMPLETED_MARKER_FILE, sourceInventoryPath = SOURCE_INVENTORY_FILE, reportPath = REPORT_FILE, requireReport = true, allowIncomplete = false, strictIncomplete = false }) {
   const root = path.resolve(resultDirectory || "");
   const resolvedMarker = path.isAbsolute(markerPath) ? markerPath : path.join(root, markerPath);
   if (!fs.existsSync(resolvedMarker)) return { status: INCOMPLETE_STATUS, artifactStatus: INCOMPLETE_STATUS, publishable: false, reason: "COMPLETED marker is absent" };
   let marker;
   try { marker = JSON.parse(fs.readFileSync(resolvedMarker, "utf8")); } catch { return { status: INCOMPLETE_STATUS, artifactStatus: INCOMPLETE_STATUS, publishable: false, reason: "COMPLETED marker is invalid" }; }
-  if (expectedRunId && marker.runId !== expectedRunId) throw new Error("completion marker run ID does not match the requested run");
+  if (expectedRunId && String(marker.runId) !== String(expectedRunId)) throw new Error("completion marker run ID does not match the requested run");
   assertStatusAxes({ artifactStatus: marker.artifact_status, executionOutcome: marker.execution_outcome, qualificationFlags: marker.qualification_flags });
-  if (marker.artifact_status !== COMPLETED_STATUS) return { status: INCOMPLETE_STATUS, artifactStatus: marker.artifact_status, executionOutcome: marker.execution_outcome, qualificationFlags: marker.qualification_flags, publishable: false };
-  const source = verifySourceInventory({ resultDirectory: root, inventoryPath: sourceInventoryPath, expectedDigest: marker.source_inventory_sha256 });
-  const bundle = verifyBundle({ resultDirectory: root, marker });
+  if (marker.artifact_status !== COMPLETED_STATUS) {
+    if (allowIncomplete) return (strictIncomplete ? verifyNonMeasuredRunArtifacts : verifyIncompleteRunArtifacts)({ root, marker, expectedRunId, markerPath: resolvedMarker, sourceInventoryPath });
+    return { status: INCOMPLETE_STATUS, artifactStatus: marker.artifact_status, executionOutcome: marker.execution_outcome, qualificationFlags: marker.qualification_flags, publishable: false };
+  }
+  const resolvedRunId = String(expectedRunId || marker.runId);
+  const source = verifySourceInventory({ resultDirectory: root, inventoryPath: sourceInventoryPath, expectedDigest: marker.source_inventory_sha256, expectedRunId: resolvedRunId });
   const reportLocation = resolveInside(root, reportPath);
-  if (!fs.existsSync(reportLocation.absolute)) throw new Error("derived report is missing");
-  const report = JSON.parse(fs.readFileSync(reportLocation.absolute, "utf8"));
+  if (!fs.existsSync(reportLocation.absolute)) {
+    if (requireReport) throw new Error("derived report is missing");
+    try {
+      const bundle = verifyBundle({ resultDirectory: root, marker, expectedRunId: resolvedRunId, sourceInventoryPath, requireReport: false, reportPath });
+      if (allowIncomplete && marker.execution_outcome !== "MEASURED" && strictIncomplete) return verifyNonMeasuredRunArtifacts({ root, marker, expectedRunId, markerPath: resolvedMarker, sourceInventoryPath });
+      return { status: "INCOMPLETE", artifactStatus: marker.artifact_status, publishable: false, marker, source, bundle, report: null, reason: "derived report is missing" };
+    } catch (error) {
+      return { status: "INCOMPLETE", artifactStatus: marker.artifact_status, publishable: false, marker, source, report: null, reason: error.message };
+    }
+  }
+  const bundle = verifyBundle({ resultDirectory: root, marker, expectedRunId: resolvedRunId, sourceInventoryPath, requireReport, reportPath });
+  let report;
+  try { report = JSON.parse(fs.readFileSync(reportLocation.absolute, "utf8")); } catch { throw new Error("derived report is not valid JSON"); }
+  if (report.runId !== resolvedRunId) throw new Error("report run ID does not match the requested run");
   if (report.source_inventory_sha256 !== source.sourceInventorySha256) throw new Error("report source inventory digest mismatch");
+  if (report.bundle_inventory_sha256 && report.bundle_inventory_sha256 !== bundle.digest) throw new Error("report bundle inventory digest mismatch");
+  if (!Array.isArray(report.sourceDigests) || report.sourceDigests.length === 0) throw new Error("report source digests are missing");
+  if (report.sourceDigests.length !== source.entries.length) throw new Error("report source digests do not exactly match the source inventory");
+  for (const entry of source.entries) {
+    const linked = report.sourceDigests.find((digest) => digest?.path === entry.path);
+    if (!linked || linked.sha256 !== entry.sha256) throw new Error(`report source digest is not linked: ${entry.path}`);
+  }
+  const declaredDerived = [
+    report.profileArtifact || report.profile_artifact || report.environmentManifestArtifact || report.environment_manifest,
+    ...(Array.isArray(report.rawResultArtifacts || report.raw_result_artifacts || report.rawArtifacts) ? (report.rawResultArtifacts || report.raw_result_artifacts || report.rawArtifacts) : []),
+    ...(Array.isArray(report.derivedArtifacts || report.derived_artifacts) ? (report.derivedArtifacts || report.derived_artifacts) : []),
+  ].filter(Boolean).map((entry) => typeof entry === "string" ? entry : entry.path);
+  if (declaredDerived.some((member) => !bundle.bundle.entries.some((entry) => entry.path === member))) throw new Error("bundle inventory is missing a report-declared derived member");
   const reportFlags = [...new Set(report.qualification_flags || report.qualificationFlags || [])].sort();
   const markerFlags = [...new Set(marker.qualification_flags || [])].sort();
   if ((report.artifact_status || report.artifactStatus) !== marker.artifact_status
@@ -137,6 +302,38 @@ function validateRunArtifacts({ resultDirectory, expectedRunId, markerPath = COM
     source,
     bundle,
 };
+}
+
+function loadCanonicalRetainedRun({ resultDirectory, expectedRunId } = {}) {
+  const verification = validateRunArtifacts({ resultDirectory, expectedRunId, requireReport: false, allowIncomplete: true, strictIncomplete: true });
+  if (!verification || (!["VERIFIED", "PUBLISHABLE"].includes(verification.status) && verification.incompleteVerified !== true)) {
+    throw new Error(`canonical retained run is not verified: ${verification?.status || "missing verification"}`);
+  }
+  const root = path.resolve(resultDirectory || "");
+  const sourceEntries = new Map(verification.source.entries.map((entry) => [entry.path, entry]));
+  const readInventoriedJson = (relativePath) => {
+    if (!sourceEntries.has(relativePath)) throw new Error(`canonical retained artifact is not source-inventoried: ${relativePath}`);
+    const location = resolveInside(root, relativePath);
+    try { return JSON.parse(fs.readFileSync(location.absolute, "utf8")); }
+    catch { throw new Error(`canonical retained artifact is not valid JSON: ${relativePath}`); }
+  };
+  const manifest = verification.manifest || readInventoriedJson("manifest.json");
+  const runStatus = verification.runStatus || readInventoriedJson("run-status.json");
+  const runId = String(expectedRunId || verification.marker.runId);
+  if (String(manifest.runId) !== runId || String(runStatus.runId) !== runId) throw new Error("canonical retained run identity mismatch");
+  return {
+    runId,
+    resultDirectory: root,
+    verification,
+    manifest,
+    runStatus,
+    report: verification.report,
+    marker: verification.marker,
+    sourceInventory: verification.source.inventory,
+    sourceInventorySha256: verification.source.sourceInventorySha256,
+    bundleInventory: verification.bundle?.bundle,
+    bundleInventorySha256: verification.bundle?.digest,
+  };
 }
 
 const REQUIRED_MACHINE_FIELDS = Object.freeze(["hostname", "cpuModel", "logicalProcessors", "memoryBytes"]);
@@ -270,7 +467,13 @@ function configurationEvidence(plan, metadata = {}) {
   });
 }
 
-function statusAxes(result) {
+function effectiveRuntimeEvidenceReady(metadata = {}) {
+  return metadata?.effectiveRuntimeEvidence?.status === "ATTESTED"
+    && metadata?.resolvedTopology?.status === "ATTESTED"
+    && metadata?.observerBoundary?.status === "ATTESTED";
+}
+
+function statusAxes(result, metadata = {}) {
   const phases = result.phases || {};
   const measurementCompleted = phases.measurement?.completed === true;
   const failurePhase = result.failure?.phase;
@@ -280,15 +483,17 @@ function statusAxes(result) {
       : (measurementCompleted ? "MEASURED" : "NOT_RUN"));
   const artifactStatus = result.artifact_status || result.artifactStatus
     || (!result.failure && phases.teardown?.completed === true ? "COMPLETED" : "INCOMPLETE");
+  const qualificationFlags = new Set(result.qualificationFlags || []);
+  if (executionOutcome === "MEASURED" && !effectiveRuntimeEvidenceReady(metadata)) qualificationFlags.add("OBSERVATION_INCOMPLETE");
   return {
     artifact_status: artifactStatus,
     execution_outcome: executionOutcome,
-    qualification_flags: [...new Set(result.qualificationFlags || [])],
+    qualification_flags: [...qualificationFlags],
   };
 }
 
 function createRunManifest({ plan, result, metadata = {} }) {
-  const status = statusAxes(result);
+  const status = statusAxes(result, metadata);
   const runnerLimits = metadata.runnerLimits || (plan.resultDirectory && runnerLimitsFromResult(result, plan.resultDirectory));
   const commitSha = commitShaEvidence(plan, metadata);
   const testMachine = machineHardware({ ...metadata.hardware, ...(runnerLimits ? { runnerLimits } : {}) });
@@ -301,8 +506,16 @@ function createRunManifest({ plan, result, metadata = {} }) {
     provenance: provenanceEvidence(commitSha, testMachine),
     workload: workloadEvidence(plan),
     topology: topologyEvidence(plan),
+    resolvedTopology: sanitize(metadata.resolvedTopology || null),
     dataset: datasetEvidence(plan, result, metadata),
     configuration: configurationEvidence(plan, metadata),
+    toolVersions: sanitize(metadata.toolVersions || plan.toolVersions || null),
+    dependencyTopology: sanitize(metadata.dependencyTopology || plan.dependencyTopology || null),
+    runnerPlacement: sanitize(metadata.runnerPlacement || plan.runnerPlacement || null),
+    runtimeConfiguration: sanitize(metadata.runtimeConfiguration || plan.runtimeConfiguration || null),
+    observerBoundary: sanitize(metadata.observerBoundary || null),
+    runtimeEvidenceArtifact: metadata.runtimeEvidenceArtifact || null,
+    effectiveRuntimeEvidence: sanitize(metadata.effectiveRuntimeEvidence || null),
     lifecycle: sanitize({
       phases: result.phases,
       failure: result.failure,
@@ -333,26 +546,41 @@ function sourceEntries(directory) {
     .sort((left, right) => left.relativePath.localeCompare(right.relativePath))
     .map(({ absolutePath, relativePath }) => {
       const bytes = fs.readFileSync(absolutePath);
-      return { path: relativePath, type: artifactType(relativePath), bytes: bytes.length, sha256: sha256(bytes) };
+      return { path: relativePath, type: artifactType(relativePath), byteSize: bytes.length, sha256: sha256(bytes) };
     });
 }
 
 function finalizeRunArtifacts({ plan, result, metadata = {} }) {
   if (!plan.resultDirectory) return null;
   fs.mkdirSync(plan.resultDirectory, { recursive: true });
+  let finalizedMetadata = metadata;
+  if (metadata.effectiveRuntimeEvidence) {
+    const runtimeEvidenceArtifact = metadata.runtimeEvidenceArtifact || "runtime-provenance.raw.json";
+    const { artifactSha256: _ignoredArtifactSha256, ...rawEvidence } = sanitize(metadata.effectiveRuntimeEvidence);
+    const rawBytes = jsonBytes(rawEvidence);
+    fs.writeFileSync(path.join(plan.resultDirectory, runtimeEvidenceArtifact), rawBytes, { flag: "wx" });
+    finalizedMetadata = {
+      ...metadata,
+      runtimeEvidenceArtifact,
+      effectiveRuntimeEvidence: {
+        ...rawEvidence,
+        artifactSha256: sha256(rawBytes),
+      },
+    };
+  }
+  const axes = statusAxes(result, finalizedMetadata);
   writeImmutable(plan.resultDirectory, "run-status.json", sanitize({
     schema: "k4-run-status-v1",
     runId: plan.runId,
-    artifact_status: result.artifact_status || result.artifactStatus,
-    execution_outcome: result.execution_outcome || result.executionOutcome,
-    qualification_flags: result.qualificationFlags || [],
+    ...axes,
     phases: result.phases,
     failure: result.failure,
+    reason: result.reason,
     cleanup: result.cleanup || result.teardown,
     rawMeasurement: result.rawMeasurement,
   }));
-  const manifest = createRunManifest({ plan, result, metadata });
-  writeImmutable(plan.resultDirectory, "manifest.json", manifest);
+  const manifest = createRunManifest({ plan, result, metadata: finalizedMetadata });
+  const manifestBytes = writeImmutable(plan.resultDirectory, "manifest.json", manifest);
 
   const sourceInventory = {
     schema: "k4-source-inventory-v1",
@@ -361,19 +589,46 @@ function finalizeRunArtifacts({ plan, result, metadata = {} }) {
   };
   const sourceBytes = writeImmutable(plan.resultDirectory, SOURCE_INVENTORY_FILE, sourceInventory);
   const sourceDigest = sha256(sourceBytes);
-
+  if (axes.artifact_status === COMPLETED_STATUS && axes.execution_outcome === "MEASURED") {
+    deriveReport({
+      resultDirectory: plan.resultDirectory,
+      sourceInventoryPath: SOURCE_INVENTORY_FILE,
+      sourceInventorySha256: sourceDigest,
+      reportPath: REPORT_FILE,
+      strictClaims: false,
+      report: {
+        runId: plan.runId,
+        artifact_status: axes.artifact_status,
+        execution_outcome: axes.execution_outcome,
+        qualification_flags: axes.qualification_flags,
+        measuredScope: {
+          workload: plan.workload?.scenario ? `${plan.workload.scenario}:v${plan.workload.version}` : undefined,
+          topology: plan.topology?.profile || plan.profile,
+        },
+        profileArtifact: "manifest.json",
+        rawResultArtifacts: sourceInventory.entries.filter((entry) => entry.type === "raw").map((entry) => entry.path),
+        hardwareLimits: {
+          ...manifest.testMachine,
+          manifestPath: "manifest.json",
+          manifestSha256: sha256(manifestBytes),
+        },
+      },
+    });
+  }
+  const entries = axes.artifact_status === COMPLETED_STATUS && axes.execution_outcome === "MEASURED"
+    ? bundleEntries({ resultDirectory: plan.resultDirectory, sourceInventoryPath: SOURCE_INVENTORY_FILE, reportPath: REPORT_FILE, derivedArtifacts: [] })
+    : [
+      { path: SOURCE_INVENTORY_FILE, type: "source-inventory", byteSize: sourceBytes.length, sha256: sourceDigest },
+      ...sourceInventory.entries,
+    ];
   const bundleInventory = {
     schema: "k4-bundle-inventory-v1",
     runId: plan.runId,
     source_inventory_sha256: sourceDigest,
-    entries: [
-      { path: SOURCE_INVENTORY_FILE, type: "source-inventory", bytes: sourceBytes.length, sha256: sourceDigest },
-      ...sourceInventory.entries,
-    ],
+    entries,
   };
   const bundleBytes = writeImmutable(plan.resultDirectory, BUNDLE_INVENTORY_FILE, bundleInventory);
   const bundleDigest = sha256(bundleBytes);
-  const axes = statusAxes(result);
   writeImmutable(plan.resultDirectory, COMPLETION_MARKER_FILE, {
     schema: "k4-completion-marker-v1",
     runId: plan.runId,
@@ -381,7 +636,14 @@ function finalizeRunArtifacts({ plan, result, metadata = {} }) {
     source_inventory_sha256: sourceDigest,
     bundle_inventory_sha256: bundleDigest,
   });
+  const verification = validateRunArtifacts({
+    resultDirectory: plan.resultDirectory,
+    expectedRunId: plan.runId,
+    requireReport: false,
+  });
   return {
+    resultDirectory: plan.resultDirectory,
+    verification,
     manifestPath: "manifest.json",
     sourceInventoryPath: SOURCE_INVENTORY_FILE,
     bundleInventoryPath: BUNDLE_INVENTORY_FILE,
@@ -400,6 +662,7 @@ module.exports = {
   bundleEntries,
   finalizeRun,
   validateRunArtifacts,
+  loadCanonicalRetainedRun,
   verifyBundle,
   COMPLETION_MARKER_FILE,
   SOURCE_INVENTORY_FILE,

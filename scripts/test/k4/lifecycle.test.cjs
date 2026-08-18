@@ -571,6 +571,17 @@ test("two profiles supplied the same image set preserve immutable nginx and back
   assert.equal(compareEffectiveTopologySnapshots(single, multi).status, "COMPARABLE");
 });
 
+test("effective runtime topology records logical upstream membership and retains actual container names as raw evidence", () => {
+  const snapshot = currentSnapshotForProfile({ runId: "logical-membership", profile: "multi-replica", imageSet: "fixed-source-a" });
+
+  assert.deepEqual(snapshot.effective_spec.backend_upstream_membership, ["backend-1", "backend-2", "backend-3"]);
+  assert.deepEqual(snapshot.runtime_attestation.backendUpstreamContainerNames, [
+    "kittachat-k4-logical-membership-backend-1",
+    "kittachat-k4-logical-membership-backend-2",
+    "kittachat-k4-logical-membership-backend-3",
+  ]);
+});
+
 test("a changed image set remains non-comparable without weakening immutable identity comparison", () => {
   const single = currentSnapshotForProfile({ runId: "changed-single", profile: "single-replica", imageSet: "fixed-source-a" });
   const multi = currentSnapshotForProfile({ runId: "changed-multi", profile: "multi-replica", imageSet: "fixed-source-b" });
@@ -709,7 +720,7 @@ function imageSetManifestFor(imageIdentities) {
   };
 }
 
-function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest }) {
+function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest, captureRuntimeBoundary = false }) {
   const plan = createRunPlan({ runId, profile });
   const imageEnvironment = imageSetEnvironment(imageSet);
   const services = ["runner", "nginx", "backend", "mongo", "redis", "rabbitmq", "observer", "observer-helper"];
@@ -741,16 +752,28 @@ function currentSnapshotForProfile({ runId, profile, imageSet, imageSetManifest 
   const dockerCommand = (args) => {
     if (args[0] === "ps") return inspected.map(({ Id }) => Id).join("\n");
     if (args[0] === "inspect") return JSON.stringify(inspected);
+    if (args[0] === "compose" && args.includes("exec") && args.some((entry) => String(entry).includes("backendDirectReachable"))) return JSON.stringify({ workloadTarget: "http://nginx/healthz", host: "nginx", status: 200, backendResolvable: false, backendDirectReachable: false, dockerSocketPresent: false, dockerApiReachable: false });
     if (args[0] === "compose" && args.includes("exec")) return "v22.14.0\n";
     if (args[0] === "compose" && args.includes("config")) return JSON.stringify(renderedCompose);
     throw new Error(`unexpected Docker command: ${args.join(" ")}`);
   };
   return currentEffectiveTopologySnapshot(plan, {
     dockerCommand,
+    captureRuntimeBoundary,
     imageSetManifest: imageSetManifest || imageSetManifestFor({ nginx: immutableDigest(`nginx-${imageSet}`), backend: immutableDigest(`backend-${imageSet}`) }),
     comparisonFingerprintKey: "comparison-key-for-test-only",
   });
 }
+
+test("current effective snapshot retains runner isolation and observer boundary proof", () => {
+  const snapshot = currentSnapshotForProfile({ runId: "boundary-proof", profile: "single-replica", imageSet: "fixed-source-a", captureRuntimeBoundary: true });
+  assert.equal(snapshot.runtime_attestation.observerBoundary.status, "ATTESTED");
+  assert.equal(snapshot.runtime_attestation.observerBoundary.runnerAccess.backend, false);
+  assert.equal(snapshot.runtime_attestation.observerBoundary.runnerAccess.dockerApi, false);
+  assert.equal(snapshot.runtime_attestation.observerBoundary.runnerAccess.dockerSocket, false);
+  assert.ok(snapshot.runtime_attestation.observerBoundary.deniedOperationDiagnostics.every(({ status }) => status === "DENIED"));
+  assert.equal(snapshot.runtime_attestation.observerBoundary.effectiveInspection.runner.containerId, "runner-1");
+});
 
 test("current effective snapshot fails closed when the active backend cannot supply the Compose secret", () => {
   const plan = createRunPlan({ runId: "snapshot-missing", profile: "single-replica" });

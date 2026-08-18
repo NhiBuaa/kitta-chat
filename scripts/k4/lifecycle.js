@@ -347,6 +347,18 @@ function runtimeNetworkName(plan, name) {
   return name.startsWith(`${plan.projectName}_`) ? name.slice(plan.projectName.length + 1) : name;
 }
 
+function logicalBackendReplicaName(container, plan) {
+  const labels = container?.Config?.Labels || container?.Labels || {};
+  const service = labels["com.docker.compose.service"];
+  const containerNumber = labels["com.docker.compose.container-number"];
+  if (service === "backend" && /^\d+$/.test(String(containerNumber || ""))) return `backend-${containerNumber}`;
+  const actualName = String(container?.Name || "").replace(/^\//, "");
+  const prefix = `${plan.projectName}-`;
+  const suffix = actualName.startsWith(prefix) ? actualName.slice(prefix.length) : actualName;
+  if (/^backend-\d+$/.test(suffix)) return suffix;
+  return actualName;
+}
+
 function runtimeEnvironment(container) {
   return Object.fromEntries((container?.Config?.Env || []).map((entry) => {
     const separator = entry.indexOf("=");
@@ -388,6 +400,106 @@ function runtimeComposeEnvironment(plan, options, backendContainer, runnerContai
     K4_RUNNER_IMAGE: runnerContainer.Config?.Image,
     K4_OBSERVER_IMAGE: observerContainer.Config?.Image,
     K4_OBSERVER_HELPER_IMAGE: helperContainer.Config?.Image,
+  };
+}
+
+function runtimeContainerSummary(container) {
+  return {
+    containerId: container?.Id,
+    service: container?.Config?.Labels?.["com.docker.compose.service"],
+    image: container?.Image,
+    mountTargets: (container?.Mounts || []).map((mount) => ({
+      type: mount.Type,
+      destination: mount.Destination,
+      readOnly: mount.RW === false,
+    })).sort((left, right) => String(left.destination).localeCompare(String(right.destination))),
+    environmentKeys: (container?.Config?.Env || []).map((entry) => String(entry).split("=", 1)[0]).sort(),
+  };
+}
+
+function effectiveObserverBoundary({ byService, networkSets, runnerDiagnostic }) {
+  const runner = byService.runner?.[0];
+  const observer = byService.observer?.[0];
+  const helper = byService["observer-helper"]?.[0];
+  const runnerNetworks = new Set(networkSets.runner || []);
+  const observerNetworks = new Set(networkSets.observer || []);
+  const helperNetworks = new Set(networkSets["observer-helper"] || []);
+  const runnerSummary = runtimeContainerSummary(runner);
+  const runnerMounts = new Set(runnerSummary.mountTargets.map((mount) => mount.destination));
+  const runnerEnvironmentKeys = new Set(runnerSummary.environmentKeys);
+  const helperNetworkAccess = [...runnerNetworks].some((network) => observerNetworks.has(network) || helperNetworks.has(network));
+  const helperCredentialAccess = [...runnerEnvironmentKeys].some((key) => /(?:OBSERVER_TOKEN|OBSERVER_HELPER|OBSERVER_URL)/i.test(key));
+  const dockerSocketPresent = runnerMounts.has("/var/run/docker.sock");
+  const diagnostics = [
+    {
+      operation: "runner-backend-direct",
+      status: runnerDiagnostic?.backendDirectReachable === false ? "DENIED" : "REACHABLE",
+      source: "runner-diagnostic",
+      observed: runnerDiagnostic?.backendDirectReachable,
+    },
+    {
+      operation: "runner-docker-api",
+      status: runnerDiagnostic?.dockerApiReachable === false ? "DENIED" : "REACHABLE",
+      source: "runner-diagnostic",
+      observed: runnerDiagnostic?.dockerApiReachable,
+    },
+    {
+      operation: "runner-docker-socket",
+      status: dockerSocketPresent ? "REACHABLE" : "DENIED",
+      source: "docker-inspect",
+      observed: dockerSocketPresent,
+    },
+    {
+      operation: "runner-observer-network",
+      status: helperNetworkAccess ? "REACHABLE" : "DENIED",
+      source: "docker-inspect",
+      observed: helperNetworkAccess,
+    },
+    {
+      operation: "runner-observer-credential",
+      status: helperCredentialAccess ? "REACHABLE" : "DENIED",
+      source: "docker-inspect",
+      observed: helperCredentialAccess,
+    },
+  ];
+  const runnerAccess = {
+    helper: helperNetworkAccess || helperCredentialAccess,
+    helperCredential: helperCredentialAccess,
+    dockerSocket: dockerSocketPresent,
+    dockerApi: runnerDiagnostic?.dockerApiReachable === true,
+    backend: runnerDiagnostic?.backendDirectReachable === true,
+  };
+  const complete = Boolean(
+    runner?.Id
+    && observer?.Id
+    && helper?.Id
+    && runnerDiagnostic
+    && runnerDiagnostic.backendDirectReachable === false
+    && runnerDiagnostic.dockerApiReachable === false
+    && runnerDiagnostic.dockerSocketPresent === false
+    && !helperNetworkAccess
+    && !helperCredentialAccess
+    && !dockerSocketPresent,
+  );
+  return {
+    status: complete ? "ATTESTED" : "INCOMPLETE",
+    source: "effective-runtime-attestation",
+    observerIdentity: observer?.Id ? `container:${observer.Id}` : "unresolved",
+    helperIdentity: helper?.Id ? `container:${helper.Id}` : "unresolved",
+    helperPolicyVersion: "k4-observer-helper-v1",
+    helperSchemaVersion: "k4-observer-request-v1",
+    observationNetworkMembership: {
+      observer: [...(networkSets.observer || [])],
+      helper: [...(networkSets["observer-helper"] || [])],
+      runner: [...(networkSets.runner || [])],
+    },
+    effectiveInspection: {
+      runner: runnerSummary,
+      observer: runtimeContainerSummary(observer),
+      helper: runtimeContainerSummary(helper),
+    },
+    deniedOperationDiagnostics: diagnostics,
+    runnerAccess,
   };
 }
 
@@ -469,10 +581,30 @@ function currentEffectiveTopologySnapshot(plan, options = {}) {
   const runnerTool = { name: "node", version: String(docker(composeArgs(plan, ["exec", "-T", "runner", "node", "--version"]), dockerOptions)).trim() };
   const imageSetManifest = loadImageSetManifest(nginxImageSetId, options);
   const configArtifacts = configArtifactsFromImageSet(imageSetManifest, imageIdentities);
+  const backendUpstreamContainerNames = backendContainers.map((container) => container.Name.replace(/^\//, "")).sort();
   const effectiveTopology = {
     backendReplicaCount: backendContainers.length,
-    backendUpstreamMembership: backendContainers.map((container) => container.Name.replace(/^\//, "")).sort(),
+    backendUpstreamMembership: backendContainers.map((container) => logicalBackendReplicaName(container, plan)).sort(),
   };
+  const runtimeAttestation = { networkSets, backendReplicas, backendUpstreamContainerNames };
+  if (options.captureRuntimeBoundary === true) {
+    let runnerDiagnostic;
+    try {
+      runnerDiagnostic = JSON.parse(String(docker(runnerDiagnosticArgs(plan), dockerOptions)));
+    } catch (error) {
+      throw new Error(`required runtime evidence is missing: runner isolation diagnostic is unresolved: ${error.message}`);
+    }
+    runtimeAttestation.runnerDiagnostic = {
+      workloadTarget: runnerDiagnostic.workloadTarget,
+      host: runnerDiagnostic.host,
+      status: runnerDiagnostic.status,
+      backendResolvable: runnerDiagnostic.backendResolvable,
+      backendDirectReachable: runnerDiagnostic.backendDirectReachable,
+      dockerSocketPresent: runnerDiagnostic.dockerSocketPresent,
+      dockerApiReachable: runnerDiagnostic.dockerApiReachable,
+    };
+    runtimeAttestation.observerBoundary = effectiveObserverBoundary({ byService, networkSets, runnerDiagnostic });
+  }
   return captureEffectiveTopologySnapshot(plan, {
     renderedCompose,
     imageIdentities,
@@ -480,7 +612,7 @@ function currentEffectiveTopologySnapshot(plan, options = {}) {
     comparisonFingerprintKey: options.comparisonFingerprintKey || options.env?.K4_COMPARISON_FINGERPRINT_KEY || process.env.K4_COMPARISON_FINGERPRINT_KEY,
     runnerTool,
     effectiveTopology,
-    runtimeAttestation: { networkSets, backendReplicas },
+    runtimeAttestation,
   });
 }
 

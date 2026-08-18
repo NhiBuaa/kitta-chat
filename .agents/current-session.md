@@ -1,5 +1,188 @@
 # K3/K3.1 Completion and K4 Active Checkpoint
 
+## K4 Issue #89 remediation fixed point — 2026-08-18 final11g
+
+The clean-run ownership remediation is included in the current uncommitted fixed point. Production
+ownership is registered before the first setup/resource command after fresh admission; teardown
+uses the exact owned Compose target set to distinguish no-resource setup failure from released
+resources, and cleanup failures remain incomplete/unsafe. Four regressions cover registration
+ordering, post-create setup failure, pre-create failure, cleanup failure, and an empty target set.
+This remains within Issue #80/ADR-015 clean-run/ownership scope; no workload, topology, measurement,
+treatment, authority, guide, Evaluation, or raw artifact changed.
+
+Verification: focused lifecycle/cleanup `30/30`, full K4 `252/252`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, `git diff --check` exit `0`, and retained final11 matrix/report/
+dossier/comparison revalidation passed. Fresh exact-diff Standards and feature reviews are required
+before acceptance/cadence; no benchmark rerun is needed.
+
+## K4 Issue #89 remediation fixed point — 2026-08-18 final11f
+
+The exact bundle-membership remediation is now included in the uncommitted fixed point on
+`nhibuaa/k4-remediation-final`: `verifyBundle` rejects missing, extra, duplicate, or non-canonical
+members outside the source-inventory plus report-declared derived-artifact set. This is the final
+bounded hardening approved by the remediation gate; it does not change any benchmark inputs,
+workload/topology/measurement semantics, treatment, Issue #80/ADR-015, guides, Evaluations, or raw
+artifacts. Regression coverage includes the positive exact set and an extra undeclared member.
+
+Verification after this fix: focused remediation `72/72`, full K4 `248/248`, repository CI
+`132/132`, `npm run ci:validate` exit `0`, and `git diff --check` exit `0`. Refresh the exact
+descriptor and rerun final Standards/Spec review before acceptance/cadence; no benchmark rerun is
+needed because retained final11 measurement inputs are unchanged.
+
+## K4 Issue #89 remediation fixed point — 2026-08-18 final11d
+
+The bounded Issue #89 remediation is implemented on branch `nhibuaa/k4-remediation-final` in
+worktree `D:\Developer\Projects\shotter\shot-chat-worktrees\k4-remediation-final`, based on
+`4609fcf8a0cb445855d625f5998130721f30a70d`. The exact uncommitted fixed-point descriptor is
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260818-final11d.json`
+with binary diff SHA-256
+`sha256:a8573abee62e94a4640648fe977fd55ed551420dc6e059fbff6697de6978ce4a`.
+
+This checkpoint closes only evidence-integrity validator findings: retained source-inventory
+members must be complete and canonical in the bundle; sidebar attribution must cover the exact
+measured request set; and comparison equivalence metadata rejects null/blank/empty required
+values while preserving valid `false`/`0`. Issue #80, ADR-015, locked guides, append-only
+Evaluations, workload/topology/measurement semantics, and the single approved treatment remain
+unchanged. Fresh final11 retained evidence is still the source for the six-cell matrix and one
+approved treatment; no new benchmark run or optimization was introduced by this hardening.
+
+Verification: focused remediation `71/71`, full K4 `247/247`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, and `git diff --check` exit `0`. Independent final spec and
+Standards reviews are in progress against this exact descriptor. After both approve, record a
+fresh append-only acceptance Evaluation, complete the high-cadence evidence gate, then commit,
+push, open/merge the PR, and synchronize `main`. Stop on any Critical/Major finding or benchmark
+semantic ambiguity; do not mutate Issue #80/ADR-015, locked guides, prior Evaluations, or raw
+artifacts.
+
+## K4 Issue #89 remediation fixed point — 2026-08-18 current
+
+The user approved continuation of the bounded Issue #89 remediation. The current uncommitted
+worktree is the sole implementation scope; Issue #80 and ADR-015, locked guides, append-only
+Evaluations, scenario/topology/workload semantics, and the approved treatment identity remain
+unchanged. The temporary runtime scripts were removed after use. Fresh retained inputs are the
+final5 six-cell baseline plus the final5 single-replica treatment pair.
+
+Current derived evidence is ready for the next gates:
+
+- `.k4-results/k4r5-20260818-final5-bottleneck-dossier-v3.json` is `READY_FOR_HUMAN_GATE`, with
+  exactly one candidate `sidebar-single-replica-ingress-tail` and the approved treatment
+  `profile-and-optimize-sidebar-query-plan`.
+- `.k4-results/k4r5-20260818-final5-optimization-comparison.json` is `ACCEPTED`; the validator
+  reports zero differences/diagnostics under the optimization comparison contract. The only
+  treatment artifact identity is `sha256:4d090905bac048576ac311572f90c85ebdd52997d1b273a52a27cf9992258ff1`.
+- Fresh baseline/treatment latency summaries are measurement-phase black-box
+  runner→nginx→SUT→nginx→runner evidence. They do not claim pure backend latency or an SUT
+  ceiling; `TOPOLOGY_NOT_EXERCISED` remains a non-blocking topology qualification for these
+  single-replica sidebar runs.
+
+Verification at this fixed point: changed-surface K4 `150/150`, full K4 `242/242`,
+`npm run test:ci` `132/132`, `npm run ci:validate` exit `0`, and `git diff --check` exit `0`.
+The next valid transition is to refresh the exact-diff descriptor and run the three independent
+review gates. Stop on any Critical/Major finding or benchmark-semantic ambiguity. No commit,
+merge, publish, guide mutation, or Evaluation rewrite is authorized before all review and human
+acceptance gates pass.
+
+## K4 Issue #89 remediation checkpoint — selective rerun r5 blocked at bottleneck gate
+
+The user approved the selective-invalidation path for the remaining K4 Issue #89 Major findings.
+The current uncommitted worktree now rejects forged bundle-to-source links, requires effective
+runtime topology and observer-boundary attestation before `ATTESTED`, preserves black-box latency
+and delivery eligibility under `OBSERVATION_INCOMPLETE` while blocking resource/CPU/memory/
+bottleneck claims, and reads the legacy exact-byte `bytes` inventory alias for historical audit.
+New regressions cover each boundary. Automated verification is focused `103/103`, full K4
+`236/236`, `npm run test:ci` `132/132`, `npm run ci:validate` exit `0`, and `git diff --check`
+exit `0`.
+
+Manual guide `k4-issue-89-r5` is locked and human-approved at
+`.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r5.md`.
+Execution `tc89-r5-selective-rerun-20260817-blocked` is recorded in the append-only r5 Evaluation
+history. The fresh six-cell matrix is `VALID`; all six runs are `COMPLETED + MEASURED` with
+effective provenance, and the fresh treatment pair is retained. TC-89-R5-03 is `BLOCKED` because
+the canonical sidebar resource window reports 31 cadence slots while the declared half-open
+measurement window derives 30, so `OBSERVATION_INCOMPLETE` forbids the resource/bottleneck claim.
+No comparison or bottleneck dossier was published; no commit, merge, or guide rewrite occurred.
+Next valid transition is a new explicitly approved remediation for the resource-window boundary.
+
+## K4 bounded remediation checkpoint — 2026-08-17 canonical outcomes/effective provenance
+
+The user approved remediation limited to spec findings `K4-SD-FINAL-V4-001` and
+`K4-SD-FINAL-V4-002`. Canonical retained-run loading now verifies persisted `FAILED_SETUP` and
+`NOT_RUN` source/bundle bytes, run-status axes, failure reason/point, and ownership-safe cleanup
+without requiring `report.json`. Production provenance now derives topology and observer-boundary
+fields from effective Compose/container inspection plus runner isolation diagnostics and observer-helper
+identity/policy handshake; the sanitized effective-runtime snapshot is retained as a raw artifact.
+Missing or contradictory proof derives `OBSERVATION_INCOMPLETE` for measured artifacts and does not
+self-attest `ATTESTED` provenance. Issue #80, ADR-015, guides, Evaluations, scenarios, topologies,
+workloads, and optimization semantics remain unchanged.
+
+Verification: focused `103/103`, full K4 `236/236`, `npm run test:ci` `132/132`,
+`npm run ci:validate` exit `0`, and `git diff --check` exit `0`. Refreshed fixed-point descriptor:
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260817-final-v8.json`;
+the descriptor is the sole authority for the exact fixed-point diff. Manual acceptance is
+currently BLOCKED at the bottleneck prerequisite, so independent reviews and publication are not
+authorized. Stop on any Critical/Major finding or benchmark-semantic ambiguity. No commit, merge,
+publish, guide mutation, or Evaluation rewrite is allowed.
+
+## K4 bounded remediation checkpoint — 2026-08-17 resource/provenance
+
+User approved the next bounded remediation for the two Major spec findings in the prior K4
+Issue #89 fixed point. The implementation independently derives resource cadence expected-count
+from the canonical half-open measurement window and interval, and production composition now
+emits the required non-secret tool, topology, dependency, runner-placement, runtime, and
+observer-boundary provenance fields into the measured manifest. No authority, guide, Evaluation,
+scenario, topology, workload, or treatment decision changed.
+
+Verification after this remediation: changed-surface focused suite `76/76` (Issue #89 baseline,
+dossier, provenance, runtime composition, and production observation sources), full K4 suite
+`227/227`, `npm run test:ci` `132/132`, `npm run ci:validate` exit `0`, and `git diff --check`
+exit `0`. The worktree remains intentionally uncommitted; refresh the fixed-point descriptor
+before independent review. Stop on any Critical/Major finding or benchmark-semantic ambiguity;
+do not commit, merge, publish, or mutate guides/Evaluations.
+
+## K4 bounded remediation checkpoint — 2026-08-17 pre-window completeness
+
+User approved the bounded remediation for the remaining Major finding in the current K4 Issue
+#89 fixed point. The implementation preserves Issue #80/ADR-015, locked guides, append-only
+Evaluations, and all scenario/topology/workload semantics. It propagates pre-window socket
+`truncated`/`rotationGap` completeness flags into per-source and aggregate attribution evidence,
+and adds a regression proving a pre-window rotation gap fails closed.
+
+Verification after this remediation: changed-surface focused suite `74/74` (Issue #89 baseline,
+dossier, provenance, runtime composition, and production observation sources), full K4 suite
+`225/225`, `npm run test:ci` `132/132`, `npm run ci:validate` exit `0`, and `git diff --check`
+exit `0`. The worktree remains intentionally uncommitted; refresh the fixed-point descriptor
+before any independent review. Stop on any Critical/Major finding or benchmark-semantic
+ambiguity; do not commit, merge, publish, or mutate guides/Evaluations.
+
+## K4 remediation checkpoint — 2026-08-16
+
+User-approved remediation is present on branch `nhibuaa/k4-remediation-final` in worktree
+`D:\Developer\Projects\shotter\shot-chat-worktrees\k4-remediation-final`, based on
+`4609fcf8a0cb445855d625f5998130721f30a70d`. The remediation keeps Issue #80/ADR-015 and all
+locked guides/Evaluations immutable. It adds exact generated-inventory verification and run-ID
+binding, deterministic clean-dataset/seed and phase-window admission, observation-backed topology
+and cross-replica claim gating, claim-specific qualification rules, topology-equivalence checks,
+fail-closed dossier/history lineage, and ownership-safe cleanup evidence.
+
+Verification at this checkpoint: focused Issue #89 regression `66/66` (`issue89BaselineEvidence`,
+`issue89BottleneckDossier`, `provenance`, `runtimeComposition`), full K4 suite `224/224`,
+`npm run test:ci` `132/132`, `npm run ci:validate` exit `0`, and `git diff --check` exit `0`.
+The prior internal remediation aggregate remains historical; the independent high-cadence
+reviews of this fixed point returned `REQUEST_CHANGES` (spec/design: 6 Major, ticket: 3 Major,
+manual guide: 2 Major) and their artifacts are retained at
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-89-spec-design-external-review.json`,
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-89-ticket-external-review.json`, and
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-89-manual-guide-external-review.json`.
+The bounded findings are now addressed in the current uncommitted remediation diff; independent
+reviews must be rerun against the refreshed fixed point.
+The fixed-point descriptor is explicitly an uncommitted worktree scope at
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260817-final.json`;
+no commit, merge, publish, or default-branch mutation was performed. Final cadence remains
+`blocked` because the only external reviews currently available are for the superseded diff and
+returned `REQUEST_CHANGES`; do not reuse them as approval for this changed fixed point. Next valid
+transition is to refresh the fixed-point descriptor, rerun independent review, record any required
+post-review human acceptance, then rerun final feature review/cadence.
+
 ## K4 Current Frontier Override
 
 Issues #81–#89 are implemented, accepted, and integrated into `main` under locked Issue #80 and

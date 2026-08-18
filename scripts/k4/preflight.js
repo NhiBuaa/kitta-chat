@@ -69,6 +69,18 @@ function assertFreshRunTargets(preview) {
   return { status: "FRESH" };
 }
 
+function validateRunLifecycleEvidence(evidence, runId) {
+  const lifecycle = evidence?.lifecycle || evidence?.datasetLifecycle || evidence || {};
+  const diagnostics = [];
+  if (runId && String(evidence?.runId || lifecycle.runId || "") !== String(runId)) diagnostics.push("setup lifecycle run ID does not match the current run");
+  if (lifecycle.status !== "VERIFIED") diagnostics.push("setup lifecycle verification is not VERIFIED");
+  if (lifecycle.ownerRunId !== runId) diagnostics.push("setup lifecycle owner run ID does not match the current run");
+  if (lifecycle.runScoped !== true || lifecycle.cleanInitialState !== true || lifecycle.initialState !== "CLEAN") diagnostics.push("clean run-scoped initial-state evidence is missing");
+  for (const step of ["create", "migrate", "seed"]) if (lifecycle[step] !== "completed") diagnostics.push(`setup lifecycle ${step} evidence is incomplete`);
+  if (lifecycle.verify !== "VERIFIED") diagnostics.push("setup lifecycle dataset verification is not VERIFIED");
+  return { valid: diagnostics.length === 0, lifecycle, diagnostics };
+}
+
 function scanRetainedEvidence(inventory, canaries, readArtifact) {
   if (!Array.isArray(inventory) || !inventory.length) throw new Error("retained-evidence inventory is required");
   if (!Array.isArray(canaries)) throw new Error("canary material must be an array");
@@ -116,6 +128,7 @@ module.exports = {
   K4_DATASET_CONTENT,
   K4_DATASET_DECLARATION,
   assertFreshRunTargets,
+  validateRunLifecycleEvidence,
   admitWarmup,
   canonicalDatasetFingerprint,
   classifySetupFailure,

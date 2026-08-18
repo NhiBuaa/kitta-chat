@@ -73,7 +73,17 @@ function createDockerObservationAdapters({ activeRun, engine, fetchFn = fetch, m
       const decoded = decodeDockerLogs(raw);
       const truncated = decoded.length > maxLogBytes;
       const body = truncated ? decoded.subarray(decoded.length - maxLogBytes) : decoded;
-      return { body: body.toString("utf8"), sourceIdentity: `${target.role}:${target.id}:container-logs`, sourceDigest: digest(body), parserVersion: "k4-attribution-v1", truncated, rotationGap: false };
+      return {
+        body: body.toString("utf8"),
+        sourceIdentity: `${target.role}:${target.id}:container-logs`,
+        sourceDigest: digest(body),
+        parserVersion: "k4-attribution-v1",
+        truncated,
+        rotationGap: false,
+        ambiguousClock: false,
+        coverageGaps: [],
+        parseDiagnostics: [],
+      };
     },
     async "runner-cgroup"(request) {
       const { target } = await ownedTarget(request);
