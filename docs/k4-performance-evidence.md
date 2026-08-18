@@ -90,11 +90,12 @@ approved treatment is the targeted sidebar query-plan index, and one bounded
 post-treatment/optimization-comparison rerun is retained at
 `.k4-results/k4issue89r4-20260816-optimization-comparison.json`. Its append-only Evaluation ends
 with `tc89-r4-treatment-comparison-20260816-approved` (`PASSED`/`approved`); no
-production-capacity, scalability, or topology claim is emitted. The implementation is integrated
-at `codex/k4-integration` head `e38cfff6ec69b4e8216fb1a322f44df024a363fa`; verification is green,
-and selective invalidation preserved the accepted r3/r4 Evaluations because no inputs, environment,
-or approved behavior changed. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) is open;
-the single final K4 feature review remains pending.
+production-capacity, scalability, or topology claim is emitted. The implementation was integrated
+at `codex/k4-integration` head `4609fcf`; verification is green, and selective invalidation
+preserved the accepted r3/r4 Evaluations because no inputs, environment, or approved behavior
+changed. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) is `MERGED` into `main` at
+`8871adeb6ad2913f435dc7d2272a6b650b61677d`; GitHub Issue #89 is `CLOSED`. The single final K4
+feature review remains pending.
 
 The CLI seams are `baseline-matrix`, `execute-baseline`, `validate-baseline`, `baseline-report`,
 `prerequisite-freshness`, `prerequisite-set`, and `bottleneck-dossier`. Every run also retains `run-status.json` and lifecycle details in the

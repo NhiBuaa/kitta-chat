@@ -185,9 +185,10 @@ post-review human acceptance, then rerun final feature review/cadence.
 
 ## K4 Current Frontier Override
 
-Issues #85, #86, #87, and #88 are complete and integrated. Issue #89 is the only open K4
-frontier, a child of locked Issue #80. This worktree is reserved for #89 on branch
-`codex/k4-issue89`, with integration branch `codex/k4-integration`.
+Issues #81–#89 are implemented, accepted, and integrated into `main` under locked Issue #80 and
+ADR-015. Issue #89 was published by PR #103 and is now closed. This checkpoint is on `main` at
+merge commit `8871adeb6ad2913f435dc7d2272a6b650b61677d`; the final K4 feature review remains
+deferred until the complete fixed point.
 
 Issue #89 manual-acceptance guides `k4-issue-89-r1` and `k4-issue-89-r2` remain immutable and
 unapproved. Revision `k4-issue-89-r3` is now locked and human-approved at
@@ -196,7 +197,7 @@ unapproved. Revision `k4-issue-89-r3` is now locked and human-approved at
 human-approved at `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.md`
 (`2026-08-16T13:30:07+07:00`, approved by `user`). Issue #89 implementation and r4 execution are complete.
 
-Issue #89 delegated implementation is complete in this worktree. Focused tests pass 13/13;
+Issue #89 delegated implementation is complete in its dedicated worktree. Focused tests pass 13/13;
 full K4 plus server attribution passes 193/193; `npm run test:ci` passes 132/132; and
 `npm run ci:validate` passes. Locked r3 manual execution observed TC-89-01 through TC-89-04 as
 PASS. The r3 append-only Evaluation history retains its original `BLOCKED`/pending record and
@@ -204,24 +205,24 @@ approved append-only record `tc89-r3-baseline-20260816-approved`. The r4 Evaluat
 ends with `tc89-r4-treatment-comparison-20260816-approved` (`PASSED`/`approved`) after the prior
 `BLOCKED`/pending observation. The valid comparison artifact is
 `.k4-results/k4issue89r4-20260816-optimization-comparison.json`; the treated run completed the
-full lifecycle and was cleaned to zero owned resources. The accepted implementation is now
-committed as `b4e3c49`, `e8c8fb6`, and `e38cfff` and fast-forwarded into `codex/k4-integration`
-at `e38cfff6ec69b4e8216fb1a322f44df024a363fa`. Integration verification passes K4 `190/190`,
+full lifecycle and was cleaned to zero owned resources. The accepted implementation commits are
+`b4e3c49`, `e8c8fb6`, and `e38cfff`; the integration ledger/publication head is `4609fcf`, and
+PR #103 merged the complete branch into `main` at
+`8871adeb6ad2913f435dc7d2272a6b650b61677d`. Integration verification passes K4 `190/190`,
 server attribution/read-model `13/13`, repository CI `132/132`, and `npm run ci:validate`.
 Selective invalidation decision: no acceptance input, authoritative guide/Evaluation, environment,
 or approved behavior changed during the fast-forward; the r3/r4 accepted Evaluations remain valid
-and no rerun is required. The Issue #89 worktree is retained; [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
-is open against `main`. Final feature review and merge remain deferred.
+and no rerun is required. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) is `MERGED`,
+and GitHub Issue #89 is `CLOSED`. Final feature review remains deferred.
 
 ## K4 Current Frontier Override
 
-Issue #84 is closed after the accepted K4 measurement-observation delivery. Issue #85 is
-implemented and manually accepted. Issue #87 is fully integrated after implementation, bounded
-remediation, manual acceptance, final review, and PR #99 publication. Issue #86 implementation
-and locked-r2 acceptance are complete on branch `codex/k4-issue86`; Issue #88 remains an
-independent K4 child in its own worktree.
+Issue #84 is closed after the accepted K4 measurement-observation delivery. Issues #85–#89 are
+implemented, manually accepted, and integrated. Issues #86 and #88 were published by PR #102 and
+PR #101 respectively; their final K4 feature review remains deferred until the complete fixed
+point.
 
-- Issue #87 implementation and bounded TC-87-03 remediation are complete in this worktree.
+- Issue #87 implementation and bounded TC-87-03 remediation are complete in its dedicated worktree.
 - Automated evidence is green: Issue #87 focused K4 136/136; combined post-reconcile K4 143/143;
   `npm run test:ci` 132/132; server 476 passed/5 skipped/0 failed.
 - Locked guide `k4-issue-87-r2` remains immutable. Its append-only Evaluation history now records
@@ -237,10 +238,10 @@ independent K4 child in its own worktree.
 
 ## Issue #88 Closeout Override
 
-This worktree contains the delegated Issue #88 Socket.IO concurrency implementation on branch
-`codex/k4-issue88`. Guide `k4-issue-88-r3` is locked and human-approved; Evaluation
-`tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. Final code review
-is intentionally deferred until all K4 Issues reach the complete feature fixed point.
+Issue #88's delegated Socket.IO concurrency implementation is integrated by PR #101. Guide
+`k4-issue-88-r3` is locked and human-approved; Evaluation
+`tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. Final K4 feature
+review remains deferred until the complete fixed point.
 
 - Issue #86 manual-acceptance guide `k4-issue-86-r1` remains immutable and unapproved. Revision
   `k4-issue-86-r2` is locked and human-approved at
@@ -260,12 +261,12 @@ is intentionally deferred until all K4 Issues reach the complete feature fixed p
 - K3 Observability is complete. Issue #44 and implementation Issues #45–#52 are closed.
 - K3.1 Local Observability Demo is complete. Implementation Issues #70–#72 are closed.
 - The K3.1 parent specification, Issue #69, remains open for tracker history. It is not an implementation frontier.
-- Local `main` and `github/main` were previously synchronized at `0cb0dc2afe63bd5858772bfdd738043bafc03a98`; K4 Issue #81 was published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
+- Local `main` and `github/main` are synchronized at `8871adeb6ad2913f435dc7d2272a6b650b61677d`, the PR #103 merge commit; K4 Issue #81 was previously published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
 - No deployment or destructive K3.1 reset was performed.
 - K4 Reproducible Performance Evidence is active under locked specification Issue #80 and ADR-015.
-- Issues #81–#89 are published. Issues #81–#85 and #87 have completed implementation, acceptance,
-  review, and integration milestones. Issues #86 and #88 remain independent pending frontiers, and
-  later dependent issues remain blocked by the approved ticket graph.
+- Issues #81–#89 are published, closed, and integrated. Implementation and acceptance milestones
+  are complete for all nine tickets; the only remaining K4 transition is the single final feature
+  review at the complete fixed point.
 - K4 is leader-coordinated: the leader does not implement issues. Guide revisions `k4-issue-81-r1` through `k4-issue-81-r3` remain immutable; `k4-issue-81-r4` is locked and approved. Issue #81 implementation and mandatory acceptance TC-81-01 through TC-81-04 are complete and accepted; TC-81-05 was not run because it remains conditional.
 - Issue #81 final remediation fixed point has append-only Evaluation `tc81digest-v1`; mandatory TC-81-01 through TC-81-04 pass, TC-81-05 remains conditional/non-blocking.
 - Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 is closed.
@@ -319,6 +320,7 @@ is intentionally deferred until all K4 Issues reach the complete feature fixed p
 - K4 Issue #89 r4 treatment guide: `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.md` (locked and approved; r1–r3 immutable)
 - K4 Issue #89 r4 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.evaluations.jsonl` (latest `tc89-r4-treatment-comparison-20260816-approved`, PASSED/approved)
 - K4 Issue #89 comparison artifact: `.k4-results/k4issue89r4-20260816-optimization-comparison.json`
+- K4 Issue #89 publication: PR #103, merge commit `8871adeb6ad2913f435dc7d2272a6b650b61677d`, Issue #89 `CLOSED`
 
 ## Publication History
 
@@ -330,6 +332,9 @@ is intentionally deferred until all K4 Issues reach the complete feature fixed p
   merge `e69932c` is green; fixed-point review is `APPROVE` with zero Critical/Major findings on
   both Standards and Spec axes; PR #99 is merged at `cfd1bf90c490dfcfe3349107f841269d1b6aa720`,
   and GitHub Issue #87 is closed.
+- Issue #89 acceptance fixed point: r3/r4 Evaluations are `PASSED` with explicit approval; PR #103
+  is merged at `8871adeb6ad2913f435dc7d2272a6b650b61677d`, and GitHub Issue #89 is closed. The
+  single final K4 feature review remains deferred.
 
 ## Guardrails
 
