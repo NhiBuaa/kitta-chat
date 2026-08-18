@@ -6,6 +6,10 @@ const OPTIMIZATION_FIELDS = Object.freeze([
   "hardware",
   "runnerPlacement",
   "nonTreatmentConfiguration",
+  "replicaCount",
+  "backendReplicaCount",
+  "upstreamMembership",
+  "backendUpstreamMembership",
 ]);
 const TOPOLOGY_FIELDS = Object.freeze([
   "commit",
@@ -15,6 +19,8 @@ const TOPOLOGY_FIELDS = Object.freeze([
   "runnerPlacement",
   "nonTreatmentConfiguration",
 ]);
+const OPTIMIZATION_REQUIRED_FIELDS = Object.freeze([...OPTIMIZATION_FIELDS, "commit"]);
+const TOPOLOGY_REQUIRED_FIELDS = Object.freeze(["profile", ...TOPOLOGY_FIELDS, "topology", "replicaCount", "backendReplicaCount", "upstreamMembership", "backendUpstreamMembership"]);
 const {
   claimEligibilityForCell,
   validateBaselineCell,
@@ -33,12 +39,28 @@ function valueAt(run, field) {
     runnerPlacement: ["testRunnerPlacement"],
     nonTreatmentConfiguration: ["runtimeConfiguration", "configuration"],
     commit: ["commitSha", "commit_sha"],
+    replicaCount: ["backendReplicaCount", "backend_replica_count", "replica_count"],
+    backendReplicaCount: ["replicaCount", "replica_count"],
+    upstreamMembership: ["backendUpstreamMembership", "backend_upstream_membership"],
+    backendUpstreamMembership: ["upstreamMembership", "upstream_membership"],
   };
   return (aliases[field] || []).map((alias) => run?.[alias]).find((value) => value !== undefined);
 }
 
 function differences(left, right, fields) {
   return fields.filter((field) => JSON.stringify(valueAt(left, field)) !== JSON.stringify(valueAt(right, field)));
+}
+
+function isMissingComparisonValue(value) {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "string") return value.trim().length === 0;
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "object") return Object.keys(value).length === 0;
+  return false;
+}
+
+function missingFields(left, right, fields) {
+  return fields.filter((field) => isMissingComparisonValue(valueAt(left, field)) || isMissingComparisonValue(valueAt(right, field)));
 }
 
 function sourceDigest(run) {
@@ -51,6 +73,8 @@ function bundleDigest(run) {
 
 function validateOptimization({ baseline, candidate, bottleneckEvidence, treatment }) {
   const diagnostics = [];
+  const missing = missingFields(baseline, candidate, OPTIMIZATION_REQUIRED_FIELDS);
+  if (missing.length) diagnostics.push(...missing.map((field) => `mandatory equivalence field is missing: ${field}`));
   const changed = differences(baseline, candidate, OPTIMIZATION_FIELDS);
   if (changed.length) diagnostics.push(...changed.map((field) => `undeclared difference: ${field}`));
   if (!sourceDigest(baseline) || !sourceDigest(candidate)) diagnostics.push("baseline and rerun source digests are required");
@@ -59,8 +83,12 @@ function validateOptimization({ baseline, candidate, bottleneckEvidence, treatme
   const treatments = Array.isArray(treatment) ? treatment : (treatment ? [treatment] : []);
   if (treatments.length !== 1 || !treatments[0]?.name || !treatments[0]?.digest) diagnostics.push("exactly one targeted optimization treatment is required");
   const bottleneckLink = bottleneckEvidence?.runDigest || bottleneckEvidence?.source_inventory_sha256 || bottleneckEvidence?.bundle_inventory_sha256;
-  if (bottleneckLink && bottleneckLink !== sourceDigest(baseline) && bottleneckLink !== bundleDigest(baseline)) diagnostics.push("bottleneck evidence is not linked to the baseline provenance");
+  if (!bottleneckLink) diagnostics.push("bottleneck evidence must link to the baseline provenance");
+  else if (bottleneckLink !== sourceDigest(baseline) && bottleneckLink !== bundleDigest(baseline)) diagnostics.push("bottleneck evidence is not linked to the baseline provenance");
   const selectedTreatment = treatments[0];
+  const approval = selectedTreatment?.approval;
+  if (!approval || approval.status !== "APPROVED" || !approval.gateId) diagnostics.push("approved treatment gate evidence is required");
+  else if (approval.treatmentName !== selectedTreatment.name || approval.treatmentDigest !== selectedTreatment.digest) diagnostics.push("approved treatment identity does not match the selected treatment");
   return {
     status: diagnostics.length ? "REJECTED" : "ACCEPTED",
     experimentType: "optimization",
@@ -74,6 +102,8 @@ function validateOptimization({ baseline, candidate, bottleneckEvidence, treatme
 
 function validateTopology({ baseline, candidate }) {
   const diagnostics = [];
+  const missing = missingFields(baseline, candidate, TOPOLOGY_REQUIRED_FIELDS);
+  if (missing.length) diagnostics.push(...missing.map((field) => `mandatory comparison field is missing: ${field}`));
   const changed = differences(baseline, candidate, TOPOLOGY_FIELDS);
   if (changed.length) diagnostics.push(...changed.map((field) => `undeclared difference: ${field}`));
   const topologyChanged = JSON.stringify(valueAt(baseline, "topology")) !== JSON.stringify(valueAt(candidate, "topology"));

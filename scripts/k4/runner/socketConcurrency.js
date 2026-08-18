@@ -33,7 +33,9 @@ function createAttemptRecord({ attemptId, actorName, actor, target, timeoutMs, s
     actorRef: actor.id,
     target,
     path: "/socket.io/",
-    socketOptions: { path: "/socket.io/", transports: ["websocket"], reconnection: false, autoConnect: false, auth: { tokenProvided: true } },
+    // Keep the effective transport options without serializing the Socket.IO auth object.
+    // The actual token is supplied only to createSocket and must remain ephemeral.
+    socketOptions: { path: "/socket.io/", transports: ["websocket"], reconnection: false, autoConnect: false },
     handshakeTimeoutMs: timeoutMs,
     startedAt,
     terminalHandshakeOutcome: null,

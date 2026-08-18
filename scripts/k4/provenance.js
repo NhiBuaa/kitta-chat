@@ -118,12 +118,13 @@ function readInventory({ resultDirectory, inventoryPath = SOURCE_INVENTORY_FILE 
   return { root, resolved, bytes, inventory, digest: digestBytes(bytes) };
 }
 
-function verifySourceInventory({ resultDirectory, inventoryPath = SOURCE_INVENTORY_FILE, expectedDigest, expectedSourceInventorySha256, expectedSourceArtifacts, representation }) {
+function verifySourceInventory({ resultDirectory, inventoryPath = SOURCE_INVENTORY_FILE, expectedDigest, expectedSourceInventorySha256, expectedSourceArtifacts, representation, expectedRunId }) {
   const loaded = readInventory({ resultDirectory, inventoryPath });
   const actualDigest = loaded.digest;
   const expected = expectedDigest || expectedSourceInventorySha256;
   if (expected && expected !== actualDigest) throw new Error(`source inventory digest/integrity mismatch: expected ${expected}, got ${actualDigest}`);
   const boundary = requireDeclaredBoundary(loaded.inventory);
+  if (expectedRunId && loaded.inventory.runId !== String(expectedRunId)) throw new Error("source inventory run ID does not match the requested run");
   if (representation && representation !== boundary) throw new Error("source inventory representation does not match the declared contract");
   if (boundary !== WHOLE_FILE_BOUNDARY) throw new Error("BLOCKED: alternate source-inventory representation requires an authority-specific verifier");
   const entries = loaded.inventory.entries;
@@ -135,7 +136,7 @@ function verifySourceInventory({ resultDirectory, inventoryPath = SOURCE_INVENTO
     seen.add(location.relative);
     if (!fs.existsSync(location.absolute) || !fs.statSync(location.absolute).isFile()) throw new Error(`source artifact is missing: ${location.relative}`);
     const bytes = fs.readFileSync(location.absolute);
-    const byteSize = entry.byteSize ?? entry.byte_size;
+    const byteSize = entry.byteSize ?? entry.byte_size ?? entry.bytes;
     const expectedFileDigest = entry.sha256 || entry.digest;
     if (byteSize !== bytes.byteLength || expectedFileDigest !== digestBytes(bytes)) throw new Error(`source artifact integrity mismatch: ${location.relative}`);
   }
@@ -201,6 +202,13 @@ function deriveReport({ resultDirectory, sourceInventoryPath = SOURCE_INVENTORY_
   const candidate = typeof report === "function" ? report(verification) : { ...report };
   const sourceDigest = verification.sourceInventorySha256;
   if (candidate.source_inventory_sha256 && candidate.source_inventory_sha256 !== sourceDigest) throw new Error("report source inventory digest does not match the locked source inventory");
+  if (candidate.runId !== undefined && String(candidate.runId) !== String(verification.inventory.runId)) throw new Error("report run ID does not match the locked source inventory");
+  const expectedSourceDigests = verification.entries.map((entry) => ({ path: entry.path, sha256: entry.sha256 }));
+  if (candidate.sourceDigests !== undefined) {
+    const supplied = Array.isArray(candidate.sourceDigests) ? candidate.sourceDigests.map((entry) => ({ path: entry?.path, sha256: entry?.sha256 })) : [];
+    const canonical = (entries) => JSON.stringify(entries.sort((left, right) => `${left.path}\u0000${left.sha256}`.localeCompare(`${right.path}\u0000${right.sha256}`)));
+    if (canonical(supplied) !== canonical(expectedSourceDigests)) throw new Error("report source digests must exactly match the locked source inventory entries");
+  }
   const normalized = {
     ...candidate,
     runId: candidate.runId || verification.inventory.runId,

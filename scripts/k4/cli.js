@@ -29,7 +29,7 @@ function printHelp() {
       executeBaseline: "npm run k4 -- execute-baseline --run-id-prefix <prefix> --dataset-json <json> [--provenance-json <json>] [--candidates-json <json>]",
       validateBaseline: "npm run k4 -- validate-baseline --matrix-json <json>",
       baselineReport: "npm run k4 -- baseline-report --matrix-json <json>",
-      dossier: "npm run k4 -- bottleneck-dossier --candidates-json <json>",
+      dossier: "npm run k4 -- bottleneck-dossier --candidates-json <json> --baseline-json <json> --history-json <json>",
       freshness: "npm run k4 -- prerequisite-freshness --prerequisite-json <json>",
       freshnessSet: "npm run k4 -- prerequisite-set --prerequisites-json <json> --current-json <json>",
     },
@@ -83,17 +83,30 @@ function attachRunArtifactBoundary(result, plan) {
   const bundle = readJson(artifacts.bundleInventoryPath || "bundle-inventory.json");
   const sourceInventory = readJson(artifacts.sourceInventoryPath || "source-inventory.json");
   const manifest = readJson("manifest.json");
+  let artifactVerification = artifacts.verification;
+  try {
+    artifactVerification = validateRunArtifacts({
+      resultDirectory: plan.resultDirectory,
+      expectedRunId: plan.runId,
+      reportPath: "report.json",
+      requireReport: result?.execution_outcome === "MEASURED" || result?.executionOutcome === "MEASURED",
+      allowIncomplete: result?.execution_outcome !== "MEASURED" && result?.executionOutcome !== "MEASURED",
+    });
+  } catch (error) {
+    artifactVerification = { status: "INVALID", runId: plan.runId, error: error.message };
+  }
   return {
     ...result,
     ...(marker ? { marker } : {}),
     ...(bundle ? { bundle } : {}),
     ...(sourceInventory ? { sourceInventory } : {}),
     ...(manifest ? { manifest } : {}),
-    artifacts: { ...artifacts, ...(marker ? { marker } : {}), ...(bundle ? { bundle } : {}), ...(sourceInventory ? { sourceInventory } : {}), ...(manifest ? { manifest } : {}) },
+    artifactVerification,
+    artifacts: { ...artifacts, ...(marker ? { marker } : {}), ...(bundle ? { bundle } : {}), ...(sourceInventory ? { sourceInventory } : {}), ...(manifest ? { manifest } : {}), verification: artifactVerification },
   };
 }
 
-async function executeBaseline({ executeProduction, runIdPrefix = "k4-issue89", intervalMs = 1000, multiReplicaUnavailableReason, dataset, provenance, candidates: suppliedCandidates = [], candidateFactory } = {}) {
+async function executeBaseline({ executeProduction, runIdPrefix = "k4-issue89", intervalMs = 1000, multiReplicaUnavailableReason, dataset, provenance, candidates: suppliedCandidates = [], candidateFactory, historyScope } = {}) {
   if (typeof executeProduction !== "function") throw new Error("baseline execution requires the production composition seam");
   const matrix = createBaselineMatrix({ runIdPrefix, dataset, provenance });
   let equivalenceReference;
@@ -108,11 +121,17 @@ async function executeBaseline({ executeProduction, runIdPrefix = "k4-issue89", 
           execution_outcome: "NOT_RUN",
           qualification_flags: [],
           reason: multiReplicaUnavailableReason,
+          cleanup: { attempted: true, completed: true, ownershipSafe: true, noResources: true, reason: "multi-replica topology was unavailable before resource admission" },
           dataset: cell.dataset || datasetReference,
           provenance: equivalenceReference || cell.provenance,
         };
       }
       const plan = createRunPlan({ runId: cell.attemptId, profile: cell.topology });
+      plan.topology = {
+        profile: cell.topology,
+        backendReplicaCount: plan.backendReplicaCount,
+        backendUpstreamMembership: plan.backendUpstreamMembership,
+      };
       plan.workload = approvedWorkloadProfile(cell.scenario, 2);
       const result = attachRunArtifactBoundary(await executeProduction({ plan, intervalMs }), plan);
       if (cell.topology === "single-replica") equivalenceReference = normalizeBaselineRecord({ ...cell, ...result }).provenance;
@@ -124,10 +143,11 @@ async function executeBaseline({ executeProduction, runIdPrefix = "k4-issue89", 
         topologyEvidence: result?.topologyEvidence || { replicaCount: plan.backendReplicaCount, upstreamMembership: plan.backendUpstreamMembership },
       };
     },
+    historyScope,
   });
   const candidates = typeof candidateFactory === "function" ? (await candidateFactory({ matrix: chain.matrix, report: chain.report }) || []) : (suppliedCandidates?.candidates || suppliedCandidates || []);
   if (candidates.length) {
-    chain.dossier = buildBottleneckDossier({ candidates, baselineMatrix: chain.report.baselineMatrix, claimMatrix: chain.report.claims });
+    chain.dossier = buildBottleneckDossier({ candidates, baselineMatrix: chain.report.baselineMatrix, baselineValidation: chain.matrix, claimMatrix: chain.report.claims, historyScope });
     chain.status = chain.matrix.valid ? chain.dossier.status : "BLOCKED";
   }
   return chain;
@@ -160,17 +180,30 @@ function runSetupPreflight({
   }
   const verification = verifyDatasetContract(K4_DATASET_DECLARATION, observedDeclaration);
   if (verification.status !== "VERIFIED") return { action: "setup-preflight", verification, warmupAdmission: "NOT_ADMITTED" };
+  const lifecycle = {
+    status: "VERIFIED",
+    runId: plan.runId,
+    ownerRunId: plan.runId,
+    runScoped: true,
+    cleanInitialState: true,
+    initialState: "CLEAN",
+    create: "completed",
+    migrate: "completed",
+    seed: "completed",
+    verify: verification.status,
+  };
   const phaseRecordPath = path.join(plan.resultDirectory, "setup-preflight.json");
   writeFileSyncFn(phaseRecordPath, `${JSON.stringify({
     runId: plan.runId,
     declaredDataset: K4_DATASET_DECLARATION,
     observedDataset: observedDeclaration,
     verification,
+    lifecycle,
     warmupAdmission: "WARMUP_ADMITTED",
     authentication: { ingress: "http://nginx", login: "passed", socketIo: "passed" },
   })}\n`, { flag: "wx" });
   const evidenceScan = scanRetainedEvidenceDirectory(plan.resultDirectory, [environment.K4_BENCHMARK_PASSWORD, benchmarkToken]);
-  return { action: "setup-preflight", verification, warmupAdmission: "WARMUP_ADMITTED", evidenceScan };
+  return { action: "setup-preflight", verification, lifecycle, warmupAdmission: "WARMUP_ADMITTED", evidenceScan };
 }
 
 async function main({ executeProduction } = {}) {
@@ -190,6 +223,7 @@ async function main({ executeProduction } = {}) {
       dataset: jsonArgument("--dataset-json", undefined),
       provenance: jsonArgument("--provenance-json", undefined),
       candidates: jsonArgument("--candidates-json", []),
+      historyScope: jsonArgument("--history-json", undefined),
     }));
   }
   if (action === "validate-baseline") {
@@ -205,11 +239,13 @@ async function main({ executeProduction } = {}) {
   if (action === "bottleneck-dossier") {
     const candidates = jsonArgument("--candidates-json", []);
     const baseline = jsonArgument("--baseline-json", {});
+    const historyScope = jsonArgument("--history-json", baseline?.historyScope);
     return print(buildBottleneckDossier({
       candidates: candidates?.candidates || candidates,
       selectedCandidateId: argument("--selected-candidate-id"),
       baselineMatrix: baseline?.baselineMatrix,
       claimMatrix: baseline?.claims,
+      historyScope,
     }));
   }
   if (action === "compare") {

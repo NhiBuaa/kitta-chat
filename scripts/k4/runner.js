@@ -41,14 +41,26 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata, c
   let qualification = { complete: false, qualified: false };
   let publishable;
   let rawMeasurement;
+  let teardownOutput;
   let failed;
+  let lastPhaseTimestamp = Number.NEGATIVE_INFINITY;
+
+  const nextPhaseTimestamp = () => {
+    const raw = clock();
+    const candidate = raw instanceof Date ? raw.getTime() : typeof raw === "number" ? raw : Date.parse(String(raw));
+    if (!Number.isFinite(candidate)) return phaseTimestamp(() => raw);
+    const timestamp = Math.max(candidate, lastPhaseTimestamp + 1);
+    lastPhaseTimestamp = timestamp;
+    return new Date(timestamp).toISOString();
+  };
 
   const runPhase = async (name) => {
     const started = true;
-    const startedAt = phaseTimestamp(clock);
+    const startedAt = nextPhaseTimestamp();
     try {
       if (name === "measurement" && observation) await observation.start(plan);
       const output = await executePhase(name, context);
+      if (name === "teardown") teardownOutput = output;
       const observationEvidence = name === "measurement" && observation ? await observation.finalize(plan, output) : undefined;
       const measurementOutput = observationEvidence ? {
         ...output,
@@ -61,7 +73,7 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata, c
           ? { complete: !measurementOutput.qualificationFlags.includes("OBSERVATION_INCOMPLETE"), qualified: !measurementOutput.qualificationFlags.includes("OBSERVATION_INCOMPLETE") }
           : (measurementOutput.qualificationFlags || { complete: true, qualified: true }))
         : qualification;
-      phases[name] = { started, startedAt, completed: true, completedAt: phaseTimestamp(clock), qualified: name === "measurement" && qualification.qualified === true, publishable: false, output: measurementOutput };
+      phases[name] = { started, startedAt, completed: true, completedAt: nextPhaseTimestamp(), qualified: name === "measurement" && qualification.qualified === true, publishable: false, output: measurementOutput };
       if (name === "measurement") {
         artifactStatus = canonicalArtifactStatus(measurementOutput);
         executionOutcome = canonicalMeasurementOutcome(measurementOutput);
@@ -71,7 +83,7 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata, c
       if (name === "measurement" && executionOutcome === "MEASURED") publishable = measurementOutput?.numbers === undefined ? undefined : { numbers: measurementOutput.numbers };
       return true;
     } catch (error) {
-      phases[name] = { started, startedAt, completed: false, completedAt: phaseTimestamp(clock), qualified: false, publishable: false, error: error.message };
+      phases[name] = { started, startedAt, completed: false, completedAt: nextPhaseTimestamp(), qualified: false, publishable: false, error: error.message };
       if (!failed) failed = { phase: name, error: error.message };
       if (name === "setup/seed" || name === "warm-up") executionOutcome = "FAILED_SETUP";
       if (name === "measurement") executionOutcome = "NOT_RUN";
@@ -102,7 +114,15 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata, c
     phases.teardown = { attempted: false, completed: false, qualified: false, publishable: false };
   }
 
-  const cleanup = { attempted: shouldTeardown, completed: phases.teardown.completed, ...(phases.teardown.teardownError ? { error: phases.teardown.teardownError } : {}) };
+  const cleanup = {
+    attempted: shouldTeardown,
+    completed: typeof teardownOutput?.completed === "boolean" ? teardownOutput.completed : phases.teardown.completed,
+    ownershipSafe: typeof teardownOutput?.ownershipSafe === "boolean"
+      ? teardownOutput.ownershipSafe
+      : ownedResources.length === 0 || phases.teardown.completed === true,
+    noResources: typeof teardownOutput?.noResources === "boolean" ? teardownOutput.noResources : ownedResources.length === 0,
+    ...(phases.teardown.teardownError ? { error: phases.teardown.teardownError } : {}),
+  };
   const result = { status, phases, teardown: cleanup, cleanup };
   if (publishable && qualification.complete !== false && qualification.qualified !== false) result.publishable = publishable;
   if (rawMeasurement) result.rawMeasurement = rawMeasurement;
@@ -111,11 +131,10 @@ async function executeRun(plan, { executePhase, observation, artifactMetadata, c
   result.artifactStatus = artifactStatus;
   result.execution_outcome = executionOutcome;
   result.artifact_status = artifactStatus;
+  result.qualificationFlags = Array.isArray(context.qualificationFlags) ? context.qualificationFlags : [];
+  result.qualification_flags = result.qualificationFlags;
+  result.claimEligibility = context.claimEligibility || {};
   result.qualification = qualification;
-  if (context.observation) {
-    result.qualificationFlags = context.observation.qualificationFlags;
-    result.claimEligibility = context.observation.claimEligibility;
-  }
   const artifacts = finalizeRunArtifacts({ plan, result, metadata: artifactMetadata });
   if (artifacts) result.artifacts = artifacts;
   return result;

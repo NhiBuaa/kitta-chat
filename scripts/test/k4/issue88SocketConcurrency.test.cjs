@@ -112,6 +112,9 @@ test("Issue 88 socket ramp records immutable attempts and gates plateau on settl
   assert.equal(result.targetHeldThroughSettling, true);
   assert.equal(result.measurementAdmitted, true);
   assert.equal(result.initialAttempts.every((attempt) => attempt.socketOptions.reconnection === false), true);
+  assert.equal(result.initialAttempts.every((attempt) => attempt.socketOptions.auth === undefined), true);
+  assert.equal(JSON.stringify(result).includes("alice-token"), false);
+  assert.equal(JSON.stringify(result).includes("bob-token"), false);
   assert.equal(result.connections.every((connection) => connection.teardown === true), true);
 });
 

@@ -108,3 +108,106 @@ test("cadence stays anchored, records overlap as missing, and finalize joins in-
     { slotIndex: 2, timestamp: "2026-08-13T00:00:02.000Z", status: "missing" },
   ]);
 });
+
+test("resource cadence binds to the declared runner measurement window", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-observation-declared-window-"));
+  const declaredWindow = {
+    start: "2026-08-13T00:00:01.000Z",
+    end: "2026-08-13T00:00:03.000Z",
+    boundary: "[phase_start, phase_end)",
+  };
+  let captureEndInput;
+  const containers = ["nginx", "backend-1", "runner"];
+  const observations = Object.fromEntries(containers.map((container) => [container, [0, 1].map((offset) => ({
+    timestamp: new Date(Date.parse(declaredWindow.start) + offset * 1000).toISOString(),
+    status: "success",
+    sample: { container, cpu: offset + 1 },
+  }))]));
+  const observation = createMeasurementObservation({
+    intervalMs: 1000,
+    clock: (() => {
+      const values = ["2026-08-13T00:00:00.000Z", "2026-08-13T00:00:03.500Z"];
+      return () => values.shift();
+    })(),
+    captureStart: () => ({ histogram: { resolvedBackendReplicas: ["backend-1"], snapshots: { "backend-1": { before: histogram(1) } } } }),
+    captureEnd: (_plan, input) => {
+      captureEndInput = input;
+      return {
+        histogram: { snapshots: { "backend-1": { after: histogram(2) } } },
+        resource: { observations },
+        loadGenerator: { shortfall: null, runner: { cgroupVersion: "v2", sourcePaths: {}, limits: {}, cpuSamples: [], memoryEvents: { oomDelta: 0, oomKillDelta: 0 } } },
+      };
+    },
+  });
+
+  await executeRun(plan("single-replica", ["backend-1"], directory), {
+    observation,
+    executePhase: async (phase) => {
+      if (phase === "setup/seed") return { resourcesCreated: true };
+      if (phase === "measurement") return { measurementWindow: declaredWindow, numbers: { requests: 2 } };
+      return {};
+    },
+  });
+
+  const persisted = JSON.parse(fs.readFileSync(path.join(directory, "measurement-observation.json"), "utf8"));
+  assert.equal(captureEndInput.measurementStart, declaredWindow.start);
+  assert.equal(captureEndInput.measurementEnd, declaredWindow.end);
+  assert.deepEqual(persisted.resourceEvidence.measurementWindow, {
+    start: declaredWindow.start,
+    end: declaredWindow.end,
+    boundary: "[measurement_start, measurement_end)",
+  });
+  assert.equal(persisted.resourceEvidence.expectedCount, 2);
+  assert.deepEqual(persisted.resourceEvidence.byContainer.nginx.counts, { successful: 2, error: 0, missing: 0, expected: 2 });
+  assert.deepEqual(persisted.qualificationFlags, []);
+});
+
+test("socket runner epoch measurement bounds are normalized and bind resource cadence", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "k4-observation-socket-epoch-window-"));
+  const startMs = Date.parse("2026-08-13T00:00:01.000Z");
+  const endMs = Date.parse("2026-08-13T00:00:03.000Z");
+  const observations = Object.fromEntries(["nginx", "backend-1", "runner"].map((container) => [container, [0, 1].map((offset) => ({
+    timestamp: new Date(startMs + offset * 1000).toISOString(),
+    status: "success",
+    sample: { container, cpu: offset + 1 },
+  }))]));
+  const observation = createMeasurementObservation({
+    intervalMs: 1000,
+    clock: (() => {
+      const values = ["2026-08-13T00:00:00.000Z", "2026-08-13T00:00:03.500Z"];
+      return () => values.shift();
+    })(),
+    captureStart: () => ({ histogram: { resolvedBackendReplicas: ["backend-1"], snapshots: { "backend-1": { before: histogram(1) } } } }),
+    captureEnd: (_plan, input) => ({
+      histogram: { snapshots: { "backend-1": { after: histogram(2) } } },
+      resource: { observations },
+      loadGenerator: { shortfall: null, runner: { cgroupVersion: "v2", sourcePaths: {}, limits: {}, cpuSamples: [], memoryEvents: { oomDelta: 0, oomKillDelta: 0 } } },
+      capturedWindow: { start: input.measurementStart, end: input.measurementEnd },
+    }),
+  });
+
+  await executeRun(plan("single-replica", ["backend-1"], directory), {
+    observation,
+    executePhase: async (phase) => {
+      if (phase === "setup/seed") return { resourcesCreated: true };
+      if (phase === "measurement") return { measurementStart: startMs, measurementEnd: endMs, numbers: { requests: 2 } };
+      return {};
+    },
+  });
+
+  const persisted = JSON.parse(fs.readFileSync(path.join(directory, "measurement-observation.json"), "utf8"));
+  const raw = JSON.parse(fs.readFileSync(path.join(directory, "measurement-observation-final.raw.json"), "utf8"));
+  assert.deepEqual(raw.measurementWindow, {
+    start: "2026-08-13T00:00:01.000Z",
+    end: "2026-08-13T00:00:03.000Z",
+    boundary: "[phase_start, phase_end)",
+    source: "runner",
+  });
+  assert.deepEqual(persisted.resourceEvidence.measurementWindow, {
+    start: "2026-08-13T00:00:01.000Z",
+    end: "2026-08-13T00:00:03.000Z",
+    boundary: "[measurement_start, measurement_end)",
+  });
+  assert.equal(persisted.resourceEvidence.expectedCount, 2);
+  assert.deepEqual(persisted.resourceEvidence.byContainer.runner.counts, { successful: 2, error: 0, missing: 0, expected: 2 });
+});
