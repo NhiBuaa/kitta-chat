@@ -1,4 +1,29 @@
-# K3/K3.1 Completion and K4 Active Checkpoint
+# K3/K3.1 Completion and K4 Final Checkpoint
+
+## K4 final fixed point — 2026-08-18 final11g (completed)
+
+K4 is complete under locked Issue #80 and ADR-015. The final Issue #89 remediation was published
+by [PR #106](https://github.com/NhiBuaa/kitta-chat/pull/106) and merged into `main` at
+`ef42b99cee93c0dfd5d6c770e5f3698f38c55599`; Issues #80–#89 are `CLOSED`. The exact final11g
+descriptor is `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260818-final11g.json`
+with diff SHA-256
+`sha256:8e441c6d64147a675aca8dbe77c0c540fcc362ded7acf524d131aa7042e26903`.
+
+The independent Standards and Spec axes and aggregate feature review are `APPROVE` with zero
+Critical/Major/Minor findings. Cadence is `ready`; final11g acceptance is `PASSED` with explicit
+`human_approval=approved`. Retained evidence revalidates as a valid six-cell matrix/report,
+`READY_FOR_HUMAN_GATE` bottleneck dossier, `ACCEPTED` optimization comparison, and seven
+`COMPLETED + MEASURED/PUBLISHABLE` runs. The approved treatment remains the single sidebar
+query-plan optimization. No authority, guide, Evaluation, raw artifact, or K4 semantics changed.
+
+Verification: focused lifecycle/cleanup `30/30`, full K4 `252/252`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, and `git diff --check` exit `0`. The K4 implementation fixed point
+is `ef42b99`; no implementation frontier or pending K4 review remains.
+
+The sections below are historical checkpoints retained for audit. They are superseded by this
+final state and must not be treated as an active worktree or next-transition instruction.
+
+## Historical checkpoints (superseded)
 
 ## K4 Issue #89 remediation fixed point — 2026-08-18 final11g
 
@@ -187,8 +212,8 @@ post-review human acceptance, then rerun final feature review/cadence.
 
 Issues #81–#89 are implemented, accepted, and integrated into `main` under locked Issue #80 and
 ADR-015. Issue #89 was published by PR #103 and is now closed. This checkpoint is on `main` at
-merge commit `8871adeb6ad2913f435dc7d2272a6b650b61677d`; the final K4 feature review remains
-deferred until the complete fixed point.
+merge commit `8871adeb6ad2913f435dc7d2272a6b650b61677d`; the final K4 feature review was deferred
+at that historical point and was completed as `APPROVE` in final11g above.
 
 Issue #89 manual-acceptance guides `k4-issue-89-r1` and `k4-issue-89-r2` remain immutable and
 unapproved. Revision `k4-issue-89-r3` is now locked and human-approved at
@@ -213,14 +238,15 @@ server attribution/read-model `13/13`, repository CI `132/132`, and `npm run ci:
 Selective invalidation decision: no acceptance input, authoritative guide/Evaluation, environment,
 or approved behavior changed during the fast-forward; the r3/r4 accepted Evaluations remain valid
 and no rerun is required. [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) is `MERGED`,
-and GitHub Issue #89 is `CLOSED`. Final feature review remains deferred.
+and GitHub Issue #89 is `CLOSED`. Final feature review was still deferred at this historical point
+and was completed as `APPROVE` in final11g above.
 
 ## K4 Current Frontier Override
 
 Issue #84 is closed after the accepted K4 measurement-observation delivery. Issues #85–#89 are
 implemented, manually accepted, and integrated. Issues #86 and #88 were published by PR #102 and
-PR #101 respectively; their final K4 feature review remains deferred until the complete fixed
-point.
+PR #101 respectively; their final K4 feature review was deferred at this historical point and was
+completed as `APPROVE` in final11g above.
 
 - Issue #87 implementation and bounded TC-87-03 remediation are complete in its dedicated worktree.
 - Automated evidence is green: Issue #87 focused K4 136/136; combined post-reconcile K4 143/143;
@@ -234,14 +260,15 @@ point.
   and human-approved at `.agents/manual-tests/k4-performance-evidence/issue-85-provenance-report-validator-r3.md`;
   its append-only Evaluation history records `tc85r3-human-approved-20260814` as `PASSED`.
   Review cadence and the three required high-tier external reviews are recorded in the Issue #85
-  acceptance artifacts; final K4 review remains governed by the complete feature fixed point.
+  acceptance artifacts; final K4 review was governed by the complete feature fixed point and is now
+  recorded as `APPROVE` in final11g above.
 
 ## Issue #88 Closeout Override
 
 Issue #88's delegated Socket.IO concurrency implementation is integrated by PR #101. Guide
 `k4-issue-88-r3` is locked and human-approved; Evaluation
 `tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. Final K4 feature
-review remains deferred until the complete fixed point.
+review was deferred at this historical point and was completed as `APPROVE` in final11g above.
 
 - Issue #86 manual-acceptance guide `k4-issue-86-r1` remains immutable and unapproved. Revision
   `k4-issue-86-r2` is locked and human-approved at
@@ -261,12 +288,11 @@ review remains deferred until the complete fixed point.
 - K3 Observability is complete. Issue #44 and implementation Issues #45–#52 are closed.
 - K3.1 Local Observability Demo is complete. Implementation Issues #70–#72 are closed.
 - The K3.1 parent specification, Issue #69, remains open for tracker history. It is not an implementation frontier.
-- Local `main` and `github/main` are synchronized at `8871adeb6ad2913f435dc7d2272a6b650b61677d`, the PR #103 merge commit; K4 Issue #81 was previously published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
+- The K4 implementation fixed point is `ef42b99cee93c0dfd5d6c770e5f3698f38c55599`, the PR #106 merge commit; K4 Issue #81 was previously published by PR #91 merge commit `3015031dacea7f1624f989d1cb9b9c2f14c6e9ce`.
 - No deployment or destructive K3.1 reset was performed.
-- K4 Reproducible Performance Evidence is active under locked specification Issue #80 and ADR-015.
-- Issues #81–#89 are published, closed, and integrated. Implementation and acceptance milestones
-  are complete for all nine tickets; the only remaining K4 transition is the single final feature
-  review at the complete fixed point.
+- K4 Reproducible Performance Evidence is complete under locked specification Issue #80 and ADR-015.
+- Issues #81–#89 are published, closed, and integrated. Implementation, acceptance, final review,
+  cadence, and publication milestones are complete for all nine tickets; no K4 transition remains.
 - K4 is leader-coordinated: the leader does not implement issues. Guide revisions `k4-issue-81-r1` through `k4-issue-81-r3` remain immutable; `k4-issue-81-r4` is locked and approved. Issue #81 implementation and mandatory acceptance TC-81-01 through TC-81-04 are complete and accepted; TC-81-05 was not run because it remains conditional.
 - Issue #81 final remediation fixed point has append-only Evaluation `tc81digest-v1`; mandatory TC-81-01 through TC-81-04 pass, TC-81-05 remains conditional/non-blocking.
 - Final review of the remediation fixed point is `APPROVE` with zero Critical and zero Major findings. Issue #81 is closed.
@@ -321,6 +347,8 @@ review remains deferred until the complete fixed point.
 - K4 Issue #89 r4 Evaluation: `.agents/manual-tests/k4-performance-evidence/issue-89-baseline-evidence-bottleneck-dossier-r4.evaluations.jsonl` (latest `tc89-r4-treatment-comparison-20260816-approved`, PASSED/approved)
 - K4 Issue #89 comparison artifact: `.k4-results/k4issue89r4-20260816-optimization-comparison.json`
 - K4 Issue #89 publication: PR #103, merge commit `8871adeb6ad2913f435dc7d2272a6b650b61677d`, Issue #89 `CLOSED`
+- K4 final11g fixed-point descriptor: `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260818-final11g.json`
+- K4 final11g publication: PR #106, merge commit `ef42b99cee93c0dfd5d6c770e5f3698f38c55599`, Issues #80–#89 `CLOSED`
 
 ## Publication History
 
@@ -332,9 +360,9 @@ review remains deferred until the complete fixed point.
   merge `e69932c` is green; fixed-point review is `APPROVE` with zero Critical/Major findings on
   both Standards and Spec axes; PR #99 is merged at `cfd1bf90c490dfcfe3349107f841269d1b6aa720`,
   and GitHub Issue #87 is closed.
-- Issue #89 acceptance fixed point: r3/r4 Evaluations are `PASSED` with explicit approval; PR #103
-  is merged at `8871adeb6ad2913f435dc7d2272a6b650b61677d`, and GitHub Issue #89 is closed. The
-  single final K4 feature review remains deferred.
+- Issue #89 final acceptance fixed point: final11g Evaluation is `PASSED` with explicit approval;
+  PR #106 is merged at `ef42b99cee93c0dfd5d6c770e5f3698f38c55599`, and GitHub Issue #89 is closed.
+  The final K4 feature review is `APPROVE` with zero Critical/Major/Minor findings.
 
 ## Guardrails
 

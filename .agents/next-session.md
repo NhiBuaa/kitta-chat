@@ -1,4 +1,32 @@
-# Next Session — K4 Leader Continuation
+# Next Session — K4 Leader Closeout
+
+## No next K4 slice is active
+
+K4 is complete under locked Issue #80 and ADR-015. The final Issue #89 remediation was published
+by [PR #106](https://github.com/NhiBuaa/kitta-chat/pull/106) and merged into `main` at
+`ef42b99cee93c0dfd5d6c770e5f3698f38c55599`; Issues #80–#89 are `CLOSED`. That commit is the K4
+implementation fixed point; the docs-only publication is a separate change.
+
+The final11g fixed-point descriptor is
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k4-remediation-fixed-point-descriptor-20260818-final11g.json`
+with exact diff SHA-256
+`sha256:8e441c6d64147a675aca8dbe77c0c540fcc362ded7acf524d131aa7042e26903`. Independent
+Standards/Spec review and the aggregate final feature review are `APPROVE` with zero
+Critical/Major/Minor findings; cadence validation is `ready`. The final11g acceptance is
+`PASSED` with explicit `human_approval=approved`.
+
+Retained evidence is a valid six-cell baseline/report, a `READY_FOR_HUMAN_GATE` bottleneck dossier,
+an `ACCEPTED` optimization comparison, and seven `COMPLETED + MEASURED/PUBLISHABLE` runs. The
+single approved treatment is the sidebar query-plan optimization. Qualification flags remain
+claim-specific (`TOPOLOGY_NOT_EXERCISED` for sidebar single-replica and `OBSERVATION_INCOMPLETE`
+for the declared cells); no new benchmark claim or scope is implied.
+
+Verification is focused lifecycle/cleanup `30/30`, full K4 `252/252`, repository CI `132/132`,
+`npm run ci:validate` exit `0`, and `git diff --check` exit `0`. No implementation, review,
+acceptance, or publication transition remains. Any future K4 work requires a new approved Issue
+#80/ADR-015 authority change; do not infer a next slice from the historical checkpoints below.
+
+## Historical checkpoints (superseded)
 
 ## Current fixed point — 2026-08-18 final11g
 
@@ -132,8 +160,8 @@ the cadence validator returns `ready`.
 
 Issues #81–#89 are complete, closed, and integrated into `main`. Issue #89 was published by PR
 #103, merged at `8871adeb6ad2913f435dc7d2272a6b650b61677d`; the integration branch head before
-merge was `4609fcf`. The only remaining K4 transition is the single final feature review at the
-complete fixed point.
+merge was `4609fcf`. The only remaining K4 transition at this historical checkpoint was the final
+feature review; final11g completed it as `APPROVE`.
 
 ## Issue #89 Acceptance Checkpoint
 
@@ -161,12 +189,13 @@ artifact is `.k4-results/k4issue89r4-20260816-optimization-comparison.json`.
 Integration verification is complete on `e38cfff`; selective invalidation found no changed
 acceptance input, authoritative guide/Evaluation, environment, or approved behavior, so r3/r4
 Evaluations remain valid without rerun. Preserve all prior runs and guide revisions; [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103)
-is `MERGED` into `main`, and GitHub Issue #89 is `CLOSED`. Final review remains deferred.
+is `MERGED` into `main`, and GitHub Issue #89 is `CLOSED`. Final review was deferred at this
+historical checkpoint and was completed as `APPROVE` in final11g above.
 
 ## Current Parallel Frontier Override
 
-Issues #81–#89 are complete and integrated; no implementation frontier remains. Final K4 review is
-deferred until the complete feature fixed point.
+Issues #81–#89 are complete and integrated; no implementation frontier remains. Final K4 review was
+deferred at this historical checkpoint and was completed as `APPROVE` in final11g above.
 
 ## Issue #86 Completion Checkpoint
 
@@ -177,14 +206,15 @@ immutable and unapproved. Implementation and automated verification are complete
 followed by approved append-only Evaluation `issue86-r2-attribution-20260816-approved`. The
 explicit TC-86-02 matrix proves identical commit SHA, hardware, dataset, workload,
 runner/configuration, and only topology/replica-count differences. Issue #86 was published by PR
-#102 and is closed; final K4 review remains deferred until the complete fixed point.
+#102 and is closed; final K4 review was deferred at this historical checkpoint and was completed as
+`APPROVE` in final11g above.
 
 ## Issue #88 Completion Checkpoint
 
 Issue #88 implementation and manual acceptance are complete and integrated by PR #101. Guide
 `k4-issue-88-r3` remains immutable; Evaluation
 `tc88r3-acceptance-20260816-approved` is `PASSED` with explicit human approval. Final K4 feature
-review remains deferred until the complete fixed point.
+review was deferred at this historical checkpoint and was completed as `APPROVE` in final11g above.
 
 ## Issue #87 Closeout Checkpoint
 
@@ -225,13 +255,15 @@ parallel frontier.
 The accepted Issue #89 worktree was integrated into `codex/k4-integration` at `4609fcf` and merged
 into `main` by [PR #103](https://github.com/NhiBuaa/kitta-chat/pull/103) at
 `8871adeb6ad2913f435dc7d2272a6b650b61677d`. GitHub Issue #89 is `CLOSED`; the single final K4
-feature review remains deferred until the complete fixed point. Preserve all prior guide revisions,
-Evaluation records, and treated comparison artifacts.
+feature review was deferred at this historical checkpoint and was completed as `APPROVE` in
+final11g above. Preserve all prior guide revisions, Evaluation records, and treated comparison
+artifacts.
 
-K4 Reproducible Performance Evidence remains active under locked specification
+K4 Reproducible Performance Evidence was active at this historical checkpoint under locked specification
 https://github.com/NhiBuaa/kitta-chat/issues/80 and ADR-015. The approved ticket graph is
 Issues #81–#89; implementation, acceptance, integration, publication, and closure are complete.
-Final K4 review remains governed by the approved dependency graph and complete-feature fixed point.
+Final K4 review was governed by the approved dependency graph and complete-feature fixed point and is
+now recorded as `APPROVE` in final11g above.
 
 The K4 session is leader-only. The leader coordinates `feature-delivery`, acceptance gates,
 delegation, evidence, and issue state; it does not implement an issue itself. No implementation
@@ -264,10 +296,10 @@ Its final closure review found zero Critical and zero Major findings. Targeted t
 
 1. Preserve all accepted Issue #81–#89 implementations, immutable guide revisions, and append-only
    Evaluation histories; no ticket has additional implementation scope.
-2. Issue #89 is integrated and published by PR #103 at merge commit
+2. Issue #89 was historically integrated and published by PR #103 at merge commit
    `8871adeb6ad2913f435dc7d2272a6b650b61677d`; GitHub Issues #81–#89 are closed.
-3. The only remaining K4 transition is the single final feature review at the complete fixed point;
-   do not run it until the governed review cadence and complete-feature evidence are ready.
+3. The final feature review was the remaining transition at this historical checkpoint; final11g
+   completed it as `APPROVE`, and PR #106 subsequently synchronized `main` at `ef42b99`.
 
 ## Issue #87 Fixed Point
 
