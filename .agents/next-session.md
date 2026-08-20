@@ -1,4 +1,25 @@
-# Next Session — K4 Leader Closeout
+# Next Session — K5 Post-Acceptance Checkpoint
+
+## K5 package has human approval
+
+The docs-only K5 security-readiness package is prepared on branch `feature/security-readiness-package`
+from base `4388ed842498fa85d90a95d06944e7c9db936e25`. The uncommitted artifacts are:
+
+- `docs/security/k5-security-readiness-package.md`
+- `docs/security/k5-security-readiness-research.md`
+
+Focused source/test verification passed server `16/16` and client `2/2`. User approval was
+recorded on 2026-08-19 before the final feature review sequence. The post-acceptance whole-scope
+Standards/Spec review is `APPROVE` with zero findings, and cadence validation is `ready` with
+evidence digest `sha256:760eaccd1128b86687994db217dd4ef430feb42d8152857f72d41c56be578ccf`.
+
+The approval covers the package as an evidence record and preserves the stale-document question,
+the 29-current-policy-ID versus historical-27-point scope difference, and the CastError observation
+as open evidence questions. This K5 checkpoint is complete for the stated docs-only scope. Do not
+implement remediation, change policy values, rerun deployment/Redis evidence, commit, merge, or
+deploy; deployment, measurement, and K6 remain separately unauthorized.
+
+## Historical Next Session — K4 Leader Closeout
 
 ## No next K4 slice is active
 
