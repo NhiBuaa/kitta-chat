@@ -2,8 +2,9 @@
 
 ## K5 package has human approval
 
-The docs-only K5 security-readiness package is prepared on branch `feature/security-readiness-package`
-from base `4388ed842498fa85d90a95d06944e7c9db936e25`. The uncommitted artifacts are:
+The docs-only K5 security-readiness package is committed at `9e0fcad` on branch
+`feature/security-readiness-package` from base `4388ed842498fa85d90a95d06944e7c9db936e25` and is
+open for review in [PR #108](https://github.com/NhiBuaa/kitta-chat/pull/108). The PR artifacts are:
 
 - `docs/security/k5-security-readiness-package.md`
 - `docs/security/k5-security-readiness-research.md`

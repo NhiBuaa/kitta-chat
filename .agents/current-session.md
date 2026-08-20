@@ -2,7 +2,8 @@
 
 K4 is complete and published at `4388ed842498fa85d90a95d06944e7c9db936e25`. The approved next
 slice is the docs-only K5 security-readiness package on branch `feature/security-readiness-package`.
-The package and primary-source research note are currently uncommitted. Human approval for the
+The package and primary-source research note were committed at `9e0fcad` and pushed to open PR
+[#108](https://github.com/NhiBuaa/kitta-chat/pull/108) targeting `main`. Human approval for the
 package was recorded on 2026-08-19; the package is accepted for its stated evidence boundary:
 
 - `docs/security/k5-security-readiness-package.md`
@@ -13,7 +14,8 @@ and the client reset-token fragment tests passed `2/2`. The post-acceptance whol
 and Spec review is `APPROVE` with zero findings, and cadence validation is `ready` with evidence
 digest `sha256:760eaccd1128b86687994db217dd4ef430feb42d8152857f72d41c56be578ccf`. No runtime
 behavior, security policy, quota, scanner, benchmark, deployment, commit, merge, or public-
-exposure change is authorized in this checkpoint.
+exposure change is authorized in this checkpoint. The PR is review-only; no merge or deploy has
+been performed.
 
 The package records a current 29-policy-ID versus historical 27-point closure wording mismatch
 and a CastError logging observation from the research run. Both remain evidence questions; no
