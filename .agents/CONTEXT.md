@@ -96,6 +96,34 @@ _Avoid_: wildcard, phản chiếu origin của request, alias ngầm hoặc dùn
 Frontend base URL duy nhất dùng để tạo user-facing link như password-reset link, tách biệt với tập Allowed Browser Origin.
 _Avoid_: giả định một public URL có thể đại diện cho mọi origin được phép trong development, Docker và deployment.
 
+**Public Demo Environment**:
+ Một target không-production dành cho portfolio/recruiter evaluation, có provider bindings và capability scope riêng, không phải production environment và không phải nguồn Issue #61 measurement.
+_Avoid_: gọi public-demo là production, scalable production hoặc production evidence.
+
+**Provider Binding**:
+ Identity và non-secret security/capacity metadata của một external dependency đã được chọn cho một target; binding chưa chứng minh live connectivity cho tới khi D2 validation hoàn tất.
+_Avoid_: suy ra runtime connectivity, credential binding hoặc provider-internal topology chỉ từ S1 metadata.
+
+**Capability Contract**:
+ Tập capability được bật/tắt tường minh cho một target, trong đó capability disabled phải fail closed hoặc không public và không phụ thuộc vào lỗi thiếu secret.
+_Avoid_: dùng missing credentials như cơ chế disable feature hoặc coi capability flag là thay thế cho authentication/authorization.
+
+**Runtime Capability Document**:
+ Tài liệu non-secret được phục vụ same-origin để frontend biết capability của target ở runtime; nó không chứa hostname build-time, provider credential, TURN master secret hoặc token dài hạn. Khi tài liệu thiếu hoặc không hợp lệ, capability tùy chọn phải fail closed.
+_Avoid_: nhúng Railway hostname hoặc secret vào Vite bundle, hoặc để UI hiển thị control cho capability đã disabled.
+
+**Synthetic Demo Identity Boundary**:
+ Trong K6 public-demo, backend enforce `K6_SYNTHETIC_SIGNUP_ONLY=true` và chỉ persist self-signup identity có email domain thuộc `.test`; enforcement áp dụng cho cả SPA và direct HTTP client, không chỉ dựa vào warning/UI.
+_Avoid_: coi hướng dẫn không nhập dữ liệu cá nhân là bằng chứng đủ cho synthetic-only hoặc để missing capability/secret quyết định boundary.
+
+**Railway Readiness Authority**:
+ Tín hiệu readiness ứng dụng của K6 là backend `/readyz`, chỉ ready khi MongoDB và Redis connected; edge `/healthz` chỉ là liveness của public edge. Backend `/healthz` là diagnostic private và không phải readiness authority.
+_Avoid_: dùng edge liveness để claim dependency readiness hoặc dùng backend `/healthz` làm Railway readiness check.
+
+**D2 Deployment Checkpoint**:
+ Human-approved transition cho credential binding, immutable artifact deployment, live health/provider validation, rollback và manual acceptance của một target.
+_Avoid_: suy ra D2 approval từ S1 evidence hoặc từ việc Phase 2 design đã được approve.
+
 **Edge Rate Limit**:
 Defense-in-depth tại nginx dựa trên network identity như client IP và state trong nginx shared memory; nó bảo vệ ingress trước khi request đến backend.
 _Avoid_: gọi Edge Rate Limit là Redis-shared quota hoặc distributed backend enforcement.

@@ -1,4 +1,160 @@
-# K5 Security-Readiness Package — Current Checkpoint (2026-08-19)
+# K6 Railway Public Demo — Current Checkpoint (2026-08-22)
+
+## End-to-end execution authorized — Bootstrap B0 in progress
+
+The maintainer approved the durable execution plan at
+`docs/deployment/k6-end-to-end-execution-plan.md` and authorized the full pre-D2 workflow. This
+includes K6 implementation, tests, reviews, commits, pushes, child PR merges into
+`nhibuaa/k6-public-demo`, Issue closure, and safe K6-owned cleanup. It does not authorize D2.
+The plan SHA-256 is `43fadb48bdf900b9bd4be2e8d50f12e3d583542ad5ed123f687db8bcd14014f3`.
+
+Bootstrap B0 is active. The unrelated root `mongoose` WIP was preserved at
+`C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k6-preexisting-root-mongoose.patch` with SHA-256
+`5B200E0BE700AB2A87F9F0E453711A7879B5B7BE15F337FE8CD30606EB60DAD2`. Reverse-apply and
+forward-apply checks passed, and only `package.json`/`package-lock.json` were restored to HEAD.
+The patch remains the intentional external exclusion.
+
+Next: finish state synchronization, run the B0 baseline and secret-safe checks, commit
+`docs(k6): lock public-demo execution baseline`, push the integration branch, create the dedicated
+integration worktree, and obtain the required fresh external Phase 2 design review. Issue #111 is
+the frontier but must not enter implementation before its ticket review, locked-guide review, and
+maintainer guide approval. D2-owned credentials, GHCR publication, Railway binding/deployment, live
+acceptance, rollback, and Issue #61 measurement remain forbidden.
+
+K5 was merged into `main` at `72a9828579f34c0b88c9c8a1c51c2c4f8225c1ca`. The user then explicitly
+authorized the separate K6 implementation workflow described in the current task. Phase 0 is
+complete on branch `nhibuaa/k6-public-demo`, based on that merge commit; `main` remains unchanged.
+
+Phase 1 target identity is partially bound from a maintainer-supplied S1 packet: Railway
+project/environment/application service IDs, GHCR namespace, health/readiness semantics, rollback
+owner/objective, and provider candidates are recorded. An authenticated Railway CLI read-back
+confirmed the IDs and empty `serviceInstances`/`volumeInstances` sets. The maintainer has now bound
+Singapore `asia-southeast1-eqsg3a`, approved the dedicated MongoDB Atlas Free project with the
+explicit demo-only `0.0.0.0/0` allowlist exception and compensating controls, and fixed the two
+GHCR package names. No D2 action is authorized.
+
+S1 resource/security evidence is now recorded for AWS S3; Phase 1 provider-binding evidence is
+complete. Upstash resource, region, quota, native TLS evidence and the accepted
+single-endpoint application-client topology are recorded; provider-internal mode remains
+intentionally unasserted. MongoDB Atlas S1 evidence is recorded for `kitta-chat` / `Cluster0` in
+Hong Kong. CloudAMQP S1 evidence is recorded for resource `kittachat-public-demo`, shared Little
+Lemur RabbitMQ `4.2.7` in AWS `ap-southeast-1`, application user/vhost `bptdlerq`, AMQPS endpoint
+metadata, quotas, and 0 open connections/0 queues. Its `configure`/`write`/`read` permission
+regexes remain explicitly `NOT_ASSERTED`. Live Atlas/Upstash/CloudAMQP connectivity and queue
+behavior remain `PENDING_D2`. Generated hostname/CORS, image
+digests, private hostnames, live healthcheck settings, and runtime region read-back are `PENDING_D2`,
+not S1 blockers. Do not infer or deploy.
+
+Authoritative K6 records:
+
+- `docs/deployment/k6-public-demo-plan.md` (canonical plan; read-back verified after CloudAMQP metadata amendment)
+- `docs/deployment/k6-public-demo-feature-delivery.md`
+- `docs/deployment/k6-railway-public-demo-research.md`
+- `docs/deployment/k6-public-demo-s1-resource-readiness.md`
+- `docs/deployment/k6-public-demo-s1-provider-readiness-research.md`
+- `docs/deployment/k6-public-demo-s1-mongodb-atlas-evidence.md`
+- `docs/deployment/k6-public-demo-s1-upstash-evidence.md`
+- `docs/deployment/k6-public-demo-s1-cloudamqp-evidence.md`
+- `docs/deployment/k6-public-demo-s1-s3-evidence.md`
+- `docs/deployment/k6-public-demo-phase2-design.md`
+- `docs/adr/016-k6-public-demo-target-configuration-seam.md`
+- `.agents/CONTEXT.md`
+- Specification: [GitHub Issue #110](https://github.com/NhiBuaa/kitta-chat/issues/110)
+- `docs/deployment/k6-railway-public-demo-target-binding.md`
+- Resume Contract: `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k6-railway-public-demo-s1-provider-validation.json`
+
+The canonical K6 plan is now durable in the repository; its SHA-256 is
+`931f5d4592bc30034139aafc9dc32fdfd9fc0e11b85d3b8e68e79e6ec725abe6`. Phase 2 specification and
+design artifacts are now revised after REQUEST_CHANGES and approved. The Phase 3 graph was approved
+and published as GitHub Issues #111–#118; implementation remains unauthorized. No runtime, CI, provider, registry,
+secret, deployment, commit, push, PR, merge, or Issue #61 measurement change has been performed in
+this K6 checkpoint.
+
+## CloudAMQP S1 amendment — 2026-08-21
+
+The maintainer supplied a shared CloudAMQP `Little Lemur` RabbitMQ instance at version `4.2.7`,
+application vhost/user identifier `bptdlerq`, and same-credential Management UI authentication for
+that vhost. The provider-managed application boundary is accepted for S1. The shared-plan UI does
+not expose `configure`/`write`/`read` permission regexes, so those fields remain `NOT_ASSERTED`;
+this is not least-privilege evidence. Existing provider policies and all nine queues remain
+unchanged. The full record is `docs/deployment/k6-public-demo-s1-cloudamqp-evidence.md`.
+
+CloudAMQP identity/region/plan/endpoint metadata is recorded. AWS S3 resource/security evidence is
+recorded for bucket `kittachat-public-demo-nhibuaa` in `ap-southeast-1`, with prefix-scoped IAM and
+7-day multipart cleanup; access key creation and live upload remain `PENDING_D2`. Credential
+ownership boundaries are recorded without values; live broker operations remain
+`PENDING_D2`.
+
+## AWS S3 S1 amendment — 2026-08-21
+
+The maintainer supplied non-secret evidence for dedicated bucket `kittachat-public-demo-nhibuaa`
+in AWS `ap-southeast-1`: Block Public Access, bucket-owner-enforced ownership with ACLs disabled,
+SSE-S3, approved prefixes `uploads/*`/`avatars/*`, customer-managed prefix-scoped IAM policy,
+and 7-day incomplete multipart cleanup. The access key is `NOT_CREATED`; exact Railway-origin
+CORS, credential binding, and live S3 behavior remain `PENDING_D2`. Full record:
+`docs/deployment/k6-public-demo-s1-s3-evidence.md`.
+
+## K6 Phase 2 approved / Phase 3 decomposition checkpoint — 2026-08-22
+
+Phase 2 was explicitly authorized by the maintainer. The specification is published as GitHub
+Issue #110 with `ready-for-agent`; the design is recorded in
+`docs/deployment/k6-public-demo-phase2-design.md`; ADR-016 is accepted for Phase 3 decomposition; and the Current World Model
+now defines `Public Demo Environment`, `Provider Binding`, `Capability Contract`, `Runtime Capability
+Document`, `Railway Readiness Authority`, and `D2 Deployment Checkpoint`. REQUEST_CHANGES is
+addressed in the revised design and ADR-016: backend `/readyz` is the Railway readiness authority,
+edge `/healthz` is public liveness, metrics are internally retained but Prometheus export is disabled,
+and public health responses are minimal and secret-safe. The final topology, least-privilege matrix,
+frontend hostname/capability mechanism, bounded upload sequence, STUN/TURN risk, server-enforced
+synthetic self-signup boundary, image-worker Redis dependency, and the split D2 Authorization Request
+versus post-approval Execution Evidence Record are explicit.
+
+The maintainer approved the Phase 2 consistency revision. The next gate is Phase 3 ticket
+decomposition/cadence; `to-tickets` must obtain approval of vertical-slice granularity and blocking
+edges before publishing implementation issues. No runtime implementation,
+runtime implementation, secret creation, image publication, deployment, or Issue #61 measurement is
+implied. Before D2, only candidate build/test/prepare work is allowed; GHCR publication, credential
+binding, Railway rollout, live provider validation, and deployed-target manual acceptance are
+post-approval actions. Remaining risks are the current `queue-sources/*` S3 prefix mismatch,
+private-object URL behavior, STUN-only WebRTC, public health sanitization, live provider compatibility,
+and first-deployment rollback evidence.
+
+Previous checkpoint: `PHASE_2_APPROVED_FOR_PHASE_3_DECOMPOSITION`.
+
+## K6 Phase 3 ticket graph — approved and published
+
+The maintainer approved publication only. `to-tickets` published exactly eight GitHub Issues with
+parent #110 and `ready-for-agent`; read-back verified every title, label, and blocker edge:
+
+1. [Issue #111](https://github.com/NhiBuaa/kitta-chat/issues/111), `K6-01 — Target configuration, runtime capability document và Vite same-origin contract` —
+   blocked by none.
+2. [Issue #112](https://github.com/NhiBuaa/kitta-chat/issues/112), `K6-02 — Railway edge upstream, public routes và sanitized health projection` — blocked by #111.
+3. [Issue #113](https://github.com/NhiBuaa/kitta-chat/issues/113), `K6-03 — Backend capability gates, synthetic signup và environment validation` — blocked by #111.
+4. [Issue #114](https://github.com/NhiBuaa/kitta-chat/issues/114), `K6-04 — S3 upload boundary, prefix/private-object policy và image-worker storage path` — blocked by #113.
+5. [Issue #115](https://github.com/NhiBuaa/kitta-chat/issues/115), `K6-05 — WebRTC ICE configuration và call readiness fixture` — blocked by #111 and #112.
+6. [Issue #116](https://github.com/NhiBuaa/kitta-chat/issues/116), `K6-06 — Demo seed/reset operating boundary` — blocked by #113.
+7. [Issue #117](https://github.com/NhiBuaa/kitta-chat/issues/117), `K6-07 — Candidate image build, CI validation và Railway descriptors` — blocked by #112, #113, #114, #115, and #116.
+8. [Issue #118](https://github.com/NhiBuaa/kitta-chat/issues/118), `K6-08 — Locked D2 manual acceptance guide và evidence package` — blocked by #117.
+
+The graph is acyclic. Its authoritative frontier is Issue #111; after it, Issues #112 and #113 may
+proceed in parallel; then #114/#116 follow #113, #115 follows #112, #117 waits for all preceding
+implementation slices, and #118 follows #117.
+
+The deterministic cadence artifacts are `docs/deployment/k6-public-demo-review-cadence-input.json`
+and `docs/deployment/k6-public-demo-review-cadence-plan.json`. Effective cadence is `high`, with
+required spec/design review, every-ticket review, every-manual-guide review, human acceptance, and
+final whole-scope code review. The cadence plan SHA-256 is
+`f90725533a77d6b6c3ada162f8efb84e115e8d893c3b310b0b87acbd505e9058`. The retained risks are the STUN-only/TURN gap, S3 prefix mismatch,
+private-object URL behavior, live provider compatibility, public health sanitization, and first-
+deployment rollback evidence. No risk is marked Pass by this decomposition.
+
+Checkpoint: `PHASE_3_PUBLISHED_IMPLEMENTATION_NOT_AUTHORIZED`.
+
+The next valid transition is a new explicit maintainer authorization for bounded Issue #111
+acceptance preparation and implementation. Ticket publication itself grants no implementation
+authority. No runtime implementation, worktree creation, secret creation/binding, GHCR publication,
+Railway deployment, deployed-target acceptance, or Issue #61 measurement is authorized.
+
+## K5 Security-Readiness Package — Current Checkpoint (2026-08-19)
 
 K4 is complete and published at `4388ed842498fa85d90a95d06944e7c9db936e25`. The approved next
 slice is the docs-only K5 security-readiness package on branch `feature/security-readiness-package`.
