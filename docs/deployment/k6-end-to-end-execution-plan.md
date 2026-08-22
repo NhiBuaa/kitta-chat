@@ -216,22 +216,10 @@ After #118 merges:
 5. Create the D2 Authorization Request as a secret-safe Issue #110 checkpoint and an environment-
    owned JSON copy with a hash.
 
-The request contains only pre-approval facts:
-
-- Reviewed candidate SHA and GHCR package names without digests.
-- Railway project, environment, service IDs, and intended Singapore region.
-- Atlas, Upstash, CloudAMQP, and S3 resource identities and credential owners.
-- Intended least-privilege service/secret matrix.
-- Intended backend `/readyz` and edge `/healthz` checks.
-- Initial capabilities: upload, recovery, Google login, metrics/Issue #61 off; calls pending media
-  acceptance.
-- Expected resources, cost ceiling, downtime, rollback policy, and first-deployment exception.
-- Exact requested mutations: required credential creation/rotation, GHCR publication, hostname
-  read-back, secret/config binding, Railway rollout, S3 CORS, upload activation, seed, live
-  acceptance, and conditional rollback evidence.
-
-It must not contain actual digests, generated hostnames, derived CORS values, live health results,
-Railway revisions, or secret values. The agent stops and requests explicit human approval.
+The request must satisfy the complete `A01`–`A15` field matrix and `M01`–`M10` mutation list in
+[k6-d2-authorization-execution-contract.md](k6-d2-authorization-execution-contract.md). This plan
+does not own a duplicate checklist. It must contain no secret or execution-only output. The agent
+stops and requests explicit human approval of the exact request hash and candidate SHA.
 
 ## Post-D2 rollout sequence
 
@@ -248,7 +236,8 @@ After approval of the exact request:
 7. Configure backend `/readyz`, deploy the backend digest, and wait for MongoDB/Redis readiness.
 8. Deploy image-worker and audit-worker; leave notification-worker undeployed.
 9. Validate declaration and use of the nine CloudAMQP queues; do not create them manually.
-10. Deploy edge and validate `/healthz`, sanitized readiness, SPA, API, and Socket.IO upgrade.
+10. Deploy edge and validate `/healthz`, any retained sanitized public readiness projection, SPA,
+    API, and Socket.IO upgrade; verbose backend health remains non-public.
 11. Validate Atlas, Upstash, CloudAMQP, and S3 compatibility under the approved live contract.
 12. While upload is false, complete internal S3 checks, then set exact-origin S3 CORS.
 13. Enable upload through capability/config state and run browser upload acceptance.

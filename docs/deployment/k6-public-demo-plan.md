@@ -8,6 +8,21 @@ K6 sẽ đưa KittaChat lên Railway dưới dạng `public-demo` phục vụ po
 
 K6 giữ nguyên các invariant của hệ thống hiện tại: MongoDB là durable source of truth, Redis là coordination/cache, RabbitMQ chỉ chạy background work, API/socket payload hiện có không đổi ngoài deployment seams đã được duyệt, và startup migration tự động không được bật.
 
+## Execution authority update — 2026-08-22
+
+The maintainer later approved the exact Phase 3 graph, publication of Issues #111–#118, and the
+pre-D2 execution plan at `docs/deployment/k6-end-to-end-execution-plan.md`. That later authority is
+recorded in
+[Issue #110](https://github.com/NhiBuaa/kitta-chat/issues/110#issuecomment-5378196659) and supersedes
+stale transition wording in earlier S1/Phase 2 sections. Bootstrap B0 is
+`74d5ed917c37a12b8ee88c767447f8fa23242af1`; Issue #111 is the review-gated frontier. D2 remains
+unauthorized.
+
+The later approved health contract also supersedes the earlier required-public-route list: private
+backend `/readyz` is Railway application readiness, public edge `/healthz` is liveness, a sanitized
+public readiness projection is optional, and `/backend-healthz` is not a required public route.
+Verbose backend health, `/ops`, and `/metrics` remain non-public.
+
 ## Quyết định đã khóa
 
 - Target: Railway environment `public-demo`.
@@ -161,9 +176,11 @@ Các thay đổi dự kiến:
 - Bảo đảm public edge route đúng:
   - `/api`;
   - `/socket.io`;
-  - `/readyz`;
-  - `/backend-healthz`;
+  - `/healthz`;
+  - optional sanitized `/readyz` only if retained by Issue #112;
   - SPA frontend.
+- Keep `/backend-healthz` private/internal or absent from the public route map; never proxy verbose
+  backend health publicly.
 - Giữ `/ops` internal và `/metrics` không public.
 - Thêm capability contract cho:
   - upload;
@@ -260,59 +277,18 @@ Skill:
 
 ### D2 Authorization Request — before human approval
 
-Trước human approval, maintainer phải cung cấp hoặc xác nhận các thông tin đã biết mà không cần vượt
-qua D2:
-
-- Railway project/environment/service;
-- MongoDB service;
-- Redis service;
-- RabbitMQ service;
-- S3 bucket identity and intended least-privilege credential owner;
-- intended GHCR package names and registry permission plan;
-- generated-domain policy, not a generated hostname;
-- intended CORS origin policy, not the derived runtime origin;
-- cost ceiling;
-- rollback owner;
-- first-deployment exception policy;
-- intended health paths `/readyz` and `/healthz`;
-- initial capability state;
-- exact list of mutations/actions for which approval is requested.
-
-Không gửi secret values trong chat. Không yêu cầu actual image digest, generated hostname, derived
-`URL_FRONTEND`, derived `CORS_ALLOWED_ORIGINS`, private `BACKEND_UPSTREAM`, live healthcheck
-read-back, provider connectivity, Railway revision, manual acceptance, hoặc rollback result ở
-Authorization Request.
-
-D2 Authorization Request phải có:
-
-- exact target;
-- reviewed commit SHA;
-- GHCR package names, without requiring image digests;
-- provider resource identities and credential owners;
-- intended service/secret binding matrix;
-- expected resources;
-- expected downtime;
-- intended healthcheck paths;
-- rollback policy and first-deployment exception;
-- feature scope;
-- public exposure map;
-- exact requested mutation/action list.
+The complete request interface is fields `A01`–`A15` and mutations `M01`–`M10` in
+[k6-d2-authorization-execution-contract.md](k6-d2-authorization-execution-contract.md). This plan
+does not define another checklist. Secret values and execution-only outputs are forbidden before
+approval; a missing required field or premature output is `BLOCKED`.
 
 Chỉ sau checkpoint này mới deploy. Không tự động suy ra quyền D2 từ K5 hoặc từ S1.
 
 ### D2 Execution Evidence Record — after human approval
 
-Sau approval, append-only evidence mới được ghi actual values/results:
-
-- immutable GHCR image digests linked to the reviewed commit;
-- Railway generated public/private hostnames and exact applied `URL_FRONTEND`,
-  `CORS_ALLOWED_ORIGINS`, and `BACKEND_UPSTREAM`;
-- live Railway healthcheck read-back;
-- final S3 CORS;
-- Railway revision IDs and rollout timestamps;
-- provider connectivity and compatibility evidence;
-- deployed-target manual acceptance evidence;
-- failed/restored digest or first-deployment fallback/rollback evidence.
+After approval, append-only evidence must satisfy fields `E01`–`E12` in
+[k6-d2-authorization-execution-contract.md](k6-d2-authorization-execution-contract.md). The rollout
+steps below explain order only and do not redefine the evidence interface.
 
 ### Phase 8 — Rollout và live verification
 
@@ -330,7 +306,8 @@ Rollout:
 4. Deploy các Railway services theo dependency order.
 5. Chờ MongoDB/Redis/RabbitMQ.
 6. Start backend và workers.
-7. Verify `/readyz`, `/backend-healthz`, `/healthz`.
+7. Verify private backend `/readyz`, public edge `/healthz`, any retained sanitized public readiness
+   projection, and no public verbose backend health.
 8. Verify nginx public routes và WebSocket.
 9. Chạy manual acceptance trên public URL.
 10. Ghi deployment revision, digest, health results và rollback marker.
@@ -473,9 +450,10 @@ Railway-to-Upstash connectivity, Node Redis compatibility, Socket.IO pub/sub, Lu
 readiness, reconnect behavior, and rate-limit/call acceptance remain `PENDING_D2`. The full record
 is `docs/deployment/k6-public-demo-s1-upstash-evidence.md`.
 
-## Current execution boundary
+## Historical S1 execution boundary — superseded
 
-The canonical plan is recorded during the S1 continuation checkpoint. At this point:
+The following bullets record the historical S1 continuation checkpoint and are not current workflow
+authority:
 
 - Phase 0 and official Railway research are complete.
 - Phase 1 target identity and provider-readiness contract are partially bound; remaining provider
@@ -485,7 +463,14 @@ The canonical plan is recorded during the S1 continuation checkpoint. At this po
   accepted single-endpoint application-client topology are recorded; provider-internal topology is
   intentionally unasserted and is not an S1 blocker.
 - Runtime-only values remain `PENDING_D2` and must not be invented in S1.
-- No Phase 2 design/authorization, runtime implementation, image publication, provider mutation, secret creation, deployment, commit, push, PR, merge, or Issue #61 measurement enablement is implied by this plan artifact.
+- At that historical checkpoint, no Phase 2 design/authorization, runtime implementation, image
+  publication, provider mutation, secret creation, deployment, commit, push, PR, merge, or Issue #61
+  measurement enablement was implied.
+
+Current authority is the Execution authority update near the top of this file: Phase 2 and the
+published graph are approved, Bootstrap B0 is complete, and Issue #111 is review-gated. Actual
+digests, generated hostnames, derived CORS/private-upstream values, live health read-back, revisions,
+provider compatibility, and acceptance remain post-approval D2 Execution Evidence only.
 
 ## S1 CloudAMQP permission/read-back amendment — 2026-08-21
 
@@ -529,6 +514,7 @@ CloudAMQP credentials remain outside Git/chat/evidence until D2 binding; and the
 not created in S1. Runtime connectivity, exact Railway hostname/CORS, credential creation/binding,
 image digests, queue operations, upload behavior, and all live provider acceptance remain D2-bound.
 
-Phase 1 S1 provider-binding is complete. The next transition is Phase 2 specification/design and
-its authorization gate. This closeout does not authorize implementation, image publication,
-deployment, or Issue #61 measurement.
+Phase 1 S1 provider-binding is complete. Historical next-transition wording is superseded by the
+Execution authority update above: Phase 2 and the Phase 3 graph are approved, Bootstrap B0 is
+complete, and Issue #111 is the review-gated frontier. This does not authorize image publication,
+deployment, D2, or Issue #61 measurement.

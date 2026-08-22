@@ -41,6 +41,12 @@ wording that assigned readiness authority to backend `/healthz`. Any public read
 sanitized to a minimal ready/not-ready result; no provider, runtime, or secret-bearing details are
 public.
 
+The public edge must expose `/healthz`. A public `/readyz` projection is optional; if retained, it
+reports only `ready`/`not_ready`. `/backend-healthz` is not a required public route, and no public
+route may proxy the verbose private backend health body. This follows the later approved Issue #112
+scope and execution plan, which supersede the stale required-route list in the earlier canonical
+draft.
+
 RabbitMQ degradation may make internal health degraded but does not falsify MongoDB/Redis readiness.
 Prometheus HTTP export is disabled with `METRICS_ENABLED=false` and no public `/metrics` route.
 The internal metrics module may remain for safe in-process observations, but K6 does not treat those
@@ -56,6 +62,12 @@ activation, metrics, and Issue #61 measurement are never disabled merely by miss
 
 `URL_FRONTEND` and `CORS_ALLOWED_ORIGINS` are backend values derived from the D2-read-back edge
 hostname; they remain separate semantic values even when equal.
+
+For public-demo, missing or invalid public URL/origin configuration aborts backend startup before
+protected REST or Socket.IO traffic is served. There is no local, reflected, host-derived, empty, or
+permissive fallback. For `/api` and `/socket.io`, nginx forwards the incoming browser `Origin`
+unchanged and never substitutes `Host`, `X-Forwarded-Host`, or an edge-generated value. Requests
+without `Origin` do not receive a synthetic one.
 
 ### Revised provider and upload boundary
 
@@ -83,18 +95,21 @@ remain the abuse-control basis; no new quota is introduced. Reset/cleanup is exp
 namespace-bounded.
 
 The former single D2 packet is split into a pre-approval D2 Authorization Request and a post-approval
-D2 Execution Evidence Record. The request contains the reviewed commit SHA, package names, provider
-identities/owners, intended bindings, intended health paths, initial capabilities, cost/resources,
-rollback/first-deployment policy, and the exact requested mutations. It does not require actual
-digests, generated hostnames, derived URLs, live checks, revision IDs, acceptance, or rollback
-results. The evidence record is populated only after approval and records those actual values and
-results. Pre-D2 work may prepare/test candidates; publication, binding, rollout, live validation,
-and deployed-target acceptance are post-approval actions.
+D2 Execution Evidence Record. Their sole normative interface is
+[k6-d2-authorization-execution-contract.md](../deployment/k6-d2-authorization-execution-contract.md):
+request fields `A01`–`A15`, approved mutations `M01`–`M10`, and evidence fields `E01`–`E12`. This ADR
+does not duplicate that matrix. Pre-D2 work may prepare/test candidates; publication, binding,
+rollout, live validation, and deployed-target acceptance are post-approval actions.
 
 Image-worker `REDIS_URL` remains intentional because its startup calls `connectCacheRedis()` and
 `createSocketEmitter()`, which creates Redis publisher/subscriber clients for Socket.IO event
 emission. A first deployment without a prior stable revision must declare that exception and cannot
 claim prior-revision rollback evidence until a stable revision exists.
+
+M1/M2 message access control and reset-token transport/logging retain their current remediated,
+source/test-verified dispositions from the security rules and K5 package. They are not waived for
+K6: D2 preflight must revalidate those focused contracts plus exact origin and no-public-`/ops`;
+any regression blocks public ingress.
 
 ## Alternatives rejected
 
@@ -129,11 +144,15 @@ Costs and risks:
 - Public calls remain at risk until the STUN-only path passes or a TURN provider is separately bound.
 - CloudAMQP permission regexes and all live provider compatibility remain intentionally unasserted
   until D2.
+- The retained M1/M2 and reset-token source/test contracts must remain green before public ingress;
+  historical log occurrence/retention remains uninspected and is not claimed.
 
 ## Scope and transition
 
-This ADR authorizes no implementation, secret creation, image publication, provider mutation, Railway
-deployment, rollback, or Issue #61 measurement. Phase 2 is approved for the next decomposition gate;
-`to-tickets` must still obtain maintainer approval of vertical-slice granularity and blocking edges
-before publishing implementation issues. The linked design artifact is:
+This ADR does not authorize secret creation, image publication, provider mutation, Railway
+deployment, rollback, or Issue #61 measurement. The Phase 3 graph is published as Issues #111–#118,
+Bootstrap B0 is complete, and Issue #111 is the review-gated frontier under the approved execution
+plan. The superseding maintainer authority is recorded in
+[Issue #110](https://github.com/NhiBuaa/kitta-chat/issues/110#issuecomment-5378196659). Runtime
+implementation must not start before the ticket/guide/human gates. The linked design artifact is:
 `docs/deployment/k6-public-demo-phase2-design.md`.

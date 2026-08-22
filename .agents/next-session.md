@@ -1,20 +1,62 @@
 # Next Session — K6 Bootstrap B0 and Issue #111 Frontier
 
+## CURRENT NEXT ACTION — review authorized normalization fixed point
+
+`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
+
+This block supersedes every lower next-transition paragraph. B0 is complete and pushed at
+`74d5ed917c37a12b8ee88c767447f8fa23242af1`. The maintainer authorized the current bounded docs-only
+normalization cycle. The exact staged fixed point must use one lifecycle state and reference
+`docs/deployment/k6-d2-authorization-execution-contract.md` as the sole normative D2 field matrix.
+No post-B0 reconciliation commit or push exists yet.
+
+- Canonical plan SHA-256: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`.
+- End-to-end execution plan SHA-256: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`.
+
+Run fresh isolated Standards and Spec review, then aggregate the results. Only `APPROVE` with zero
+Critical or Major findings permits commit and push. After an approved push, create Issue #111 from
+the new integration head and prepare its externally reviewed locked guide. Stop for maintainer guide
+approval before runtime implementation. D2 remains unauthorized. All lower sections are historical
+context unless this block explicitly incorporates them.
+
+## Historical next-session checkpoints — superseded by CURRENT NEXT ACTION
+
 The maintainer approved `docs/deployment/k6-end-to-end-execution-plan.md` and activated pre-D2
-execution. Bootstrap B0 is the current transition. Complete the B0 baseline, commit only K6
-planning/governance artifacts as `docs(k6): lock public-demo execution baseline`, push
-`nhibuaa/k6-public-demo`, record exact `B0`, return the canonical checkout to clean `main`, and
-create `D:\Developer\Projects\shotter\shot-chat-worktrees\k6-integration`.
+execution. Bootstrap B0 is complete at `74d5ed917c37a12b8ee88c767447f8fa23242af1`, and the dedicated
+integration worktree exists at
+`D:\Developer\Projects\shotter\shot-chat-worktrees\k6-integration`.
 The approved plan SHA-256 is `43fadb48bdf900b9bd4be2e8d50f12e3d583542ad5ed123f687db8bcd14014f3`.
+After the authorized consistency reconciliation, the plan SHA-256 is
+`62cc8c1d92534bbe2446cd8ebaa982de8ec93a34a14038b73640c881b329bd87`.
 
 The unrelated root `mongoose` WIP is intentionally excluded at
 `C:\Users\Nhi\AppData\Local\Temp\agent-handoffs\k6-preexisting-root-mongoose.patch`; SHA-256 is
 `5B200E0BE700AB2A87F9F0E453711A7879B5B7BE15F337FE8CD30606EB60DAD2`. Do not add this patch or
 the package diff to K6.
 
-After B0, obtain a fresh external spec/design review. Then prepare Issue #111 through external
-ticket review, `test-craft`, locked manual guide, external guide review, and maintainer guide
-approval. Do not implement #111 before those gates. D2 remains unauthorized.
+The fresh external spec/design review returned `REQUEST_CHANGES` with zero Critical and five Major.
+Complete the bounded design/ADR remediation and rerun both isolated review axes. Only after
+`APPROVE` may Issue #111 proceed through external ticket review, `test-craft`, locked manual guide,
+external guide review, and maintainer guide approval. Do not implement #111 before those gates. D2
+remains unauthorized.
+
+Remediation cycle 1 cleared Standards but Spec retained two consistency findings. The second
+remediation keeps public readiness projection optional per approved Issue #112, keeps verbose backend
+health non-public, and cross-references the superseding Phase 3/pre-D2 approval at
+https://github.com/NhiBuaa/kitta-chat/issues/110#issuecomment-5378196659. Re-pin and rerun both review
+axes; do not start Issue #111 while either axis has a Major finding.
+
+The second/final review still returned `REQUEST_CHANGES` with two Major findings. The workflow is
+suspended because the approved remediation-cycle limit is exhausted. Resume only from an explicit
+maintainer authorization for one additional bounded docs-only consistency cycle. That cycle may
+only reconcile stale lifecycle state and the D2 request/evidence split; it must not redesign
+ADR-016, expand Issue #112, implement Issue #111, publish images, bind credentials, deploy, or enable
+Issue #61 measurement.
+
+The maintainer has authorized one additional bounded docs-only consistency cycle. Finish that exact
+remediation, pin the staged fixed point, and rerun isolated Standards and Spec axes. If and only if
+the aggregate verdict is `APPROVE`, commit/push the reconciliation and proceed to Issue #111 ticket
+review and locked-guide preparation. Stop for maintainer guide approval before runtime implementation.
 
 K5 is complete and merged into `main` at `72a9828579f34c0b88c9c8a1c51c2c4f8225c1ca`. K6 has been
 authorized as a separate Railway `public-demo` workflow on branch `nhibuaa/k6-public-demo`, based

@@ -2,11 +2,15 @@
 
 ## Status and authorization boundary
 
-`PHASE_2_APPROVED / PHASE_3_DECOMPOSITION_PENDING`
+`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
 
-This revision responds to the maintainer REQUEST_CHANGES for Phase 2. It is a design artifact only.
-It does not authorize runtime implementation, provider mutation, credential creation, Railway secret
-binding, GHCR publication, deployment, rollback, or Phase 3 decomposition.
+This design has passed maintainer review and the eight-ticket Phase 3 graph is published as Issues
+#111–#118. The superseding maintainer authority is recorded in
+[Issue #110](https://github.com/NhiBuaa/kitta-chat/issues/110#issuecomment-5378196659). A fresh
+external pre-implementation review requested bounded consistency corrections;
+this revision addresses only those findings. Pre-D2 implementation is governed by the approved
+execution plan, but this design artifact does not authorize provider mutation, credential creation,
+Railway secret binding, GHCR publication, deployment, rollback, or any D2 action.
 
 K6 remains a non-production Railway `public-demo` target for portfolio and recruiter evaluation. It
 must not be described as production, scalable production, production evidence, or an Issue #61
@@ -105,6 +109,18 @@ provider topology, or raw deployment-specific defaults directly.
 scheme/host/port allowlist used by Express and Socket.IO. They are separate values even when K6
 binds them to the same generated edge origin. Wildcards, origin reflection, evil subdomains,
 alternate ports, and alternate schemes are rejected.
+
+For `targetName=public-demo`, missing, blank, malformed, wildcard, reflected, or otherwise invalid
+`publicAppUrl` or `allowedBrowserOrigins` is a fatal startup configuration error. The backend must
+abort before it serves protected REST or accepts Socket.IO connections. It must not fall back to a
+local, empty, host-derived, reflected, or permissive origin policy. Target-validation tests must
+cover startup rejection and exact-origin request rejection for both Express and Socket.IO.
+
+For `/api` and `/socket.io`, the edge preserves and forwards the browser's incoming `Origin` header
+unchanged. It must not replace that value with `Host`, `X-Forwarded-Host`, another forwarding header,
+or an edge-generated origin. A request without `Origin` remains without a synthetic origin so the
+backend can apply the approved same-origin, health-check, and non-browser-client contract. Edge
+contract tests must prove pass-through for REST and WebSocket upgrade requests.
 
 ### 4.2 Frontend build-time versus Railway runtime values
 
@@ -283,11 +299,11 @@ readiness authority.
 
 | Surface | Authority/meaning | Exposure | Railway use |
 | --- | --- | --- | --- |
-| Backend `GET /readyz` | Authoritative application readiness; ready only when MongoDB and Redis are connected | Private backend service; edge may expose only a sanitized status | Backend Railway healthcheck, D2-read back |
+| Backend `GET /readyz` | Authoritative application readiness; ready only when MongoDB and Redis are connected | Private backend service; edge may retain only a sanitized projection | Backend Railway healthcheck, D2-read back |
 | Edge `GET /healthz` | Edge process liveness only; does not claim backend/provider readiness | Public | Edge Railway healthcheck and public smoke test |
 | Backend `GET /healthz` | Private diagnostic health/degraded signal, not Railway readiness authority | Private only | Optional internal diagnostic |
-| Edge `GET /readyz` | If retained, sanitized projection of backend readiness (`ready`/`not_ready` only) | Public | Public smoke test only; not a provider diagnostic |
-| Edge `GET /backend-healthz` | Internal-only route or removed from public route map | Private/internal | Never a public dependency-status endpoint |
+| Edge `GET /readyz` | Optional. If retained, sanitized projection of backend readiness (`ready`/`not_ready` only) | Public | Public smoke test only; not a provider diagnostic |
+| Edge `GET /backend-healthz` | Not a required public route; verbose backend health is private | Private/internal or absent | Never a public dependency-status endpoint |
 | `/ops` | Internal operational route | Private/internal only | No public edge route |
 | `/metrics` | Not registered with `METRICS_ENABLED=false`; no edge proxy | Not public | No Railway scrape |
 
@@ -300,6 +316,19 @@ Every public health response must be minimal and secret-safe. It must not includ
 private hostnames, connection strings, usernames, secret-bearing error messages, process IDs,
 memory, active sockets, or dependency-by-dependency detail. The current verbose health payload is
 therefore not acceptable on a public surface and must be sanitized in the implementation slice.
+If the optional edge readiness projection is retained, the edge must map it to the fixed vocabulary
+above and must never proxy a verbose backend health body through unchanged.
+
+### Public-demo security finding disposition before D2
+
+The K5 closure package and current security rules classify M1/M2 message access control as
+`MESSAGE ACCESS-CONTROL REMEDIATED / VERIFIED BY SOURCE-AUTHORIZATION-TEST EVIDENCE` and reset-token
+transport/logging as `RESET-TOKEN URL/LOGGING EXPOSURE REMEDIATED / VERIFIED BY
+FRAGMENT-TRANSPORT-LOGGING-TEST EVIDENCE`. K6 does not reopen historical log inspection and does not
+copy sensitive evidence. D2 preflight must re-run the retained focused source/test contracts and
+confirm that public-demo configuration preserves authenticated-principal authorization, fragment
+transport, token-free reset paths, logging redaction, exact origin handling, and no public `/ops`.
+Any regression or missing containment is a public-ingress blocker and must not be converted to PASS.
 
 ## 7. WebRTC dependency and readiness design
 
@@ -403,61 +432,17 @@ after the corresponding action has occurred. Neither record contains credential 
 
 ### A. D2 Authorization Request — pre-approval contract
 
-This record is the human approval request. It may contain plans and identities already known without
-crossing D2, but it must not require outputs that can exist only after D2 authority is granted.
-
-Required fields:
-
-- reviewed commit SHA, fixed before the request is submitted;
-- GHCR package names `ghcr.io/nhibuaa/kitta-chat-edge` and
-  `ghcr.io/nhibuaa/kitta-chat-server`; no image digest is required or asserted here;
-- Railway project/environment/service IDs, intended region, and intended public/private topology;
-- provider resource identities and credential owners for Atlas, Upstash, CloudAMQP, and S3;
-- intended service/secret binding matrix from section 5, with secret names/locations but no values;
-- intended Railway healthcheck paths: backend `/readyz` and edge `/healthz`;
-- initial capability state: upload false, recovery false, Google login false, metrics export false,
-  Issue #61 measurement false, and calls pending the later media acceptance;
-- expected resources, cost ceiling, expected downtime, rollback policy, and first-deployment
-  exception policy;
-- seed/self-signup policy, no-personal-data rule, and manual-guide scope;
-- the exact actions for which D2 authority is requested:
-  1. create or rotate only the approved application credentials in provider secret managers;
-  2. bind those credentials to the intended Railway services;
-  3. publish immutable GHCR images from the reviewed commit;
-  4. read back Railway hostnames and configure intended environment values;
-  5. bind image digests and rollout backend, workers, and edge in the approved order;
-  6. finalize exact-origin S3 CORS after the real edge origin exists;
-  7. run internal provider checks while upload remains fail-closed;
-  8. enable upload only after its gates pass;
-  9. run the one-off demo seed and deployed-target manual acceptance;
-  10. record stable and rollback evidence.
-- explicit exclusions: no `latest` deployment authority, no manual RabbitMQ queue provisioning, no
-  notification-worker rollout, no startup migration, no public `/ops` or `/metrics`, no Issue #61
-  measurement, and no production claim.
-
-The Authorization Request must not require actual immutable image digests, generated public/private
-hostnames, exact derived `URL_FRONTEND`, exact derived `CORS_ALLOWED_ORIGINS`, live healthcheck
-read-back, final S3 CORS, Railway revision IDs, provider connectivity, manual acceptance, or rollback
-results. Those are execution outputs.
+The sole normative request interface is fields `A01`–`A15` plus mutations `M01`–`M10` in
+[k6-d2-authorization-execution-contract.md](k6-d2-authorization-execution-contract.md). This design
+does not define a shorter checklist. A request containing an execution-only value is invalid, and a
+request missing any required field is `BLOCKED`.
 
 ### B. D2 Execution Evidence Record — post-approval contract
 
-This record may be populated only after the Authorization Request has a human approval timestamp and
-the relevant action is authorized. It records actual results, not intended values:
-
-- human approval reference and approved request hash/identifier;
-- actual immutable GHCR image digests linked to the reviewed commit SHA;
-- Railway generated public edge hostname and private service hostnames;
-- exact applied `URL_FRONTEND`, `CORS_ALLOWED_ORIGINS`, and `BACKEND_UPSTREAM`;
-- live Railway region and healthcheck setting read-back;
-- final exact-origin S3 CORS read-back and upload capability transition;
-- Railway deployment/revision IDs and dependency-order timestamps;
-- secret-safe Atlas, Upstash, CloudAMQP, and S3 connectivity/compatibility evidence;
-- readiness/liveness results for backend `/readyz` and edge `/healthz`;
-- seeded-account, self-signup, WebSocket, chat/group/sidebar, call, and conditional-upload manual
-  acceptance records;
-- failed candidate digest, restored known-good digest, or the first-deployment fallback result;
-- any `BLOCKED`, `FAIL`, or `PASS` disposition with the maintainer decision that followed.
+The sole normative evidence interface is fields `E01`–`E12` in
+[k6-d2-authorization-execution-contract.md](k6-d2-authorization-execution-contract.md). It may be
+populated only after approval of the exact request hash and candidate SHA. This design's rollout
+sequence explains ordering but does not redefine evidence fields.
 
 ### D2 sequence
 
@@ -482,7 +467,8 @@ After the D2 Authorization Request is human-approved:
 6. Roll out image-worker and audit-worker in dependency order; verify RabbitMQ topology through the
    application contract. Do not manually create the nine queues. Keep notification-worker excluded.
 7. Roll out the immutable edge digest with private `BACKEND_UPSTREAM`; verify public `/healthz`,
-   sanitized `/readyz` if exposed, `/api`, SPA fallback, and Socket.IO upgrade.
+   private backend `/readyz`, any retained sanitized public readiness projection, `/api`, SPA
+   fallback, unchanged `Origin` forwarding, Socket.IO upgrade, and no public verbose backend health.
 8. Perform fail-closed S3 internal checks, finalize exact-origin CORS, then enable upload only after
    the section 8 gates pass.
 9. Run the one-off idempotent demo seed with secret-safe environment injection; never seed on
@@ -545,18 +531,22 @@ These risks are explicit and must not be silently converted into Pass:
   use the explicit first-deployment fallback until a stable digest exists.
 - **Disabled UI routes:** current frontend contains Google/recovery flows; implementation must gate
   both UI controls and direct routes using the runtime capability document.
+- **Security-regression gate:** M1/M2 and reset-token transport/logging are currently remediated by
+  retained source/test evidence, not waived. D2 must stop if the focused contracts regress or if
+  exact origin and no-public-`/ops` containment cannot be demonstrated.
 
 ## Phase 2 approval checkpoint
 
-`PHASE_2_APPROVED_FOR_PHASE_3_DECOMPOSITION`
+`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
 
-The maintainer approved the Phase 2 consistency revision. The eight prior architecture deltas and
-the remaining consistency corrections are accepted without redesigning ADR-016: separate D2
-Authorization Request versus Execution Evidence Record, ledger ordering, server-enforced `.test`
-self-signup, evidence-backed image-worker Redis binding, and continued explicit treatment of the
-later implementation/D2 risks.
+The maintainer approved the Phase 2 consistency revision and the eight-ticket Phase 3 graph. Issues
+#111–#118 are published. Bootstrap B0 is complete. The fresh external review remediation preserves
+ADR-016 and adds explicit security-closure disposition, fatal no-fallback origin validation, actual
+`Origin` pass-through, optional sanitized public readiness consistent with Issue #112, no public
+verbose backend health, and complete D1/D2 owner, status, and rollback-target fields. Superseding
+Phase 3/pre-D2 authority is recorded in Issue #110.
 
-The valid next transition is Phase 3 ticket decomposition/cadence. `to-tickets` must present the
-vertical slices and blocking edges for maintainer approval before publishing issues. Runtime
-implementation, secret creation, image publication, Railway mutation, deployment, and Issue #61
-measurement remain unauthorized.
+The valid next transition is a fresh review of this remediation. If it approves, Issue #111 remains
+the frontier and must complete its external ticket review, locked-guide review, and maintainer guide
+approval before implementation. D2 secret creation/binding, image publication, Railway mutation,
+deployment, live acceptance, rollback, and Issue #61 measurement remain unauthorized.

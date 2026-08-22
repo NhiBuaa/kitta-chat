@@ -1,6 +1,28 @@
-# K6 Railway Public Demo — Current Checkpoint (2026-08-22)
+# K6 Railway Public Demo — Current Authority (2026-08-22)
 
-## End-to-end execution authorized — Bootstrap B0 in progress
+## CURRENT AUTHORITY — docs-only normalization review
+
+`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
+
+This block supersedes every lower transition/status paragraph in this file. Bootstrap B0 is complete
+and pushed at `74d5ed917c37a12b8ee88c767447f8fa23242af1`. The maintainer authorized this bounded docs-only
+normalization cycle. Its fixed point uses one lifecycle state and the sole normative D2 field matrix
+in `docs/deployment/k6-d2-authorization-execution-contract.md`. No post-B0 reconciliation commit or
+push exists yet.
+
+- Canonical plan SHA-256: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`.
+- End-to-end execution plan SHA-256: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`.
+
+The current action is fresh isolated Standards and Spec review of the exact staged fixed point. Only
+an aggregate `APPROVE` with zero Critical or Major findings permits the reconciliation commit and
+push. After that push, Issue #111 may enter ticket review and locked-guide preparation. Runtime
+implementation remains forbidden until the ticket, guide-review, and maintainer guide-approval
+gates pass. D2 remains unauthorized. All lower sections are historical evidence unless this block
+explicitly incorporates them.
+
+## Historical checkpoints — superseded by CURRENT AUTHORITY
+
+### Bootstrap B0 initialization (historical)
 
 The maintainer approved the durable execution plan at
 `docs/deployment/k6-end-to-end-execution-plan.md` and authorized the full pre-D2 workflow. This
@@ -14,12 +36,34 @@ Bootstrap B0 is active. The unrelated root `mongoose` WIP was preserved at
 forward-apply checks passed, and only `package.json`/`package-lock.json` were restored to HEAD.
 The patch remains the intentional external exclusion.
 
-Next: finish state synchronization, run the B0 baseline and secret-safe checks, commit
-`docs(k6): lock public-demo execution baseline`, push the integration branch, create the dedicated
-integration worktree, and obtain the required fresh external Phase 2 design review. Issue #111 is
-the frontier but must not enter implementation before its ticket review, locked-guide review, and
-maintainer guide approval. D2-owned credentials, GHCR publication, Railway binding/deployment, live
+Bootstrap B0 is complete and pushed at `74d5ed917c37a12b8ee88c767447f8fa23242af1`; the dedicated
+integration worktree is active. The required fresh external Phase 2 review returned
+`REQUEST_CHANGES`, zero Critical and five Major. Bounded design/ADR remediation is in progress for
+security dispositions, fatal origin validation, D1 fields, unchanged `Origin` forwarding, and
+the sanitized/non-public health boundary. Issue #111 remains the frontier but must not enter
+implementation before this remediation re-review and its ticket, locked-guide, external-guide, and
+maintainer-guide gates. D2-owned credentials, GHCR publication, Railway binding/deployment, live
 acceptance, rollback, and Issue #61 measurement remain forbidden.
+
+Remediation cycle 1 cleared Standards with zero findings. Spec retained two consistency findings.
+The later approved Issue #112 keeps public readiness projection optional and does not require public
+`/backend-healthz`; canonical/design/ADR wording is being reconciled to that authority instead of
+expanding ticket scope. The superseding Phase 3/pre-D2 authority is now recorded in
+[Issue #110](https://github.com/NhiBuaa/kitta-chat/issues/110#issuecomment-5378196659). A second fixed-
+point review is required before Issue #111 ticket preparation.
+
+The final allowed remediation review is now complete with `REQUEST_CHANGES`, zero Critical and two
+Major. The remaining Major findings are mutually exclusive active lifecycle status in the canonical
+plan/target-binding record and inconsistent D2 Authorization Request versus Execution Evidence
+checklists across the four authorities. The two-cycle remediation limit in the approved execution
+plan is exhausted. K6 is suspended before Issue #111. Do not modify the staged remediation, commit,
+push, create the Issue #111 worktree, prepare its guide, implement, or perform D2 actions unless the
+maintainer explicitly authorizes one additional bounded docs-only consistency cycle.
+
+The maintainer has granted that exact additional docs-only authority. Remediation is in progress and
+is limited to marking stale S1 lifecycle text historical/current, synchronizing D2 Authorization
+Request versus Execution Evidence fields, and qualifying any public readiness projection as
+optional. Runtime implementation and D2 remain unauthorized.
 
 K5 was merged into `main` at `72a9828579f34c0b88c9c8a1c51c2c4f8225c1ca`. The user then explicitly
 authorized the separate K6 implementation workflow described in the current task. Phase 0 is

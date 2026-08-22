@@ -1,5 +1,20 @@
 # K6 Railway Public Demo — Feature Delivery Ledger
 
+## Current authority override — normalization review
+
+`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
+
+This block supersedes lower transition wording where it conflicts. B0 is complete and pushed at
+`74d5ed917c37a12b8ee88c767447f8fa23242af1`. The maintainer authorized the current bounded docs-only
+normalization cycle. The staged fixed point uses one lifecycle state and references
+`docs/deployment/k6-d2-authorization-execution-contract.md` as the sole normative D2 field matrix.
+No post-B0 reconciliation commit or push exists yet.
+
+Fresh isolated Standards and Spec review is the current gate. Only aggregate `APPROVE` with zero
+Critical or Major findings permits commit and push, followed by Issue #111 ticket review and
+locked-guide preparation. Runtime implementation remains forbidden until the ticket, guide-review,
+and maintainer guide-approval gates pass. D2 remains unauthorized.
+
 ## Workflow identity
 
 - Workflow: `feature-delivery`
@@ -9,9 +24,11 @@
 - Feature integration branch: `nhibuaa/k6-public-demo`
 - Base and initial integration head: `72a9828579f34c0b88c9c8a1c51c2c4f8225c1ca`
 - Canonical K6 plan: `docs/deployment/k6-public-demo-plan.md`
+- Canonical K6 plan SHA-256 at this review fixed point: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`
 - Approved execution plan: `docs/deployment/k6-end-to-end-execution-plan.md`
-- Approved execution plan SHA-256: `43fadb48bdf900b9bd4be2e8d50f12e3d583542ad5ed123f687db8bcd14014f3`
-- Pre-D2 implementation, test, commit, push, child-PR merge, and K6-owned cleanup authority is active.
+- Approved execution plan SHA-256 at this review fixed point: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`
+- Pre-D2 delivery authority exists under the approved plan, but Issue #111 runtime implementation is
+  inactive until Phase 2 review and the ticket/guide/human gates pass.
 - D2 credential creation/binding, GHCR publication, Railway rollout, and live acceptance remain unauthorized.
 - `main` was unchanged and clean at initialization.
 
@@ -37,8 +54,8 @@
 | Phase 1 — Railway research and target binding | completed at S1 evidence boundary | Singapore region `asia-southeast1-eqsg3a`, dedicated-Atlas wildcard-allowlist decision, MongoDB Atlas S1 evidence, accepted Upstash application-client topology, complete CloudAMQP metadata/provider-managed vhost/user boundary, AWS S3 resource/security evidence, and secret-safe credential ownership boundaries are recorded; provider-internal/permission regexes remain intentionally unasserted; live compatibility remains D2 |
 | Phase 2 — specification/design/authorization | completed; maintainer approved | Phase 2 consistency revision approved by maintainer; ADR-016 accepted; D2 remains separately gated |
 | Phase 3 — decomposition/cadence | completed; maintainer approved and tickets published | Approved eight-ticket graph published as Issues #111–#118 with real blocking references; read-back passed; frontier is Issue #111; cadence is `high` |
-| Bootstrap B0 — execution baseline | in progress | Unrelated root `mongoose` WIP preserved externally; durable execution plan and state synchronization in progress; baseline/commit/push pending |
-| Phase 4 — implementation | authorized pre-D2; waiting for B0 and required reviews | Issues execute in approved dependency waves; Issue #111 is the initial frontier |
+| Bootstrap B0 — execution baseline | completed | Unrelated root `mongoose` WIP preserved externally; full baseline passed; commit `74d5ed917c37a12b8ee88c767447f8fa23242af1` pushed; integration worktree created |
+| Phase 4 — implementation | review-gated before Issue #111 | Maintainer authorized one additional docs-only consistency cycle; runtime implementation remains forbidden before guide approval |
 | Phase 5 — candidate artifacts/CI preparation | pending | Pre-D2 may build/test/validate images and prepare workflows/descriptors; no GHCR publication or deployment digest exists |
 | Phase 6 — manual acceptance preparation | pending | Pre-D2 may lock the guide and evidence schema; deployed-target execution is forbidden before D2 rollout |
 | Phase 7 — D2 Authorization Request/checkpoint | pending | Human approval is required before credential binding, GHCR publication, rollout, live provider validation, or deployed-target acceptance |
@@ -211,22 +228,51 @@ Issue #111, but implementation remains unauthorized at this checkpoint.
 
 The complete approved K6 plan is recorded at
 [k6-public-demo-plan.md](k6-public-demo-plan.md). The file was amended for the CloudAMQP S1
-disposition and read back on 2026-08-21; it has SHA-256
-`931f5d4592bc30034139aafc9dc32fdfd9fc0e11b85d3b8e68e79e6ec725abe6`.
+disposition and later reconciled with the approved Phase 3/pre-D2 authority and Issue #112 health
+contract; it has SHA-256
+`b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`.
 
 This checkpoint only makes the plan durable and resumable. It does not authorize D2, create secrets,
 publish images, mutate providers, deploy, commit, push, open/merge a PR, or enable Issue #61
 measurement. Phase 3 decomposition/publication is complete; implementation and all D2 actions remain
 separately gated.
 
-## Next valid transition
+## Historical review transitions — superseded by Current authority override
 
-The maintainer approved the end-to-end plan and pre-D2 execution. Bootstrap B0 is active. After B0
-is committed and pushed, create the dedicated integration worktree and obtain a fresh external
-spec/design review. Issue #111 remains the initial implementation frontier, but its ticket review,
-locked-guide review, and maintainer guide approval must complete before implementation. GHCR
-publication, credential binding, Railway rollout, live provider validation, and deployed-target
-manual acceptance remain prohibited until the later D2 Authorization Request is human-approved.
+### Fresh Phase 2 external review remediation (historical)
+
+Bootstrap B0 was committed and pushed at `74d5ed917c37a12b8ee88c767447f8fa23242af1` and the dedicated
+integration worktree was created. The required fresh external review returned `REQUEST_CHANGES`
+with zero Critical and five Major findings: retained M1/M2/reset-token security dispositions,
+fatal no-fallback origin startup behavior, complete D1 owner/status/rollback fields, unchanged
+browser `Origin` forwarding, and required sanitized public `/readyz`/`/backend-healthz` routes. One
+Minor finding identified the stale pre-publication checkpoint. A bounded docs/ADR remediation is in
+progress; no runtime implementation or D2 action has started. Remediation cycle 1 cleared Standards
+with zero findings. Spec retained two consistency findings: the required public health projections
+conflicted with the later approved Issue #112 scope, and the superseding Phase 3/pre-D2 approvals
+were not yet cross-referenced in Issue #110/canonical records. The approved authority is now recorded
+at [Issue #110 comment](https://github.com/NhiBuaa/kitta-chat/issues/110#issuecomment-5378196659),
+and canonical/target-binding/ADR/design records are being reconciled without expanding #112.
+
+The final allowed remediation review returned `REQUEST_CHANGES` with zero Critical and two Major
+findings. The remaining blockers are: (1) stale active S1/Phase 2 status paragraphs still conflict
+with the Phase 3/B0 frontier; and (2) D2 Authorization Request versus Execution Evidence fields are
+not yet synchronized across design, canonical plan, approved execution plan, and target-binding.
+Two Minor findings cover the target-binding status token and optional readiness wording. The
+approved two-cycle remediation limit is exhausted. The workflow is suspended before Issue #111;
+another docs-only consistency cycle requires an explicit maintainer authorization.
+
+The maintainer has now explicitly authorized one additional bounded docs-only consistency cycle.
+The cycle is limited to stale lifecycle state, the D2 Authorization Request/Execution Evidence
+checklists, and the optional public-readiness qualifier. It does not authorize Issue #111 runtime
+implementation or D2.
+
+Bootstrap B0 is complete. The maintainer authorized one additional bounded docs-only consistency
+cycle for the two remaining Major findings. The next valid transition is to pin and rerun the fresh
+Standards/Spec review. Only `APPROVE` unlocks Issue #111 ticket and guide preparation; implementation
+still requires maintainer guide approval. GHCR publication, credential binding, Railway rollout,
+live provider validation, and deployed-target manual acceptance remain prohibited until a future D2
+Authorization Request is human-approved.
 Upstash's application-client topology is accepted;
 provider-internal mode is intentionally unasserted. CloudAMQP permission regexes remain
 `NOT_ASSERTED`. The current S3 `queue-sources/*` mismatch, STUN-only WebRTC, private-object URL
@@ -235,9 +281,9 @@ explicit risks.
 
 ## Non-actions
 
-The approved pre-D2 workflow has started at Bootstrap B0. No provider mutation, registry login,
-secret creation, source/runtime/CI behavior change, Issue #61 measurement enablement, deployment,
-commit, push, PR, or merge has occurred at this checkpoint.
+Bootstrap B0 was committed and pushed. No post-B0 reconciliation commit/push, provider mutation,
+registry login, secret creation, source/runtime/CI behavior change, Issue #61 measurement enablement,
+deployment, PR, or merge has occurred at this checkpoint.
 
 ## Workflow tooling note
 

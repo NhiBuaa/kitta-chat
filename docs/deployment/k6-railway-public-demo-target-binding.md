@@ -2,7 +2,7 @@
 
 ## Status
 
-`S1_PROVIDER_BINDING_RECORDED_PHASE2_PENDING`
+`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
 
 The maintainer target-binding packet was supplied in the current execution context. The identifiers
 below were first checked for UUID shape and uniqueness, then read back through the authenticated
@@ -125,8 +125,11 @@ S1 metadata blocker. AWS S3 resource/security readiness is recorded; exact CORS,
 creation/binding, upload, worker behavior, and connectivity remain D2 validation requirements.
 
 S1 provider-binding evidence is complete for the selected MongoDB, Redis, RabbitMQ, and S3
-resources. Phase 2 specification/design and its authorization gate are the next transition; this
-record does not authorize implementation, image publication, deployment, or D2.
+resources. The historical next-transition wording is superseded by the maintainer-approved Phase 2,
+published Issues #111–#118, and pre-D2 execution plan recorded in
+[Issue #110](https://github.com/NhiBuaa/kitta-chat/issues/110#issuecomment-5378196659). Bootstrap B0
+is complete and Issue #111 is the review-gated frontier. This record does not authorize image
+publication, deployment, or D2.
 
 The exact minimum resource set and evidence return format are recorded in
 [k6-public-demo-s1-resource-readiness.md](k6-public-demo-s1-resource-readiness.md).
@@ -137,14 +140,12 @@ derived `URL_FRONTEND`, derived `CORS_ALLOWED_ORIGINS`, actual GHCR image digest
 runtime hostnames, live Railway healthcheck settings, Railway runtime-region read-back, Railway
 service-variable/secret binding, and live Railway-to-provider connectivity.
 
-## D2 prerequisite packet
+## D2 Authorization Request and Execution Evidence boundary
 
-Before D2, the maintainer must return the remaining non-secret resource evidence in
-`k6-public-demo-s1-resource-readiness.md`, then confirm the allocated hostname, derived CORS values,
-exact image digests, Railway healthcheck/private-host settings, cost ceiling, rollback owner,
-expected downtime, GHCR/Railway permissions, and secret ownership in the D2 packet. Secret values
-must not be sent in chat.
-
-Until the S1 provider-resource evidence is returned, Phase 2/implementation and D2 rollout claims
-must not be recorded. The supplied decisions close the region and Atlas-network decision gaps but
-are not sufficient to authorize D2.
+S1 non-secret provider-resource evidence is complete. The D2 Authorization Request must satisfy
+`A01`–`A15` and `M01`–`M10`; the post-approval record must satisfy `E01`–`E12` in
+[k6-d2-authorization-execution-contract.md](k6-d2-authorization-execution-contract.md). This target
+record does not own a shorter checklist. In particular, `A12` explicitly requires M1/M2,
+reset-token transport/logging, exact Origin, no-public `/ops`, and a public-ingress blocker for any
+regression or missing containment. Actual runtime outputs remain evidence-only. Completed S1 and
+pre-D2 delivery authority do not authorize D2.
