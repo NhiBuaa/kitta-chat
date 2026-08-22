@@ -1,19 +1,20 @@
 # K6 Railway Public Demo — Feature Delivery Ledger
 
-## Current authority override — normalization review
+## Current authority override — Issue #111 implementation authorized
 
 `PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
 
-This block supersedes lower transition wording where it conflicts. B0 is complete and pushed at
-`74d5ed917c37a12b8ee88c767447f8fa23242af1`. The maintainer authorized the current bounded docs-only
-normalization cycle. The staged fixed point uses one lifecycle state and references
-`docs/deployment/k6-d2-authorization-execution-contract.md` as the sole normative D2 field matrix.
-No post-B0 reconciliation commit or push exists yet.
+This block supersedes lower transition wording where it conflicts. The docs-only normalization
+fixed point passed external review and is pushed at integration head
+`0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The canonical D2 matrix remains
+`docs/deployment/k6-d2-authorization-execution-contract.md`.
 
-Fresh isolated Standards and Spec review is the current gate. Only aggregate `APPROVE` with zero
-Critical or Major findings permits commit and push, followed by Issue #111 ticket review and
-locked-guide preparation. Runtime implementation remains forbidden until the ticket, guide-review,
-and maintainer guide-approval gates pass. D2 remains unauthorized.
+Issue #111's revised ticket passed fresh external review. Guide `k6-111-target-config-v2` passed
+external review with zero findings at SHA-256
+`a5a97dca1df0fc020a14b835fdbd580cdd928eead4726b69175326ed731110ec`. The maintainer approved that
+exact revision/hash at `2026-08-22T14:47:09.2579798+07:00`. Issue #111 TDD is authorized after the
+locked guide/state checkpoint is committed and the clean baseline passes. Guide execution remains
+deferred until reviewed implementation. D2 remains unauthorized.
 
 ## Workflow identity
 
@@ -23,6 +24,7 @@ and maintainer guide-approval gates pass. D2 remains unauthorized.
 - Default branch: `main`
 - Feature integration branch: `nhibuaa/k6-public-demo`
 - Base and initial integration head: `72a9828579f34c0b88c9c8a1c51c2c4f8225c1ca`
+- Current integration head: `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`
 - Canonical K6 plan: `docs/deployment/k6-public-demo-plan.md`
 - Canonical K6 plan SHA-256 at this review fixed point: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`
 - Approved execution plan: `docs/deployment/k6-end-to-end-execution-plan.md`
@@ -55,12 +57,39 @@ and maintainer guide-approval gates pass. D2 remains unauthorized.
 | Phase 2 — specification/design/authorization | completed; maintainer approved | Phase 2 consistency revision approved by maintainer; ADR-016 accepted; D2 remains separately gated |
 | Phase 3 — decomposition/cadence | completed; maintainer approved and tickets published | Approved eight-ticket graph published as Issues #111–#118 with real blocking references; read-back passed; frontier is Issue #111; cadence is `high` |
 | Bootstrap B0 — execution baseline | completed | Unrelated root `mongoose` WIP preserved externally; full baseline passed; commit `74d5ed917c37a12b8ee88c767447f8fa23242af1` pushed; integration worktree created |
-| Phase 4 — implementation | review-gated before Issue #111 | Maintainer authorized one additional docs-only consistency cycle; runtime implementation remains forbidden before guide approval |
+| Phase 4 — implementation | Issue #111 authorized; baseline pending | Ticket, external guide, and maintainer guide approval gates pass; commit/push locked checkpoint and run baseline before TDD |
 | Phase 5 — candidate artifacts/CI preparation | pending | Pre-D2 may build/test/validate images and prepare workflows/descriptors; no GHCR publication or deployment digest exists |
 | Phase 6 — manual acceptance preparation | pending | Pre-D2 may lock the guide and evidence schema; deployed-target execution is forbidden before D2 rollout |
 | Phase 7 — D2 Authorization Request/checkpoint | pending | Human approval is required before credential binding, GHCR publication, rollout, live provider validation, or deployed-target acceptance |
 | Phase 8 — D2 execution/rollout/live verification | pending | Post-approval only: capture actual digests/hostnames, bind credentials, deploy, validate providers, run manual acceptance, and record rollback evidence |
 | Phase 9 — final review/closeout | pending | Requires all prior evidence |
+
+## Issue #111 execution checkpoint
+
+- Issue: https://github.com/NhiBuaa/kitta-chat/issues/111
+- Source base and expected integration head:
+  `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`
+- Branch: `nhibuaa/k6-issue-111-target-config`
+- Worktree owner: `D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`
+- Worktree disposition: retained; no implementation commit or PR exists
+- Initial ticket review: `REQUEST_CHANGES` with zero Critical, three Major, and one Minor finding
+- Ticket remediation: clarified fatal validation/fallbacks, `schemaVersion: 1` and stale semantics,
+  payload preservation, and SPA versus edge/backend ownership in the GitHub Issue body
+- Ticket re-review: `APPROVE` with zero findings
+- Guide v1: SHA-256
+  `46ac8d2a5067c293c33d6712b622e340eaf9a3d24f5ad278852e63abb7313ca9`;
+  `REQUEST_CHANGES` with zero Critical and three Major findings; never approved or executed
+- Guide v2: `.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.md`; SHA-256
+  `a5a97dca1df0fc020a14b835fdbd580cdd928eead4726b69175326ed731110ec`
+- Guide v2 external review: `APPROVE` with zero findings; bound review sidecar at
+  `.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.guide-review.json`
+- Human guide approval: approved at `2026-08-22T14:47:09.2579798+07:00`; bound sidecar at
+  `.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.approval.json`
+- Current frontier: Issue #111 only; #112 and #113 remain blocked until #111 is accepted and merged
+- Next valid transition: commit/push the locked guide/state checkpoint, run the clean baseline, and
+  begin Issue #111 TDD through the approved seams
+- Forbidden at this checkpoint: guide execution before reviewed implementation, D2 actions,
+  provider/credential mutation, image publication, Railway deployment, rollback, or Issue #61 work
 
 ## S1 target-binding checkpoint
 

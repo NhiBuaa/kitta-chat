@@ -1,22 +1,24 @@
 # Next Session — K6 Bootstrap B0 and Issue #111 Frontier
 
-## CURRENT NEXT ACTION — review authorized normalization fixed point
+## CURRENT NEXT ACTION — lock checkpoint, baseline, then Issue #111 TDD
 
 `PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
 
-This block supersedes every lower next-transition paragraph. B0 is complete and pushed at
-`74d5ed917c37a12b8ee88c767447f8fa23242af1`. The maintainer authorized the current bounded docs-only
-normalization cycle. The exact staged fixed point must use one lifecycle state and reference
-`docs/deployment/k6-d2-authorization-execution-contract.md` as the sole normative D2 field matrix.
-No post-B0 reconciliation commit or push exists yet.
+This block supersedes every lower next-transition paragraph. The approved normalization fixed point
+is pushed at integration head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. Issue #111 already
+exists and its isolated branch/worktree were created from that exact head. The revised ticket passed
+fresh external review.
 
 - Canonical plan SHA-256: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`.
 - End-to-end execution plan SHA-256: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`.
 
-Run fresh isolated Standards and Spec review, then aggregate the results. Only `APPROVE` with zero
-Critical or Major findings permits commit and push. After an approved push, create Issue #111 from
-the new integration head and prepare its externally reviewed locked guide. Stop for maintainer guide
-approval before runtime implementation. D2 remains unauthorized. All lower sections are historical
+Guide `k6-111-target-config-v2` at
+`.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.md` has SHA-256
+`a5a97dca1df0fc020a14b835fdbd580cdd928eead4726b69175326ed731110ec` and external-review verdict
+`APPROVE` with zero findings. The maintainer approved that exact revision/hash at
+`2026-08-22T14:47:09.2579798+07:00`; the bound approval sidecar exists. Commit/push the locked
+guide/state checkpoint, run the clean baseline, then implement Issue #111 through TDD. Do not execute
+the guide before reviewed implementation. D2 remains unauthorized. All lower sections are historical
 context unless this block explicitly incorporates them.
 
 ## Historical next-session checkpoints — superseded by CURRENT NEXT ACTION

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 111,
+  "guide_revision": "k6-111-target-config-v2",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-111-target-config-v2.md",
+  "guide_sha256": "a5a97dca1df0fc020a14b835fdbd580cdd928eead4726b69175326ed731110ec",
+  "source_base": "0a4e350dfd21d1dc979392f1bf2261ae66a4093e",
+  "reviewed_at": "2026-08-22T14:10:12.8882149+07:00",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02849-5c89-7693-9fa7-3e7e731b5525"
+  },
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "findings": [],
+  "report": "The guide hash and source base were verified. MA-111-01 through MA-111-08 close the prior semantic-field, command-pinning, fixture-shutdown, and outcome-classification findings. Commands and evidence are deterministic and secret-safe. Issue #112, Issue #113, provider, deployment, and D2 scope remain excluded.",
+  "human_approval": "pending",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

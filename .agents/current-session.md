@@ -1,24 +1,30 @@
 # K6 Railway Public Demo — Current Authority (2026-08-22)
 
-## CURRENT AUTHORITY — docs-only normalization review
+## CURRENT AUTHORITY — Issue #111 implementation authorized
 
 `PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
 
-This block supersedes every lower transition/status paragraph in this file. Bootstrap B0 is complete
-and pushed at `74d5ed917c37a12b8ee88c767447f8fa23242af1`. The maintainer authorized this bounded docs-only
-normalization cycle. Its fixed point uses one lifecycle state and the sole normative D2 field matrix
-in `docs/deployment/k6-d2-authorization-execution-contract.md`. No post-B0 reconciliation commit or
-push exists yet.
+This block supersedes every lower transition/status paragraph in this file. The docs-only
+normalization review reached aggregate `APPROVE` with zero Critical or Major findings and was pushed
+at integration head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The sole normative D2 field matrix remains
+`docs/deployment/k6-d2-authorization-execution-contract.md`.
 
 - Canonical plan SHA-256: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`.
 - End-to-end execution plan SHA-256: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`.
 
-The current action is fresh isolated Standards and Spec review of the exact staged fixed point. Only
-an aggregate `APPROVE` with zero Critical or Major findings permits the reconciliation commit and
-push. After that push, Issue #111 may enter ticket review and locked-guide preparation. Runtime
-implementation remains forbidden until the ticket, guide-review, and maintainer guide-approval
-gates pass. D2 remains unauthorized. All lower sections are historical evidence unless this block
-explicitly incorporates them.
+Issue #111 uses branch `nhibuaa/k6-issue-111-target-config`, worktree
+`D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`, and exact source base
+`0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. Its revised GitHub ticket passed fresh external review.
+Manual guide `k6-111-target-config-v2` passed external review with zero findings at SHA-256
+`a5a97dca1df0fc020a14b835fdbd580cdd928eead4726b69175326ed731110ec`. The maintainer approved that
+exact revision/hash at `2026-08-22T14:47:09.2579798+07:00`; the locked authority is recorded in
+`.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.approval.json`. No Issue #111 runtime
+implementation, Evaluation, implementation commit, push, or child PR has occurred yet.
+
+The next valid transition is commit/push of the locked guide/state checkpoint, followed by a clean
+baseline and Issue #111 TDD through the approved seams. The locked guide is not executed until the
+implementation reaches its reviewed local fixed point. D2 remains unauthorized. All lower sections
+are historical evidence unless this block explicitly incorporates them.
 
 ## Historical checkpoints — superseded by CURRENT AUTHORITY
 
