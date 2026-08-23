@@ -4,6 +4,7 @@ const multer = require('multer');
 const fileController = require('../controllers/fileController');
 const authMiddleware = require('../middlewares/auth');
 const { createHttpRateLimitMiddleware } = require('../rateLimit/httpAdmissionMiddleware');
+const { OPERATION_POLICY_MEMBERSHIP } = require('../rateLimit/operationPolicyMembership');
 
 const MAX_LIMIT = 50 * 1024 * 1024;
 
@@ -15,13 +16,13 @@ const upload = multer({
 router.use(authMiddleware);
 
 const uploadControlLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["file_resource.aggregate", "file_resource.upload_control"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/files/init"],
 });
 const partPresignLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["file_resource.aggregate", "file_resource.part_presign"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/files/get-presigned-url"],
 });
 const downloadSigningLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["file_resource.aggregate", "file_resource.download_signing"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/files/:fileId/download-url"],
 });
 
 router.post('/init', uploadControlLimiter, fileController.init);

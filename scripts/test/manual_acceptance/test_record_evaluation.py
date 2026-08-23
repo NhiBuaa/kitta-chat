@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -14,6 +15,7 @@ SPEC.loader.exec_module(record_evaluation)
 
 
 CASE_IDS = [f"MA-111-{index:02d}" for index in range(1, 9)]
+ISSUE_113_CASE_IDS = [f"MA-113-{index:02d}" for index in range(1, 9)]
 
 
 def git(repository, *args):
@@ -54,7 +56,16 @@ class EvaluationRecorderTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def evaluation(self, run_id="k6-111-run-1", verdict="BLOCKED"):
+    def evaluation(
+        self,
+        run_id="k6-111-run-1",
+        verdict="BLOCKED",
+        *,
+        authority=None,
+        case_ids=None,
+    ):
+        authority = authority or self.authority
+        case_ids = case_ids or CASE_IDS
         outcome = "FAIL" if verdict == "FAILED" else "PASS"
         return {
             "schema_version": 1,
@@ -62,10 +73,10 @@ class EvaluationRecorderTests(unittest.TestCase):
             "observed_at": "2026-08-22T12:00:00Z",
             "executor": "Codex",
             "artifact_binding": {
-                "guide_revision": self.authority.guide_revision,
-                "guide_sha256": self.authority.guide_sha256,
-                "source_base": self.authority.source_base,
-                "candidate_tree": self.authority.candidate_tree,
+                "guide_revision": authority.guide_revision,
+                "guide_sha256": authority.guide_sha256,
+                "source_base": authority.source_base,
+                "candidate_tree": authority.candidate_tree,
             },
             "test_results": [
                 {
@@ -74,7 +85,7 @@ class EvaluationRecorderTests(unittest.TestCase):
                     "observation": "The required local behavior matched the guide.",
                     "evidence": [f"{case_id} command exited 0"],
                 }
-                for case_id in CASE_IDS
+                for case_id in case_ids
             ],
             "verdict": verdict,
             "human_approval": "approved" if verdict == "PASSED" else "pending",
@@ -124,6 +135,40 @@ class EvaluationRecorderTests(unittest.TestCase):
             record_evaluation.load_history(self.history, self.authority),
         )
 
+    def test_appends_a_new_candidate_without_rewriting_prior_candidate_history(self):
+        first = self.evaluation("k6-111-old-candidate", "FAILED")
+        record_evaluation.append_evaluation(self.history, first, self.authority)
+        prior = self.history.read_bytes()
+
+        (self.repository / "candidate.txt").write_text(
+            "remediated candidate\n",
+            encoding="utf-8",
+        )
+        git(self.repository, "add", "candidate.txt")
+        remediated_authority = record_evaluation.EvaluationAuthority.create(
+            repository=self.repository,
+            guide_path=self.guide,
+            guide_revision=self.authority.guide_revision,
+            source_base=self.source_base,
+            candidate_tree=git(self.repository, "write-tree"),
+        )
+        second = self.evaluation(
+            "k6-111-remediated-candidate",
+            authority=remediated_authority,
+        )
+
+        record_evaluation.append_evaluation(
+            self.history,
+            second,
+            remediated_authority,
+        )
+
+        self.assertTrue(self.history.read_bytes().startswith(prior))
+        self.assertEqual(
+            [first, second],
+            record_evaluation.load_history(self.history, remediated_authority),
+        )
+
     def test_rejects_duplicate_run_id_without_changing_history(self):
         record = self.evaluation()
         record_evaluation.append_evaluation(self.history, record, self.authority)
@@ -165,6 +210,84 @@ class EvaluationRecorderTests(unittest.TestCase):
                 "test result IDs must exactly match",
             ):
                 record_evaluation.append_evaluation(self.history, record, self.authority)
+
+    def test_issue_113_derives_all_eight_case_ids_from_the_locked_revision(self):
+        authority = record_evaluation.EvaluationAuthority.create(
+            repository=self.repository,
+            guide_path=self.guide,
+            guide_revision="k6-113-capability-gates-v4",
+            source_base=self.source_base,
+            candidate_tree=self.candidate_tree,
+        )
+        record = self.evaluation(
+            "k6-113-observation",
+            authority=authority,
+            case_ids=ISSUE_113_CASE_IDS,
+        )
+
+        record_evaluation.append_evaluation(self.history, record, authority)
+        self.assertEqual([record], record_evaluation.load_history(self.history, authority))
+
+        unknown = json.loads(json.dumps(record))
+        unknown["run_id"] = "k6-113-unknown-case"
+        unknown["test_results"][-1]["id"] = "MA-113-09"
+        with self.assertRaisesRegex(
+            record_evaluation.EvaluationError,
+            "MA-113-01 through MA-113-08",
+        ):
+            record_evaluation.append_evaluation(self.history, unknown, authority)
+
+    def test_rejects_guide_revisions_that_cannot_safely_define_case_identity(self):
+        authority = record_evaluation.EvaluationAuthority.create(
+            repository=self.repository,
+            guide_path=self.guide,
+            guide_revision="../../unsafe-guide",
+            source_base=self.source_base,
+            candidate_tree=self.candidate_tree,
+        )
+        record = self.evaluation(authority=authority)
+        with self.assertRaisesRegex(
+            record_evaluation.EvaluationError,
+            "guide_revision cannot define locked case IDs",
+        ):
+            record_evaluation.append_evaluation(self.history, record, authority)
+
+    def test_existing_issue_111_histories_validate_without_byte_changes(self):
+        repository = SCRIPT.parents[1]
+        histories = [
+            "issue-111-target-config-v5",
+            "issue-111-target-config-v6",
+        ]
+        expected_paths = [
+            repository / ".agents" / "manual-tests" / "k6-public-demo" / f"{stem}{suffix}"
+            for stem in histories
+            for suffix in (".md", ".evaluations.jsonl")
+        ]
+        if not all(path.exists() for path in expected_paths):
+            self.assertFalse((repository / ".git").exists())
+            self.assertTrue(all(not path.exists() for path in expected_paths))
+            return
+
+        for stem in histories:
+            history = repository / ".agents" / "manual-tests" / "k6-public-demo" / f"{stem}.evaluations.jsonl"
+            guide = repository / ".agents" / "manual-tests" / "k6-public-demo" / f"{stem}.md"
+            prior = history.read_bytes()
+            first = json.loads(prior.splitlines()[0])
+            binding = first["artifact_binding"]
+            authority = record_evaluation.EvaluationAuthority.create(
+                repository=repository,
+                guide_path=guide,
+                guide_revision=binding["guide_revision"],
+                source_base=binding["source_base"],
+                candidate_tree=binding["candidate_tree"],
+            )
+            with self.subTest(stem=stem):
+                self.assertGreater(len(record_evaluation.load_history(history, authority)), 0)
+                self.assertEqual(prior, history.read_bytes())
+                self.assertEqual(
+                    hashlib.sha256(prior).hexdigest(),
+                    hashlib.sha256(history.read_bytes()).hexdigest(),
+                )
 
     def test_enforces_verdict_and_human_approval_matrix(self):
         invalid_records = []

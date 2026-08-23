@@ -100,6 +100,35 @@ class Issue111CandidateTests(unittest.TestCase):
             names,
         )
 
+    def test_materialized_archive_marks_files_binary_and_preserves_git_blob_bytes(self):
+        candidate = issue111_candidate.compute_execution_candidate(
+            self.repository,
+            self.source_base,
+        )
+        archive = Path(self.temp.name) / "candidate-binary.zip"
+
+        issue111_candidate.materialize_archive(
+            self.repository,
+            candidate.execution_tree,
+            archive,
+        )
+
+        expected_blob = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.repository),
+                "show",
+                f"{candidate.execution_tree}:client/app.js",
+            ],
+            check=True,
+            capture_output=True,
+        ).stdout
+        with zipfile.ZipFile(archive) as stream:
+            file_info = stream.getinfo("client/app.js")
+            self.assertEqual(file_info.internal_attr & 1, 0)
+            self.assertEqual(stream.read(file_info), expected_blob)
+
     def test_expected_tree_mismatch_fails_closed(self):
         with self.assertRaisesRegex(
             issue111_candidate.CandidateError,

@@ -1,0 +1,608 @@
+{
+  "schemaVersion": 1,
+  "scenario": "limiter-contract",
+  "candidateTree": "d700fa035c6cd3fa59b70da1d2b32c1bb0322e1e",
+  "commands": [
+    {
+      "name": "scenario-limiter-contract",
+      "exitCode": 0
+    }
+  ],
+  "http": [
+    {
+      "method": "POST",
+      "pathTemplate": "/api/auth/login",
+      "status": 429,
+      "success": false,
+      "errorCode": "RATE_LIMITED",
+      "messageEqual": true,
+      "requestIdMatched": true,
+      "retryAfter": "1"
+    },
+    {
+      "method": "POST",
+      "pathTemplate": "/api/auth/login",
+      "status": 503,
+      "success": false,
+      "errorCode": "RATE_LIMIT_UNAVAILABLE",
+      "messageEqual": true,
+      "requestIdMatched": true,
+      "retryAfter": null
+    }
+  ],
+  "socket": [
+    {
+      "inputEvent": "initCall",
+      "outputEvent": "RATE_LIMIT_UNAVAILABLE",
+      "payloadShape": [
+        "code"
+      ],
+      "reasonEqual": true
+    },
+    {
+      "inputEvent": "initCall",
+      "outputEvent": "RATE_LIMITED",
+      "payloadShape": [
+        "code",
+        "retryAfterSeconds"
+      ],
+      "reasonEqual": true
+    }
+  ],
+  "policyChecks": [
+    {
+      "policyId": "auth_entry.aggregate",
+      "actualTuple": [
+        "sliding_window",
+        20,
+        900000,
+        null,
+        "network"
+      ],
+      "expectedTuple": [
+        "sliding_window",
+        20,
+        900000,
+        null,
+        "network"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "auth_entry.login",
+      "actualTuple": [
+        "sliding_window",
+        10,
+        900000,
+        null,
+        "network"
+      ],
+      "expectedTuple": [
+        "sliding_window",
+        10,
+        900000,
+        null,
+        "network"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "auth_entry.register",
+      "actualTuple": [
+        "sliding_window",
+        5,
+        3600000,
+        null,
+        "network"
+      ],
+      "expectedTuple": [
+        "sliding_window",
+        5,
+        3600000,
+        null,
+        "network"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "auth_entry.google",
+      "actualTuple": [
+        "sliding_window",
+        10,
+        900000,
+        null,
+        "network"
+      ],
+      "expectedTuple": [
+        "sliding_window",
+        10,
+        900000,
+        null,
+        "network"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "auth_recovery_request",
+      "actualTuple": [
+        "sliding_window",
+        5,
+        3600000,
+        null,
+        "network"
+      ],
+      "expectedTuple": [
+        "sliding_window",
+        5,
+        3600000,
+        null,
+        "network"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "auth_recovery_complete",
+      "actualTuple": [
+        "sliding_window",
+        10,
+        900000,
+        null,
+        "network"
+      ],
+      "expectedTuple": [
+        "sliding_window",
+        10,
+        900000,
+        null,
+        "network"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "auth_refresh.stage_a",
+      "actualTuple": [
+        "token_bucket",
+        60,
+        60000,
+        10,
+        "network"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        60,
+        60000,
+        10,
+        "network"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "auth_refresh.stage_b",
+      "actualTuple": [
+        "token_bucket",
+        20,
+        60000,
+        5,
+        "subject"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        20,
+        60000,
+        5,
+        "subject"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "file_resource.aggregate",
+      "actualTuple": [
+        "token_bucket",
+        300,
+        3600000,
+        50,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        300,
+        3600000,
+        50,
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "file_resource.upload_control",
+      "actualTuple": [
+        "token_bucket",
+        30,
+        3600000,
+        10,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        30,
+        3600000,
+        10,
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "file_resource.part_presign",
+      "actualTuple": [
+        "token_bucket",
+        240,
+        3600000,
+        40,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        240,
+        3600000,
+        40,
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "file_resource.download_signing",
+      "actualTuple": [
+        "token_bucket",
+        120,
+        3600000,
+        30,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        120,
+        3600000,
+        30,
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "call_initiation",
+      "actualTuple": [
+        "sliding_window",
+        10,
+        60000,
+        null,
+        "socket_user"
+      ],
+      "expectedTuple": [
+        "sliding_window",
+        10,
+        60000,
+        null,
+        "socket_user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "read_expensive.aggregate",
+      "actualTuple": [
+        "token_bucket",
+        240,
+        60000,
+        60,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        240,
+        60000,
+        60,
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "read_expensive.call_history",
+      "actualTuple": [
+        "token_bucket",
+        30,
+        60000,
+        10,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        30,
+        60000,
+        10,
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "state_mutation.aggregate",
+      "actualTuple": [
+        "token_bucket",
+        120,
+        60000,
+        30,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        120,
+        60000,
+        30,
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "policyId": "state_mutation.call_history",
+      "actualTuple": [
+        "token_bucket",
+        120,
+        60000,
+        30,
+        "user"
+      ],
+      "expectedTuple": [
+        "token_bucket",
+        120,
+        60000,
+        30,
+        "user"
+      ],
+      "exactMatch": true
+    }
+  ],
+  "operationPolicyChecks": [
+    {
+      "operation": "POST /api/auth/login",
+      "actualPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.login"
+      ],
+      "expectedPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.login"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/auth/register",
+      "actualPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "expectedPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/auth/google",
+      "actualPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.google"
+      ],
+      "expectedPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.google"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/auth/forgot-password",
+      "actualPolicyIds": [
+        "auth_recovery_request"
+      ],
+      "expectedPolicyIds": [
+        "auth_recovery_request"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/auth/reset-password/:id",
+      "actualPolicyIds": [
+        "auth_recovery_complete"
+      ],
+      "expectedPolicyIds": [
+        "auth_recovery_complete"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/auth/refresh stage A",
+      "actualPolicyIds": [
+        "auth_refresh.stage_a"
+      ],
+      "expectedPolicyIds": [
+        "auth_refresh.stage_a"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "refresh subject admission stage B",
+      "actualPolicyIds": [
+        "auth_refresh.stage_b"
+      ],
+      "expectedPolicyIds": [
+        "auth_refresh.stage_b"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/files/init",
+      "actualPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.upload_control"
+      ],
+      "expectedPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.upload_control"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/files/get-presigned-url",
+      "actualPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.part_presign"
+      ],
+      "expectedPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.part_presign"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/files/complete",
+      "actualPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.upload_control"
+      ],
+      "expectedPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.upload_control"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/files/upload-single",
+      "actualPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.upload_control"
+      ],
+      "expectedPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.upload_control"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/files/:fileId/download-url",
+      "actualPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.download_signing"
+      ],
+      "expectedPolicyIds": [
+        "file_resource.aggregate",
+        "file_resource.download_signing"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "GET /api/calls/history",
+      "actualPolicyIds": [
+        "read_expensive.aggregate",
+        "read_expensive.call_history"
+      ],
+      "expectedPolicyIds": [
+        "read_expensive.aggregate",
+        "read_expensive.call_history"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "GET /api/calls/missed",
+      "actualPolicyIds": [
+        "read_expensive.aggregate",
+        "read_expensive.call_history"
+      ],
+      "expectedPolicyIds": [
+        "read_expensive.aggregate",
+        "read_expensive.call_history"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/calls/:id/read",
+      "actualPolicyIds": [
+        "state_mutation.aggregate",
+        "state_mutation.call_history"
+      ],
+      "expectedPolicyIds": [
+        "state_mutation.aggregate",
+        "state_mutation.call_history"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "POST /api/calls/read-all",
+      "actualPolicyIds": [
+        "state_mutation.aggregate",
+        "state_mutation.call_history"
+      ],
+      "expectedPolicyIds": [
+        "state_mutation.aggregate",
+        "state_mutation.call_history"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "Socket.IO initCall",
+      "actualPolicyIds": [
+        "call_initiation"
+      ],
+      "expectedPolicyIds": [
+        "call_initiation"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "Socket.IO callUser",
+      "actualPolicyIds": [
+        "call_initiation"
+      ],
+      "expectedPolicyIds": [
+        "call_initiation"
+      ],
+      "exactMatch": true
+    },
+    {
+      "operation": "Socket.IO answerCall",
+      "actualPolicyIds": [],
+      "expectedPolicyIds": [],
+      "exactMatch": true
+    },
+    {
+      "operation": "Socket.IO endCall",
+      "actualPolicyIds": [],
+      "expectedPolicyIds": [],
+      "exactMatch": true
+    },
+    {
+      "operation": "Socket.IO rejectCall",
+      "actualPolicyIds": [],
+      "expectedPolicyIds": [],
+      "exactMatch": true
+    },
+    {
+      "operation": "Socket.IO toggleMedia",
+      "actualPolicyIds": [],
+      "expectedPolicyIds": [],
+      "exactMatch": true
+    }
+  ],
+  "sideEffects": {
+    "limiter": 4,
+    "controller": 0,
+    "provider": 0,
+    "database": 0,
+    "queue": 0,
+    "s3": 0,
+    "bodyProcessing": 0,
+    "signaling": 0,
+    "history": 0,
+    "session": 0
+  },
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "processCount": 0
+  }
+}

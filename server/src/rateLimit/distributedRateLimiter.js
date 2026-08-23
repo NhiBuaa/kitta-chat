@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 const { createClient, createCluster } = require("redis");
 const { getPolicy, POLICIES } = require("./closureMinimumPolicyCatalog");
+const { OPERATION_POLICY_MEMBERSHIP } = require("./operationPolicyMembership");
 const {
   assertSameHashTag,
   createCallCorrelationKey,
@@ -233,7 +234,7 @@ const createDistributedRateLimiter = ({ redisClient, keyPrefix = RATE_LIMIT_NAME
         : `unmatched_${crypto.randomUUID()}`;
       const result = await execute({
         mode: "call",
-        policyIds: ["call_initiation"],
+        policyIds: OPERATION_POLICY_MEMBERSHIP["Socket.IO initCall"],
         context: { actor: { kind: "socket_user", value: canonicalCaller } },
         caller: canonicalCaller,
         callee: canonicalCallee,

@@ -1,6 +1,9 @@
 {
   "scripts": {
     "test:ci": "node --test scripts/ci/*.test.cjs",
+    "test:k6-capability-gates": "node scripts/k6/runCapabilityGateTests.cjs",
+    "oracle:k6-capability-gates": "node scripts/k6/capabilityGates/oracle.cjs",
+    "accept:k6-capability-gates": "node scripts/k6/capabilityGates/accept.cjs",
     "ci:validate": "node scripts/ci/validateCiContract.cjs",
     "lint": "npm --prefix client run lint",
     "lint:ci": "npm --prefix client run lint:ci",

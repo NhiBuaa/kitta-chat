@@ -8,7 +8,10 @@ const { registerPresenceHandlers } = require("./handlers/presenceHandler");
 const { createRegisterMessageHandlers, registerMessageHandlers } = require("./handlers/messageHandler");
 const { registerFriendHandlers } = require("./handlers/friendHandler");
 const { registerTypingHandlers } = require("./handlers/typingHandler");
-const { registerCallHandlers } = require("./handlers/call/index");
+const {
+    initializeCallHandlers = () => {},
+    registerCallHandlers,
+} = require("./handlers/call/index");
 const { createCallTimeoutFinalizer } = require("./handlers/call/services/callTimeoutFinalizer");
 const { createSocketConnectionTracker } = require("./connectionMetrics");
 const { logger: defaultLogger } = require("../utils/logger");
@@ -46,6 +49,10 @@ const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement
         metrics: metrics || appMetrics,
     });
     const callMeasurement = issue61Measurement || createIssue61AggregateMeasurementModule();
+    const capabilities = typeof app?.get === "function"
+        ? app.get("capabilities") || { calls: true }
+        : { calls: true };
+    initializeCallHandlers({ capabilities });
     const registerConfiguredMessageHandlers = attribution === k4Attribution
         ? registerMessageHandlers
         : createRegisterMessageHandlers({ attribution });
@@ -173,7 +180,10 @@ const initSocket = async (httpServer, app, { metrics, logger, issue61Measurement
         registerConfiguredMessageHandlers(socket, io);
         registerFriendHandlers(socket, io);
         registerTypingHandlers(socket, io);
-        registerCallHandlers(socket, io, { measurement: callMeasurement });
+        registerCallHandlers(socket, io, {
+            capabilities,
+            measurement: callMeasurement,
+        });
     });
 
     return io;

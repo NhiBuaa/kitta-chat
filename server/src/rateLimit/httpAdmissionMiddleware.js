@@ -36,7 +36,7 @@ const createHttpRateLimitMiddleware = ({ policyIds, context, when } = {}) => {
     throw new TypeError("HTTP rate-limit middleware requires approved policy IDs");
   }
 
-  return async (req, res, next) => {
+  const middleware = async (req, res, next) => {
     if (typeof when === "function" && !when(req)) return next();
 
     let resolvedPolicyIds;
@@ -102,6 +102,11 @@ const createHttpRateLimitMiddleware = ({ policyIds, context, when } = {}) => {
 
     return next();
   };
+
+  if (typeof policyIds !== "function") {
+    middleware.rateLimitPolicyIds = Object.freeze([...policyIds]);
+  }
+  return middleware;
 };
 
 module.exports = {

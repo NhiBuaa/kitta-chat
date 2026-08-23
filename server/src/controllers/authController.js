@@ -12,81 +12,17 @@ const {
   issueAuthSession,
   verifyRefreshToken,
 } = require("../services/authSessionService");
-const { isValidEmailFormat } = require("../validation/emailFormat");
 const { canonicalRefreshSubjectActor } = require("../rateLimit/requestIdentity");
-// Hàm helper để validate email
-const validateEmail = isValidEmailFormat;
+const { OPERATION_POLICY_MEMBERSHIP } = require("../rateLimit/operationPolicyMembership");
+const { createRegistrationController } = require("./registrationController");
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
 // dang ky----------------------------------------
-exports.register = async (req, res) => {
-  try {
-    const { displayName, email, password, confirmPassword } = req.body;
-    const cleanEmail = email.trim().toLowerCase();
-    // Validate thông tin đăng ký
-    if (!displayName || !email || !password || !confirmPassword) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Vui lòng nhập đủ thông tin" });
-    }
-    if (/\s/.test(email) || /\s/.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Email và mật khẩu không được chứa khoảng trắng",
-      });
-    }
-    if (!validateEmail(cleanEmail)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email không hợp lệ" });
-    }
-
-    const userExists = await User.findOne({ email: cleanEmail });
-    if (userExists) {
-      return res.status(400).json({
-        success: false,
-        message: "Email đã được sử dụng",
-      });
-    }
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
-      });
-    }
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Mật khẩu xác nhận không khớp",
-      });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=22c55e&color=fff&size=128`;
-    const newUser = new User({
-      // KHÔNG CÒN USERNAME
-      email: cleanEmail,
-      password: hashedPassword,
-      displayName,
-      avatar: defaultAvatarUrl,
-    });
-
-    await newUser.save();
-    const authSession = issueAuthSession(res, newUser);
-
-    res.status(201).json({
-      success: true,
-      message: "Đăng ký thành công",
-      token: authSession.token,
-      user: authSession.user,
-    });
-  } catch (error) {
-    console.error("Register Error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+exports.register = createRegistrationController({
+  userModel: User,
+  passwordHasher: bcrypt,
+  sessionIssuer: issueAuthSession,
+});
 
 // dang nhap------------------------------------------
 exports.login = async (req, res) => {
@@ -304,7 +240,7 @@ const findSessionUser = async (req, res, { enforceRefreshSubjectLimit = false } 
     try {
       result = rateLimiter?.admit
         ? await rateLimiter.admit({
-          policyIds: ["auth_refresh.stage_b"],
+          policyIds: OPERATION_POLICY_MEMBERSHIP["refresh subject admission stage B"],
           actor,
         })
         : { unavailable: true };

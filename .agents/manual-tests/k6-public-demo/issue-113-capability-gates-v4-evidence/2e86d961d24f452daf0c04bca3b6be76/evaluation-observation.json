@@ -1,0 +1,88 @@
+{
+  "schema_version": 2,
+  "run_id": "k6-113-v4-local-2e86d961d24f452daf0c04bca3b6be76-observation",
+  "observed_at": "2026-08-23T15:48:13.0763928+07:00",
+  "executor": "Codex",
+  "artifact_binding": {
+    "guide_revision": "k6-113-capability-gates-v4",
+    "guide_sha256": "e7d1a43e5a291c15c2ab9a8c987a20f68310e55e6df2bd545280c2e3b9cded44",
+    "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+    "candidate_tree": "d700fa035c6cd3fa59b70da1d2b32c1bb0322e1e"
+  },
+  "test_results": [
+    {
+      "id": "MA-113-01",
+      "outcome": "PASS",
+      "observation": "The environment matrix accepted all seven exact recipient contracts and rejected invalid public-demo binding categories; focused startup and recipient checks passed.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/env-matrix.json",
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-113-02",
+      "outcome": "PASS",
+      "observation": "Recovery and Google direct-client routes returned the locked disabled contract with zero downstream side effects, while inherited disabled-control checks remained green.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/disabled-auth.json",
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-113-03",
+      "outcome": "PASS",
+      "observation": "All four upload mutation routes failed closed before limiter, parser, controller, storage, queue, or database work; private download remained delegated to Issue #114.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/disabled-upload.json"
+      ]
+    },
+    {
+      "id": "MA-113-04",
+      "outcome": "PASS",
+      "observation": "Disabled HTTP and all six socket call events failed closed with zero side effects; enabled call signaling and history shapes matched the source-base oracle.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/calls-disabled.json",
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/calls-enabled.json"
+      ]
+    },
+    {
+      "id": "MA-113-05",
+      "outcome": "PASS",
+      "observation": "All 32 direct and SPA identity observations followed the locked synthetic namespace table, retained ordered limiter admission, and rejected invalid rows before downstream side effects.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/synthetic-signup.json"
+      ]
+    },
+    {
+      "id": "MA-113-06",
+      "outcome": "PASS",
+      "observation": "Twelve sanitized public-contract checks matched the immutable source base exactly, including the host-CRLF source archive, and synthetic-only false retained legacy behavior.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/contract-oracle.json",
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/legacy-contract.json"
+      ]
+    },
+    {
+      "id": "MA-113-07",
+      "outcome": "PASS",
+      "observation": "All 17 policy tuples and 22 operation memberships matched; exhaustion and store-unavailability responses retained their distinct locked contracts.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/limiter-contract.json"
+      ]
+    },
+    {
+      "id": "MA-113-08",
+      "outcome": "PASS",
+      "observation": "The exact candidate passed focused, root CI, validation, lint, client, server, both image builds, diff checking, pinned secret scans, provider isolation, and final cleanup invariants with D2 mutations remaining zero.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/evidence-manifest.json#command_results",
+        "issue-113-capability-gates-v4-evidence/2e86d961d24f452daf0c04bca3b6be76/evidence-manifest.json#cleanup"
+      ]
+    }
+  ],
+  "verdict": "BLOCKED",
+  "human_approval": "pending",
+  "accepted_run_id": null,
+  "approval_sha256": null,
+  "notes": "All eight required observations passed. Maintainer acceptance is pending. D2_MUTATIONS=0."
+}

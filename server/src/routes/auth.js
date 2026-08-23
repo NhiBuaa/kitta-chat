@@ -1,5 +1,6 @@
 const { Router } = require("express");
 const { createHttpRateLimitMiddleware } = require("../rateLimit/httpAdmissionMiddleware");
+const { OPERATION_POLICY_MEMBERSHIP } = require("../rateLimit/operationPolicyMembership");
 const {
   register,
   login,
@@ -21,22 +22,22 @@ const createAuthRouter = () => {
   const router = Router();
 
   const loginLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["auth_entry.aggregate", "auth_entry.login"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/auth/login"],
   });
   const registerLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["auth_entry.aggregate", "auth_entry.register"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/auth/register"],
   });
   const googleLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["auth_entry.aggregate", "auth_entry.google"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/auth/google"],
   });
   const forgotPasswordLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["auth_recovery_request"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/auth/forgot-password"],
   });
   const resetPasswordLimiter = createHttpRateLimitMiddleware({
-    policyIds: ["auth_recovery_complete"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/auth/reset-password/:id"],
   });
   const refreshStageALimiter = createHttpRateLimitMiddleware({
-    policyIds: ["auth_refresh.stage_a"],
+    policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/auth/refresh stage A"],
   });
 
   router.post("/register", registerLimiter, register);

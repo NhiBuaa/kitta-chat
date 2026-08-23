@@ -2,12 +2,13 @@ const router = require("express").Router();
 const callHistoryController = require("../controllers/callHistoryController");
 const authMiddleware = require("../middlewares/auth");
 const { createHttpRateLimitMiddleware } = require("../rateLimit/httpAdmissionMiddleware");
+const { OPERATION_POLICY_MEMBERSHIP } = require("../rateLimit/operationPolicyMembership");
 
 const callHistoryReadLimiter = createHttpRateLimitMiddleware({
-  policyIds: ["read_expensive.aggregate", "read_expensive.call_history"],
+  policyIds: OPERATION_POLICY_MEMBERSHIP["GET /api/calls/history"],
 });
 const callHistoryMutationLimiter = createHttpRateLimitMiddleware({
-  policyIds: ["state_mutation.aggregate", "state_mutation.call_history"],
+  policyIds: OPERATION_POLICY_MEMBERSHIP["POST /api/calls/:id/read"],
 });
 
 // GET /api/calls/history

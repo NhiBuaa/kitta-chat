@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "run_id": "k6-113-v4-local-20260823T060317Z-failed",
+  "guide_revision": "k6-113-capability-gates-v4",
+  "guide_sha256": "e7d1a43e5a291c15c2ab9a8c987a20f68310e55e6df2bd545280c2e3b9cded44",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "source_base_tree": "820600cd72283a048d154c98ad4b40bf62de898f",
+  "head": "b4152ff425bcfa1ef989f25c9e83e96cac3504f5",
+  "full_index_tree": "4fefbbe0942523c1c882fd309d8e6db66704163f",
+  "candidate_tree": "c730b5036b0d0990205dd3fe007c9325dbdd38ff",
+  "command_results": [
+    { "name": "candidate-archive", "exit_code": 0 },
+    { "name": "source-base-archive", "exit_code": 0 },
+    { "name": "candidate-root-npm-ci", "exit_code": 0 },
+    { "name": "candidate-client-npm-ci", "exit_code": 0 },
+    { "name": "candidate-server-npm-ci", "exit_code": 0 },
+    { "name": "source-base-root-npm-ci", "exit_code": 0 },
+    { "name": "source-base-client-npm-ci", "exit_code": 0 },
+    { "name": "source-base-server-npm-ci", "exit_code": 0 },
+    { "name": "source-base-contract-oracle", "exit_code": 0 },
+    { "name": "scenario-env-matrix", "exit_code": 0 },
+    { "name": "scenario-disabled-auth", "exit_code": 0 },
+    { "name": "scenario-disabled-upload", "exit_code": 0 },
+    { "name": "scenario-calls-disabled", "exit_code": 0 },
+    { "name": "scenario-calls-enabled", "exit_code": 0 },
+    { "name": "scenario-synthetic-signup", "exit_code": 0 },
+    { "name": "scenario-legacy-contract", "exit_code": 0 },
+    { "name": "scenario-limiter-contract", "exit_code": 0 },
+    {
+      "name": "focused",
+      "exit_code": 1,
+      "passed": 102,
+      "failed": 2,
+      "failure_class": "archive-test-required-git-metadata"
+    }
+  ],
+  "candidate_diff_sha256": null,
+  "scenario_observations": [
+    { "name": "calls-disabled.json", "sha256": "5b6e1b952059b2e68286969be149bcb4ee358d4be74e1d267468af6c6503093e" },
+    { "name": "calls-enabled.json", "sha256": "68145c0fb71aac2b2efb103a87f76637aa94b2db2f429f5147f8802b939a8166" },
+    { "name": "contract-oracle.json", "sha256": "3c62237da8f2756017d3b6b36e0976a1006a3dffa8974f82ec99a21e6407e933" },
+    { "name": "disabled-auth.json", "sha256": "78ccde4464ce0e4a8ee5def3c0823598615a6583a78b9bd0886a0c3f30ee3d9f" },
+    { "name": "disabled-upload.json", "sha256": "750c0b27c620e123360b7e5abcf4675a4e8947405fe3eeba6ad2d459e8b594d9" },
+    { "name": "env-matrix.json", "sha256": "2088a9d4a74a1ff32a9469d8152faaa8f0d02797e493139d76ba7dc333869480" },
+    { "name": "legacy-contract.json", "sha256": "d6d9e152284e461f50360ea75e36f2117aa7d3dd4f6b52308ab3adea68479dc6" },
+    { "name": "limiter-contract.json", "sha256": "1351b709ca353b4ea2d5205b894725f4a34bc59b0cb5e3bb8b4d1beac35aa95b" },
+    { "name": "synthetic-signup.json", "sha256": "2145bb67b55856d1d1f1211495e63b9ca4ca52275055223313e082aad1b92e27" }
+  ],
+  "contract_oracle": {
+    "source_observation_sha256": "5906909bac2eb7889c6543b3580986dff30b6144773f8804f2be27d75edd9936",
+    "candidate_observation_sha256": "5906909bac2eb7889c6543b3580986dff30b6144773f8804f2be27d75edd9936",
+    "exact_match": true,
+    "check_count": 12
+  },
+  "recipient_check_count": 7,
+  "policy_check_count": 17,
+  "operation_policy_check_count": 22,
+  "identity_row_count": 32,
+  "changed_file_count": 38,
+  "external_provider_request_count": 0,
+  "provider_mutation_count": 0,
+  "cleanup": {
+    "port_released": true,
+    "process_count": 0
+  },
+  "D2_MUTATIONS": 0
+}

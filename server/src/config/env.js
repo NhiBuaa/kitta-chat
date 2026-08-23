@@ -123,6 +123,40 @@ const validateServerEnv = (env = process.env) => {
     }
   }
 
+  let targetName = "local";
+  let capabilities = {
+    calls: true,
+    googleLogin: true,
+    issue61Measurement: false,
+    recovery: true,
+    syntheticSignupOnly: false,
+    upload: true,
+  };
+  if (!isBlank(env.K6_TARGET)) {
+    if (String(env.K6_TARGET) !== "public-demo") {
+      issues.push("K6_TARGET must be exactly public-demo when configured");
+    } else {
+      try {
+        const k6Configuration = validateK6PublicDemoEnvironment({
+          service: "backend",
+          env,
+        });
+        targetName = k6Configuration.targetName;
+        capabilities = { ...k6Configuration.capabilities };
+      } catch (error) {
+        if (error instanceof K6EnvironmentValidationError) {
+          issues.push(...error.issues);
+        } else {
+          throw error;
+        }
+      }
+    }
+  } else if (!isBlank(env.K6_SYNTHETIC_SIGNUP_ONLY)) {
+    if (String(env.K6_SYNTHETIC_SIGNUP_ONLY) !== "false") {
+      issues.push("K6_SYNTHETIC_SIGNUP_ONLY must be false outside public-demo");
+    }
+  }
+
   throwIfInvalid("server", issues);
 
   return {
@@ -138,6 +172,8 @@ const validateServerEnv = (env = process.env) => {
     conversationPanelResourcesEnabled,
     conversationPanelRateLimit,
     browserOriginPolicy,
+    targetName,
+    capabilities,
   };
 };
 
@@ -222,3 +258,7 @@ const {
   createBrowserOriginPolicy,
   parseBrowserOriginPolicy,
 } = require("./browserOriginPolicy");
+const {
+  K6EnvironmentValidationError,
+  validateK6PublicDemoEnvironment,
+} = require("./k6PublicDemoEnvironment");

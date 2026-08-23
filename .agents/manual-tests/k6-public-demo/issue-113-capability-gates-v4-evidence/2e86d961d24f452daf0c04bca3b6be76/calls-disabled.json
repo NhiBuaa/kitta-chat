@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "scenario": "calls-disabled",
+  "candidateTree": "d700fa035c6cd3fa59b70da1d2b32c1bb0322e1e",
+  "commands": [
+    {
+      "name": "scenario-calls-disabled",
+      "exitCode": 0
+    }
+  ],
+  "http": [
+    {
+      "method": "GET",
+      "pathTemplate": "/api/calls/history",
+      "status": 404,
+      "success": false,
+      "errorCode": "CAPABILITY_DISABLED",
+      "messageEqual": true,
+      "requestIdMatched": true,
+      "retryAfter": null
+    },
+    {
+      "method": "GET",
+      "pathTemplate": "/api/calls/missed",
+      "status": 404,
+      "success": false,
+      "errorCode": "CAPABILITY_DISABLED",
+      "messageEqual": true,
+      "requestIdMatched": true,
+      "retryAfter": null
+    },
+    {
+      "method": "POST",
+      "pathTemplate": "/api/calls/:id/read",
+      "status": 404,
+      "success": false,
+      "errorCode": "CAPABILITY_DISABLED",
+      "messageEqual": true,
+      "requestIdMatched": true,
+      "retryAfter": null
+    },
+    {
+      "method": "POST",
+      "pathTemplate": "/api/calls/read-all",
+      "status": 404,
+      "success": false,
+      "errorCode": "CAPABILITY_DISABLED",
+      "messageEqual": true,
+      "requestIdMatched": true,
+      "retryAfter": null
+    }
+  ],
+  "socket": [
+    {
+      "inputEvent": "initCall",
+      "outputEvent": "callRejected",
+      "payloadShape": [
+        "reason"
+      ],
+      "reasonEqual": true
+    },
+    {
+      "inputEvent": "callUser",
+      "outputEvent": "callRejected",
+      "payloadShape": [
+        "reason"
+      ],
+      "reasonEqual": true
+    },
+    {
+      "inputEvent": "answerCall",
+      "outputEvent": "callRejected",
+      "payloadShape": [
+        "reason"
+      ],
+      "reasonEqual": true
+    },
+    {
+      "inputEvent": "endCall",
+      "outputEvent": "callRejected",
+      "payloadShape": [
+        "reason"
+      ],
+      "reasonEqual": true
+    },
+    {
+      "inputEvent": "rejectCall",
+      "outputEvent": "callRejected",
+      "payloadShape": [
+        "reason"
+      ],
+      "reasonEqual": true
+    },
+    {
+      "inputEvent": "toggleMedia",
+      "outputEvent": "callRejected",
+      "payloadShape": [
+        "reason"
+      ],
+      "reasonEqual": true
+    }
+  ],
+  "sideEffects": {
+    "limiter": 0,
+    "controller": 0,
+    "provider": 0,
+    "database": 0,
+    "queue": 0,
+    "s3": 0,
+    "bodyProcessing": 0,
+    "signaling": 0,
+    "history": 0,
+    "session": 0
+  },
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "processCount": 0
+  }
+}

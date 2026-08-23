@@ -1,0 +1,87 @@
+{
+  "schema_version": 2,
+  "run_id": "k6-113-v4-local-20260823T060317Z-failed",
+  "observed_at": "2026-08-23T06:07:07.6309818Z",
+  "executor": "Codex",
+  "artifact_binding": {
+    "guide_revision": "k6-113-capability-gates-v4",
+    "guide_sha256": "e7d1a43e5a291c15c2ab9a8c987a20f68310e55e6df2bd545280c2e3b9cded44",
+    "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+    "candidate_tree": "c730b5036b0d0990205dd3fe007c9325dbdd38ff"
+  },
+  "test_results": [
+    {
+      "id": "MA-113-01",
+      "outcome": "PASS",
+      "observation": "The environment matrix accepted the seven exact recipient contracts and rejected invalid public-demo binding categories; focused startup checks also passed before the later archive-only failure.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/env-matrix.json",
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-113-02",
+      "outcome": "PASS",
+      "observation": "Recovery and Google direct-client routes returned the locked disabled contract with zero downstream side effects, and accepted Issue 111 disabled-control checks passed.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/disabled-auth.json",
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-113-03",
+      "outcome": "PASS",
+      "observation": "All four upload mutation routes failed closed before limiter, parser, controller, storage, queue, or database work; private download remained delegated to Issue 114.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/disabled-upload.json"
+      ]
+    },
+    {
+      "id": "MA-113-04",
+      "outcome": "PASS",
+      "observation": "Disabled HTTP and all six socket call events failed closed with zero side effects; enabled call signaling and history shapes matched the source-base oracle.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/calls-disabled.json",
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/calls-enabled.json"
+      ]
+    },
+    {
+      "id": "MA-113-05",
+      "outcome": "PASS",
+      "observation": "All 32 direct and SPA identity observations followed the locked synthetic namespace table, retained ordered limiter admission, and rejected invalid rows before downstream side effects.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/synthetic-signup.json"
+      ]
+    },
+    {
+      "id": "MA-113-06",
+      "outcome": "PASS",
+      "observation": "Twelve sanitized public-contract checks matched the immutable source base exactly, and local synthetic-only false behavior retained the legacy payload contract.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/contract-oracle.json",
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/legacy-contract.json"
+      ]
+    },
+    {
+      "id": "MA-113-07",
+      "outcome": "PASS",
+      "observation": "All 17 policy tuples and 22 operation memberships matched; exhaustion and store-unavailability responses retained their distinct locked contracts.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/limiter-contract.json"
+      ]
+    },
+    {
+      "id": "MA-113-08",
+      "outcome": "FAIL",
+      "observation": "The archive-focused gate failed two helper tests because they attempted to run Git archive inside an extracted candidate without repository metadata; later full gates were not run.",
+      "evidence": [
+        "issue-113-capability-gates-v4-evidence/a792bb95390d44d5a0ae48040380b405/evidence-manifest.json#command_results"
+      ]
+    }
+  ],
+  "verdict": "FAILED",
+  "human_approval": "pending",
+  "accepted_run_id": null,
+  "approval_sha256": null,
+  "notes": "The run stopped at the MA-113-08 focused archive gate as required. D2_MUTATIONS=0."
+}

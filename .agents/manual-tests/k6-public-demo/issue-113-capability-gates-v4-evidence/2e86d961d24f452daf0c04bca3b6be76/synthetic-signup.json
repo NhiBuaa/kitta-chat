@@ -1,0 +1,671 @@
+{
+  "schemaVersion": 1,
+  "scenario": "synthetic-signup",
+  "candidateTree": "d700fa035c6cd3fa59b70da1d2b32c1bb0322e1e",
+  "commands": [
+    {
+      "name": "scenario-synthetic-signup",
+      "exitCode": 0
+    }
+  ],
+  "identity": [
+    {
+      "inputId": "V01-direct",
+      "normalizedCategory": "approved-test",
+      "persistedIdentity": "visitor@kittachat.test",
+      "responseClass": "accepted",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 1,
+        "normalizedQuery": 1,
+        "hash": 1,
+        "save": 1,
+        "session": 1,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "V01-spa",
+      "normalizedCategory": "approved-test",
+      "persistedIdentity": "visitor@kittachat.test",
+      "responseClass": "accepted",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 1,
+        "normalizedQuery": 1,
+        "hash": 1,
+        "save": 1,
+        "session": 1,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "V02-direct",
+      "normalizedCategory": "approved-test",
+      "persistedIdentity": "visitor@team.kittachat.test",
+      "responseClass": "accepted",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 1,
+        "normalizedQuery": 1,
+        "hash": 1,
+        "save": 1,
+        "session": 1,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "V02-spa",
+      "normalizedCategory": "approved-test",
+      "persistedIdentity": "visitor@team.kittachat.test",
+      "responseClass": "accepted",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 1,
+        "normalizedQuery": 1,
+        "hash": 1,
+        "save": 1,
+        "session": 1,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R01-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R01-spa",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R02-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R03-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R04-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R05-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R06-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R07-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R08-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R08-spa",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R09-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R10-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R11-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R12-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R13-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R14-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R15-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R16-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R17-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R18-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R19-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R20-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R21-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R22-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R23-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R24-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R25-direct",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    },
+    {
+      "inputId": "R25-spa",
+      "normalizedCategory": "rejected",
+      "persistedIdentity": null,
+      "responseClass": "validation-rejected",
+      "limiterPolicyIds": [
+        "auth_entry.aggregate",
+        "auth_entry.register"
+      ],
+      "limiterBypass": false,
+      "sideEffectDelta": {
+        "find": 0,
+        "normalizedQuery": 0,
+        "hash": 0,
+        "save": 0,
+        "session": 0,
+        "queue": 0,
+        "provider": 0
+      }
+    }
+  ],
+  "sideEffects": {
+    "limiter": 32,
+    "controller": 0,
+    "provider": 0,
+    "database": 0,
+    "queue": 0,
+    "s3": 0,
+    "bodyProcessing": 32,
+    "signaling": 0,
+    "history": 0,
+    "session": 0
+  },
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "processCount": 0
+  }
+}
