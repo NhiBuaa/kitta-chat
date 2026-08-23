@@ -14,7 +14,8 @@ const readRepositoryFile = (relativePath) => readFileSync(
 test("nginx does not expose or proxy the internal /metrics endpoint", () => {
   const nginx = readRepositoryFile("nginx/nginx.conf");
 
-  assert.doesNotMatch(nginx, /location\s+(?:=|\^~|~\*?)?\s*\/metrics\b/i);
+  assert.ok(nginx.includes("location ~ ^/(?:readyz|ops|metrics|backend-healthz)(?:/|$) {"));
+  assert.match(nginx, /return 404 "Not Found";/);
   assert.doesNotMatch(nginx, /proxy_pass[^;\r\n]*\/metrics\b/i);
 });
 

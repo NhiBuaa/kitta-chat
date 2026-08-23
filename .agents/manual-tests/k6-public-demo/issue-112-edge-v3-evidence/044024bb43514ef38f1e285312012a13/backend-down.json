@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "scenario": "backend-down",
+  "candidateTree": "0a76220630c3f45a91dbb60b51b078e145717889",
+  "commands": [
+    {
+      "name": "docker-build-edge",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-up",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-stop-backend",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-restart-backend",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-health-wait",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-down",
+      "exitCode": 0
+    },
+    {
+      "name": "cleanup-container-count",
+      "exitCode": 0
+    },
+    {
+      "name": "cleanup-network-count",
+      "exitCode": 0
+    }
+  ],
+  "http": [
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "status": 200,
+      "contentCategory": "edge-liveness",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    }
+  ],
+  "headerChecks": [],
+  "socket": {
+    "pollingConnected": false,
+    "upgraded": false,
+    "reconnected": false,
+    "originEqual": false,
+    "originAbsent": false,
+    "upgradeHeaderConformant": false,
+    "connectionHeaderConformant": false,
+    "payloadDigestEqual": false
+  },
+  "upstreamCounterScope": "per-request",
+  "artifactChecks": [
+    {
+      "name": "edge-health-minimal",
+      "matched": true
+    }
+  ],
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "containerCount": 0,
+    "networkCount": 0
+  }
+}

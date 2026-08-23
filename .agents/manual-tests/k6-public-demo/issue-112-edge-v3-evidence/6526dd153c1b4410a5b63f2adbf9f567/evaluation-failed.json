@@ -1,0 +1,83 @@
+{
+  "schema_version": 2,
+  "run_id": "k6-112-v3-local-20260823T054925Z-failed",
+  "observed_at": "2026-08-23T05:54:59.8503327Z",
+  "executor": "Codex",
+  "artifact_binding": {
+    "guide_revision": "k6-112-edge-v3",
+    "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+    "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+    "candidate_tree": "93b3640418ff2994153f8cf7d13d68a2933d0ff5"
+  },
+  "test_results": [
+    {
+      "id": "MA-112-01",
+      "outcome": "FAIL",
+      "observation": "The exact archived candidate passed 33 of 34 focused cases; the Socket.IO fixture oracle disagreed because checkout and archive line endings produced different byte digests.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-02",
+      "outcome": "NOT_RUN",
+      "observation": "Not run after the terminal MA-112-01 failure.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-03",
+      "outcome": "NOT_RUN",
+      "observation": "Not run after the terminal MA-112-01 failure.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-04",
+      "outcome": "NOT_RUN",
+      "observation": "Not run after the terminal MA-112-01 failure.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-05",
+      "outcome": "NOT_RUN",
+      "observation": "Not run after the terminal MA-112-01 failure.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-06",
+      "outcome": "NOT_RUN",
+      "observation": "Not run after the terminal MA-112-01 failure.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-07",
+      "outcome": "NOT_RUN",
+      "observation": "Not run after the terminal MA-112-01 failure.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-08",
+      "outcome": "NOT_RUN",
+      "observation": "Not run after the terminal MA-112-01 failure; no provider request or D2 mutation occurred.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/6526dd153c1b4410a5b63f2adbf9f567/evidence-manifest.json#cleanup"
+      ]
+    }
+  ],
+  "verdict": "FAILED",
+  "human_approval": "pending",
+  "accepted_run_id": null,
+  "approval_sha256": null,
+  "notes": "The run stopped at MA-112-01 as required. D2_MUTATIONS=0."
+}

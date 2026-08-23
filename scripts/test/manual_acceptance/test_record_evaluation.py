@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -124,6 +125,38 @@ class EvaluationRecorderTests(unittest.TestCase):
             record_evaluation.load_history(self.history, self.authority),
         )
 
+    def test_appends_a_new_candidate_without_rewriting_prior_candidate_history(self):
+        first = self.evaluation("k6-111-old-candidate", "FAILED")
+        record_evaluation.append_evaluation(self.history, first, self.authority)
+        prior = self.history.read_bytes()
+
+        (self.repository / "candidate.txt").write_text(
+            "remediated candidate\n",
+            encoding="utf-8",
+        )
+        git(self.repository, "add", "candidate.txt")
+        remediated_authority = record_evaluation.EvaluationAuthority.create(
+            repository=self.repository,
+            guide_path=self.guide,
+            guide_revision=self.authority.guide_revision,
+            source_base=self.source_base,
+            candidate_tree=git(self.repository, "write-tree"),
+        )
+        second = self.evaluation("k6-111-remediated-candidate")
+        second["artifact_binding"]["candidate_tree"] = remediated_authority.candidate_tree
+
+        record_evaluation.append_evaluation(
+            self.history,
+            second,
+            remediated_authority,
+        )
+
+        self.assertTrue(self.history.read_bytes().startswith(prior))
+        self.assertEqual(
+            [first, second],
+            record_evaluation.load_history(self.history, remediated_authority),
+        )
+
     def test_rejects_duplicate_run_id_without_changing_history(self):
         record = self.evaluation()
         record_evaluation.append_evaluation(self.history, record, self.authority)
@@ -165,6 +198,89 @@ class EvaluationRecorderTests(unittest.TestCase):
                 "test result IDs must exactly match",
             ):
                 record_evaluation.append_evaluation(self.history, record, self.authority)
+
+    def test_derives_issue_112_case_ids_from_the_locked_guide_revision(self):
+        guide = self.repository / "issue-112-edge-v3.md"
+        guide.write_text("# K6 Issue #112 guide v3\n", encoding="utf-8")
+        git(self.repository, "add", guide.name)
+        authority = record_evaluation.EvaluationAuthority.create(
+            repository=self.repository,
+            guide_path=guide,
+            guide_revision="k6-112-edge-v3",
+            source_base=self.source_base,
+            candidate_tree=self.candidate_tree,
+        )
+        record = self.evaluation("k6-112-observation")
+        record["artifact_binding"] = {
+            "guide_revision": authority.guide_revision,
+            "guide_sha256": authority.guide_sha256,
+            "source_base": authority.source_base,
+            "candidate_tree": authority.candidate_tree,
+        }
+        for index, result in enumerate(record["test_results"], 1):
+            result["id"] = f"MA-112-{index:02d}"
+
+        record_evaluation.append_evaluation(self.history, record, authority)
+        self.assertEqual([record], record_evaluation.load_history(self.history, authority))
+
+        unknown = json.loads(json.dumps(record))
+        unknown["run_id"] = "k6-112-unknown-case"
+        unknown["test_results"][-1]["id"] = "MA-112-09"
+        with self.assertRaisesRegex(
+            record_evaluation.EvaluationError,
+            "MA-112-01 through MA-112-08",
+        ):
+            record_evaluation.append_evaluation(self.history, unknown, authority)
+
+    def test_rejects_guide_revisions_that_cannot_derive_a_case_namespace(self):
+        with self.assertRaisesRegex(
+            record_evaluation.EvaluationError,
+            "guide_revision must match",
+        ):
+            record_evaluation.EvaluationAuthority.create(
+                repository=self.repository,
+                guide_path=self.guide,
+                guide_revision="k6-edge-v3",
+                source_base=self.source_base,
+                candidate_tree=self.candidate_tree,
+            )
+
+    def test_existing_issue_111_histories_validate_without_byte_changes(self):
+        repository = SCRIPT.parents[1]
+        histories = [
+            "issue-111-target-config-v5",
+            "issue-111-target-config-v6",
+        ]
+        expected_paths = [
+            repository / ".agents" / "manual-tests" / "k6-public-demo" / f"{stem}{suffix}"
+            for stem in histories
+            for suffix in (".md", ".evaluations.jsonl")
+        ]
+        if not all(path.exists() for path in expected_paths):
+            self.assertFalse((repository / ".git").exists())
+            self.assertTrue(all(not path.exists() for path in expected_paths))
+            return
+
+        for stem in histories:
+            history = repository / ".agents" / "manual-tests" / "k6-public-demo" / f"{stem}.evaluations.jsonl"
+            guide = repository / ".agents" / "manual-tests" / "k6-public-demo" / f"{stem}.md"
+            prior = history.read_bytes()
+            first = json.loads(prior.splitlines()[0])
+            binding = first["artifact_binding"]
+            authority = record_evaluation.EvaluationAuthority.create(
+                repository=repository,
+                guide_path=guide,
+                guide_revision=binding["guide_revision"],
+                source_base=binding["source_base"],
+                candidate_tree=binding["candidate_tree"],
+            )
+            with self.subTest(stem=stem):
+                self.assertGreater(len(record_evaluation.load_history(history, authority)), 0)
+                self.assertEqual(prior, history.read_bytes())
+                self.assertEqual(
+                    hashlib.sha256(prior).hexdigest(),
+                    hashlib.sha256(history.read_bytes()).hexdigest(),
+                )
 
     def test_enforces_verdict_and_human_approval_matrix(self):
         invalid_records = []

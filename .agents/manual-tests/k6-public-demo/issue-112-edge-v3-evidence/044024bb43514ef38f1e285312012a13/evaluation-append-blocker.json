@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "run_id": "k6-112-v3-local-044024bb43514ef38f1e285312012a13-observation",
+  "candidate_tree": "0a76220630c3f45a91dbb60b51b078e145717889",
+  "observations": "PASS",
+  "history_append": "BLOCKED",
+  "reason": "The append-only history contains a prior failed run for the same guide and source base on an older candidate tree, while the recorder validated every historical line against only the current candidate tree.",
+  "history_mutated": false,
+  "external_provider_request_count": 0,
+  "provider_mutation_count": 0,
+  "D2_MUTATIONS": 0
+}

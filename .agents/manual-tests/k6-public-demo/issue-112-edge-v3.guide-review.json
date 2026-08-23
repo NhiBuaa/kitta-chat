@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 112,
+  "guide_revision": "k6-112-edge-v3",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-112-edge-v3.md",
+  "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02cb5-ffde-7623-a6af-46e355103407"
+  },
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "findings": [],
+  "prior_findings_closed": [
+    "Candidate environment guard rejects tracked example files and leaves Vite inputs inherited",
+    "Denied-route upstream isolation is not provable per route",
+    "Evidence-manifest secret scan has no executable command"
+  ],
+  "human_approval": "pending",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

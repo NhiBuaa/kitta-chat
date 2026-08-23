@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "run_id": "k6-112-v3-local-20260823T054925Z-failed",
+  "guide_revision": "k6-112-edge-v3",
+  "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "head": "243347cff936f99ace18e5ed4b9a4acb9c473d60",
+  "full_index_tree": "d17833a4212e900e54646662666d29aadd43c7de",
+  "candidate_tree": "93b3640418ff2994153f8cf7d13d68a2933d0ff5",
+  "command_results": [
+    {
+      "name": "candidate-archive",
+      "exit_code": 0
+    },
+    {
+      "name": "candidate-root-npm-ci",
+      "exit_code": 0
+    },
+    {
+      "name": "candidate-client-npm-ci",
+      "exit_code": 0
+    },
+    {
+      "name": "candidate-server-npm-ci",
+      "exit_code": 0
+    },
+    {
+      "name": "focused",
+      "exit_code": 1,
+      "passed": 33,
+      "failed": 1,
+      "failure_class": "fixture-digest-line-ending-mismatch"
+    }
+  ],
+  "scenario_paths": [],
+  "local_image_ids": [],
+  "changed_file_inventory": [
+    "docker-compose.k4.yml",
+    "docker-compose.yml",
+    "nginx/Dockerfile",
+    "nginx/docker-entrypoint.d/10-render-k6-edge.sh",
+    "nginx/nginx.conf",
+    "package.json",
+    "scripts/ci/k3ObservabilityBoundaries.test.cjs",
+    "scripts/ci/opsExposureBoundary.test.cjs",
+    "scripts/k6/edge-fixture.compose.yml",
+    "scripts/k6/edgeAcceptanceContract.cjs",
+    "scripts/k6/edgeAcceptanceRunner.cjs",
+    "scripts/k6/edgeAcceptanceScenarios.cjs",
+    "scripts/k6/edgeDockerHarness.cjs",
+    "scripts/k6/edgeFixtureBackend.cjs",
+    "scripts/k6/issue111_candidate.py",
+    "scripts/record_evaluation.py",
+    "scripts/test/k6/edgeAcceptanceRunner.test.cjs",
+    "scripts/test/k6/edgeConfig.test.cjs",
+    "scripts/test/k6/test_issue111_candidate.py",
+    "scripts/test/manual_acceptance/test_record_evaluation.py"
+  ],
+  "external_provider_request_count": 0,
+  "provider_mutation_count": 0,
+  "cleanup": {
+    "port_released": true,
+    "container_count": 0,
+    "network_count": 0
+  },
+  "D2_MUTATIONS": 0
+}

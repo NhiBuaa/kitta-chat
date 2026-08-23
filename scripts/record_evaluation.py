@@ -1,4 +1,4 @@
-"""Validate and append a K6 Issue #111 human-required Evaluation."""
+"""Validate and append a K6 human-required Evaluation."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from typing import Any, NamedTuple
 VERDICTS = {"PASSED", "FAILED", "BLOCKED"}
 TEST_OUTCOMES = {"PASS", "FAIL", "BLOCKED", "NOT_RUN"}
 APPROVAL_STATES = {"approved", "pending", "rejected"}
-REQUIRED_CASE_IDS = {f"MA-111-{index:02d}" for index in range(1, 9)}
+GUIDE_REVISION_PATTERN = re.compile(r"k6-(?P<issue>\d{3})-[a-z0-9]+(?:-[a-z0-9]+)*-v\d+\Z")
 TOP_LEVEL_FIELDS = {
     "schema_version",
     "run_id",
@@ -51,6 +51,7 @@ RFC3339_PATTERN = re.compile(
     r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})\Z"
 )
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
+GIT_OBJECT_ID_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
 EXECUTOR_IDENTITIES = {"Codex"}
 ACCEPTANCE_APPROVAL_FIELDS = {
     "schema_version",
@@ -96,11 +97,14 @@ class EvaluationAuthority(NamedTuple):
         if not guide_path.is_file():
             raise EvaluationError("guide must be a readable file")
         _require_non_empty_string(guide_revision, "guide_revision")
+        _required_case_ids(guide_revision)
         if _git_object_type(repository, source_base) != "commit":
             raise EvaluationError("source_base must resolve to a commit object")
         if _git_object_type(repository, candidate_tree) != "tree":
             raise EvaluationError("candidate_tree must resolve to a tree object")
-        guide_sha256 = hashlib.sha256(guide_path.read_bytes()).hexdigest()
+        guide_sha256 = hashlib.sha256(
+            _locked_guide_bytes(repository, guide_path)
+        ).hexdigest()
         return cls(
             repository=repository,
             guide_path=guide_path,
@@ -175,9 +179,45 @@ def _git_object_type(repository: Path, object_id: str) -> str:
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
+def _locked_guide_bytes(repository: Path, guide_path: Path) -> bytes:
+    try:
+        relative = guide_path.relative_to(repository).as_posix()
+    except ValueError as error:
+        raise EvaluationError("guide must be inside the Git worktree") from error
+    tracked = subprocess.run(
+        ["git", "-C", str(repository), "ls-files", "--error-unmatch", "--", relative],
+        capture_output=True,
+    )
+    if tracked.returncode != 0:
+        raise EvaluationError("guide must be tracked in the Git index")
+    changed = subprocess.run(
+        ["git", "-C", str(repository), "diff", "--quiet", "--", relative],
+        capture_output=True,
+    )
+    if changed.returncode != 0:
+        raise EvaluationError("guide working-tree content must match the Git index")
+    result = subprocess.run(
+        ["git", "-C", str(repository), "show", f":{relative}"],
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise EvaluationError("guide index bytes could not be read")
+    return result.stdout
+
+
 def _require_non_empty_string(value: Any, field: str) -> None:
     if not isinstance(value, str) or not value.strip():
         raise EvaluationError(f"{field} must be a non-empty string")
+
+
+def _required_case_ids(guide_revision: str) -> set[str]:
+    match = GUIDE_REVISION_PATTERN.fullmatch(guide_revision)
+    if match is None:
+        raise EvaluationError(
+            "guide_revision must match k6-NNN-lowercase-slug-vN"
+        )
+    issue = match.group("issue")
+    return {f"MA-{issue}-{index:02d}" for index in range(1, 9)}
 
 
 def _validate_safe_text(value: str, field: str) -> None:
@@ -263,9 +303,13 @@ def validate_evaluation(record: Any, authority: EvaluationAuthority) -> None:
     if any(not isinstance(result, dict) for result in results):
         raise EvaluationError("every test result must be an object")
 
+    required_case_ids = _required_case_ids(authority.guide_revision)
     result_ids = [result.get("id") for result in results]
-    if len(result_ids) != len(REQUIRED_CASE_IDS) or set(result_ids) != REQUIRED_CASE_IDS:
-        raise EvaluationError("test result IDs must exactly match MA-111-01 through MA-111-08")
+    if len(result_ids) != len(required_case_ids) or set(result_ids) != required_case_ids:
+        issue = authority.guide_revision.split("-", 2)[1]
+        raise EvaluationError(
+            f"test result IDs must exactly match MA-{issue}-01 through MA-{issue}-08"
+        )
     if len(set(result_ids)) != len(result_ids):
         raise EvaluationError("test result IDs must be unique")
 
@@ -321,6 +365,21 @@ def validate_evaluation(record: Any, authority: EvaluationAuthority) -> None:
             )
 
 
+def _historical_authority(
+    record: Any,
+    authority: EvaluationAuthority,
+) -> EvaluationAuthority:
+    binding = record.get("artifact_binding") if isinstance(record, dict) else None
+    candidate_tree = binding.get("candidate_tree") if isinstance(binding, dict) else None
+    if not isinstance(candidate_tree, str) or not GIT_OBJECT_ID_PATTERN.fullmatch(
+        candidate_tree
+    ):
+        raise EvaluationError(
+            "historical artifact_binding.candidate_tree must be a lowercase Git object ID"
+        )
+    return authority._replace(candidate_tree=candidate_tree)
+
+
 def load_history(path: Path, authority: EvaluationAuthority) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -334,7 +393,7 @@ def load_history(path: Path, authority: EvaluationAuthority) -> list[dict[str, A
             raise EvaluationError(
                 f"invalid JSONL at line {line_number}: {error.msg}"
             ) from error
-        validate_evaluation(record, authority)
+        validate_evaluation(record, _historical_authority(record, authority))
         records.append(record)
     return records
 

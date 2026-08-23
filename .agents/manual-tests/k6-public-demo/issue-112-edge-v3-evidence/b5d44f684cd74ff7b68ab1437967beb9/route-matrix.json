@@ -1,0 +1,411 @@
+{
+  "schemaVersion": 1,
+  "scenario": "route-matrix",
+  "candidateTree": "ab2ab0b18c8e133247135ab252ab002c3c0a1a39",
+  "commands": [
+    {
+      "name": "docker-build-edge",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-up",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-counter",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-down",
+      "exitCode": 0
+    },
+    {
+      "name": "cleanup-container-count",
+      "exitCode": 0
+    },
+    {
+      "name": "cleanup-network-count",
+      "exitCode": 0
+    }
+  ],
+  "http": [
+    {
+      "method": "GET",
+      "path": "/readyz",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/readyz/",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/readyz/child",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/ops",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/ops/",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/ops/child",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/metrics",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/metrics/",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/metrics/child",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/backend-healthz",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/backend-healthz/",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/backend-healthz/child",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/api",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/socket.io",
+      "status": 404,
+      "contentCategory": "generic-non-html",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 0,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/api/probe",
+      "status": 200,
+      "contentCategory": "backend-json",
+      "upstreamHitCountBefore": 0,
+      "upstreamHitCountAfter": 1,
+      "upstreamHitDelta": 1
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/probe",
+      "status": 200,
+      "contentCategory": "backend-json",
+      "upstreamHitCountBefore": 1,
+      "upstreamHitCountAfter": 2,
+      "upstreamHitDelta": 1
+    },
+    {
+      "method": "GET",
+      "path": "/socket.io/?EIO=4&transport=polling",
+      "status": 200,
+      "contentCategory": "socket-io",
+      "upstreamHitCountBefore": 2,
+      "upstreamHitCountAfter": 3,
+      "upstreamHitDelta": 1
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "status": 200,
+      "contentCategory": "edge-liveness",
+      "upstreamHitCountBefore": 3,
+      "upstreamHitCountAfter": 3,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/runtime-config.json",
+      "status": 200,
+      "contentCategory": "runtime-json",
+      "upstreamHitCountBefore": 3,
+      "upstreamHitCountAfter": 3,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/login",
+      "status": 200,
+      "contentCategory": "spa-entry",
+      "upstreamHitCountBefore": 3,
+      "upstreamHitCountAfter": 3,
+      "upstreamHitDelta": 0
+    },
+    {
+      "method": "GET",
+      "path": "/__k6_unknown_navigation__",
+      "status": 200,
+      "contentCategory": "spa-entry",
+      "upstreamHitCountBefore": 3,
+      "upstreamHitCountAfter": 3,
+      "upstreamHitDelta": 0
+    }
+  ],
+  "headerChecks": [],
+  "socket": {
+    "pollingConnected": false,
+    "upgraded": false,
+    "reconnected": false,
+    "originEqual": false,
+    "originAbsent": false,
+    "upgradeHeaderConformant": false,
+    "connectionHeaderConformant": false,
+    "payloadDigestEqual": false
+  },
+  "upstreamCounterScope": "per-request",
+  "artifactChecks": [
+    {
+      "name": "route-matrix-complete",
+      "matched": true
+    }
+  ],
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "containerCount": 0,
+    "networkCount": 0
+  }
+}
