@@ -4,8 +4,14 @@ import imageCompression from "browser-image-compression";
 import { useAuth } from "@/services/auth/useAuth.js";
 import { updateUserProfile } from "@/services/api/userApi.js";
 import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
-const VITE_API_URL_USERS = import.meta.env.VITE_API_URL_USERS;
-const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
+import { PUBLIC_CLIENT_PATHS } from "@/config/publicClientPaths.js";
+const UserProfileSidebar = ({
+  isOpen,
+  onClose,
+  user,
+  onUpdateSuccess,
+  uploadEnabled = false,
+}) => {
   const defaultAvatar = import.meta.env.VITE_DEFAULT_AVATAR;
   const { updateUser } = useAuth();
   // Khởi tạo state cho form
@@ -23,7 +29,7 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
   const getAvatarUrl = (avatar) => {
     return resolveAvatarUrl(avatar, {
       defaultAvatar,
-      legacyBaseUrl: VITE_API_URL_USERS,
+      legacyBaseUrl: PUBLIC_CLIENT_PATHS.users,
     });
   };
 
@@ -192,21 +198,25 @@ const UserProfileSidebar = ({ isOpen, onClose, user, onUpdateSuccess }) => {
             )}
 
             {/* Overlay đổi ảnh */}
-            <label
-              htmlFor="upload-avatar"
-              className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-            >
-              <span className="text-white text-xs font-bold">Đổi ảnh</span>
-            </label>
+            {uploadEnabled && (
+              <>
+                <label
+                  htmlFor="upload-avatar"
+                  className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  <span className="text-white text-xs font-bold">Đổi ảnh</span>
+                </label>
 
-            {/* Input File Ẩn */}
-            <input
-              id="upload-avatar"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
+                {/* Input File Ẩn */}
+                <input
+                  id="upload-avatar"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </>
+            )}
           </div>
         </div>
 

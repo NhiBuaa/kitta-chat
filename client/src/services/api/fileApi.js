@@ -1,6 +1,7 @@
 import { axiosClient } from './axiosClient.js';
+import { PUBLIC_CLIENT_PATHS } from '../../config/publicClientPaths.js';
 
-const API_URL = import.meta.env?.VITE_API_URL_FILES || '/api/files';
+const API_URL = PUBLIC_CLIENT_PATHS.files;
 
 export const initUpload = async (fileName, fileType, fileHash) => {
     const res = await axiosClient.post(`${API_URL}/init`, {

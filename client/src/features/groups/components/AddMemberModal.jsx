@@ -3,6 +3,7 @@ import { FaTimes, FaUserPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { getUserDisplayName } from "@/utils/getUserDisplayName.js";
 import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
+import { PUBLIC_CLIENT_PATHS } from "@/config/publicClientPaths.js";
 import { getFriends } from "@/services/api/friendApi.js";
 import { addGroupMember } from "@/services/api/groupApi.js";
 
@@ -56,7 +57,7 @@ const AddMemberModal = ({ isOpen, onClose, group, onAddSuccess }) => {
   const getAvatarUrl = (avatar) => {
     return resolveAvatarUrl(avatar, {
       defaultAvatar: "https://via.placeholder.com/40",
-      legacyBaseUrl: import.meta.env.VITE_API_URL_USERS || "/api/users",
+      legacyBaseUrl: PUBLIC_CLIENT_PATHS.users,
     });
   };
 

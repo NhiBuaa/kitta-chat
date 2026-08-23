@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { initUpload, getPresignedUrl, completeUpload } from '@/services/api/fileApi.js';
 import { axiosClient } from '@/services/api/axiosClient.js';
+import { PUBLIC_CLIENT_PATHS } from '@/config/publicClientPaths.js';
 
 // BIẾN
-const VITE_API_URL_FILES = import.meta.env.VITE_API_URL_FILES || '/api/files';
+const VITE_API_URL_FILES = PUBLIC_CLIENT_PATHS.files;
 
 export const uploadFileChunked = async (file, onProgress) => {
     const { uploadId, key } = await initUpload(file.name, file.type, "");

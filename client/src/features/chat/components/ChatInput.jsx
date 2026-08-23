@@ -26,6 +26,7 @@ const ChatInput = ({
   uploadQueue,
   addFiles,
   removeUploadItem,
+  uploadEnabled = false,
 }) => {
   // tự điều chỉnh chiều cao của textarea khi ở 2 mh lớn nhỏ khác nhau
   const textareaRef = useRef(null);
@@ -50,7 +51,7 @@ const ChatInput = ({
   return (
     <div className="bg-white p-4 border-t border-gray-200 relative shrink-0">
       {/* KHU VỰC HIỂN THỊ FILE ĐANG TẢI LÊN */}
-      {uploadQueue && uploadQueue.length > 0 && (
+      {uploadEnabled && uploadQueue && uploadQueue.length > 0 && (
         <div className="absolute bottom-20 left-4 bg-white p-3 rounded-lg shadow-xl border border-gray-200 z-50 w-80 max-h-64 overflow-y-auto">
           <div className="text-xs font-bold text-gray-500 mb-2 uppercase">
             Đính kèm:
@@ -93,27 +94,31 @@ const ChatInput = ({
         className="flex items-center bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm focus-within:shadow-md focus-within:border-green-400 transition"
       >
         <div className="flex items-center">
-          {/* icon gui ảnh */}
-          <FilePicker onFilesSelected={addFiles} accept="image/*">
-            <button
-              type="button"
-              title="Gửi ảnh"
-              className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-green-500 transition transform hover:scale-110"
-            >
-              <FaImage size={16} />
-            </button>
-          </FilePicker>
+          {uploadEnabled && (
+            <>
+              {/* icon gui ảnh */}
+              <FilePicker onFilesSelected={addFiles} accept="image/*">
+                <button
+                  type="button"
+                  title="Gửi ảnh"
+                  className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-green-500 transition transform hover:scale-110"
+                >
+                  <FaImage size={16} />
+                </button>
+              </FilePicker>
 
-          {/* Bọc icon File bằng FilePicker */}
-          <FilePicker onFilesSelected={addFiles} accept="*/*">
-            <button
-              type="button"
-              title="Gửi file"
-              className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-green-500 transition transform hover:scale-110"
-            >
-              <FaPaperclip size={16} />
-            </button>
-          </FilePicker>
+              {/* Bọc icon File bằng FilePicker */}
+              <FilePicker onFilesSelected={addFiles} accept="*/*">
+                <button
+                  type="button"
+                  title="Gửi file"
+                  className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-green-500 transition transform hover:scale-110"
+                >
+                  <FaPaperclip size={16} />
+                </button>
+              </FilePicker>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setShowEmoji(!showEmoji)}

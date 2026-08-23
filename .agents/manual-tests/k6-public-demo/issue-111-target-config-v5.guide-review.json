@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 111,
+  "guide_revision": "k6-111-target-config-v5",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-111-target-config-v5.md",
+  "guide_sha256": "96bbea03b314ef0eae039a6e4483552b03563874af8e111103956124e03a087d",
+  "specification_snapshot_path": ".agents/manual-tests/k6-public-demo/issue-111-spec-snapshot.md",
+  "specification_snapshot_sha256": "0d6127f8d166b0df3cd2177eb523932c4411128b7a208e58d8914b06e75dfbbb",
+  "source_base": "0a4e350dfd21d1dc979392f1bf2261ae66a4093e",
+  "execution_tree": "60edb5717b7dfc51b7be383b413eeef3f60c1264",
+  "reviewed_at": "2026-08-22T20:13:55.7935370+07:00",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02991-8447-7bd0-ac67-ae59249d2d29"
+  },
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "findings": [],
+  "report": "Exact guide and specification hashes match. The self-reference-free execution tree, candidate helper, immutable diff and no-pull scan, strict Evaluation recorder, recursive dist inventory, real disabled-call controls, expected-failure Vite build, target binding, lifecycle, and authorization boundaries are evidence-backed. No guide execution or D2 action occurred.",
+  "human_approval": "pending",
+  "execution_authorized": false,
+  "implementation_authorized": true,
+  "d2_authorized": false
+}

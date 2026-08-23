@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "run_id": "k6-111-v6-local-20260823T022616Z-observation",
+  "guide_revision": "k6-111-target-config-v6",
+  "guide_sha256": "f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b",
+  "source_base": "0a4e350dfd21d1dc979392f1bf2261ae66a4093e",
+  "committed_checkpoint": "13e65c11f040d0efa88b7805c93293a78c2eb97e",
+  "branch": "nhibuaa/k6-issue-111-target-config",
+  "execution_tree": "6f53a78d88137e0d8dd48aac91e0672d312c3d6f",
+  "environment": {
+    "kind": "isolated-local-candidate",
+    "browser": "Codex in-app browser",
+    "network_scope": "loopback-only",
+    "ports_released_after_run": [
+      4173,
+      4174
+    ],
+    "d2_mutations": 0
+  },
+  "command_results": [
+    {
+      "name": "dependency_install",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "target_config_and_build_contract",
+      "result": "PASS",
+      "exit_code": 0,
+      "passed": 60,
+      "failed": 0
+    },
+    {
+      "name": "candidate_helper",
+      "result": "PASS",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "name": "evaluation_recorder",
+      "result": "PASS",
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0
+    },
+    {
+      "name": "root_test_ci",
+      "result": "PASS",
+      "exit_code": 0,
+      "passed": 134,
+      "failed": 0
+    },
+    {
+      "name": "ci_validate",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "lint_ci",
+      "result": "PASS",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 13
+    },
+    {
+      "name": "client_tests",
+      "result": "PASS",
+      "exit_code": 0,
+      "passed": 280,
+      "failed": 0
+    },
+    {
+      "name": "client_production_build",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "server_tests",
+      "result": "PASS",
+      "exit_code": 0,
+      "passed": 492,
+      "failed": 0,
+      "skipped": 5
+    },
+    {
+      "name": "immutable_diff_check",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "server_image_build",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "edge_image_build",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "server_image_environment_exclusion",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "name": "cached_candidate_diff_scan",
+      "result": "PASS",
+      "exit_code": 0,
+      "findings": 0
+    }
+  ],
+  "rejected_target_categories": [
+    "unsupported target",
+    "unsafe or loopback public origin",
+    "mismatched browser origin allowlist",
+    "unsafe backend upstream",
+    "public origin outside trusted target authority",
+    "test-only namespace under production authority",
+    "synthetic namespace without own boolean test authority",
+    "missing trusted target binding",
+    "malformed capability contract",
+    "disabled core public-demo capability",
+    "incomplete or over-privileged worker binding",
+    "unknown deployment field"
+  ],
+  "browser_observations": {
+    "legacy_local": {
+      "fixture": "malformed",
+      "route": "/login",
+      "result": "ordinary local login rendered without runtime configuration error",
+      "runtime_config_request_observed": false
+    },
+    "valid_disabled": {
+      "loading_text": "Đang tải cấu hình bản demo...",
+      "ready_result": "login rendered without Google or recovery controls",
+      "disabled_routes": {
+        "/forgot-password": "Tính năng này không khả dụng trong bản demo hiện tại.",
+        "/reset-password/demo-id": "Tính năng này không khả dụng trong bản demo hiện tại.",
+        "/call/demo-user": "Tính năng này không khả dụng trong bản demo hiện tại."
+      },
+      "authenticated_chat": {
+        "file_input_count": 0,
+        "call_control_count": 0
+      }
+    },
+    "invalid_documents": {
+      "missing": {
+        "response_category": "4xx-missing",
+        "routes": [
+          "/login",
+          "/call/demo-user"
+        ],
+        "visible_state": "Bản demo hiện chưa khả dụng. Vui lòng thử lại sau."
+      },
+      "malformed": {
+        "response_category": "2xx-config",
+        "routes": [
+          "/login",
+          "/call/demo-user"
+        ],
+        "visible_state": "Bản demo hiện chưa khả dụng. Vui lòng thử lại sau."
+      },
+      "old-version": {
+        "response_category": "2xx-config",
+        "routes": [
+          "/login",
+          "/call/demo-user"
+        ],
+        "visible_state": "Bản demo hiện chưa khả dụng. Vui lòng thử lại sau."
+      },
+      "future-version": {
+        "response_category": "2xx-config",
+        "routes": [
+          "/login",
+          "/call/demo-user"
+        ],
+        "visible_state": "Bản demo hiện chưa khả dụng. Vui lòng thử lại sau."
+      },
+      "wrong-target": {
+        "response_category": "2xx-config",
+        "routes": [
+          "/login",
+          "/call/demo-user"
+        ],
+        "visible_state": "Bản demo hiện chưa khả dụng. Vui lòng thử lại sau."
+      }
+    },
+    "upload_transition": {
+      "disabled_file_input_count": 0,
+      "enabled_file_input_count": 2,
+      "disabled_dist_digest": "f20f45cb5664d80f7f7222e12e74b061f25a06cb672d9a0201f6d390d8e0a9c7",
+      "enabled_dist_digest": "f20f45cb5664d80f7f7222e12e74b061f25a06cb672d9a0201f6d390d8e0a9c7",
+      "dist_digests_equal": true,
+      "upload_request_observed": false,
+      "fixed_disabled_capabilities_remained_absent": true
+    }
+  },
+  "sanitized_request_inventories": {
+    "legacy_local": [
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/login",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/api/auth/refresh",
+        "method": "POST",
+        "response_category": "4xx-local-api"
+      }
+    ],
+    "valid_disabled": [
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/runtime-config.json",
+        "method": "GET",
+        "response_category": "2xx-config"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/login",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/forgot-password",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/reset-password/demo-id",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/call/demo-user",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/__k6-test__/authenticated-chat",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/api/auth/refresh",
+        "method": "POST",
+        "response_category": "4xx-local-api"
+      }
+    ],
+    "invalid_document_fixtures": [
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/login",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/call/demo-user",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/runtime-config.json",
+        "method": "GET",
+        "response_category": "2xx-config-or-4xx-missing"
+      }
+    ],
+    "valid_upload_enabled": [
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/runtime-config.json",
+        "method": "GET",
+        "response_category": "2xx-config"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/__k6-test__/authenticated-chat",
+        "method": "GET",
+        "response_category": "2xx-static"
+      },
+      {
+        "scheme_category": "http-loopback",
+        "host": "127.0.0.1",
+        "port": 4173,
+        "path": "/api/auth/refresh",
+        "method": "POST",
+        "response_category": "4xx-local-api"
+      }
+    ]
+  },
+  "public_contract_inventory": {
+    "controller_files_changed": [],
+    "server_socket_handler_files_changed": [],
+    "message_schema_changed": false,
+    "conversation_schema_changed": false,
+    "client_socket_connection_seam_changed": true,
+    "preservation_tests": "PASS"
+  },
+  "screenshots": [
+    {
+      "path": "ma111-02-legacy-local.png",
+      "sha256": "2ba2fad5aefe78742f1de563900a78965fe5b0f618571d5642165ed7e44c2b8d"
+    },
+    {
+      "path": "ma111-04-disabled-loading.png",
+      "sha256": "f759072d766a8004a0d345e1d96fe271f38f424465b0d6a78013d6b62e78707c"
+    },
+    {
+      "path": "ma111-04-disabled-ready.png",
+      "sha256": "b8cd61c7093ff12cb911b6fdd5f4d544b5d8218357e021ca5bc5931e757b36d1"
+    },
+    {
+      "path": "ma111-04-disabled-call-route.png",
+      "sha256": "bec2ce9dffe6dc48695c49d8202bd54039446fc0b868e4e263cda5ea2930448d"
+    },
+    {
+      "path": "ma111-04-disabled-chat.png",
+      "sha256": "316709fdb4d57b922c9a2db2c85e456bc0fef199c28cd9d397647459f26adcc8"
+    },
+    {
+      "path": "ma111-05-safe-unavailable.png",
+      "sha256": "24fcd41c13abeae9edb9ed4838bf3fc3b2fe02ad2ccefc96d5ac371d8d0d252d"
+    },
+    {
+      "path": "ma111-06-upload-disabled.png",
+      "sha256": "316709fdb4d57b922c9a2db2c85e456bc0fef199c28cd9d397647459f26adcc8"
+    },
+    {
+      "path": "ma111-06-upload-enabled.png",
+      "sha256": "e3ad3f1cf146ceb101cf7d724e689a6bba676792500717a11b971b6b13de96a3"
+    }
+  ]
+}

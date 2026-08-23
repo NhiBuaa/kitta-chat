@@ -30,6 +30,7 @@ const Sidebar = ({
   checkIsOnline,
   handleAddFriend,
   setShowCallHistoryModal,
+  callsEnabled = false,
   onLoadMore,
   hasMore,
   isFetching,
@@ -233,14 +234,16 @@ const Sidebar = ({
             <FaUsers size={20} />
           </button>
 
-          <button
-            onClick={() => setShowCallHistoryModal?.(true)}
-            className="relative p-1 hover:text-blue-200"
-            title="Lịch sử cuộc gọi"
-          >
-            <FaHistory size={18} />
-            <CallHistoryBadge />
-          </button>
+          {callsEnabled && (
+            <button
+              onClick={() => setShowCallHistoryModal?.(true)}
+              className="relative p-1 hover:text-blue-200"
+              title="Lịch sử cuộc gọi"
+            >
+              <FaHistory size={18} />
+              <CallHistoryBadge />
+            </button>
+          )}
 
           {/* nút addfr */}
           <button

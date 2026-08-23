@@ -1,6 +1,7 @@
-import { axiosClient } from '@/services/api/axiosClient.js'
+import { PUBLIC_CLIENT_PATHS } from '../../config/publicClientPaths.js'
+import { axiosClient } from './axiosClient.js'
 
-const API_URL_USERS = import.meta.env.VITE_API_URL_USERS || '/api/users'
+const API_URL_USERS = PUBLIC_CLIENT_PATHS.users
 
 export const getFriends = () => axiosClient.get(`${API_URL_USERS}/friends`)
 

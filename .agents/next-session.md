@@ -1,23 +1,35 @@
 # Next Session — K6 Bootstrap B0 and Issue #111 Frontier
 
-## CURRENT NEXT ACTION — review authorized normalization fixed point
+## CURRENT NEXT ACTION — publish accepted Issue #111 child PR
 
-`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
+`ISSUE_111_V6_ACCEPTED_CHILD_PR_AUTHORIZED_D2_UNAUTHORIZED`
 
-This block supersedes every lower next-transition paragraph. B0 is complete and pushed at
-`74d5ed917c37a12b8ee88c767447f8fa23242af1`. The maintainer authorized the current bounded docs-only
-normalization cycle. The exact staged fixed point must use one lifecycle state and reference
-`docs/deployment/k6-d2-authorization-execution-contract.md` as the sole normative D2 field matrix.
-No post-B0 reconciliation commit or push exists yet.
+This block supersedes every lower next-transition paragraph. The approved normalization fixed point
+is pushed at integration head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. Issue #111 already
+exists and its isolated branch/worktree were created from that exact head. The revised ticket passed
+fresh external review.
 
-- Canonical plan SHA-256: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`.
-- End-to-end execution plan SHA-256: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`.
+- Canonical plan SHA-256: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`.
+- End-to-end execution plan SHA-256: `72753830ab70236ba1b269077472fdc15952097a265f30c692f11f4296a59cc5`.
 
-Run fresh isolated Standards and Spec review, then aggregate the results. Only `APPROVE` with zero
-Critical or Major findings permits commit and push. After an approved push, create Issue #111 from
-the new integration head and prepare its externally reviewed locked guide. Stop for maintainer guide
-approval before runtime implementation. D2 remains unauthorized. All lower sections are historical
-context unless this block explicitly incorporates them.
+Issue #111 remediation is staged but uncommitted at execution tree
+`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`. Focused target-config/build verification passes
+`60/60`; Evaluation-recorder tests pass `14/14`; v5 history remains readable without rewriting.
+The prior v5 guide/Evaluations are immutable historical evidence and are invalid for this changed
+candidate. They also lack the retained screenshot/digest/request-inventory evidence needed for a
+current acceptance claim.
+
+Guide v6 is fixed at SHA-256
+`f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b` and binds exact tree
+`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`. External manual-guide review returned `APPROVE` with
+zero findings, and the maintainer approved this exact revision/hash/tree. Locked execution run
+`k6-111-v6-local-20260823T022616Z-observation` completed with eight `PASS` observations. The
+maintainer accepted that exact run; append-only run
+`k6-111-v6-local-20260823T025857Z-approved` is now `PASSED/approved`. Retained manifest digest:
+`3e882c5f2717752abf2e3fbe222a6115714e26c774f43c08d5e0a9a6d57ec6b1`. Verify the exact candidate,
+commit, push, and open the child PR to `nhibuaa/k6-public-demo`. No per-Issue Standards/Spec
+`code-review` runs here; final whole-K6 review remains deferred. Do not cross D2. All lower
+sections are historical context unless this block explicitly incorporates them.
 
 ## Historical next-session checkpoints — superseded by CURRENT NEXT ACTION
 

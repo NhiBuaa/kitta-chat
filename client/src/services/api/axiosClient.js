@@ -5,10 +5,11 @@ import {
   setAccessToken,
   setStoredUser,
 } from '../auth/authSession.js'
+import { PUBLIC_CLIENT_PATHS } from '../../config/publicClientPaths.js'
 
 const AUTH_CHANGED_EVENT = 'auth-changed'
 
-const getAuthBaseUrl = () => import.meta.env?.VITE_API_URL_AUTH || '/api/auth'
+const getAuthBaseUrl = () => PUBLIC_CLIENT_PATHS.auth
 
 const defaultRefreshSession = () =>
   axios.post(`${getAuthBaseUrl()}/refresh`, null, {

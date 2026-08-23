@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 111,
+  "guide_revision": "k6-111-target-config-v6",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-111-target-config-v6.md",
+  "guide_sha256": "f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b",
+  "source_base": "0a4e350dfd21d1dc979392f1bf2261ae66a4093e",
+  "execution_tree": "6f53a78d88137e0d8dd48aac91e0672d312c3d6f",
+  "approved_at": "2026-08-23T09:23:42.1949518+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message approving the exact guide revision, SHA-256, and execution tree",
+  "human_approval": "approved",
+  "lock_status": "locked",
+  "authorized_actions": [
+    "execute the locked Issue #111 guide against the exact approved execution tree",
+    "append a secret-safe pending manual-acceptance Evaluation"
+  ],
+  "not_authorized": [
+    "accept the observed manual run without a separate maintainer acceptance decision",
+    "commit, push, or open the Issue #111 child PR before current acceptance completes",
+    "D2 credential creation or rotation",
+    "Railway or provider secret binding",
+    "GHCR deployment image publication",
+    "Railway runtime deployment or mutation",
+    "live provider validation or deployed-target acceptance",
+    "rollback",
+    "Issue #61 measurement or production claims"
+  ],
+  "guide_execution_authorized": true,
+  "d2_authorized": false
+}
