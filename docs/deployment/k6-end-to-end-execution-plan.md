@@ -20,7 +20,9 @@ without broadening this plan or crossing the D2 boundary.
 - `feature-delivery` owns the ledger, graph, frontier, integration, and completion.
 - `test-craft` and `manual-acceptance` own Test Cases, locked guides, and append-only Evaluations.
 - `implement` and `tdd` own RED → GREEN → cleanup within one approved ticket.
-- `code-review` owns each child fixed-point review and the final feature review.
+- `code-review` owns the single final whole-K6 fixed-point review after all child Issues are
+  integrated and required live acceptance completes. Child Issues use the approved ticket review,
+  guide review, automated verification, and human acceptance gates.
 - `deployment` owns the D2 preflight, rollout, health, and rollback guardrails.
 - `session-continuity` and `handoff` own resumable checkpoints.
 - `resolving-merge-conflicts` is used only when reconciliation preserves approved behavior.
@@ -109,7 +111,7 @@ The following invariants apply:
 - Parallel merges are sequential by Issue number: #112 → #113 and #114 → #115 → #116.
 - After the first parallel PR merges, each remaining child merges the updated integration branch,
   reruns affected tests and the full merge gate, reevaluates acceptance invalidation, and refreshes
-  fixed-point review evidence before merge.
+  its exact candidate/acceptance evidence before merge.
 - Do not force-push after review evidence is recorded.
 - Do not silently resolve architecture conflicts or expand ticket scope.
 - Critical/Major findings and failed required acceptance stop or remediate under the delivery
@@ -150,9 +152,10 @@ For each Issue:
    `PASSED` and `human_approval=approved`.
 10. Commit per slice. Add remediation commits; do not rewrite accepted history.
 11. Push and open a PR to `nhibuaa/k6-public-demo`.
-12. Run pinned Standards and Spec `code-review` on the exact PR fixed point.
-13. Merge only with zero Critical/Major findings, valid acceptance, a mergeable PR, and the latest
-    integration head reconciled.
+12. Do not run a per-Issue Standards/Spec `code-review`. Preserve the exact child candidate for
+    the single final whole-K6 review.
+13. Merge only when the ticket and guide reviews have no Critical/Major findings, acceptance is
+    valid, the PR is mergeable, and the latest integration head is reconciled.
 
 ### Verification gates
 

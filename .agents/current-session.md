@@ -1,8 +1,8 @@
 # K6 Railway Public Demo — Current Authority (2026-08-23)
 
-## CURRENT AUTHORITY — Issue #111 guide v6 accepted; child publication authorized
+## CURRENT AUTHORITY — Issue #111 integrated; Wave 2 frontier active
 
-`ISSUE_111_V6_ACCEPTED_CHILD_PR_AUTHORIZED_D2_UNAUTHORIZED`
+`ISSUE_111_INTEGRATED_WAVE_2_FRONTIER_D2_UNAUTHORIZED`
 
 This block supersedes every lower transition/status paragraph in this file. The docs-only
 normalization review reached aggregate `APPROVE` with zero Critical or Major findings and was pushed
@@ -10,11 +10,11 @@ at integration head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The sole normati
 `docs/deployment/k6-d2-authorization-execution-contract.md`.
 
 - Canonical plan SHA-256: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`.
-- End-to-end execution plan SHA-256: `72753830ab70236ba1b269077472fdc15952097a265f30c692f11f4296a59cc5`.
+- End-to-end execution plan SHA-256: `5827ab0a5c2d1a38f4bf4dc2270531daa9ba2d8fb31144529c586bada60955e2`.
 
-Issue #111 uses branch `nhibuaa/k6-issue-111-target-config`, worktree
+Issue #111 used branch `nhibuaa/k6-issue-111-target-config`, isolated worktree
 `D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`, and source base
-`0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The staged, uncommitted remediation execution tree is
+`0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. Its accepted implementation tree is
 `6f53a78d88137e0d8dd48aac91e0672d312c3d6f`.
 
 Two reviewer axes that had already been dispatched returned after the maintainer cancelled the
@@ -48,9 +48,14 @@ retained manifest digest is
 that exact pending run and all eight observations. Run
 `k6-111-v6-local-20260823T025857Z-approved` is appended as `PASSED/approved` and binds the
 accepted observation through
-`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.acceptance.json`. The next valid
-transition is exact-candidate verification, commit, push, and child PR creation targeting
-`nhibuaa/k6-public-demo`. Do not run a per-Issue final review. D2 remains unauthorized.
+`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.acceptance.json`. Child commit
+`7ab8f2515d117af69be318ffcc8a03515bb1918d` was merged by PR #119 at
+`4d135b911d90c8cf6ea8eb04e00e8a8399998f22`. Both commits are reachable from integration; the
+post-merge tree equals the accepted child tree, so no v6 Test Case was invalidated. Issue #111 is
+closed; its clean child worktree and local/remote child branches were removed after reachability
+verification. The new frontier is Issues #112 and #113, which must start from the same exact
+integration checkpoint containing this docs-only lifecycle normalization. Do not run per-Issue
+final reviews. D2 remains unauthorized.
 All lower sections are historical evidence unless this block explicitly incorporates them.
 
 ## Historical checkpoints — superseded by CURRENT AUTHORITY

@@ -1,15 +1,15 @@
 # K6 Railway Public Demo — Feature Delivery Ledger
 
-## Current authority override — Issue #111 accepted; child PR publication authorized
+## Current authority override — Issue #111 integrated; Wave 2 frontier active
 
-`ISSUE_111_V6_ACCEPTED_CHILD_PR_AUTHORIZED_D2_UNAUTHORIZED`
+`ISSUE_111_INTEGRATED_WAVE_2_FRONTIER_D2_UNAUTHORIZED`
 
-This block supersedes lower transition wording where it conflicts. The docs-only normalization
-fixed point passed external review and is pushed at integration head
+This block supersedes lower transition wording where it conflicts. The previous docs-only
+normalization fixed point passed external review and is pushed at integration head
 `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The canonical D2 matrix remains
 `docs/deployment/k6-d2-authorization-execution-contract.md`.
 
-Issue #111 remediation is staged on its isolated branch and remains uncommitted at execution tree
+Issue #111 accepted implementation tree is
 `6f53a78d88137e0d8dd48aac91e0672d312c3d6f`. Two already-dispatched reviewer axes returned after
 the per-Issue review was cancelled; they were not aggregated and are not final-review evidence.
 Their concrete findings were independently verified and remediated through TDD. Target/build tests
@@ -32,9 +32,15 @@ appended as `BLOCKED/pending`. Its retained manifest digest is
 `3e882c5f2717752abf2e3fbe222a6115714e26c774f43c08d5e0a9a6d57ec6b1`. The maintainer accepted
 that exact run and all eight observations. Run
 `k6-111-v6-local-20260823T025857Z-approved` is appended as `PASSED/approved` and binds the prior
-observation through the immutable acceptance sidecar. Commit, push, and child PR creation are now
-the active transition. No per-Issue Standards/Spec `code-review` is pending; the one final
-whole-K6 review remains deferred. No D2 mutation occurred. D2 remains unauthorized.
+observation through the immutable acceptance sidecar. PR #119 merged child commit
+`7ab8f2515d117af69be318ffcc8a03515bb1918d` into integration at
+`4d135b911d90c8cf6ea8eb04e00e8a8399998f22`. The child and merge commits are reachable and the
+post-merge tree equals the accepted child tree, so selective acceptance invalidation is `none`.
+Issue #111 is closed; its clean child worktree and local/remote branch were removed after
+reachability verification. The active frontier is Issues #112 and #113 from the same exact
+integration head containing this lifecycle checkpoint. No per-Issue Standards/Spec `code-review`
+is pending; the one final whole-K6 review remains deferred. No D2 mutation occurred. D2 remains
+unauthorized.
 
 ## Workflow identity
 
@@ -44,13 +50,14 @@ whole-K6 review remains deferred. No D2 mutation occurred. D2 remains unauthoriz
 - Default branch: `main`
 - Feature integration branch: `nhibuaa/k6-public-demo`
 - Base and initial integration head: `72a9828579f34c0b88c9c8a1c51c2c4f8225c1ca`
-- Current integration head: `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`
+- Current integration authority: the commit containing this lifecycle checkpoint; its parent
+  includes Issue #111 merge commit `4d135b911d90c8cf6ea8eb04e00e8a8399998f22`
 - Canonical K6 plan: `docs/deployment/k6-public-demo-plan.md`
 - Canonical K6 plan SHA-256 at this lifecycle fixed point: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`
 - Approved execution plan: `docs/deployment/k6-end-to-end-execution-plan.md`
-- Approved execution plan SHA-256 at this lifecycle fixed point: `72753830ab70236ba1b269077472fdc15952097a265f30c692f11f4296a59cc5`
-- Pre-D2 delivery authority exists under the approved plan. Issue #111 implementation and its
-  ticket/guide/human gates are complete; child integration is the current transition.
+- Approved execution plan SHA-256 at this lifecycle fixed point: `5827ab0a5c2d1a38f4bf4dc2270531daa9ba2d8fb31144529c586bada60955e2`
+- Pre-D2 delivery authority exists under the approved plan. Issue #111 implementation,
+  ticket/guide/human gates, and child integration are complete; Wave 2 initialization is current.
 - D2 credential creation/binding, GHCR publication, Railway rollout, and live acceptance remain unauthorized.
 - `main` was unchanged and clean at initialization.
 
@@ -75,9 +82,9 @@ whole-K6 review remains deferred. No D2 mutation occurred. D2 remains unauthoriz
 | Phase 0 — K5 reconciliation and K6 initialization | completed | K5 merged at `72a9828`; requested branch created; session state and K6 records written; canonical plan recorded and verified; no runtime mutation |
 | Phase 1 — Railway research and target binding | completed at S1 evidence boundary | Singapore region `asia-southeast1-eqsg3a`, dedicated-Atlas wildcard-allowlist decision, MongoDB Atlas S1 evidence, accepted Upstash application-client topology, complete CloudAMQP metadata/provider-managed vhost/user boundary, AWS S3 resource/security evidence, and secret-safe credential ownership boundaries are recorded; provider-internal/permission regexes remain intentionally unasserted; live compatibility remains D2 |
 | Phase 2 — specification/design/authorization | completed; maintainer approved | Phase 2 consistency revision approved by maintainer; ADR-016 accepted; D2 remains separately gated |
-| Phase 3 — decomposition/cadence | completed; maintainer approved and tickets published | Approved eight-ticket graph published as Issues #111–#118 with real blocking references; read-back passed; frontier is Issue #111; cadence is `high` |
+| Phase 3 — decomposition/cadence | completed; maintainer approved and tickets published | Approved eight-ticket graph published as Issues #111–#118 with real blocking references; read-back passed; frontier is Issues #112 and #113 after #111 integration; cadence is `high` |
 | Bootstrap B0 — execution baseline | completed | Unrelated root `mongoose` WIP preserved externally; full baseline passed; commit `74d5ed917c37a12b8ee88c767447f8fa23242af1` pushed; integration worktree created |
-| Phase 4 — implementation | Issue #111 accepted; child commit/PR pending | Execution tree `6f53a78d` is staged; focused target/build `60/60`, Evaluation recorder `14/14`, both local Docker builds pass, and v6 Evaluation is `PASSED/approved`; no child commit/PR exists yet |
+| Phase 4 — implementation | Issue #111 integrated; Wave 2 pending | Issue #111 tree `6f53a78d` passed all gates and v6 Evaluation is `PASSED/approved`; PR #119 merged at `4d135b9`; Issues #112/#113 are the active parallel frontier |
 | Phase 5 — candidate artifacts/CI preparation | pending | Pre-D2 may build/test/validate images and prepare workflows/descriptors; no GHCR publication or deployment digest exists |
 | Phase 6 — manual acceptance preparation | pending | Pre-D2 may lock the guide and evidence schema; deployed-target execution is forbidden before D2 rollout |
 | Phase 7 — D2 Authorization Request/checkpoint | pending | Human approval is required before credential binding, GHCR publication, rollout, live provider validation, or deployed-target acceptance |
@@ -91,7 +98,8 @@ whole-K6 review remains deferred. No D2 mutation occurred. D2 remains unauthoriz
   `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`
 - Branch: `nhibuaa/k6-issue-111-target-config`
 - Worktree owner: `D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`
-- Worktree disposition: retained; no implementation commit or PR exists
+- Worktree disposition: removed cleanly after reachability verification and Issue closure; local
+  and remote child branches deleted
 - Initial ticket review: `REQUEST_CHANGES` with zero Critical, three Major, and one Minor finding
 - Ticket remediation: clarified fatal validation/fallbacks, `schemaVersion: 1` and stale semantics,
   payload preservation, and SPA versus edge/backend ownership in the GitHub Issue body
@@ -138,19 +146,25 @@ whole-K6 review remains deferred. No D2 mutation occurred. D2 remains unauthoriz
 - Historical approved Evaluation: run `k6-111-v5-local-20260823T010318Z-approved`, eight `PASS`
   outcomes, verdict `PASSED`, `human_approval=approved`; prior bytes are preserved, but changed
   implementation plus incomplete retained evidence make it ineligible for the current candidate
-- Staged remediation fixed point: uncommitted execution tree
+- Accepted remediation tree:
   `6f53a78d88137e0d8dd48aac91e0672d312c3d6f`; v5 remains bound only to `60edb571...`
 - Focused remediation verification: target config/build `60/60`, Evaluation recorder `14/14`;
   historical v5 history reload `2` records with `BLOCKED/PASSED`
-- Current frontier: Issue #111 only; #112 and #113 remain blocked until current-candidate acceptance
-  passes and #111 is merged
+- Issue #111 child commit: `7ab8f2515d117af69be318ffcc8a03515bb1918d`
+- Issue #111 PR: #119, merged at
+  `4d135b911d90c8cf6ea8eb04e00e8a8399998f22`
+- Post-merge verification: child and merge commits reachable; integration tree equals accepted
+  child tree; selective acceptance invalidation is `none`
+- Issue state: closed with acceptance, merge, verification, and `D2_MUTATIONS=0` evidence comment
+- Current frontier: Issues #112 and #113 from the same exact integration head containing this
+  lifecycle checkpoint
 - Guide v6: `.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.md`; SHA-256
   `f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b`; execution tree
   `6f53a78d88137e0d8dd48aac91e0672d312c3d6f`; external review `APPROVE`, zero findings
 - Guide v6 acceptance: pending run `k6-111-v6-local-20260823T022616Z-observation` was explicitly
   accepted; run `k6-111-v6-local-20260823T025857Z-approved` is `PASSED/approved`
-- Next valid transition: commit the accepted exact candidate, push the child branch, and open its
-  PR to `nhibuaa/k6-public-demo`
+- Next valid transition: initialize Issues #112 and #113 from the same exact integration head, then
+  prepare their ticket reviews, Test Cases, and locked guide candidates
 - Final-review sequencing: do not run a per-Issue Standards/Spec `code-review`; run one final
   whole-K6 review only after Issues #111–#118 are integrated and required live acceptance completes
 - Forbidden at this checkpoint: per-Issue final review, D2 actions, provider/credential mutation, image
