@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v9",
+  "guide_sha256": "396a2eed873326969f9dd23856bfdb61edbde2c8d18e61bd18a279afaead5b15",
+  "catalog_sha256": "682205a12684359629f9eaa44830941118f80ff23604490161d0e3c674e6151b",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6cf2-7fe2-8ce2-deaa18fcdfa4"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 1,
+  "minor_count": 0,
+  "finding_titles": [
+    "Pre-runtime cleanup can traverse a replaced loader-root reparse point"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 116,
+  "review_type": "pre-implementation-ticket-spec",
+  "issue_url": "https://github.com/NhiBuaa/kitta-chat/issues/116",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02e22-acc8-7751-b03e-b251ff009812"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "REQUEST_CHANGES",
+      "critical_count": 0,
+      "major_count": 4,
+      "minor_count": 0,
+      "finding_titles": [
+        "Seeded, self-signup, mixed-record, and S3 cleanup ownership was ambiguous",
+        "Remote public-demo target guard lacked testable attestation",
+        "Reserved seed identities could adopt a foreign account",
+        "Reset end state, dry-run parity, and partial failure were unspecified"
+      ],
+      "remediation_comment": "https://github.com/NhiBuaa/kitta-chat/issues/116#issuecomment-5385558715"
+    },
+    {
+      "round": 2,
+      "verdict": "REQUEST_CHANGES",
+      "critical_count": 0,
+      "major_count": 1,
+      "minor_count": 0,
+      "finding_titles": [
+        "Foreign-User reference repair contradicted the zero-write uncertainty rule"
+      ],
+      "remediation_comment": "https://github.com/NhiBuaa/kitta-chat/issues/116#issuecomment-5385570971"
+    },
+    {
+      "round": 3,
+      "verdict": "APPROVE",
+      "critical_count": 0,
+      "major_count": 0,
+      "minor_count": 0,
+      "findings": [],
+      "report": "The final ticket uses structural ownership only, makes every foreign reference uncertain with zero writes, escalates explicitly observed sensitive content without a classifier, and locks target, collision, dry-run, failure, and Mongo-only boundaries."
+    }
+  ],
+  "final_verdict": "APPROVE",
+  "per_issue_code_review": false,
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

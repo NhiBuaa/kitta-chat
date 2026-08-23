@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v8",
+  "guide_sha256": "9481bd984e87ebc97680fc361d15274a686a85b0749c0342745857932c08eb89",
+  "catalog_sha256": "bb7b77825d802e3fa8765c2087f775bf9b7519dd77963d23065e420bd92616c3",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6cf2-7fe2-8ce2-deaa18fcdfa4"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Dot-source failure leaves the pre-runtime root behind",
+    "Injected faults do not exercise the production materializer cleanup"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

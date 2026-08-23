@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v1",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-116-demo-seed-v1.md",
+  "guide_sha256": "9849f94a4519d1ccef3f6b8c0abfdd82480656c935934ba3840f3a5a11e0e77c",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {"kind": "external-subagent", "id": "01a02e22-acc8-7751-b03e-b251ff009812"},
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 6,
+  "minor_count": 0,
+  "finding_titles": [
+    "Candidate construction and dependency bootstrap were not executable",
+    "Disposable Mongo image/lifecycle was mutable and unbounded",
+    "Traceability and Test Case oracles were underspecified",
+    "Provider/secret/D2 boundary was asserted rather than enforced",
+    "Cleanup was conditional and durable evidence destination missing",
+    "Final PASSED Evaluation append was incomplete"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

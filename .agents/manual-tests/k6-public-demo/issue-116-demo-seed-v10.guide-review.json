@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v10",
+  "guide_sha256": "8929eafc74abe1bc66d6714048b63a40777dfe7ed75c5ca157ec0e67d4e69cdc",
+  "catalog_sha256": "6bbce1dc6ffba75c6a84e5c7212553bcc90de917b3dea34d65a90dfeb94824d2",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6cf2-7fe2-8ce2-deaa18fcdfa4"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Parent-scope loading cannot enforce the pre-shared zero-mutation oracle",
+    "Pre-recorder validation failures retain unappended durable evidence"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v13",
+  "guide_sha256": "07ce4933cafb01060f022af46e754b22228c734ccfa1858700c6bd4c0211ca6e",
+  "catalog_sha256": "6fc3c495cab211843b672044fd2e185abe40dcdcaadce17e929ecdd90ff2ce02",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6cf2-7fe2-8ce2-deaa18fcdfa4"
+  },
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "finding_titles": [],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

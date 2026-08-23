@@ -1,0 +1,20 @@
+{
+  "schema_version":1,
+  "issue":116,
+  "guide_revision":"k6-116-demo-seed-v5",
+  "guide_sha256":"dc54626fcac4c8de4ed7e10ae49e4fdacd1fa73bbc0ba7a4a38f1714f127b12c",
+  "catalog_sha256":"afaac0713e0c4a11a0605caeb57bc250ed3b4c405b483a208c8d7fe77870d454",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-acc8-7751-b03e-b251ff009812"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":1,
+  "minor_count":1,
+  "finding_titles":[
+    "Remote seed/reset authority and reverse mode matrix remain incomplete",
+    "Revision lineage names stale revisions"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

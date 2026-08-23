@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v4",
+  "guide_sha256": "57dee68c5f480cd4893cdb2f9ad0c67280eda4802ff9f03eb64c4c5e61f6f7f0",
+  "catalog_sha256": "fe0f2e936f794bcd9a0d8f1db5a1c366044115e0eff0af7e3d9b029ec96b7af1",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {"kind":"external-subagent","id":"01a02e22-acc8-7751-b03e-b251ff009812"},
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 3,
+  "minor_count": 0,
+  "finding_titles": [
+    "The locked 19-account catalog does not match the SourceBase canonical dataset",
+    "The safety catalog still omits required invalid-target and foreign-marker cases",
+    "Loader cleanup removes files but does not bound or reclaim its spawned processes"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version":1,
+  "issue":116,
+  "guide_revision":"k6-116-demo-seed-v6",
+  "guide_sha256":"0e34fa4c5c2f6567bf067f978fbe103f761cbbf228f896a4d7b14035af5b43a1",
+  "catalog_sha256":"0f1e015a8630f2459759ac60d982d4fec4f63d4032b43d1ef7e68a96d1b36a3a",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-acc8-7751-b03e-b251ff009812"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":1,
+  "minor_count":0,
+  "finding_titles":[
+    "Append-only Evaluation authority is committed before outer loader cleanup is known"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

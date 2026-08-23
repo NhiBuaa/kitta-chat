@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v12",
+  "guide_sha256": "d7e4eee28c6e20f3b6e52d5b1d0854e4f327ee10dd8dacd0ce028a2f346ad4cf",
+  "catalog_sha256": "9bb5b4ae5fe3e55afc9f290dd800b1c0e0c08931a61bf936e8540a9ff9cee1d2",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6cf2-7fe2-8ce2-deaa18fcdfa4"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 4,
+  "minor_count": 0,
+  "finding_titles": [
+    "Lifetime root leases still do not own child-path operations",
+    "Finalization result union is not total for unsafe history/cleanup states",
+    "Blank run IDs pass the exact-result guard",
+    "Explicit target mode remains untested"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

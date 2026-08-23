@@ -1,0 +1,21 @@
+{
+  "schema_version":1,
+  "issue":116,
+  "guide_revision":"k6-116-demo-seed-v7",
+  "guide_sha256":"3bdb957776695b4c009c5c63d1391c04eade7485cfcb1f31e2128d6c9d06036c",
+  "catalog_sha256":"14e3b45fd9f0050c4c01d2fc4f6a21c42b58b5ad12e93cc74b6a2ca3ee1a9e88",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-acc8-7751-b03e-b251ff009812"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":3,
+  "minor_count":0,
+  "finding_titles":[
+    "Uncertain reset apply still lacks an explicit zero-mutation oracle",
+    "The post-cleanup Evaluation is called sealed but is not digest-bound across promotion",
+    "The final recorder process and append-failure path are not bounded or cleanup-complete"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

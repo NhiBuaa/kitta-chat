@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v11",
+  "guide_sha256": "e1817e6a7735da3964e1786c84243423226511ceb36ec5be84b0651c038888f1",
+  "catalog_sha256": "b8afb39a7554b4d82b88c5bce13616a42d9b2a6b8b4483ef56c62f698476ff00",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6cf2-7fe2-8ce2-deaa18fcdfa4"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 3,
+  "minor_count": 0,
+  "finding_titles": [
+    "Top-level PowerShell traps bypass declaration validation",
+    "Ownership leases do not govern post-lease child operations",
+    "Confirmation-failure classification does not require verified cleanup"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

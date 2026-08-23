@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v2",
+  "guide_sha256": "233f07a9c9774b0926548cd77a6d38e3bc8c672148c293c406d7f3ee371cb15e",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {"kind": "external-subagent", "id": "01a02e22-acc8-7751-b03e-b251ff009812"},
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 5,
+  "minor_count": 0,
+  "finding_titles": [
+    "Source commit tree identity was incorrect",
+    "Changed scope and candidate trust root remained open-ended",
+    "Per-ID nested observation schemas were not fully closed",
+    "Parent secret environment cleanup was not failure-safe",
+    "Evidence finalization preceded gate, scan, and cleanup results"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

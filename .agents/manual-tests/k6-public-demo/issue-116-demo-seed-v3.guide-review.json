@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v3",
+  "guide_sha256": "7934620ae38a7e133c1177123afc4b1095c7f855320faf3368503bea2593043d",
+  "catalog_sha256": "6c89c847879a9be74587c0e0e2e78855d1651c11d1d57243428ba49fa8a6244d",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02e22-acc8-7751-b03e-b251ff009812"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 3,
+  "minor_count": 0,
+  "finding_titles": [
+    "The per-ID catalog is still not mechanically closed against its declared observation schemas",
+    "The catalog does not provide oracles for all seed and destructive-authority acceptance requirements",
+    "The copy-run bootstrap creates owned temporary artifacts outside any executable cleanup envelope"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

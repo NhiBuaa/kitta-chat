@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "issue": 116,
+  "guide_revision": "k6-116-demo-seed-v9",
+  "case_order": [
+    "MA-116-01",
+    "MA-116-02",
+    "MA-116-03",
+    "MA-116-04",
+    "MA-116-05",
+    "MA-116-06",
+    "MA-116-07",
+    "MA-116-08"
+  ],
+  "validation_contract": {
+    "top_level_fields": ["schema_version", "issue", "guide_revision", "case_order", "validation_contract", "cases", "retained_d2_risks"],
+    "case_fields": ["vectors", "aggregate_expected", "oracle", "d2_disposition"],
+    "vector_fields": ["id", "input", "expected"],
+    "rules": [
+      "top-level, case, vector, input, expected and aggregate objects use exact field-set equality",
+      "case_order is duplicate-free and set-equal to cases keys",
+      "vector ids are globally unique and each exact input maps to one exact expected object",
+      "missing, extra, reordered, mistyped or unequal material is BLOCKED before candidate observations",
+      "candidate output cannot supply or alter expected values"
+    ]
+  },
+  "cases": {
+    "MA-116-01": {
+      "vectors": [
+        {
+          "id":"DATA-CATALOG",
+          "input":{
+            "namespace":"kittachat-demo",
+            "version":1,
+            "kind":"seeded",
+            "users":[
+              {"id":"64a000000000000000000001","email":"alice@kittachat.test"},
+              {"id":"64a000000000000000000002","email":"bob@kittachat.test"},
+              {"id":"64a000000000000000000003","email":"chloe@kittachat.test"},
+              {"id":"64a000000000000000000004","email":"daniel@kittachat.test"},
+              {"id":"64a000000000000000000005","email":"emma@kittachat.test"},
+              {"id":"64a000000000000000000006","email":"felix@kittachat.test"},
+              {"id":"64a000000000000000000007","email":"grace@kittachat.test"},
+              {"id":"64a000000000000000000008","email":"henry@kittachat.test"},
+              {"id":"64a000000000000000000009","email":"iris@kittachat.test"},
+              {"id":"64a00000000000000000000a","email":"jack@kittachat.test"},
+              {"id":"64a00000000000000000000b","email":"kara@kittachat.test"},
+              {"id":"64a00000000000000000000c","email":"liam@kittachat.test"},
+              {"id":"64a00000000000000000000d","email":"maya@kittachat.test"},
+              {"id":"64a00000000000000000000e","email":"noah@kittachat.test"},
+              {"id":"64a00000000000000000000f","email":"olivia@kittachat.test"},
+              {"id":"64a000000000000000000010","email":"paul@kittachat.test"},
+              {"id":"64a000000000000000000011","email":"quinn@kittachat.test"},
+              {"id":"64a000000000000000000012","email":"ruby@kittachat.test"},
+              {"id":"64a000000000000000000013","email":"sam@kittachat.test"}
+            ],
+            "cardinalities":{"users":19,"groups":6,"files":60,"messages":244,"conversations":24,"participants":60}
+          },
+          "expected":{"code":"OK","canonical_digest_stable":true,"credential_fields_in_digest":0,"public_marker_fields":0}
+        },
+        {"id":"DATA-PASSWORD-MISSING","input":{"password_state":"missing"},"expected":{"code":"DEMO_CREDENTIAL_REQUIRED","parse_calls":0,"connect_calls":0,"model_calls":0,"writes":0}},
+        {"id":"DATA-PASSWORD-BLANK","input":{"password_state":"blank"},"expected":{"code":"DEMO_CREDENTIAL_REQUIRED","parse_calls":0,"connect_calls":0,"model_calls":0,"writes":0}},
+        {"id":"DATA-AUTH-ALL","input":{"password_state":"operator_supplied","account_count":19},"expected":{"code":"OK","authentication_attempts":19,"authentication_successes":19,"authentication_failures":0,"retained_password_values":0,"retained_hash_values":0}},
+        {"id":"DATA-SEED-TWICE","input":{"runs":2,"target":"disposable_mongo","initial_state":"empty"},"expected":{"code":"OK","run1_cardinalities":{"users":19,"groups":6,"files":60,"messages":244,"conversations":24,"participants":60},"run2_cardinalities":{"users":19,"groups":6,"files":60,"messages":244,"conversations":24,"participants":60},"stable_user_ids":19,"stable_legacy_conversation_ids":24,"duplicate_records":0,"canonical_digest_equal":true}}
+      ],
+      "aggregate_expected":{"vector_count":5,"account_count":19,"authentication_successes":19,"duplicate_records":0},
+      "oracle":"The exact synthetic catalog is deterministic, authenticates all accounts and remains idempotent after two persisted seed runs.",
+      "d2_disposition":"REMOTE_SEED_PENDING_D2"
+    },
+    "MA-116-02": {
+      "vectors": [
+        {"id":"TARGET-LOCAL-VALID","input":{"uri_state":"valid","mode":"local","target":null,"host_class":"loopback","database":"shot-chat","expected_fingerprint":null,"actual_fingerprint":null,"seed_authority":false,"reset_authority":false,"confirmation":null},"expected":{"code":"OK","parse_calls":1,"connect_calls":1,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-LOCAL-REMOTE-HOST","input":{"uri_state":"valid","mode":"local","target":null,"host_class":"remote-demo","database":"shot-chat","expected_fingerprint":null,"actual_fingerprint":null,"seed_authority":false,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-WRONG-DATABASE","input":{"uri_state":"valid","mode":"local","target":null,"host_class":"loopback","database":"production","expected_fingerprint":null,"actual_fingerprint":null,"seed_authority":false,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-MISSING-DATABASE","input":{"uri_state":"valid","mode":"local","target":null,"host_class":"loopback","database":null,"expected_fingerprint":null,"actual_fingerprint":null,"seed_authority":false,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-MALFORMED-URI","input":{"uri_state":"malformed","mode":"local","target":null,"host_class":"unresolved","database":null,"expected_fingerprint":null,"actual_fingerprint":null,"seed_authority":false,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-REMOTE-MISSING-K6-TARGET","input":{"uri_state":"valid","mode":"public-demo","target":null,"host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-REMOTE-WRONG-K6-TARGET","input":{"uri_state":"valid","mode":"public-demo","target":"production","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-MODE-MISMATCH","input":{"uri_state":"valid","mode":"local","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":null,"actual_fingerprint":null,"seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-REVERSE-MODE-MISMATCH","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"loopback","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-PRODUCTION-LIKE","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"production-like","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-UNKNOWN-HOST","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"unknown","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-REMOTE-MISSING-FINGERPRINT","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":null,"actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_ATTESTATION_REQUIRED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-REMOTE-MISMATCH","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_TARGET_ATTESTATION_FAILED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-REMOTE-SEED-NO-AUTH","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":false,"reset_authority":false,"confirmation":null},"expected":{"code":"DEMO_REMOTE_SEED_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-REMOTE-SEED-PURE-VALID","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":null},"expected":{"code":"POLICY_ADMITTED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-RESET-NO-SEED-AUTH","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":false,"reset_authority":true,"confirmation":"RESET_KITTACHAT_PUBLIC_DEMO"},"expected":{"code":"DEMO_REMOTE_SEED_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-RESET-SEED-ONLY","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":false,"confirmation":"RESET_KITTACHAT_PUBLIC_DEMO"},"expected":{"code":"DEMO_REMOTE_RESET_NOT_ALLOWED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-RESET-CONFIRM-MISSING","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":true,"confirmation":null},"expected":{"code":"DEMO_RESET_CONFIRMATION_REQUIRED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-RESET-CONFIRM-BLANK","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":true,"confirmation":""},"expected":{"code":"DEMO_RESET_CONFIRMATION_REQUIRED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-RESET-CONFIRM-WRONG","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":true,"confirmation":"RESET_WRONG_TARGET"},"expected":{"code":"DEMO_RESET_CONFIRMATION_REQUIRED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}},
+        {"id":"TARGET-RESET-PURE-VALID","input":{"uri_state":"valid","mode":"public-demo","target":"public-demo","host_class":"remote-demo","database":"shot-chat","expected_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","actual_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","seed_authority":true,"reset_authority":true,"confirmation":"RESET_KITTACHAT_PUBLIC_DEMO"},"expected":{"code":"POLICY_ADMITTED","parse_calls":1,"connect_calls":0,"model_calls":0,"writes":0,"forbidden_output_occurrences":0}}
+      ],
+      "aggregate_expected":{"vector_count":21,"invalid_connect_calls":0,"policy_only_remote_connect_calls":0,"forbidden_output_occurrences":0},
+      "oracle":"Target and destructive authority are resolved at a pure pre-connect seam; no remote connection occurs pre-D2.",
+      "d2_disposition":"LIVE_TARGET_FINGERPRINT_PENDING_D2"
+    },
+    "MA-116-03": {
+      "vectors": [
+        {"id":"COLLISION-REUSE","input":{"reserved_email":true,"expected_id":true,"marker_namespace":"kittachat-demo","marker_kind":"seeded","marker_version":1,"duplicate_count":1},"expected":{"code":"REUSE","preflight_complete":true,"writes":0,"reused_users":1,"adopted_users":0}},
+        {"id":"COLLISION-UNMARKED","input":{"reserved_email":true,"expected_id":true,"marker_namespace":null,"marker_kind":null,"marker_version":null,"duplicate_count":1},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}},
+        {"id":"COLLISION-MISSING-NAMESPACE","input":{"reserved_email":true,"expected_id":true,"marker_namespace":null,"marker_kind":"seeded","marker_version":1,"duplicate_count":1},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}},
+        {"id":"COLLISION-FOREIGN-NAMESPACE","input":{"reserved_email":true,"expected_id":true,"marker_namespace":"foreign-demo","marker_kind":"seeded","marker_version":1,"duplicate_count":1},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}},
+        {"id":"COLLISION-SELF-SIGNUP","input":{"reserved_email":true,"expected_id":true,"marker_namespace":"kittachat-demo","marker_kind":"self-signup","marker_version":1,"duplicate_count":1},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}},
+        {"id":"COLLISION-WRONG-VERSION","input":{"reserved_email":true,"expected_id":true,"marker_namespace":"kittachat-demo","marker_kind":"seeded","marker_version":2,"duplicate_count":1},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}},
+        {"id":"COLLISION-WRONG-ID","input":{"reserved_email":true,"expected_id":false,"marker_namespace":"kittachat-demo","marker_kind":"seeded","marker_version":1,"duplicate_count":1},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}},
+        {"id":"COLLISION-ID-OTHER-EMAIL","input":{"reserved_email":false,"expected_id":true,"marker_namespace":"kittachat-demo","marker_kind":"seeded","marker_version":1,"duplicate_count":1},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}},
+        {"id":"COLLISION-DUPLICATE-EMAIL","input":{"reserved_email":true,"expected_id":true,"marker_namespace":"kittachat-demo","marker_kind":"seeded","marker_version":1,"duplicate_count":2},"expected":{"code":"DEMO_IDENTITY_COLLISION","preflight_complete":true,"writes":0,"reused_users":0,"adopted_users":0}}
+      ],
+      "aggregate_expected":{"vector_count":9,"collision_write_calls":0,"adopted_users":0},
+      "oracle":"Only the exact reserved email, deterministic ID and seeded marker tuple is reusable; all ambiguity aborts before writes.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-116-04": {
+      "vectors": [
+        {"id":"OWN-FULL-SEED","input":{"record_class":"seed_graph","all_users_owned":true,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":false,"sensitive_observed":false},"expected":{"code":"OWNED","uncertain":0,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-SELF-SIGNUP","input":{"record_class":"isolated_self_signup_user","all_users_owned":true,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":false,"sensitive_observed":false},"expected":{"code":"OWNED","uncertain":0,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-SUFFIX-ONLY","input":{"record_class":"user","all_users_owned":false,"marker_valid":false,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":false,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-MIXED-GROUP","input":{"record_class":"group","all_users_owned":false,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":true,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-MIXED-CONVERSATION","input":{"record_class":"conversation","all_users_owned":false,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":true,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-MIXED-CALL","input":{"record_class":"call_history","all_users_owned":false,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":true,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-MIXED-FILE-MESSAGE","input":{"record_class":"file_message_chain","all_users_owned":false,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":true,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-LEGACY-MISMATCH","input":{"record_class":"conversation","all_users_owned":true,"marker_valid":true,"legacy_identity_valid":false,"s3_backed":false,"foreign_reference":false,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-S3-FILE","input":{"record_class":"file","all_users_owned":true,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":true,"foreign_reference":false,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-FOREIGN-FRIEND","input":{"record_class":"user_friends","all_users_owned":false,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":true,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-FOREIGN-REQUEST","input":{"record_class":"user_friend_requests","all_users_owned":false,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":true,"sensitive_observed":false},"expected":{"code":"UNCERTAIN","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}},
+        {"id":"OWN-SENSITIVE","input":{"record_class":"user","all_users_owned":true,"marker_valid":true,"legacy_identity_valid":true,"s3_backed":false,"foreign_reference":false,"sensitive_observed":true},"expected":{"code":"ESCALATE","uncertain":1,"writes":0,"foreign_repairs":0,"classifier_calls":0}}
+      ],
+      "aggregate_expected":{"vector_count":12,"model_inventory":["User","Group","File","Message","Conversation","ConversationParticipant","CallHistory"],"uncertain_write_calls":0,"foreign_repairs":0,"classifier_calls":0},
+      "oracle":"Structural ownership covers every named model/reference; mixed, S3-backed or sensitive-observed material blocks without content classification.",
+      "d2_disposition":"S3_CLEANUP_OWNED_BY_ISSUE_114_D2"
+    },
+    "MA-116-05": {
+      "vectors": [
+        {"id":"RESET-DRY-RUN","input":{"mode":"dry_run","owned_count":413,"uncertain":0},"expected":{"code":"DRY_RUN","writes":0,"candidate_count":413,"remaining_owned":413}},
+        {"id":"RESET-PARITY","input":{"mode":"compare_dry_run_apply","owned_count":413,"uncertain":0},"expected":{"code":"MATCH","manifest_equal":true,"selectors_equal":true,"writes":0}},
+        {"id":"RESET-APPLY","input":{"mode":"apply","owned_count":413,"uncertain":0},"expected":{"code":"APPLIED","outside_manifest_writes":0,"remaining_owned":0}},
+        {"id":"RESET-SECOND-APPLY","input":{"mode":"apply","owned_count":0,"uncertain":0},"expected":{"code":"NO_OP","outside_manifest_writes":0,"remaining_owned":0}},
+        {"id":"RESET-UNCERTAIN","input":{"mode":"apply","owned_count":413,"uncertain":1},"expected":{"code":"BLOCKED","outside_manifest_writes":0,"writes":0,"model_mutations":0,"delete_calls":0,"update_calls":0,"bulk_write_calls":0,"reference_repair_calls":0,"remaining_owned":413}},
+        {"id":"RESET-REPORT","input":{"mode":"dry_run","owned_count":413,"uncertain":0},"expected":{"code":"SAFE_REPORT","allowed_fields":["candidate","deleted","referenceRepairs","skipped","uncertain","failed"],"forbidden_fields":0}}
+      ],
+      "aggregate_expected":{"vector_count":6,"outside_manifest_writes":0,"uncertain_apply_writes":0,"uncertain_model_mutations":0,"final_remaining_owned":0},
+      "oracle":"Dry-run and apply share one manifest; apply is exact-manifest bounded, uncertain-safe and idempotent.",
+      "d2_disposition":"LIVE_RESET_PENDING_D2_AND_CONDITIONAL"
+    },
+    "MA-116-06": {
+      "vectors": [
+        {"id":"FAIL-PREFLIGHT","input":{"fault_stage":"ownership-preflight"},"expected":{"code":"FAILED","completed_stages":[],"exit_nonzero":true,"false_completion":false}},
+        {"id":"FAIL-CALL-HISTORIES","input":{"fault_stage":"callHistories"},"expected":{"code":"FAILED","completed_stages":[],"exit_nonzero":true,"false_completion":false}},
+        {"id":"FAIL-PARTICIPANTS","input":{"fault_stage":"participants"},"expected":{"code":"FAILED","completed_stages":["callHistories"],"exit_nonzero":true,"false_completion":false}},
+        {"id":"FAIL-CONVERSATIONS","input":{"fault_stage":"conversations"},"expected":{"code":"FAILED","completed_stages":["callHistories","participants"],"exit_nonzero":true,"false_completion":false}},
+        {"id":"FAIL-MESSAGES","input":{"fault_stage":"messages"},"expected":{"code":"FAILED","completed_stages":["callHistories","participants","conversations"],"exit_nonzero":true,"false_completion":false}},
+        {"id":"FAIL-FILES","input":{"fault_stage":"files"},"expected":{"code":"FAILED","completed_stages":["callHistories","participants","conversations","messages"],"exit_nonzero":true,"false_completion":false}},
+        {"id":"FAIL-GROUPS","input":{"fault_stage":"groups"},"expected":{"code":"FAILED","completed_stages":["callHistories","participants","conversations","messages","files"],"exit_nonzero":true,"false_completion":false}},
+        {"id":"FAIL-USERS","input":{"fault_stage":"users"},"expected":{"code":"FAILED","completed_stages":["callHistories","participants","conversations","messages","files","groups"],"exit_nonzero":true,"false_completion":false}},
+        {"id":"RERUN-ALL-STAGES","input":{"prior_faults":["ownership-preflight","callHistories","participants","conversations","messages","files","groups","users"]},"expected":{"code":"CONVERGED","rerun_count":8,"remaining_owned":0,"false_completion":false}}
+      ],
+      "aggregate_expected":{"vector_count":9,"stage_order":["ownership-preflight","callHistories","participants","conversations","messages","files","groups","users"],"rerun_failures":0},
+      "oracle":"Every partial failure is visible, non-zero and safely converges on rerun without selector broadening.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-116-07": {
+      "vectors": [
+        {"id":"ENTRYPOINT-SEED","input":{"path":"server/scripts/k6/seedPublicDemo.js","command":"seed:k6-public-demo"},"expected":{"distinct_from_reset":true,"startup_imports":0,"startup_invocations":0}},
+        {"id":"ENTRYPOINT-RESET","input":{"path":"server/scripts/k6/resetPublicDemo.js","command":"reset:k6-public-demo"},"expected":{"distinct_from_seed":true,"startup_imports":0,"startup_invocations":0}},
+        {"id":"STARTUP-BACKEND","input":{"entrypoint":"backend"},"expected":{"seed_imports":0,"seed_invocations":0,"reset_imports":0,"reset_invocations":0}},
+        {"id":"STARTUP-IMAGE-WORKER","input":{"entrypoint":"image-worker"},"expected":{"seed_imports":0,"seed_invocations":0,"reset_imports":0,"reset_invocations":0}},
+        {"id":"STARTUP-AUDIT-WORKER","input":{"entrypoint":"audit-worker"},"expected":{"seed_imports":0,"seed_invocations":0,"reset_imports":0,"reset_invocations":0}},
+        {"id":"STARTUP-NOTIFICATION-WORKER","input":{"entrypoint":"notification-worker"},"expected":{"seed_imports":0,"seed_invocations":0,"reset_imports":0,"reset_invocations":0}},
+        {"id":"CONTRACT-PUBLIC-SHAPES","input":{"surfaces":["registration","login","profile","friend","message","group","socket"]},"expected":{"surface_count":7,"source_candidate_exact_matches":7,"marker_fields":0}}
+      ],
+      "aggregate_expected":{"vector_count":7,"distinct_operator_commands":2,"startup_seed_reset_imports":0,"public_marker_fields":0},
+      "oracle":"Seed/reset are distinct explicit commands, absent from every startup path, and ownership markers remain internal.",
+      "d2_disposition":"ONE_OFF_REMOTE_SEED_PENDING_D2"
+    },
+    "MA-116-08": {
+      "vectors": [
+        {"id":"GATE-CATALOG","input":{"mutations":["missing-case","extra-case","duplicate-case","reordered-case","missing-field","extra-field","wrong-type","wrong-value"]},"expected":{"blocked_mutations":8,"accepted_mutations":0}},
+        {"id":"GATE-CONTROL","input":{"mutations":["missing-control","extra-control","tampered-control","runner-tamper"]},"expected":{"blocked_before_candidate_process":4,"candidate_process_starts":0}},
+        {"id":"GATE-PRE-RUNTIME-MATERIALIZER","input":{"faults":["loader-git-stream-timeout","loader-git-process-timeout","loader-git-stream-dispose","loader-git-process-dispose","loader-runtime-dot-source"],"bounds_ms":{"process":30000,"termination":10000,"stdout_drain":10000,"stderr_drain":10000},"cleanup_attempts":2,"cleanup_mode":"exact-file-empty-root-no-recursion"},"expected":{"fault_count":5,"remaining_loader_roots":0,"remaining_processes":0,"remaining_streams":0,"candidate_process_starts":0,"history_append_count":0,"recursive_delete_calls":0,"reparse_traversals":0}},
+        {"id":"GATE-BOOTSTRAP-CLEANUP","input":{"faults":["loader-interruption","hung-bootstrap-grandchild","bootstrap-process-dispose","parent-path-removal","durable-parent-create","evidence-promotion","candidate-archive","source-archive","candidate-expand","source-expand","control-verification","runner-launch","history-write-attempt","reparse-parent"]},"expected":{"fault_count":14,"remaining_archives":0,"remaining_run_roots":0,"remaining_loader_roots":0,"remaining_provisional_outputs":0,"remaining_incomplete_durable_outputs":0,"remaining_processes":0,"history_append_count":0,"passed_append_count":0,"reparse_escape_count":0}},
+        {"id":"GATE-RECORDER-FAILURE","input":{"faults":["recorder-start","recorder-timeout","recorder-nonzero","recorder-ack-loss","recorder-ack-loss-after-append"]},"expected":{"fault_count":5,"no_exact_append_count":4,"exact_append_retained_count":1,"removed_unappended_evidence_count":4,"duplicate_retry_count":0,"ambiguous_append_retry_count":0}},
+        {"id":"GATE-SHARED-LOADER","input":{"shared_control":"scripts/k6/issue116/loaderRuntime.ps1","consumers":["parent-guide","bootstrap.ps1","loaderSelfTest.ps1"],"adapter_modes":["real","injected"],"shared_exports":["Assert-K6NoReparsePath","Get-K6FileBinding","Write-K6GitBlob","Test-K6HistoryRecord","Protect-K6HistoryPath","Release-K6HistoryPath","New-K6LoaderAdapters","Invoke-K6LoaderRun","Invoke-K6LoaderCleanup","Invoke-K6EvidencePromotion","Invoke-K6BoundedRecorder","Write-K6AppendConfirmation"]},"expected":{"shared_blob_identity":true,"shared_function_body_digest":true,"local_lifecycle_reimplementations":0,"reimplemented_function_count":0,"adapter_fault_count":14}},
+        {"id":"GATE-MONGO-IDENTITY","input":{"image":"mongo@sha256:d5b3ca8c3f3cdce78d44870dc0871b76d5235e9b2ad4ea6bea5d1fbff8027703","network":"loopback-random-port","storage":"tmpfs-512MiB","volume_count":0},"expected":{"identity_match":true,"registered_mongo_connections":1,"unregistered_mongo_connections":0}},
+        {"id":"GATE-EGRESS","input":{"attempts":["external-dns-http","unregistered-loopback-mongo","redis-6379","rabbitmq-5672","aws","railway"]},"expected":{"blocked_attempts":6,"provider_requests":0,"remote_mutations":0}},
+        {"id":"GATE-SCAN","input":{"gitleaks_image":"ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f","surfaces":{"candidate-diff":"gitleaks","client-dist":"gitleaks","observations":"gitleaks","command-summaries":"gitleaks","evidence-inventory":"gitleaks","final-manifest":"closed-safe-text","pending-evaluation":"closed-safe-text","acceptance-sidecar":"closed-safe-text-approve","approved-evaluation":"closed-safe-text-approve","append-confirmation":"closed-safe-text-post-append"}},"expected":{"gitleaks_digest":"sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f","gitleaks_surface_count":5,"closed_safe_text_surface_count":2,"approve_safe_text_surface_count":2,"post_append_safe_text_surface_count":1,"findings":0,"forbidden_evidence_occurrences":0}},
+        {"id":"GATE-CLEANUP","input":{"resources":["child-secret-env","mongo-container","mongo-port","processes","temp-roots"]},"expected":{"resource_count":5,"remaining_resources":0,"parent_secret_keys_present":false}},
+        {"id":"GATE-BOUNDARY","input":{"counters":["provider-request","provider-mutation","remote-mutation","d2-mutation"]},"expected":{"provider_request":0,"provider_mutation":0,"remote_mutation":0,"d2_mutation":0}}
+      ],
+      "aggregate_expected":{"vector_count":11,"D2_MUTATIONS":0,"retained_secret_values":0},
+      "oracle":"Trust root, disposable Mongo, child-only secret handling, egress denial, cleanup and scans pass before Evaluation.",
+      "d2_disposition":"NO_D2_ACTION_AUTHORIZED"
+    }
+  },
+  "retained_d2_risks": {
+    "atlas_fingerprint_readback":"PENDING_D2",
+    "remote_seed":"PENDING_D2",
+    "remote_reset":"PENDING_D2_AND_CONDITIONAL",
+    "s3_cleanup":"OWNED_BY_ISSUE_114_D2"
+  }
+}
