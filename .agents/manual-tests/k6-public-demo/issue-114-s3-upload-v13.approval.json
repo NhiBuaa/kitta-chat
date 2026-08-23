@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "approval_type": "manual-guide",
+  "guide_revision": "k6-114-s3-upload-v13",
+  "guide_sha256": "4463f4987ce9037b3bc1fca91f647f0cd264c9896c165604f8df10130ad410e1",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "catalog_sha256": "4a90e56f647282f8cc802b69a56807aba8a9dcf578897ac9a70cc989cf88b230",
+  "approved_at": "2026-08-24T06:46:59.4400469+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message approving the exact K6 Wave 3 Issue #114 guide and catalog SHA-256 values",
+  "human_approval": "approved"
+}

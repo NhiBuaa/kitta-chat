@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v10",
+  "guide_sha256": "0519c5618702e9e3b66434d8007b1353907d1568f38719383ad3f7035cd2820d",
+  "catalog_sha256": "6977de175ead2655fde15f36e2d24bf58dc362cb67ebf187c8e2e1a825e881dd",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6a8f-7330-af4a-2bd066f35a89"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Pre-shared phase still accesses unvalidated loader paths",
+    "Post-promotion finalization is not failure-atomic"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

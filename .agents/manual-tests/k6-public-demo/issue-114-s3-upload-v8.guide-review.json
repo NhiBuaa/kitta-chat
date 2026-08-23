@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v8",
+  "guide_sha256": "08b5b241b977d362f7ead3e15fa8cc621b78ed3a688e98e8f49322dceafbc3ed",
+  "catalog_sha256": "bdd4aaa8a5e3a44767baefef92685a1d7cba5b9e5f576a6fece7d5d09665706f",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6a8f-7330-af4a-2bd066f35a89"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Injected pre-runtime faults bypass the production lifecycle",
+    "Successful materialization followed by dot-source failure retains LoaderRoot"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

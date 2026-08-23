@@ -1,0 +1,25 @@
+{
+  "schema_version":1,
+  "issue":114,
+  "guide_revision":"k6-114-s3-upload-v6",
+  "guide_sha256":"b1dd2b41d66065d70f1f6f223bfe5ae7f10555d02afdb5a63d1159f8b2ad8d94",
+  "catalog_sha256":"33ebf60e2310a59e8b36c1a86639613a99169133886f20466e4eb9e390c8d609",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-abe6-7261-b31e-82bb53308449"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":7,
+  "minor_count":0,
+  "finding_titles":[
+    "First-run durable evidence promotion has no destination parent",
+    "Evaluation is appended before parent-owned promotion and cleanup complete",
+    "The loader cleanup fault catalog has no executable injection seam",
+    "Multipart-session ownership and cleanup coverage remains incomplete",
+    "Forbidden public abort and anonymous key-refresh surfaces are not tested",
+    "Worker output and failure-cleanup key identity is not fully catalog-authoritative",
+    "Raw-key rejection is not enforced on every retained evidence surface"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

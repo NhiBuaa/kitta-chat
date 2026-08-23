@@ -1,0 +1,23 @@
+{
+  "schema_version":1,
+  "issue":114,
+  "guide_revision":"k6-114-s3-upload-v5",
+  "guide_sha256":"934b5f6207c257acbbbdc5cb100859d121bbd6d1bb98a6226f854009609ec6f7",
+  "catalog_sha256":"f6fef1a38242378bf725c498dcee19d9a2ddc7bb9f103750598392c4b0786b3e",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-abe6-7261-b31e-82bb53308449"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":3,
+  "minor_count":2,
+  "finding_titles":[
+    "Outer loader cleanup remains incomplete after forced child termination or disposal failure",
+    "Multipart, ETag, activation, and source/key substitution boundaries remain incomplete",
+    "Raw joined keys conflict with the no-raw-key fixture/evidence contract",
+    "Catalog property-order wording remains ambiguous",
+    "Revision lineage names stale revisions"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

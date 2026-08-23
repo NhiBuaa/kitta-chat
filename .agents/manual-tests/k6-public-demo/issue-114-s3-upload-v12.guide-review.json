@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v12",
+  "guide_sha256": "7ee546c1a2f076b712c18396df82b4560f9486e81e27e37c6edfecc02050e872",
+  "catalog_sha256": "c1708ec382d4f05004fb1b3ecaa0aa44665138a5b088e32db34db815c07bda10",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6a8f-7330-af4a-2bd066f35a89"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Lease assertions do not make direct child-path operations atomic",
+    "Finalization result union is not total for reachable failure states"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

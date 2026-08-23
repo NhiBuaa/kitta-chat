@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v4",
+  "guide_sha256": "0a0f2ce7b5de1bb03cf17d9f73ee1b038200b2f3c6806eb6a7caadb295652858",
+  "catalog_sha256": "11e94c826e69a63eb1ce33fea0cb60937436f4e2c5383511d8a44b067908b63b",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {"kind":"external-subagent","id":"01a02e22-abe6-7261-b31e-82bb53308449"},
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 3,
+  "minor_count": 1,
+  "finding_titles": [
+    "The trust loader does not unconditionally terminate its bootstrap child",
+    "The typed catalog dropped ticket-required multipart, activation, worker, and disabled-error boundaries",
+    "Private-write and worker-output identity remain unobservable, and the avatar fallback oracle is not source-compatible",
+    "Control-map reorder behavior contradicts the prose"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

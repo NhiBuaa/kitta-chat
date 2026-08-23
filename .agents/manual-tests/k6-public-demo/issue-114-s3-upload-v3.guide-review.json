@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v3",
+  "guide_sha256": "913d29b704aec0a88e444da99a973733f026b1fc86a7ff58629b0e552d15d649",
+  "catalog_sha256": "27280af7f0ff95ea696e50e51da6f99c51ac93e541fc119af852dee7ff223195",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02e22-abe6-7261-b31e-82bb53308449"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 6,
+  "minor_count": 0,
+  "finding_titles": [
+    "Trusted-script SHA checks deterministically fail in the required Windows worktree",
+    "Candidate control binding remains circular and the control inventory is not closed",
+    "The first candidate process inherits the operator provider and secret environment",
+    "Candidate/source materialization is outside unconditional cleanup",
+    "The closed catalog contains unobservable oracles and omits required private-delivery failure cases",
+    "The pending-to-approved Evaluation transition is not copy-run executable"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 114,
+  "review_type": "pre-implementation-ticket-spec",
+  "issue_url": "https://github.com/NhiBuaa/kitta-chat/issues/114",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02e22-abe6-7261-b31e-82bb53308449"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "REQUEST_CHANGES",
+      "critical_count": 0,
+      "major_count": 5,
+      "minor_count": 1,
+      "finding_titles": [
+        "Private inline delivery mechanism and affected projections were not selected",
+        "Multipart ownership and durable lifecycle were undefined",
+        "MIME, size, part, and ETag bounds were not exact",
+        "Worker staging namespace and current-attempt cleanup proof were missing",
+        "The disabled-to-validated upload transition had no source owner",
+        "Stable secret-safe error statuses and codes were missing"
+      ],
+      "remediation_comment": "https://github.com/NhiBuaa/kitta-chat/issues/114#issuecomment-5385558713"
+    },
+    {
+      "round": 2,
+      "verdict": "APPROVE",
+      "critical_count": 0,
+      "major_count": 0,
+      "minor_count": 0,
+      "findings": [],
+      "report": "The revised ticket locks private 300-second projection, Mongo-owned multipart state, exact upload bounds, approved staging namespaces, worker ownership, activation semantics, compatibility, and secret-safe failures without crossing D2."
+    }
+  ],
+  "final_verdict": "APPROVE",
+  "per_issue_code_review": false,
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

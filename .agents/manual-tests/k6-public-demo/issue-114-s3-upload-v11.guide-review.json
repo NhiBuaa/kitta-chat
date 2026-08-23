@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v11",
+  "guide_sha256": "7e325c47a0fc69ed9c9c493afb7e34bb4a9c57b38f40a7d91f900612b903c9d7",
+  "catalog_sha256": "c096e8404d9111a874f3ae9f9a90095c26f6ed2da33d19ffa8eec746adeca781",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6a8f-7330-af4a-2bd066f35a89"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Declaration-only AST admission is incomplete",
+    "Finalization ownership has an unguarded PowerShell entry gap"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

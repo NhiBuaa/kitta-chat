@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v2",
+  "guide_sha256": "5f7b920b4c53d144c7f8d7125b3fb94229c312e4466de5f71e2a88057b7c4adf",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {"kind": "external-subagent", "id": "01a02e22-abe6-7261-b31e-82bb53308449"},
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 4,
+  "minor_count": 0,
+  "finding_titles": [
+    "Source commit tree identity was incorrect",
+    "Executed control bytes and exact changed scope were not fully CandidateTree-bound",
+    "Bootstrap and loopback/provider isolation were still too broad",
+    "Manifest, cleanup, scans, and Evaluation chronology was impossible"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

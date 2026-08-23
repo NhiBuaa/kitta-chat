@@ -1,0 +1,23 @@
+{
+  "schema_version":1,
+  "issue":114,
+  "guide_revision":"k6-114-s3-upload-v7",
+  "guide_sha256":"ed8e2b119a044ca8cdf97cd920eadbc5f1b7ba97a4dfdbdecd06a1a721a0bcca",
+  "catalog_sha256":"12e983a21cb6efc3a25079a77b5974584c57af381f10efe11d122f44796a6f96",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-abe6-7261-b31e-82bb53308449"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":4,
+  "minor_count":1,
+  "finding_titles":[
+    "The loader self-test still cannot exercise the exact production loader path",
+    "The candidate receives writable append-only Evaluation history",
+    "Final recorder failure leaves promoted evidence orphaned",
+    "Durable evidence parent validation does not reject Windows reparse-point escape",
+    "The loader self-test chronology sentence is malformed and contradicts process identity"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

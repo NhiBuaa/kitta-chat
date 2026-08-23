@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v6",
+  "case_order": [
+    "MA-114-01",
+    "MA-114-02",
+    "MA-114-03",
+    "MA-114-04",
+    "MA-114-05",
+    "MA-114-06",
+    "MA-114-07",
+    "MA-114-08"
+  ],
+  "validation_contract": {
+    "top_level_fields": ["schema_version", "issue", "guide_revision", "case_order", "validation_contract", "cases", "retained_d2_risks"],
+    "case_fields": ["vectors", "aggregate_expected", "oracle", "d2_disposition"],
+    "vector_fields": ["id", "input", "expected"],
+    "rules": [
+      "top-level, case, vector, input, expected and aggregate objects use exact field-set equality",
+      "case_order is duplicate-free and set-equal to cases keys",
+      "each vector id is globally unique and every expected value is a typed JSON scalar, array or closed object",
+      "JSON object property order is non-authoritative; named arrays case_order, vectors, part numbers and ETags are ordered",
+      "missing, extra, ordered-array reordering, mistyped or unequal material is BLOCKED before candidate observations",
+      "candidate output cannot supply or alter expected values"
+    ]
+  },
+  "cases": {
+    "MA-114-01": {
+      "vectors": [
+        {"id":"KEY-CHAT-STAGING","input":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"expected":{"code":"OK","key_class":"chat_staging","segments_exact":true,"key_digest_present":true,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-CHAT-DURABLE","input":{"key_class":"chat_durable","segments":{"owner_id":"owner-1","request_or_session_id":"session-1","safe_name":"photo.webp"}},"expected":{"code":"OK","key_class":"chat_durable","segments_exact":true,"key_digest_present":true,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-AVATAR-STAGING","input":{"key_class":"avatar_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"avatar.png"}},"expected":{"code":"OK","key_class":"avatar_staging","segments_exact":true,"key_digest_present":true,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-AVATAR-DURABLE","input":{"key_class":"avatar_durable","segments":{"owner_id":"owner-1","request_id":"request-1"}},"expected":{"code":"OK","key_class":"avatar_durable","segments_exact":true,"key_digest_present":true,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-EMPTY","input":{"key_generator":{"base_class":"chat_staging","mutation":"empty-segment"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-DOT","input":{"key_generator":{"base_class":"chat_staging","mutation":"dot-segment"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-DOTDOT","input":{"key_generator":{"base_class":"chat_staging","mutation":"dotdot-segment"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-BACKSLASH","input":{"key_generator":{"base_class":"chat_staging","mutation":"backslash-separator"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-ENCODED-TRAVERSAL","input":{"key_generator":{"base_class":"chat_staging","mutation":"encoded-traversal"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-ABSOLUTE-URL","input":{"key_generator":{"base_class":"chat_staging","mutation":"absolute-url"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-USERINFO","input":{"key_generator":{"base_class":"chat_staging","mutation":"userinfo"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-CONTROL","input":{"key_generator":{"base_class":"chat_staging","mutation":"control-character"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-PREFIX-CONFUSION","input":{"key_generator":{"base_class":"chat_staging","mutation":"prefix-confusion"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}},
+        {"id":"KEY-QUEUE-SOURCES","input":{"key_generator":{"base_class":"chat_staging","mutation":"retired-queue-sources-prefix"}},"expected":{"code":"INVALID_OBJECT_KEY","key_class":null,"key_digest_present":false,"storage_calls":0,"queue_calls":0}}
+      ],
+      "aggregate_expected":{"vector_count":14,"valid_count":4,"rejected_count":10,"storage_calls":0,"queue_calls":0},
+      "oracle":"Only the four server-generated key classes succeed; every escape is rejected before storage or queue access.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-114-02": {
+      "vectors": [
+        {"id":"MIME-IMAGE","input":{"mimes":["image/jpeg","image/png","image/webp","image/gif"],"sizes":[52428799,52428800,52428801]},"expected":{"accepted_per_mime":[52428799,52428800],"rejected_per_mime":[52428801],"limit_bytes":52428800,"storage_calls":0}},
+        {"id":"MIME-VIDEO","input":{"mimes":["video/mp4","video/webm","video/quicktime"],"sizes":[52428799,52428800,52428801]},"expected":{"accepted_per_mime":[52428799,52428800],"rejected_per_mime":[52428801],"limit_bytes":52428800,"storage_calls":0}},
+        {"id":"MIME-AUDIO","input":{"mimes":["audio/mpeg","audio/mp4","audio/ogg","audio/wav","audio/webm"],"sizes":[31457279,31457280,31457281]},"expected":{"accepted_per_mime":[31457279,31457280],"rejected_per_mime":[31457281],"limit_bytes":31457280,"storage_calls":0}},
+        {"id":"MIME-DOCUMENT","input":{"mimes":["application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","text/plain","application/zip","application/x-rar-compressed"],"sizes":[31457279,31457280,31457281]},"expected":{"accepted_per_mime":[31457279,31457280],"rejected_per_mime":[31457281],"limit_bytes":31457280,"storage_calls":0}},
+        {"id":"MIME-INVALID","input":{"mimes":["","*/*","image/svg+xml","application/octet-stream"],"sizes":[1]},"expected":{"accepted_per_mime":[],"rejected_per_mime":[1],"code":"INVALID_UPLOAD_REQUEST","storage_calls":0}},
+        {"id":"PART-VALID","input":{"declared_size":52428800,"part_size":5242880,"part_numbers":[1,2,3,4,5,6,7,8,9,10],"etags":["etag-1","etag-2","etag-3","etag-4","etag-5","etag-6","etag-7","etag-8","etag-9","etag-10"]},"expected":{"code":"OK","part_count":10,"provider_calls":10}},
+        {"id":"PART-FINAL-ONE-BYTE","input":{"declared_size":5242881,"part_sizes":[5242880,1],"part_numbers":[1,2],"etags":["etag-1","etag-2"]},"expected":{"code":"OK","part_count":2,"provider_calls":2}},
+        {"id":"PART-NONFINAL-UNDERSIZED","input":{"declared_size":5242880,"part_sizes":[5242879,1],"part_numbers":[1,2],"etags":["etag-1","etag-2"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-FINAL-MAX","input":{"declared_size":10485760,"part_sizes":[5242880,5242880],"part_numbers":[1,2],"etags":["etag-1","etag-2"]},"expected":{"code":"OK","part_count":2,"provider_calls":2}},
+        {"id":"PART-FINAL-OVERSIZED","input":{"declared_size":10485761,"part_sizes":[5242880,5242881],"part_numbers":[1,2],"etags":["etag-1","etag-2"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-ZERO","input":{"declared_size":1,"part_numbers":[0],"etags":["etag-0"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-DUPLICATE","input":{"declared_size":10485760,"part_numbers":[1,1],"etags":["etag-1","etag-2"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-GAP","input":{"declared_size":10485760,"part_numbers":[1,3],"etags":["etag-1","etag-3"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-UNORDERED","input":{"declared_size":10485760,"part_numbers":[2,1],"etags":["etag-2","etag-1"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-ELEVEN","input":{"declared_size":52428801,"part_numbers":[1,2,3,4,5,6,7,8,9,10,11],"etags":["e1","e2","e3","e4","e5","e6","e7","e8","e9","e10","e11"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-SIZE-MISMATCH","input":{"declared_size":5242881,"part_numbers":[1],"etags":["etag-1"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-MISSING-ETAG","input":{"declared_size":1,"part_numbers":[1],"etags":[""]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-MALFORMED-ETAG","input":{"declared_size":1,"part_numbers":[1],"etags":["bad\r\netag"]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-MAX-ETAG","input":{"declared_size":1,"part_numbers":[1],"etag_generator":{"character":"a","length":128},"etag_max_length":128},"expected":{"code":"OK","part_count":1,"provider_calls":1}},
+        {"id":"PART-OVERBOUND-ETAG","input":{"declared_size":1,"part_numbers":[1],"etag_generator":{"character":"a","length":129},"etag_max_length":128},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-ETAG-COUNT-MISMATCH","input":{"declared_size":5242881,"part_sizes":[5242880,1],"part_numbers":[1,2],"completion_etags":[{"part_number":1,"etag":"etag-1"}]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}},
+        {"id":"PART-ETAG-ORDER-MISMATCH","input":{"declared_size":5242881,"part_sizes":[5242880,1],"part_numbers":[1,2],"completion_etags":[{"part_number":2,"etag":"etag-2"},{"part_number":1,"etag":"etag-1"}]},"expected":{"code":"INVALID_UPLOAD_REQUEST","part_count":0,"provider_calls":0}}
+      ],
+      "aggregate_expected":{"vector_count":22,"mime_count":20,"accepted_boundary_rows":40,"rejected_boundary_rows":20,"invalid_mime_rows":4,"part_vectors":17},
+      "oracle":"Exact MIME/size and multipart boundaries are server-enforced before provider side effects.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-114-03": {
+      "vectors": [
+        {"id":"LIFE-OWNER","input":{"actor":"owner-1","session_owner":"owner-1","reload":false,"operation":"complete"},"expected":{"code":"OK","complete_calls":1,"abort_calls":0,"file_count":1,"terminal":"completed"}},
+        {"id":"LIFE-RELOAD","input":{"actor":"owner-1","session_owner":"owner-1","reload":true,"operation":"complete"},"expected":{"code":"OK","complete_calls":1,"abort_calls":0,"file_count":1,"terminal":"completed"}},
+        {"id":"LIFE-REPLAY","input":{"actor":"owner-1","session_owner":"owner-1","initial_state":"completed","operation":"complete"},"expected":{"code":"OK","complete_calls":0,"abort_calls":0,"file_count":1,"terminal":"completed"}},
+        {"id":"LIFE-FOREIGN","input":{"actor":"owner-2","session_owner":"owner-1","operation":"complete"},"expected":{"code":"UPLOAD_SESSION_NOT_FOUND","complete_calls":0,"abort_calls":0,"file_count":0,"terminal":"initiated"}},
+        {"id":"LIFE-KEY-SUBSTITUTION","input":{"actor":"owner-1","key_match":false,"operation":"complete"},"expected":{"code":"UPLOAD_SESSION_NOT_FOUND","complete_calls":0,"abort_calls":0,"file_count":0,"terminal":"initiated"}},
+        {"id":"LIFE-UPLOAD-ID-SUBSTITUTION","input":{"actor":"owner-1","upload_id_match":false,"operation":"complete"},"expected":{"code":"UPLOAD_SESSION_NOT_FOUND","complete_calls":0,"abort_calls":0,"file_count":0,"terminal":"initiated"}},
+        {"id":"LIFE-EXPIRED","input":{"actor":"owner-1","initial_state":"expired","operation":"complete"},"expected":{"code":"UPLOAD_SESSION_NOT_ACTIVE","complete_calls":0,"abort_calls":0,"file_count":0,"terminal":"expired"}},
+        {"id":"LIFE-ABORTED","input":{"actor":"owner-1","initial_state":"aborted","operation":"complete"},"expected":{"code":"UPLOAD_SESSION_NOT_ACTIVE","complete_calls":0,"abort_calls":0,"file_count":0,"terminal":"aborted"}},
+        {"id":"LIFE-CONCURRENT-COMPLETE","input":{"actor":"owner-1","operations":["complete","complete"],"barrier":"simultaneous"},"expected":{"code":"OK","complete_calls":1,"abort_calls":0,"file_count":1,"terminal":"completed"}},
+        {"id":"LIFE-CONCURRENT-TERMINAL","input":{"actor":"owner-1","operations":["complete","abort"],"barrier":"simultaneous"},"expected":{"code":"ONE_TERMINAL","complete_plus_abort_calls":1,"file_count_max":1,"terminal_one_of":["completed","aborted"]}},
+        {"id":"LIFE-BEFORE-COMPLETE-FAILURE","input":{"actor":"owner-1","fault":"before_provider_complete"},"expected":{"code":"ABORTED","complete_calls":0,"abort_calls":1,"delete_calls":0,"file_count":0,"terminal":"aborted"}},
+        {"id":"LIFE-AFTER-COMPLETE-FAILURE","input":{"actor":"owner-1","fault":"after_provider_complete_before_file"},"expected":{"code":"CLEANED","complete_calls":1,"abort_calls":0,"delete_calls":1,"file_count":0,"terminal":"aborted"}}
+      ],
+      "aggregate_expected":{"vector_count":12,"unauthorized_provider_calls":0,"duplicate_files":0},
+      "oracle":"Mongo-owned multipart sessions are principal-bound, replay-safe, reload-safe and single-terminal.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-114-04": {
+      "vectors": [
+        {"id":"PROJECTION-SUCCESS","input":{"surfaces":["document-download","file-completion","fileProcessed","direct-history","group-history","conversation-resources","profile-avatar","friend-avatar","group-member-avatar","sidebar-avatar","call-participant-avatar","avatarUpdated"],"actor_authorized":true,"signer":"success"},"expected":{"code":"OK","surface_count":12,"authorization_checks":12,"sign_calls":12,"ttl_seconds":300,"raw_provider_urls":0,"raw_keys":0,"public_acl_requests":0}},
+        {"id":"PROJECTION-DOCUMENT-SIGN-FAIL","input":{"surface":"document-download","actor_authorized":true,"signer":"failure"},"expected":{"code":"UPLOAD_STORAGE_UNAVAILABLE","http_status":503,"event_count":0,"placeholder":"none","raw_provider_urls":0,"raw_keys":0}},
+        {"id":"PROJECTION-EVENT-SIGN-FAIL","input":{"surface":"fileProcessed","actor_authorized":true,"signer":"failure"},"expected":{"code":"PROJECTION_SUPPRESSED","http_status":null,"event_count":0,"placeholder":"none","raw_provider_urls":0,"raw_keys":0}},
+        {"id":"PROJECTION-AVATAR-SIGN-FAIL","input":{"surface":"profile-avatar","actor_authorized":true,"signer":"failure"},"expected":{"code":"LOCAL_PLACEHOLDER","http_status":null,"event_count":0,"placeholder":"/demo-assets/avatars/green.svg","raw_provider_urls":0,"raw_keys":0}},
+        {"id":"PROJECTION-UNAUTHORIZED","input":{"surface":"document-download","actor_authorized":false,"signer":"success"},"expected":{"code":"NOT_FOUND","http_status":404,"sign_calls":0,"raw_provider_urls":0,"raw_keys":0}},
+        {"id":"PRIVATE-WRITE-COMMANDS","input":{"operations":[{"operation":"put","key_fixture":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}}},{"operation":"multipart-init","key_fixture":{"key_class":"chat_durable","segments":{"owner_id":"owner-1","request_or_session_id":"session-1","safe_name":"report.pdf"}}},{"operation":"put","key_fixture":{"key_class":"avatar_staging","segments":{"owner_id":"owner-1","request_id":"request-2","safe_name":"avatar.png"}}},{"operation":"put","key_fixture":{"key_class":"avatar_durable","segments":{"owner_id":"owner-1","request_id":"request-2"}}}]},"expected":{"operations":[{"operation":"put","key_class":"chat_staging","segments_exact":true,"key_digest_present":true,"acl_absent":true,"public_read_absent":true,"provider_url_authority_absent":true},{"operation":"multipart-init","key_class":"chat_durable","segments_exact":true,"key_digest_present":true,"acl_absent":true,"public_read_absent":true,"provider_url_authority_absent":true},{"operation":"put","key_class":"avatar_staging","segments_exact":true,"key_digest_present":true,"acl_absent":true,"public_read_absent":true,"provider_url_authority_absent":true},{"operation":"put","key_class":"avatar_durable","segments_exact":true,"key_digest_present":true,"acl_absent":true,"public_read_absent":true,"provider_url_authority_absent":true}],"raw_key_occurrences":0,"raw_public_url_occurrences":0}}
+      ],
+      "aggregate_expected":{"vector_count":6,"success_surface_count":12,"ttl_seconds":300,"raw_provider_urls":0,"raw_keys":0,"public_acl_requests":0},
+      "oracle":"Every authorized private-object projection signs for 300 seconds; failure is safe, suppressed or same-origin fallback.",
+      "d2_disposition":"LIVE_SIGNING_PENDING_D2"
+    },
+    "MA-114-05": {
+      "vectors": [
+        {"id":"WORKER-CHAT-SUCCESS","input":{"source_class":"chat","owner_id":"owner-1","request_id":"request-1","owner_match":true,"request_match":true,"staging_fixture":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"fault":"none"},"expected":{"code":"OK","read_operation":{"key_class":"chat_staging","segments_exact":true,"key_digest_present":true},"write_operation":{"key_class":"chat_durable","segments_exact":true,"key_digest_present":true},"staging_delete_operation":{"key_class":"chat_staging","segments_exact":true,"key_digest_present":true},"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":true,"public_demo_remote_calls":0}},
+        {"id":"WORKER-AVATAR-SUCCESS","input":{"source_class":"avatar","owner_id":"owner-1","request_id":"request-2","owner_match":true,"request_match":true,"staging_fixture":{"key_class":"avatar_staging","segments":{"owner_id":"owner-1","request_id":"request-2","safe_name":"avatar.png"}},"fault":"none"},"expected":{"code":"OK","read_operation":{"key_class":"avatar_staging","segments_exact":true,"key_digest_present":true},"write_operation":{"key_class":"avatar_durable","segments_exact":true,"key_digest_present":true},"staging_delete_operation":{"key_class":"avatar_staging","segments_exact":true,"key_digest_present":true},"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":true,"public_demo_remote_calls":0}},
+        {"id":"WORKER-FORGED-OWNER","input":{"source_class":"chat","owner_id":"owner-2","request_id":"request-1","owner_match":false,"request_match":true,"staging_fixture":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"fault":"none"},"expected":{"code":"INVALID_IMAGE_JOB","read_operation":null,"write_operation":null,"staging_delete_operation":null,"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":false,"public_demo_remote_calls":0}},
+        {"id":"WORKER-REQUEST-MISMATCH","input":{"source_class":"chat","owner_id":"owner-1","request_id":"request-2","owner_match":true,"request_match":false,"staging_fixture":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"fault":"none"},"expected":{"code":"INVALID_IMAGE_JOB","read_operation":null,"write_operation":null,"staging_delete_operation":null,"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":false,"public_demo_remote_calls":0}},
+        {"id":"WORKER-OUTSIDE-PREFIX","input":{"source_class":"chat","owner_id":"owner-1","request_id":"request-1","owner_match":true,"request_match":true,"staging_generator":{"base_class":"chat_staging","mutation":"retired-queue-sources-prefix"},"fault":"none"},"expected":{"code":"INVALID_IMAGE_JOB","read_operation":null,"write_operation":null,"staging_delete_operation":null,"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":false,"public_demo_remote_calls":0}},
+        {"id":"WORKER-APPROVED-CLASS-SUBSTITUTION","input":{"source_class":"chat","owner_id":"owner-1","request_id":"request-1","owner_match":true,"request_match":true,"staging_fixture":{"key_class":"avatar_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"fault":"none"},"expected":{"code":"INVALID_IMAGE_JOB","read_operation":null,"write_operation":null,"staging_delete_operation":null,"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":false,"public_demo_remote_calls":0}},
+        {"id":"WORKER-UNSUPPORTED-SOURCE","input":{"source_class":"unknown","owner_id":"owner-1","request_id":"request-1","owner_match":true,"request_match":true,"staging_fixture":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"fault":"none"},"expected":{"code":"INVALID_IMAGE_JOB","read_operation":null,"write_operation":null,"staging_delete_operation":null,"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":false,"public_demo_remote_calls":0}},
+        {"id":"WORKER-DUPLICATE","input":{"source_class":"chat","owner_id":"owner-1","request_id":"request-1","owner_match":true,"request_match":true,"staging_fixture":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"fault":"duplicate_request"},"expected":{"code":"OK","read_operation":null,"write_operation":null,"staging_delete_operation":null,"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":true,"public_demo_remote_calls":0}},
+        {"id":"WORKER-INSERT-RACE","input":{"source_class":"chat","owner_id":"owner-1","request_id":"request-1","owner_match":true,"request_match":true,"staging_fixture":{"key_class":"chat_staging","segments":{"owner_id":"owner-1","request_id":"request-1","safe_name":"photo.png"}},"fault":"durable_insert_race"},"expected":{"code":"OK","read_operation":{"key_class":"chat_staging","segments_exact":true,"key_digest_present":true},"write_operation":{"key_class":"chat_durable","segments_exact":true,"key_digest_present":true},"staging_delete_operation":{"key_class":"chat_staging","segments_exact":true,"key_digest_present":true},"attempt_output_delete_operation":{"key_class":"chat_durable","segments_exact":true,"key_digest_present":true,"digest_matches_write":true},"durable_prior_delete_operation":null,"event_shape_match":true,"public_demo_remote_calls":0}},
+        {"id":"WORKER-LEGACY-REMOTE-AVATAR","input":{"source_class":"legacy_local_google_avatar","owner_id":"owner-1","request_id":"request-1","owner_match":true,"request_match":true,"staging_fixture":null,"fault":"none","target":"public-demo"},"expected":{"code":"PATH_DISABLED","read_operation":null,"write_operation":null,"staging_delete_operation":null,"attempt_output_delete_operation":null,"durable_prior_delete_operation":null,"event_shape_match":false,"public_demo_remote_calls":0}}
+      ],
+      "aggregate_expected":{"vector_count":10,"durable_prior_delete_calls":0,"public_demo_remote_calls":0,"raw_joined_keys_retained":0},
+      "oracle":"Worker validates ownership, source/key-class agreement, and deletes only current-attempt staging/output; retained evidence contains key classes, segment comparisons and digests but no joined keys; public-demo never fetches Google avatar.",
+      "d2_disposition":"LIVE_WORKER_PENDING_D2"
+    },
+    "MA-114-06": {
+      "vectors": [
+        {"id":"ERROR-DISABLED","input":{"fault":"upload_disabled"},"expected":{"http_status":404,"code":"CAPABILITY_DISABLED","side_effect_calls":0,"forbidden_text_count":0}},
+        {"id":"ERROR-INVALID","input":{"fault":"invalid_envelope"},"expected":{"http_status":400,"code":"INVALID_UPLOAD_REQUEST","side_effect_calls":0,"forbidden_text_count":0}},
+        {"id":"ERROR-MISSING","input":{"fault":"missing_or_foreign_session"},"expected":{"http_status":404,"code":"UPLOAD_SESSION_NOT_FOUND","side_effect_calls":0,"forbidden_text_count":0}},
+        {"id":"ERROR-INACTIVE","input":{"fault":"inactive_session"},"expected":{"http_status":409,"code":"UPLOAD_SESSION_NOT_ACTIVE","side_effect_calls":0,"forbidden_text_count":0}},
+        {"id":"ERROR-STORAGE","input":{"fault":"provider_unavailable"},"expected":{"http_status":503,"code":"UPLOAD_STORAGE_UNAVAILABLE","side_effect_calls":1,"forbidden_text_count":0}},
+        {"id":"WORKER-PROCESSING-FAIL","input":{"fault":"processing_failure"},"expected":{"code":"FAILED","staging_delete_calls":0,"attempt_output_delete_calls":0,"durable_prior_delete_calls":0,"forbidden_text_count":0}},
+        {"id":"WORKER-CLEANUP-FAIL","input":{"fault":"cleanup_failure"},"expected":{"code":"FAILED_SAFE","staging_delete_calls":1,"attempt_output_delete_calls":0,"durable_prior_delete_calls":0,"forbidden_text_count":0}}
+      ],
+      "aggregate_expected":{"vector_count":7,"forbidden_text_count":0,"forbidden_classes":["provider_text","bucket","object_key","upload_id","signed_query","credential","stack"]},
+      "oracle":"Faults use fixed safe codes and cannot disclose provider or secret-bearing material.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-114-07": {
+      "vectors": [
+        {"id":"ACT-DISABLED","input":{"backend_state":"disabled","edge_state":"disabled","backend_upload":false,"edge_upload":false},"expected":{"code":"OK","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-VALIDATED","input":{"backend_state":"validated","edge_state":"validated","backend_upload":true,"edge_upload":true},"expected":{"code":"OK","effective_upload":true,"side_effect_calls":0}},
+        {"id":"ACT-MISMATCH-1","input":{"backend_state":"validated","edge_state":"disabled","backend_upload":false,"edge_upload":false},"expected":{"code":"INVALID_CAPABILITY_STATE","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-MISMATCH-2","input":{"backend_state":"disabled","edge_state":"validated","backend_upload":true,"edge_upload":true},"expected":{"code":"INVALID_CAPABILITY_STATE","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-MISMATCH-3","input":{"backend_state":"validated","edge_state":"disabled","backend_upload":true,"edge_upload":false},"expected":{"code":"INVALID_CAPABILITY_STATE","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-MISSING-BACKEND","input":{"backend_state_present":false,"edge_state":"disabled","backend_upload":false,"edge_upload":false},"expected":{"code":"INVALID_CAPABILITY_STATE","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-MISSING-EDGE","input":{"backend_state":"disabled","edge_state_present":false,"backend_upload":false,"edge_upload":false},"expected":{"code":"INVALID_CAPABILITY_STATE","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-MALFORMED-BACKEND","input":{"backend_state":"unknown","edge_state":"disabled","backend_upload":false,"edge_upload":false},"expected":{"code":"INVALID_CAPABILITY_STATE","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-MALFORMED-EDGE","input":{"backend_state":"disabled","edge_state":"unknown","backend_upload":false,"edge_upload":false},"expected":{"code":"INVALID_CAPABILITY_STATE","effective_upload":false,"side_effect_calls":0}},
+        {"id":"ACT-CHECKED-IN","input":{"fixture":"repository_public_demo_defaults"},"expected":{"code":"OK","backend_state":"disabled","edge_state":"disabled","backend_upload":false,"edge_upload":false}},
+        {"id":"CONTRACT-SHAPES","input":{"surfaces":["init-request","init-response","part-sign-response","complete-response","single-upload-response","download-response","fileProcessed","avatarUpdated","message-history","group-history"]},"expected":{"surface_count":10,"exact_shape_matches":10,"allowed_delta":{"surface":"init-request","added_required_field":"fileSize"},"other_deltas":0}}
+      ],
+      "aggregate_expected":{"vector_count":11,"checked_in_upload":false,"contract_shape_failures":0},
+      "oracle":"Activation is fail-closed and public contracts are stable except the approved required init fileSize field.",
+      "d2_disposition":"UPLOAD_ENABLEMENT_PENDING_D2"
+    },
+    "MA-114-08": {
+      "vectors": [
+        {"id":"GATE-CATALOG","input":{"mutation_matrix":["missing-case","extra-case","duplicate-case","reordered-case","missing-field","extra-field","wrong-type","wrong-value"]},"expected":{"blocked_mutations":8,"accepted_mutations":0}},
+        {"id":"GATE-NETWORK","input":{"attempts":["external-dns","external-http","loopback-unregistered","aws-sdk","redis","rabbitmq"]},"expected":{"blocked_attempts":6,"allowed_attempts":0,"provider_requests":0}},
+        {"id":"GATE-CONTROL","input":{"mutations":["missing-control","extra-control","tampered-control","runner-tamper"]},"expected":{"blocked_before_candidate_process":4,"candidate_process_starts":0}},
+        {"id":"GATE-BOOTSTRAP-CLEANUP","input":{"faults":["loader-git-stream-timeout","loader-git-process-timeout","loader-git-stream-dispose","loader-git-process-dispose","loader-interruption","hung-bootstrap-grandchild","bootstrap-process-dispose","parent-path-removal","candidate-archive","source-archive","candidate-expand","source-expand","control-verification","runner-launch"]},"expected":{"fault_count":14,"remaining_archives":0,"remaining_run_roots":0,"remaining_loader_roots":0,"remaining_provisional_outputs":0,"remaining_incomplete_durable_outputs":0,"remaining_processes":0}},
+        {"id":"GATE-SCAN","input":{"surfaces":{"candidate-diff":"gitleaks","client-dist":"gitleaks","observations":"gitleaks","command-summaries":"gitleaks","evidence-inventory":"gitleaks","final-manifest":"closed-safe-text","pending-evaluation":"closed-safe-text","acceptance-sidecar":"closed-safe-text-approve","approved-evaluation":"closed-safe-text-approve"}},"expected":{"gitleaks_surface_count":5,"closed_safe_text_surface_count":2,"approve_safe_text_surface_count":2,"findings":0,"forbidden_evidence_occurrences":0}},
+        {"id":"GATE-BOUNDARY","input":{"counters":["socket","provider-request","provider-mutation","d2-mutation"]},"expected":{"socket":0,"provider_request":0,"provider_mutation":0,"d2_mutation":0}}
+      ],
+      "aggregate_expected":{"vector_count":6,"D2_MUTATIONS":0,"browser_identity":"NOT_APPLICABLE_PRE_D2"},
+      "oracle":"Full gates, trust-root checks, cleanup, scan and zero-D2 boundaries pass before Evaluation.",
+      "d2_disposition":"NO_D2_ACTION_AUTHORIZED"
+    }
+  },
+  "retained_d2_risks": {
+    "exact_origin_cors":"PENDING_D2",
+    "browser_put_etag":"PENDING_D2",
+    "railway_to_s3":"PENDING_D2",
+    "live_image_worker":"PENDING_D2"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "issue": 114,
+  "guide_revision": "k6-114-s3-upload-v13",
+  "guide_sha256": "4463f4987ce9037b3bc1fca91f647f0cd264c9896c165604f8df10130ad410e1",
+  "catalog_sha256": "4a90e56f647282f8cc802b69a56807aba8a9dcf578897ac9a70cc989cf88b230",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6a8f-7330-af4a-2bd066f35a89"
+  },
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "finding_titles": [],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}
