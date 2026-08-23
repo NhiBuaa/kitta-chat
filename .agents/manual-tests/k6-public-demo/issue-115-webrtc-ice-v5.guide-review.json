@@ -1,0 +1,22 @@
+{
+  "schema_version":1,
+  "issue":115,
+  "guide_revision":"k6-115-webrtc-ice-v5",
+  "guide_sha256":"6b8335632f909575374aca478901caffec9024a00ddfe8f3f08661a2fd1e89e7",
+  "catalog_sha256":"03c5bb835f20d1d33029b45ead962021aa3dd036979ce1c7d252e21f876bfdb2",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-ab1c-70e1-a630-7b0abe88e69b"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":3,
+  "minor_count":1,
+  "finding_titles":[
+    "Valid ICE lower, per-entry maximum, and port maximum boundaries remain incomplete",
+    "Forced bootstrap termination cannot fulfill the zero-residue cleanup oracle",
+    "Positive controls do not identify the two Edge process trees independently",
+    "Revision lineage names stale revisions"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

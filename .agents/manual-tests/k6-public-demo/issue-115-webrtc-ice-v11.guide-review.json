@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v11",
+  "guide_sha256": "18b484aa5a985707cb612d6e07e881f093eb9e9ffbf66208642811ac986b901f",
+  "catalog_sha256": "5cad2bbed9032a139ed2e32b178eba1ceffdf98f2d4bd1c9f0e4c94d377608e8",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6b8a-7b63-b854-dfc01d37668c"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Declaration-only AST gate admits executable top-level traps",
+    "Ownership is not pinned across direct child-path operations"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

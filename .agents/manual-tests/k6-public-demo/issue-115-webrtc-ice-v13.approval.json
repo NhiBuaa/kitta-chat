@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "approval_type": "manual-guide",
+  "guide_revision": "k6-115-webrtc-ice-v13",
+  "guide_sha256": "cea188b963bf740ccd177bf328c2845562e562cee5db63c4b4447380bce2f17e",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "catalog_sha256": "130e6ed283214028a9a237cde4b7457059bbcd4ce7d39c75b943df36d99044a8",
+  "approved_at": "2026-08-24T06:46:59.4400469+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message approving the exact K6 Wave 3 Issue #115 guide and catalog SHA-256 values",
+  "human_approval": "approved"
+}

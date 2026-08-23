@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v10",
+  "guide_sha256": "599f1aa6bc1b0288ee8321c4fa53768e51e0216e874db83aa9ed1acd30ad059a",
+  "catalog_sha256": "378bfaf6deadd02577ea9b5b0b9307fa1decf09141d3c40011286db1431b383e",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6b8a-7b63-b854-dfc01d37668c"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 1,
+  "minor_count": 0,
+  "finding_titles": [
+    "Root creation is not atomically ownership-bound to cleanup"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

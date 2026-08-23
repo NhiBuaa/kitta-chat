@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 115,
+  "review_type": "pre-implementation-ticket-spec",
+  "issue_url": "https://github.com/NhiBuaa/kitta-chat/issues/115",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02e22-ab1c-70e1-a630-7b0abe88e69b"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "REQUEST_CHANGES",
+      "critical_count": 0,
+      "major_count": 4,
+      "minor_count": 0,
+      "finding_titles": [
+        "ICE source, encoding, bounds, and calls-enabled rule were ambiguous",
+        "Ephemeral TURN credential disposition was not explicit",
+        "Media readiness lacked an objective bidirectional oracle",
+        "Fixture readiness could be confused with product and CallHistory state"
+      ],
+      "remediation_comment": "https://github.com/NhiBuaa/kitta-chat/issues/115#issuecomment-5385558692"
+    },
+    {
+      "round": 2,
+      "verdict": "APPROVE",
+      "critical_count": 0,
+      "major_count": 0,
+      "minor_count": 0,
+      "findings": [],
+      "report": "The revised ticket locks same-origin URL-only STUN metadata, all peer paths, a deterministic bidirectional RTP oracle, evidence redaction, and fixture-only readiness while preserving signaling, API, UI, and CallHistory behavior."
+    }
+  ],
+  "final_verdict": "APPROVE",
+  "per_issue_code_review": false,
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

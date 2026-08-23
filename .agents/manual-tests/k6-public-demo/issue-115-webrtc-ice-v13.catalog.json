@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v13",
+  "case_order": [
+    "MA-115-01",
+    "MA-115-02",
+    "MA-115-03",
+    "MA-115-04",
+    "MA-115-05",
+    "MA-115-06",
+    "MA-115-07",
+    "MA-115-08"
+  ],
+  "validation_contract": {
+    "top_level_fields": ["schema_version", "issue", "guide_revision", "case_order", "validation_contract", "cases", "retained_d2_risks"],
+    "case_fields": ["vectors", "aggregate_expected", "oracle", "d2_disposition"],
+    "vector_fields": ["id", "input", "expected"],
+    "rules": [
+      "top-level, case, vector, input, expected and aggregate objects use exact field-set equality",
+      "case_order is duplicate-free and set-equal to cases keys",
+      "vector ids are globally unique and each exact input maps to one exact expected object",
+      "missing, extra, reordered, mistyped, unequal or union-valued terminal material is BLOCKED",
+      "candidate output cannot supply or alter expected values"
+    ]
+  },
+  "cases": {
+    "MA-115-01": {
+      "vectors": [
+        {"id":"ICE-VALID-SCALAR","input":{"calls":true,"ice_servers":[{"urls":"stun:stun.l.google.com:19302"}]},"expected":{"code":"OK","entry_count":1,"url_count":1,"peer_calls":0}},
+        {"id":"ICE-VALID-ARRAY","input":{"calls":true,"ice_servers":[{"urls":["stun:stun.l.google.com:19302","stun:global.stun.twilio.com:3478"]}]},"expected":{"code":"OK","entry_count":1,"url_count":2,"peer_calls":0}},
+        {"id":"ICE-VALID-ARRAY-ONE","input":{"calls":true,"ice_servers":[{"urls":["stun:one.test:3478"]}]},"expected":{"code":"OK","entry_count":1,"url_count":1,"peer_calls":0}},
+        {"id":"ICE-VALID-ARRAY-FOUR","input":{"calls":true,"ice_servers":[{"urls":["stun:one.test:1","stun:two.test:2","stun:three.test:3","stun:four.test:4"]}]},"expected":{"code":"OK","entry_count":1,"url_count":4,"peer_calls":0}},
+        {"id":"ICE-VALID-PORT-MAX","input":{"calls":true,"ice_servers":[{"urls":"stun:max-port.test:65535"}]},"expected":{"code":"OK","entry_count":1,"url_count":1,"peer_calls":0}},
+        {"id":"ICE-VALID-STUNS","input":{"calls":true,"ice_servers":[{"urls":"stuns:secure-stun.test:5349"}]},"expected":{"code":"OK","entry_count":1,"url_count":1,"peer_calls":0}},
+        {"id":"ICE-VALID-MAX","input":{"calls":true,"ice_servers":[{"urls":["stun:a.test:1","stun:b.test:2"]},{"urls":["stun:c.test:3","stun:d.test:4"]},{"urls":["stun:e.test:5","stun:f.test:6"]},{"urls":["stun:g.test:7","stun:h.test:8"]}]},"expected":{"code":"OK","entry_count":4,"url_count":8,"peer_calls":0}},
+        {"id":"ICE-VALID-IPV6","input":{"calls":true,"ice_servers":[{"url_generator":{"scheme":"stun","host_kind":"ipv6","hextets":["2001","db8","0","0","0","0","0","1"],"port":3478}}]},"expected":{"code":"OK","entry_count":1,"url_count":1,"peer_calls":0}},
+        {"id":"ICE-VALID-IPV4","input":{"calls":true,"ice_servers":[{"url_generator":{"scheme":"stun","host_kind":"ipv4","octets":[192,0,2,1],"port":3478}}]},"expected":{"code":"OK","entry_count":1,"url_count":1,"peer_calls":0}},
+        {"id":"ICE-CALLS-FALSE-EMPTY","input":{"calls":false,"ice_servers":[]},"expected":{"code":"OK","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-CALLS-TRUE-EMPTY","input":{"calls":true,"ice_servers":[]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-CALLS-FALSE-NONEMPTY","input":{"calls":false,"ice_servers":[{"urls":"stun:a.test:3478"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-DUPLICATE","input":{"calls":true,"ice_servers":[{"urls":["stun:A.test:3478","stun:a.test:3478"]}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-FIVE-ENTRIES","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:1"},{"urls":"stun:b.test:2"},{"urls":"stun:c.test:3"},{"urls":"stun:d.test:4"},{"urls":"stun:e.test:5"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-FIVE-URLS-ENTRY","input":{"calls":true,"ice_servers":[{"urls":["stun:a.test:1","stun:b.test:2","stun:c.test:3","stun:d.test:4","stun:e.test:5"]}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-NINE-TOTAL-URLS","input":{"calls":true,"ice_servers":[{"urls":["stun:a.test:1","stun:b.test:2","stun:c.test:3"]},{"urls":["stun:d.test:4","stun:e.test:5","stun:f.test:6"]},{"urls":["stun:g.test:7","stun:h.test:8","stun:i.test:9"]}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-EMPTY-URLS","input":{"calls":true,"ice_servers":[{"urls":[]}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-MISSING-URLS","input":{"calls":true,"ice_servers":[{}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-WRONG-URLS-TYPE","input":{"calls":true,"ice_servers":[{"urls":3478}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-MIXED-URLS-ARRAY","input":{"calls":true,"ice_servers":[{"urls":["stun:a.test:3478",3478]}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-LEADING-SPACE","input":{"calls":true,"ice_servers":[{"urls":" stun:a.test:3478"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-TRAILING-SPACE","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:3478 "}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-INTERNAL-SPACE","input":{"calls":true,"ice_servers":[{"urls":"stun:a .test:3478"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-USERINFO","input":{"calls":true,"ice_servers":[{"urls":"stun:user@a.test:3478"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-PATH","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:3478/path"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-FRAGMENT","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:3478#x"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-QUERY","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:3478?transport=udp"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-MISSING-PORT","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-MALFORMED-DNS","input":{"calls":true,"ice_servers":[{"urls":"stun:-bad-label.test:3478"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-MALFORMED-IPV4","input":{"calls":true,"ice_servers":[{"url_generator":{"scheme":"stun","host_kind":"ipv4","octets":[256,0,2,1],"port":3478}}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-MALFORMED-IPV6","input":{"calls":true,"ice_servers":[{"url_generator":{"scheme":"stun","host_kind":"ipv6","hextets":["2001","db8","0","0","0","0","0","zzzz"],"port":3478}}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-PORT-ZERO","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:0"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-PORT-OVERFLOW","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:65536"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-TURN","input":{"calls":true,"ice_servers":[{"urls":"turn:a.test:3478"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-HTTP","input":{"calls":true,"ice_servers":[{"urls":"https://a.test/ice"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-USERNAME-FIELD","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:3478","username":"sentinel"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-CREDENTIAL-FIELD","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:3478","credential":"sentinel"}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}},
+        {"id":"ICE-UNKNOWN-FIELD","input":{"calls":true,"ice_servers":[{"urls":"stun:a.test:3478","extra":true}]},"expected":{"code":"INVALID_RUNTIME_CONFIG","entry_count":0,"url_count":0,"peer_calls":0}}
+      ],
+      "aggregate_expected":{"vector_count":38,"valid_count":10,"invalid_count":28,"peer_calls":0},
+      "oracle":"The same-origin runtime document is the sole URL-only ICE authority and all invalid metadata fails before peer construction.",
+      "d2_disposition":"PUBLIC_STUN_CONNECTIVITY_PENDING_D2"
+    },
+    "MA-115-02": {
+      "vectors": [
+        {"id":"PEER-CALLER","input":{"path":"outgoing_caller","calls":true},"expected":{"code":"OK","peer_calls":1,"immutable_clone":true,"hardcoded_fallback":false}},
+        {"id":"PEER-ANSWERER","input":{"path":"normal_answerer","calls":true},"expected":{"code":"OK","peer_calls":1,"immutable_clone":true,"hardcoded_fallback":false}},
+        {"id":"PEER-GLARE-WINNER","input":{"path":"glare_winner","calls":true},"expected":{"code":"OK","peer_calls":1,"immutable_clone":true,"hardcoded_fallback":false}},
+        {"id":"PEER-GLARE-LOSER","input":{"path":"glare_loser","calls":true},"expected":{"code":"OK","peer_calls":1,"immutable_clone":true,"hardcoded_fallback":false}},
+        {"id":"PEER-DISABLED","input":{"path":"outgoing_caller","calls":false},"expected":{"code":"DISABLED","peer_calls":0,"immutable_clone":false,"hardcoded_fallback":false}},
+        {"id":"PEER-LEGACY-LOCAL","input":{"path":"legacy_local","calls":true},"expected":{"code":"OK","peer_calls":1,"immutable_clone":true,"hardcoded_fallback":true}}
+      ],
+      "aggregate_expected":{"vector_count":6,"public_demo_fallbacks":0,"disabled_peer_calls":0},
+      "oracle":"Every public-demo peer path uses an immutable validated snapshot; legacy-local alone retains its fixed two-STUN adapter.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-115-03": {
+      "vectors": [
+        {"id":"SAFE-ARTIFACT-SCAN","input":{"sentinels":["username","credential","credentialType","token","userinfo","raw-sdp","raw-ice-candidate","ip-address","device-label","provider-error"]},"expected":{"sentinel_count":10,"occurrence_count":0,"new_endpoint_count":0,"new_socket_event_count":0,"new_backend_binding_count":0}},
+        {"id":"SAFE-RUNTIME-CONFIG","input":{"surfaces":["vite-output","runtime-config","fixture-output","evidence"]},"expected":{"surface_count":4,"credential_field_count":0,"turn_url_count":0,"raw_network_material_count":0}}
+      ],
+      "aggregate_expected":{"vector_count":2,"forbidden_occurrences":0},
+      "oracle":"No TURN credential or raw media/network evidence enters public artifacts or retained evidence.",
+      "d2_disposition":"TURN_REQUIRES_SEPARATE_APPROVAL"
+    },
+    "MA-115-04": {
+      "vectors": [
+        {"id":"MEDIA-OFFER-ONLY","input":{"ice":["new","new"],"required_kinds":["audio"],"signaling_complete":true,"remote_stream":false,"outbound_progress":false,"samples":[]},"expected":{"terminal":"signaling_only","ready":false,"sample_count":0}},
+        {"id":"MEDIA-ICE-ONLY","input":{"ice":["connected","connected"],"required_kinds":["audio"],"signaling_complete":true,"remote_stream":false,"outbound_progress":false,"samples":[]},"expected":{"terminal":"signaling_only","ready":false,"sample_count":0}},
+        {"id":"MEDIA-REMOTE-STREAM-ONLY","input":{"ice":["connected","connected"],"required_kinds":["audio"],"signaling_complete":true,"remote_stream":true,"outbound_progress":false,"samples":[{"at_ms":0,"a_in":{"audio":0},"b_in":{"audio":0}},{"at_ms":500,"a_in":{"audio":0},"b_in":{"audio":0}}]},"expected":{"terminal":"signaling_only","ready":false,"sample_count":2}},
+        {"id":"MEDIA-OUTBOUND-ONLY","input":{"ice":["connected","connected"],"required_kinds":["audio"],"signaling_complete":true,"remote_stream":true,"outbound_progress":true,"samples":[{"at_ms":0,"a_in":{"audio":0},"b_in":{"audio":0}},{"at_ms":500,"a_in":{"audio":0},"b_in":{"audio":0}}]},"expected":{"terminal":"media_timeout","ready":false,"sample_count":2}},
+        {"id":"MEDIA-ONE-WAY-AUDIO","input":{"ice":["connected","connected"],"required_kinds":["audio"],"samples":[{"at_ms":0,"a_in":{"audio":0},"b_in":{"audio":0}},{"at_ms":500,"a_in":{"audio":10},"b_in":{"audio":0}}]},"expected":{"terminal":"media_timeout","ready":false,"sample_count":2}},
+        {"id":"MEDIA-TWO-WAY-AUDIO","input":{"ice":["connected","connected"],"required_kinds":["audio"],"samples":[{"at_ms":0,"a_in":{"audio":0},"b_in":{"audio":0}},{"at_ms":500,"a_in":{"audio":10},"b_in":{"audio":11}}]},"expected":{"terminal":"ready","ready":true,"sample_count":2}},
+        {"id":"MEDIA-TWO-WAY-AUDIO-MIXED-ICE","input":{"ice":["connected","completed"],"required_kinds":["audio"],"samples":[{"at_ms":0,"a_in":{"audio":0},"b_in":{"audio":0}},{"at_ms":500,"a_in":{"audio":10},"b_in":{"audio":11}}]},"expected":{"terminal":"ready","ready":true,"sample_count":2,"allowed_ice_peer_count":2}},
+        {"id":"MEDIA-TWO-WAY-AUDIO-ICE-NOT-READY","input":{"ice":["connected","new"],"required_kinds":["audio"],"samples":[{"at_ms":0,"a_in":{"audio":0},"b_in":{"audio":0}},{"at_ms":500,"a_in":{"audio":10},"b_in":{"audio":11}}]},"expected":{"terminal":"media_timeout","ready":false,"sample_count":2,"allowed_ice_peer_count":1}},
+        {"id":"MEDIA-VIDEO-AUDIO-ONLY","input":{"ice":["completed","completed"],"required_kinds":["audio","video"],"samples":[{"at_ms":0,"a_in":{"audio":0,"video":0},"b_in":{"audio":0,"video":0}},{"at_ms":500,"a_in":{"audio":10,"video":0},"b_in":{"audio":11,"video":0}}]},"expected":{"terminal":"media_timeout","ready":false,"sample_count":2}},
+        {"id":"MEDIA-VIDEO-ONE-WAY","input":{"ice":["completed","completed"],"required_kinds":["audio","video"],"samples":[{"at_ms":0,"a_in":{"audio":0,"video":0},"b_in":{"audio":0,"video":0}},{"at_ms":500,"a_in":{"audio":10,"video":12},"b_in":{"audio":11,"video":0}}]},"expected":{"terminal":"media_timeout","ready":false,"sample_count":2}},
+        {"id":"MEDIA-TWO-WAY-AV","input":{"ice":["completed","completed"],"required_kinds":["audio","video"],"samples":[{"at_ms":0,"a_in":{"audio":0,"video":0},"b_in":{"audio":0,"video":0}},{"at_ms":500,"a_in":{"audio":10,"video":12},"b_in":{"audio":11,"video":13}}]},"expected":{"terminal":"ready","ready":true,"sample_count":2}},
+        {"id":"MEDIA-SAMPLES-TOO-CLOSE","input":{"ice":["connected","connected"],"required_kinds":["audio"],"samples":[{"at_ms":0,"a_in":{"audio":0},"b_in":{"audio":0}},{"at_ms":499,"a_in":{"audio":10},"b_in":{"audio":11}}]},"expected":{"terminal":"media_timeout","ready":false,"sample_count":2}},
+        {"id":"MEDIA-ONE-SAMPLE","input":{"ice":["connected","connected"],"required_kinds":["audio"],"samples":[{"at_ms":0,"a_in":{"audio":10},"b_in":{"audio":11}}]},"expected":{"terminal":"media_timeout","ready":false,"sample_count":1}}
+      ],
+      "aggregate_expected":{"vector_count":13,"ready_count":3,"signaling_only_count":3,"media_timeout_count":7,"deadline_ms":20000,"sample_interval_ms":500},
+      "oracle":"Only two allowed ICE peers plus bidirectional inbound RTP progress for every required kind across two valid samples can become ready.",
+      "d2_disposition":"PUBLIC_MEDIA_PATH_PENDING_D2"
+    },
+    "MA-115-05": {
+      "vectors": [
+        {"id":"LIFE-ICE-FAILED","input":{"events":[{"at_ms":0,"event":"ice_failed"}]},"expected":{"terminal":"ice_failed","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DISCONNECT-RECOVER","input":{"events":[{"at_ms":0,"event":"disconnected"},{"at_ms":4999,"event":"connected"},{"at_ms":5000,"event":"media_ready"}]},"expected":{"terminal":"ready","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DISCONNECT-EXACT-GRACE-CONNECT-FIRST","input":{"events":[{"at_ms":0,"event":"disconnected"},{"at_ms":5000,"event":"connected"},{"at_ms":5000,"event":"media_ready"}],"tie_policy":"connection_before_grace_timeout"},"expected":{"terminal":"ready","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DISCONNECT-EXACT-GRACE-TIMEOUT-FIRST","input":{"events":[{"at_ms":0,"event":"disconnected"},{"at_ms":5000,"event":"grace_timeout"},{"at_ms":5000,"event":"connected"}],"tie_policy":"grace_timeout_before_connection"},"expected":{"terminal":"ice_failed","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DISCONNECT-TIMEOUT","input":{"events":[{"at_ms":0,"event":"disconnected"},{"at_ms":5001,"event":"connected"}]},"expected":{"terminal":"ice_failed","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DEADLINE-NO-MEDIA","input":{"events":[{"at_ms":0,"event":"signaling_complete"},{"at_ms":20000,"event":"deadline"}]},"expected":{"terminal":"signaling_only","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DEADLINE-EXACT-READY-FIRST","input":{"events":[{"at_ms":0,"event":"signaling_complete"},{"at_ms":20000,"event":"media_ready"},{"at_ms":20000,"event":"deadline"}],"tie_policy":"media_before_deadline"},"expected":{"terminal":"ready","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DEADLINE-EXACT-DEADLINE-FIRST","input":{"events":[{"at_ms":0,"event":"signaling_complete"},{"at_ms":20000,"event":"deadline"},{"at_ms":20000,"event":"media_ready"}],"tie_policy":"deadline_before_media"},"expected":{"terminal":"signaling_only","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-DEADLINE-PARTIAL","input":{"events":[{"at_ms":0,"event":"one_way_media"},{"at_ms":20000,"event":"deadline"}]},"expected":{"terminal":"media_timeout","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-REPLACEMENT","input":{"events":[{"at_ms":0,"event":"peer_replaced"}]},"expected":{"terminal":"cancelled","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-END","input":{"events":[{"at_ms":0,"event":"call_end"}]},"expected":{"terminal":"cancelled","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-CANCEL","input":{"events":[{"at_ms":0,"event":"explicit_cancel"}]},"expected":{"terminal":"cancelled","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}},
+        {"id":"LIFE-LATE","input":{"events":[{"at_ms":0,"event":"ice_failed"},{"at_ms":1,"event":"media_ready"}]},"expected":{"terminal":"ice_failed","terminal_writes":1,"timer_cleanup":1,"listener_cleanup":1,"late_transitions":0}}
+      ],
+      "aggregate_expected":{"vector_count":13,"terminal_writes_per_vector":1,"late_transitions":0,"exact_grace_boundary_vectors":2,"exact_deadline_boundary_vectors":2},
+      "oracle":"The classifier is single-terminal, deadline-bounded, defines both exact timestamp tie orders, and cleans timers/listeners exactly once.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-115-06": {
+      "vectors": [
+        {"id":"CONTRACT-PRODUCT","input":{"surfaces":["socket-event-names","socket-payload-keys","acks","rooms","socket-user-id","outgoing","answer","reject","timeout","end","glare-winner","glare-loser","rest-call-history","participant-access","status","answeredAt","duration","call-log","CALL_STATES"]},"expected":{"surface_count":19,"source_candidate_exact_matches":19,"mutation_calls":0,"new_fields":0,"renamed_fields":0}}
+      ],
+      "aggregate_expected":{"vector_count":1,"contract_failures":0,"product_mutations":0},
+      "oracle":"Signaling, authorization, REST, history, logs, glare and product state remain exact.",
+      "d2_disposition":"NOT_APPLICABLE_PRE_D2"
+    },
+    "MA-115-07": {
+      "vectors": [
+        {"id":"BROWSER-AUDIO","input":{"browser_processes":2,"profiles":["alice-empty-profile","bob-empty-profile"],"principals":["alice@kittachat.test","bob@kittachat.test"],"required_kinds":["audio"],"withhold_inbound":false},"expected":{"terminal":"ready","browser_processes":2,"authenticated_principals":2,"required_kinds":["audio"],"allowed_ice_peer_count":2,"bidirectional_progress":true,"external_requests":0}},
+        {"id":"BROWSER-AV","input":{"browser_processes":2,"profiles":["alice-empty-profile","bob-empty-profile"],"principals":["alice@kittachat.test","bob@kittachat.test"],"required_kinds":["audio","video"],"withhold_inbound":false},"expected":{"terminal":"ready","browser_processes":2,"authenticated_principals":2,"required_kinds":["audio","video"],"allowed_ice_peer_count":2,"bidirectional_progress":true,"external_requests":0}},
+        {"id":"BROWSER-WITHHELD","input":{"browser_processes":2,"profiles":["alice-empty-profile","bob-empty-profile"],"principals":["alice@kittachat.test","bob@kittachat.test"],"required_kinds":["audio"],"withhold_bob_inbound":true,"alice_inbound_progress":true},"expected":{"terminal":"media_timeout","browser_processes":2,"authenticated_principals":2,"required_kinds":["audio"],"allowed_ice_peer_count":2,"bidirectional_progress":false,"external_requests":0}}
+      ],
+      "aggregate_expected":{"vector_count":3,"separate_edge_processes":2,"separate_empty_profiles":2,"real_device_permissions":0},
+      "oracle":"Two separately isolated pinned Edge processes use synthetic authenticated principals and generated media.",
+      "d2_disposition":"DEPLOYED_BROWSER_MATRIX_PENDING_D2"
+    },
+    "MA-115-08": {
+      "vectors": [
+        {"id":"GATE-CATALOG","input":{"mutations":["missing-case","extra-case","duplicate-case","reordered-case","missing-field","extra-field","wrong-type","wrong-value","finalization-total-union","child-file-lease","run-id-format"]},"expected":{"blocked_mutations":11,"accepted_mutations":0}},
+        {"id":"GATE-RUN-ID","input":{"valid":"lowercase-closed-format","mutations":["blank","malformed","mixed-case","newline-suffixed","crlf-suffixed","prefixed","non-string-singleton-array"]},"expected":{"valid_count":1,"rejected_count":7,"marker_rejections":7,"contract_rejections":7,"result_rejections":7}},
+        {"id":"GATE-LEASE-ENROLLMENT","input":{"faults":["loader-file-post-create-pre-return","run-file-post-create-pre-return","completion-marker-post-open-pre-return","acceptance-lease-post-return-validation","completion-marker-lease-post-return-envelope-validation","completion-marker-lease-post-return-identity-validation"]},"expected":{"fault_count":6,"internal_open_handles_closed":3,"internal_created_files_removed":2,"leases_enrolled_before_validation":3,"unregistered_open_handles":0,"remaining_loader_roots":0,"remaining_run_roots":0,"remaining_processes":0,"history_append_count":0}},
+        {"id":"GATE-CONTROL","input":{"mutations":["missing-control","extra-control","tampered-control","runner-tamper"]},"expected":{"blocked_before_candidate_process":4,"candidate_process_starts":0}},
+        {"id":"GATE-PRE-RUNTIME-MATERIALIZER","input":{"faults":["loader-git-stream-timeout","loader-git-process-timeout","loader-git-stream-dispose","loader-git-process-dispose","loader-runtime-dot-source","loader-runtime-function-collision","loader-runtime-post-load-digest-drift"],"malicious_ast":["top-level-statement","top-level-trap","script-requirement","filter-declaration","workflow-declaration"],"bounds_ms":{"process":30000,"termination":10000,"stdout_drain":10000,"stderr_drain":10000},"cleanup_mode":"memory-only-exact-declaration-and-post-load-verification"},"expected":{"fault_count":12,"declaration_manifest_export_count":18,"declaration_rejections":5,"function_collision_rejections":1,"post_load_digest_rejections":1,"top_level_material_executed":0,"remaining_loader_roots":0,"remaining_processes":0,"remaining_streams":0,"candidate_process_starts":0,"history_append_count":0,"pre_shared_loader_child_path_calls":0,"loader_root_create_calls_before_shared_runtime":0,"outside_root_delete_calls":0,"recursive_delete_calls":0,"reparse_traversals":0}},
+        {"id":"GATE-OWNED-ROOT","input":{"faults":["loader-post-admission-collision","run-post-admission-collision","loader-post-create-reparse","run-post-create-reparse","loader-post-lease-replacement-before-write","run-post-lease-replacement-before-write","loader-post-lease-replacement-before-launch","run-post-lease-replacement-before-launch","loader-child-reparse-before-create","run-child-reparse-before-create","loader-child-replacement-after-create","run-child-replacement-after-create","loader-child-replacement-before-launch","run-child-replacement-before-launch","completion-marker-replacement-before-read","history-source-replacement-before-snapshot"]},"expected":{"fault_count":16,"lifetime_parent_handles_open":2,"lifetime_root_handles_open":2,"minimum_lifetime_child_handles_open":9,"root_replacement_attempts_blocked":8,"child_replacement_attempts_blocked":8,"ownership_leases_for_collisions":0,"bare_child_path_operations":0,"unowned_root_traversals":0,"unowned_root_write_calls":0,"unowned_root_delete_calls":0,"outside_root_delete_calls":0,"candidate_process_starts":0,"history_append_count":0}},
+        {"id":"GATE-BOOTSTRAP-CLEANUP","input":{"faults":["loader-interruption","hung-bootstrap-grandchild","bootstrap-process-dispose","parent-path-removal","durable-parent-create","evidence-promotion","candidate-archive","source-archive","candidate-expand","source-expand","control-verification","runner-launch","history-write-attempt","reparse-parent"]},"expected":{"fault_count":14,"remaining_archives":0,"remaining_run_roots":0,"remaining_loader_roots":0,"remaining_provisional_outputs":0,"remaining_incomplete_durable_outputs":0,"remaining_processes":0,"history_append_count":0,"passed_append_count":0,"reparse_escape_count":0}},
+        {"id":"GATE-RECORDER-FAILURE","input":{"faults":["recorder-start","recorder-timeout","recorder-nonzero","recorder-ack-loss","recorder-ack-loss-after-append"]},"expected":{"fault_count":5,"no_exact_append_count":4,"exact_append_retained_count":1,"removed_unappended_evidence_count":4,"duplicate_retry_count":0,"ambiguous_append_retry_count":0}},
+        {"id":"GATE-FINALIZATION-TRANSACTION","input":{"faults":["finalization-entry-invocation","post-promotion-pre-recorder-validation","post-append-confirmation-write","post-append-cleanup-failure","no-append-cleanup-failure","history-ambiguous","history-ambiguous-cleanup-failure"],"status_contracts":["append-confirmed","append-confirmed-confirmation-failed","append-confirmed-entry-failed","append-confirmed-cleanup-failed","append-confirmed-entry-cleanup-failed","no-append-cleaned-failed","no-append-entry-failed-cleaned","no-append-cleanup-failed","no-append-entry-cleanup-failed","history-ambiguous-cleaned","history-ambiguous-entry-cleaned","history-ambiguous-cleanup-failed","history-ambiguous-entry-cleanup-failed"],"mutations":["invert-entry-flag-for-each-status","blank-run-id","malformed-run-id"]},"expected":{"fault_count":7,"exact_status_contract_count":13,"entry_flag_rejections":13,"run_id_rejections":2,"no_append_cleanup_failed_count":1,"ambiguous_history_terminal_count":2,"entry_exceptions_classified":1,"no_exact_append_count":3,"removed_unappended_evidence_count":2,"exact_append_terminal_count":2,"exact_append_retained_count":2,"confirmation_write_failure_count":1,"terminal_cleanup_failed_count":3,"terminal_non_retryable_count":5,"confirmation_failure_cleanup_verified":true,"confirmation_failure_remaining_loader_roots":0,"confirmation_failure_remaining_run_roots":0,"confirmation_failure_remaining_processes":0,"duplicate_retry_count":0,"ambiguous_append_retry_count":0}},
+        {"id":"GATE-SHARED-LOADER","input":{"shared_control":"scripts/k6/issue115/loaderRuntime.ps1","consumers":["parent-guide","bootstrap.ps1","loaderSelfTest.ps1"],"adapter_modes":["real","injected"],"shared_exports":["Assert-K6NoReparsePath","Assert-K6OwnedFileLease","Assert-K6OwnedRootLease","Get-K6FileBinding","Invoke-K6BoundedRecorder","Invoke-K6EvidencePromotion","Invoke-K6FinalizationRecovery","Invoke-K6FinalizationTransaction","Invoke-K6LoaderCleanup","Invoke-K6LoaderRun","New-K6LoaderAdapters","New-K6OwnedFile","New-K6OwnedRoot","Protect-K6HistoryPath","Read-K6OwnedFile","Release-K6HistoryPath","Test-K6HistoryRecord","Write-K6AppendConfirmation"]},"expected":{"shared_blob_identity":true,"shared_function_body_digest":true,"post_load_function_digest_match":true,"local_lifecycle_reimplementations":0,"reimplemented_function_count":0,"adapter_fault_count":34}},
+        {"id":"GATE-ENDPOINT-REGISTRY","input":{"registered":["deny-proxy-tcp","fixture-http-tcp","alice-cdp-tcp","bob-cdp-tcp","loopback-stun-udp"]},"expected":{"registered_count":5,"unknown_registered_endpoints":0}},
+        {"id":"GATE-PROCESS-MONITOR","input":{"cadence_ms":100,"owned_process_trees":["alice-edge","bob-edge","browser-harness","deny-proxy"],"barriers":["before-owned-start","after-descendant-stable","before-owned-stop","after-descendant-zero"],"registered_positive_controls":[{"owner":"alice-edge","endpoint":"deny-proxy-tcp"},{"owner":"bob-edge","endpoint":"deny-proxy-tcp"},{"owner":"alice-edge","endpoint":"loopback-stun-udp"},{"owner":"bob-edge","endpoint":"loopback-stun-udp"},{"owner":"browser-harness","endpoint":"alice-cdp-tcp"},{"owner":"browser-harness","endpoint":"bob-cdp-tcp"},{"owner":"deny-proxy","endpoint":"fixture-http-tcp"}]},"expected":{"cadence_ms":100,"owned_process_tree_count":4,"barrier_count":4,"positive_control_tuple_count":7,"observed_registered_tcp":5,"observed_registered_udp":2,"missing_tuples":0,"cross_owned_tuples":0,"unattributed_endpoints":0}},
+        {"id":"GATE-EGRESS","input":{"attempts":["external-dns-http","unregistered-loopback-tcp","unregistered-loopback-udp","literal-external-ice","public-stun-before-native","mongo-27017","redis-6379","rabbitmq-5672"]},"expected":{"blocked_attempts":8,"native_external_peer_calls":0,"external_tcp":0,"external_udp":0}},
+        {"id":"GATE-SCAN","input":{"gitleaks_image":"ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f","surfaces":{"candidate-diff":"gitleaks","client-dist":"gitleaks","observations":"gitleaks","command-summaries":"gitleaks","evidence-inventory":"gitleaks","final-manifest":"closed-safe-text","pending-evaluation":"closed-safe-text","acceptance-sidecar":"closed-safe-text-approve","approved-evaluation":"closed-safe-text-approve","append-confirmation":"closed-safe-text-post-append"}},"expected":{"gitleaks_digest":"sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f","gitleaks_surface_count":5,"closed_safe_text_surface_count":2,"approve_safe_text_surface_count":2,"post_append_safe_text_surface_count":1,"findings":0,"forbidden_evidence_occurrences":0}},
+        {"id":"GATE-BOUNDARY","input":{"counters":["provider-request","provider-mutation","d2-mutation"]},"expected":{"provider_request":0,"provider_mutation":0,"d2_mutation":0}}
+      ],
+      "aggregate_expected":{"vector_count":15,"D2_MUTATIONS":0,"public_stun_packets":0},
+      "oracle":"Trust root, two-process fixture, endpoint registry, process-tree monitor, preventive broker and scans all fail closed.",
+      "d2_disposition":"NO_D2_ACTION_AUTHORIZED"
+    }
+  },
+  "retained_d2_risks": {
+    "public_stun_network_matrix":"PENDING_D2",
+    "turn_gap":"PENDING_D2_AND_SEPARATE_APPROVAL_IF_REQUIRED",
+    "deployed_bidirectional_media":"PENDING_D2"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version":1,
+  "issue":115,
+  "guide_revision":"k6-115-webrtc-ice-v7",
+  "guide_sha256":"001ab373d59d97e3f2a84050b38f38643b4f0187b3e8af46e62f7aa38abce980",
+  "catalog_sha256":"e3c683781760b5540e6af8a5273808e95e8bd63e28c35a28ef397d0de7d6275b",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-ab1c-70e1-a630-7b0abe88e69b"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":3,
+  "minor_count":1,
+  "finding_titles":[
+    "The loader fault self-test cannot exercise the same production functions as claimed",
+    "The child receives writable access to the live append-only Evaluation history",
+    "Exact deadline race behavior remains undefined and untested",
+    "The bootstrap obligation contains a malformed authority sentence"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

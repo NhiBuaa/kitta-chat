@@ -1,0 +1,22 @@
+{
+  "schema_version":1,
+  "issue":115,
+  "guide_revision":"k6-115-webrtc-ice-v6",
+  "guide_sha256":"4ba0e9457f654154175c29fa8098858605632bf55802bb4700c818e15fbab3a0",
+  "catalog_sha256":"bdf59d566737b238ebce075e05520e56ab68cadd56f165c4349214b41fc1e1a1",
+  "source_base":"79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer":{"kind":"external-subagent","id":"01a02e22-ab1c-70e1-a630-7b0abe88e69b"},
+  "verdict":"REQUEST_CHANGES",
+  "critical_count":0,
+  "major_count":4,
+  "minor_count":0,
+  "finding_titles":[
+    "Evidence promotion is non-executable on the first run and occurs after an irreversible Evaluation append",
+    "The media catalog does not prove that connected/completed ICE is independently required for readiness",
+    "The ICE catalog does not reject missing ports or malformed DNS/IP hosts",
+    "The safety-critical Gitleaks scanner is described as pinned without an immutable image identity"
+  ],
+  "human_approval":"not_requested",
+  "implementation_authorized":false,
+  "d2_authorized":false
+}

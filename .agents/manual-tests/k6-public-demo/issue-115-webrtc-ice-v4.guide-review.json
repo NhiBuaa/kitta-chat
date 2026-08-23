@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v4",
+  "guide_sha256": "9f3524693b1251d3aa64e33e3033ef5c95f3dc6b3fab8eada62d5ddc66e7367b",
+  "catalog_sha256": "b80afe1e667f60fbd63c39ab93c5b68fb3dd7215e00323fc6f880473f29dbbb4",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {"kind":"external-subagent","id":"01a02e22-ab1c-70e1-a630-7b0abe88e69b"},
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 5,
+  "minor_count": 0,
+  "finding_titles": [
+    "The typed ICE catalog does not cover the complete locked schema and bounds",
+    "Verified-bootstrap cleanup fault coverage contradicts the guide",
+    "The Edge-only process monitor cannot observe the catalog declared HTTP positive control",
+    "The terminal scanner chronology conflicts with the catalog and omits post-approval artifacts",
+    "The exact recorder invocation lacks a recorder-compatible tracked guide path"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

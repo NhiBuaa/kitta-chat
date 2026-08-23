@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v13",
+  "guide_sha256": "cea188b963bf740ccd177bf328c2845562e562cee5db63c4b4447380bce2f17e",
+  "catalog_sha256": "130e6ed283214028a9a237cde4b7457059bbcd4ce7d39c75b943df36d99044a8",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a03035-0a3d-7bc2-a624-083199936d22"
+  },
+  "verdict": "APPROVE",
+  "critical_count": 0,
+  "major_count": 0,
+  "minor_count": 0,
+  "finding_titles": [],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

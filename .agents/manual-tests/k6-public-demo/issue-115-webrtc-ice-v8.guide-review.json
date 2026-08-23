@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v8",
+  "guide_sha256": "360ea362a4f00d9de4f09c1cffaab095b8bad3d83f48a1048ed689ee55c224e6",
+  "catalog_sha256": "6a9648331484c98f142b394b6a991389ecc4df3c39e924c0f28a0c90dcdfa574",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6b8a-7b63-b854-dfc01d37668c"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Injected pre-runtime faults bypass the production materializer",
+    "Dot-source failure after successful materialization leaves LoaderRoot behind"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

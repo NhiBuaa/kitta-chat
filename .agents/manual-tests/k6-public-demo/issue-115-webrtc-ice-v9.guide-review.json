@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v9",
+  "guide_sha256": "d034f9cfdd3df7661a66e1591a91557c3002214672e356cb56548b464d3fe30d",
+  "catalog_sha256": "333a99500d99e2b69960137799f8f5f13e8c057d2a70771ab39cea0189a7fdcc",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6b8a-7b63-b854-dfc01d37668c"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 1,
+  "minor_count": 0,
+  "finding_titles": [
+    "Pre-runtime child operations precede LoaderRoot reparse validation"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

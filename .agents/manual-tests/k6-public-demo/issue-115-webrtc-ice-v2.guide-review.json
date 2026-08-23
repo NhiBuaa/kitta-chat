@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v2",
+  "guide_sha256": "e679cb656a7660ddddb0c81d4e4c3fe1a5a783d711cd6e6bb14e805117836564",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {"kind": "external-subagent", "id": "01a02e22-ab1c-70e1-a630-7b0abe88e69b"},
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 5,
+  "minor_count": 0,
+  "finding_titles": [
+    "Source commit tree identity was incorrect",
+    "Working-tree scripts and changed scope were not exact CandidateTree authority",
+    "Observation catalog lacked per-ID closed semantics",
+    "Evidence finalization sequence was cyclic/impossible",
+    "Browser/Docker/loopback egress isolation was not enforceable"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

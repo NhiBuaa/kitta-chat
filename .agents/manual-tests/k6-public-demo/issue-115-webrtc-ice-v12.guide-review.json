@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v12",
+  "guide_sha256": "1e6703f5f4e3a26cd65009de34de95a452c948e44160ebbad60ca3555797ecc2",
+  "catalog_sha256": "b9bfb1310f8c91a263aad6cd9455bc715663b8ef458c7009e5c1cffa295beb31",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02f1f-6b8a-7b63-b854-dfc01d37668c"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 2,
+  "minor_count": 0,
+  "finding_titles": [
+    "Lifetime root handles do not secure child-path operations",
+    "Finalization result union accepts contradictory entry-exception states"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

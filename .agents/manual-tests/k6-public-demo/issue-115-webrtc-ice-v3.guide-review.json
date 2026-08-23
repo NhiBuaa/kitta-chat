@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "issue": 115,
+  "guide_revision": "k6-115-webrtc-ice-v3",
+  "guide_sha256": "fd2320a4df5f3a82af7abe13094e962c938b6c9247a54059e7eae9c796f6cc4f",
+  "catalog_sha256": "e47d92d49dafda2d75bbd554c3efe0546fff8d650de2b4580f583bb46ad84c9f",
+  "source_base": "79a2653464d0bf798b95222ec7434ce8722a696b",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02e22-ab1c-70e1-a630-7b0abe88e69b"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 5,
+  "minor_count": 0,
+  "finding_titles": [
+    "The source-pinned copy-run bootstrap deterministically blocks and lacks bootstrap-owned cleanup",
+    "Changed-path approval uses SourceBase instead of the declared execution-projection baseline",
+    "The catalog has unique IDs but still does not define complete deterministic oracles",
+    "The two-browser identity and Edge egress proof are internally incomplete",
+    "Terminal evidence and the human-approved Evaluation transition are not executable or fully safety-closed"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}
