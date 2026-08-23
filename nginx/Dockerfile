@@ -42,4 +42,7 @@ RUN npm run build
 FROM nginx:alpine
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/nginx.conf /etc/nginx/k6/nginx.conf.template
+COPY nginx/docker-entrypoint.d/10-render-k6-edge.sh /docker-entrypoint.d/10-render-k6-edge.sh
+RUN chmod 0555 /docker-entrypoint.d/10-render-k6-edge.sh
 COPY --from=frontend-build /app/client/dist /usr/share/nginx/html

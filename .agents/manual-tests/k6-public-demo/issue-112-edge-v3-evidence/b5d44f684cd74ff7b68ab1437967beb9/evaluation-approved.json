@@ -1,0 +1,84 @@
+{
+  "schema_version": 2,
+  "run_id": "k6-112-v3-local-20260823T083214Z-approved",
+  "observed_at": "2026-08-23T15:32:14.7164940+07:00",
+  "executor": "Codex",
+  "artifact_binding": {
+    "guide_revision": "k6-112-edge-v3",
+    "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+    "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+    "candidate_tree": "ab2ab0b18c8e133247135ab252ab002c3c0a1a39"
+  },
+  "test_results": [
+    {
+      "id": "MA-112-01",
+      "outcome": "PASS",
+      "observation": "The focused edge gate passed all 34 named upstream, adapter, header, route, packaging, and unchanged Socket.IO fixture checks.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-02",
+      "outcome": "PASS",
+      "observation": "REST and auth requests preserved present and absent Origin semantics, required forwarding headers, forbidden-substitution absence, and positive per-request upstream deltas.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/rest-origin.json"
+      ]
+    },
+    {
+      "id": "MA-112-03",
+      "outcome": "PASS",
+      "observation": "Socket.IO polling, upgrade, controlled backend restart, reconnect, Origin handling, upgrade headers, and payload digest conformance all passed.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/socket-reconnect.json"
+      ]
+    },
+    {
+      "id": "MA-112-04",
+      "outcome": "PASS",
+      "observation": "Exact edge health remained minimal edge liveness with status 200 and zero upstream delta while the synthetic backend was stopped.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/backend-down.json"
+      ]
+    },
+    {
+      "id": "MA-112-05",
+      "outcome": "PASS",
+      "observation": "All 21 locked route rows matched their required status and content classes; denied and reserved paths had zero upstream delta while intended proxy paths had positive deltas.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/route-matrix.json"
+      ]
+    },
+    {
+      "id": "MA-112-06",
+      "outcome": "PASS",
+      "observation": "Eligible navigation and the discovered hashed JavaScript asset used the SPA/static paths while API, Socket.IO, health, runtime config, readiness, and operational paths never fell through to the SPA.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/spa-precedence.json"
+      ]
+    },
+    {
+      "id": "MA-112-07",
+      "outcome": "PASS",
+      "observation": "The exact candidate archive passed repository CI, validation, lint, client and server suites, production builds, both local image builds, artifact-value exclusion, diff checking, and the pinned no-pull secret scan.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/evidence-manifest.json#command_results",
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/evidence-manifest.json#local_images"
+      ]
+    },
+    {
+      "id": "MA-112-08",
+      "outcome": "PASS",
+      "observation": "Every scenario retained zero external requests and provider mutations, released port 4182, and left zero K6 edge containers and networks; D2 mutation count remained zero.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/evidence-manifest.json#cleanup"
+      ]
+    }
+  ],
+  "verdict": "PASSED",
+  "human_approval": "approved",
+  "accepted_run_id": "k6-112-v3-local-b5d44f684cd74ff7b68ab1437967beb9-observation",
+  "approval_sha256": "3b2427576964fbe6fb91fee5e39e6e87d5e51322e443266254ea2bcb03070ad0",
+  "notes": "The maintainer accepted the exact pending run and all eight PASS observations. D2_MUTATIONS=0."
+}

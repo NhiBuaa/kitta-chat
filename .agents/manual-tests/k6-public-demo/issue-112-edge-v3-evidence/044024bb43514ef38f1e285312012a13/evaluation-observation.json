@@ -1,0 +1,86 @@
+{
+  "schema_version": 2,
+  "run_id": "k6-112-v3-local-044024bb43514ef38f1e285312012a13-observation",
+  "observed_at": "2026-08-23T06:43:57.7533899Z",
+  "executor": "Codex",
+  "artifact_binding": {
+    "guide_revision": "k6-112-edge-v3",
+    "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+    "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+    "candidate_tree": "0a76220630c3f45a91dbb60b51b078e145717889"
+  },
+  "test_results": [
+    {
+      "id": "MA-112-01",
+      "outcome": "PASS",
+      "observation": "The exact archived candidate passed all 34 focused upstream, renderer, Compose-adapter, header, route-precedence, packaging, and fixture-preservation checks.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-02",
+      "outcome": "PASS",
+      "observation": "REST and authentication probes preserved present and absent Origin semantics, all required forwarding headers, forbidden-substitution absence, and exact intended upstream-hit deltas.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/rest-origin.json"
+      ]
+    },
+    {
+      "id": "MA-112-03",
+      "outcome": "PASS",
+      "observation": "Socket.IO polling, upgrade, controlled backend restart, reconnect, Origin behavior, upgrade headers, and payload digest all matched the locked contract.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/socket-reconnect.json",
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/evidence-manifest.json#command_results"
+      ]
+    },
+    {
+      "id": "MA-112-04",
+      "outcome": "PASS",
+      "observation": "With the synthetic backend down, exact edge health remained a minimal 200 edge-liveness response with zero upstream hits and no internal detail.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/backend-down.json"
+      ]
+    },
+    {
+      "id": "MA-112-05",
+      "outcome": "PASS",
+      "observation": "Every omitted readiness, operational, metric, backend-health, and reserved exact route returned its locked non-SPA category with zero upstream delta; only intended proxy rows reached the backend.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/route-matrix.json"
+      ]
+    },
+    {
+      "id": "MA-112-06",
+      "outcome": "PASS",
+      "observation": "Eligible navigation returned the SPA, its discovered hashed asset returned JavaScript, and API, Socket.IO, health, runtime-config, readiness, and denied routes retained non-SPA precedence.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/spa-precedence.json"
+      ]
+    },
+    {
+      "id": "MA-112-07",
+      "outcome": "PASS",
+      "observation": "Root CI passed 134 of 134, client passed 280 of 280, server passed 492 with five expected skips, lint stayed within its 13-warning baseline, both local images built, and diff, artifact-value, and secret scans passed.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/evidence-manifest.json#command_results",
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/evidence-manifest.json#local_image_ids"
+      ]
+    },
+    {
+      "id": "MA-112-08",
+      "outcome": "PASS",
+      "observation": "All five scenarios reported zero provider requests and mutations, released port 4182, and left zero K6-112 containers and networks; D2 mutations remained zero.",
+      "evidence": [
+        "issue-112-edge-v3-evidence/044024bb43514ef38f1e285312012a13/evidence-manifest.json#cleanup",
+        "issue-112-edge-v3.execution-approval-r2.json"
+      ]
+    }
+  ],
+  "verdict": "BLOCKED",
+  "human_approval": "pending",
+  "accepted_run_id": null,
+  "approval_sha256": null,
+  "notes": "All eight observations passed. The run remains blocked only for explicit maintainer acceptance. D2_MUTATIONS=0."
+}

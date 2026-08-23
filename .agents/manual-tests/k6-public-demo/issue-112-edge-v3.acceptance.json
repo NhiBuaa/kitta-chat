@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "approval_type": "manual-acceptance-run",
+  "guide_revision": "k6-112-edge-v3",
+  "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "candidate_tree": "ab2ab0b18c8e133247135ab252ab002c3c0a1a39",
+  "accepted_run_id": "k6-112-v3-local-b5d44f684cd74ff7b68ab1437967beb9-observation",
+  "approved_at": "2026-08-23T15:32:14.7164940+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message accepting the exact pending run and all eight PASS observations",
+  "human_approval": "approved"
+}

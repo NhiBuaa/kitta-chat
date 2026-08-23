@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 112,
+  "guide_revision": "k6-112-edge-v3",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-112-edge-v3.md",
+  "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "execution_tree": "ab2ab0b18c8e133247135ab252ab002c3c0a1a39",
+  "approved_at": "2026-08-23T14:26:52.5735181+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message approving the unchanged guide revision and exact remediation execution tree",
+  "human_approval": "approved",
+  "authorized_actions": [
+    "execute the locked Issue #112 guide against the exact remediation execution tree",
+    "append a secret-safe BLOCKED/pending manual-acceptance Evaluation when all observations pass"
+  ],
+  "not_authorized": [
+    "record PASSED/approved without separate maintainer acceptance",
+    "per-Issue Standards/Spec code review",
+    "commit or push the Issue #112 implementation before acceptance",
+    "D2 credential, provider, registry, Railway, rollback, or Issue #61 mutation"
+  ],
+  "guide_execution_authorized": true,
+  "d2_authorized": false
+}

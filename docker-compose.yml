@@ -16,6 +16,9 @@ services:
         VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID:-}
     container_name: chat_nginx
     restart: always
+    environment:
+      - K6_TARGET=local-compose
+      - BACKEND_UPSTREAM=backend:3000
     ports:
       - "80:80"
       - "443:443"

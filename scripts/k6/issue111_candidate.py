@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import NamedTuple
 
@@ -139,13 +140,59 @@ def materialize_archive(repository: Path, execution_tree: str, archive: Path) ->
     if _object_type(repository, execution_tree) != "tree":
         raise CandidateError("execution candidate must resolve to a tree object")
     archive.parent.mkdir(parents=True, exist_ok=True)
-    _git(
+    tree_output = _git(
         repository,
-        "archive",
-        "--format=zip",
-        f"--output={archive}",
+        "ls-tree",
+        "-r",
+        "-z",
         execution_tree,
+        text=False,
+    ).stdout
+    entries: list[tuple[str, str, str]] = []
+    for raw_entry in tree_output.split(b"\0"):
+        if not raw_entry:
+            continue
+        metadata, raw_name = raw_entry.split(b"\t", maxsplit=1)
+        raw_mode, raw_type, raw_object_id = metadata.split(b" ")
+        mode = raw_mode.decode("ascii")
+        object_type = raw_type.decode("ascii")
+        object_id = raw_object_id.decode("ascii")
+        name = raw_name.decode("utf-8")
+        if object_type != "blob" or mode not in {"100644", "100755"}:
+            raise CandidateError(f"unsupported candidate archive entry: {name}")
+        entries.append((mode, object_id, name))
+
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{archive.name}.",
+        suffix=".tmp",
+        dir=archive.parent,
     )
+    os.close(descriptor)
+    temporary_archive = Path(temporary_name)
+    try:
+        with zipfile.ZipFile(
+            temporary_archive,
+            mode="w",
+            compression=zipfile.ZIP_DEFLATED,
+        ) as destination:
+            for mode, object_id, name in entries:
+                blob = _git(
+                    repository,
+                    "cat-file",
+                    "blob",
+                    object_id,
+                    text=False,
+                ).stdout
+                info = zipfile.ZipInfo(name)
+                info.create_system = 3
+                info.external_attr = int(mode, 8) << 16
+                info.internal_attr = 0
+                info.compress_type = zipfile.ZIP_DEFLATED
+                destination.writestr(info, blob)
+        os.replace(temporary_archive, archive)
+    finally:
+        if temporary_archive.exists():
+            temporary_archive.unlink()
 
 
 def main(argv: list[str] | None = None) -> int:

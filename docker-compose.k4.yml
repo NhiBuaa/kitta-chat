@@ -11,6 +11,9 @@ services:
       context: .
       dockerfile: nginx/Dockerfile
     labels: *k4-labels
+    environment:
+      K6_TARGET: local-compose
+      BACKEND_UPSTREAM: backend:3000
     depends_on:
       backend:
         condition: service_healthy
