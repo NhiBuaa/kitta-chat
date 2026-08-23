@@ -100,6 +100,7 @@ class EvaluationAuthority(NamedTuple):
         if not guide_path.is_file():
             raise EvaluationError("guide must be a readable file")
         _require_non_empty_string(guide_revision, "guide_revision")
+        _required_case_ids(guide_revision)
         if _git_object_type(repository, source_base) != "commit":
             raise EvaluationError("source_base must resolve to a commit object")
         if _git_object_type(repository, candidate_tree) != "tree":
@@ -212,6 +213,16 @@ def _require_non_empty_string(value: Any, field: str) -> None:
         raise EvaluationError(f"{field} must be a non-empty string")
 
 
+def _required_case_ids(guide_revision: str) -> set[str]:
+    match = GUIDE_REVISION_PATTERN.fullmatch(guide_revision)
+    if match is None:
+        raise EvaluationError(
+            "guide_revision must match k6-NNN-lowercase-slug-vN"
+        )
+    issue = match.group("issue")
+    return {f"MA-{issue}-{index:02d}" for index in range(1, LOCKED_CASE_COUNT + 1)}
+
+
 def _validate_safe_text(value: str, field: str) -> None:
     for pattern in SENSITIVE_TEXT_PATTERNS:
         if pattern.search(value):
@@ -243,14 +254,6 @@ def _validate_executor(value: Any) -> None:
     _validate_safe_text(value, "executor")
     if len(value) > 64 or value not in EXECUTOR_IDENTITIES:
         raise EvaluationError("executor must be an approved identity")
-
-
-def _required_case_ids(guide_revision: str) -> set[str]:
-    match = GUIDE_REVISION_PATTERN.fullmatch(guide_revision)
-    if match is None:
-        raise EvaluationError("guide_revision cannot define locked case IDs")
-    issue = match.group("issue")
-    return {f"MA-{issue}-{index:02d}" for index in range(1, LOCKED_CASE_COUNT + 1)}
 
 
 def _validate_binding(record: dict[str, Any], authority: EvaluationAuthority) -> None:

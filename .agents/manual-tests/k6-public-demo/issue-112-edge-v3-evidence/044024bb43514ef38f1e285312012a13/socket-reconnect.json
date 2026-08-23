@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "scenario": "socket-reconnect",
+  "candidateTree": "0a76220630c3f45a91dbb60b51b078e145717889",
+  "commands": [
+    {
+      "name": "docker-build-edge",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-up",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-restart-backend",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-health-wait",
+      "exitCode": 0
+    },
+    {
+      "name": "backend-socket-state",
+      "exitCode": 0
+    },
+    {
+      "name": "compose-down",
+      "exitCode": 0
+    },
+    {
+      "name": "cleanup-container-count",
+      "exitCode": 0
+    },
+    {
+      "name": "cleanup-network-count",
+      "exitCode": 0
+    }
+  ],
+  "http": [],
+  "headerChecks": [
+    {
+      "seam": "socket",
+      "originEqual": true,
+      "originAbsent": true,
+      "hostPresent": true,
+      "realIpPresent": true,
+      "forwardedForPresent": true,
+      "forwardedProtoPresent": true,
+      "forbiddenSubstitutionAbsent": true
+    }
+  ],
+  "socket": {
+    "pollingConnected": true,
+    "upgraded": true,
+    "reconnected": true,
+    "originEqual": true,
+    "originAbsent": true,
+    "upgradeHeaderConformant": true,
+    "connectionHeaderConformant": true,
+    "payloadDigestEqual": true
+  },
+  "upstreamCounterScope": "per-request",
+  "artifactChecks": [
+    {
+      "name": "socket-payload-contract",
+      "matched": true
+    }
+  ],
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "containerCount": 0,
+    "networkCount": 0
+  }
+}

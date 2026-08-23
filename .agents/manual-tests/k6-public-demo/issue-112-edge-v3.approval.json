@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 112,
+  "guide_revision": "k6-112-edge-v3",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-112-edge-v3.md",
+  "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "approved_at": "2026-08-23T11:21:43.9316407+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message approving the exact Issue #112 guide revision and SHA-256",
+  "human_approval": "approved",
+  "lock_status": "locked",
+  "authorized_actions": [
+    "commit and push the Issue #112 guide/state checkpoint",
+    "implement Issue #112 through the approved TDD seams"
+  ],
+  "not_authorized": [
+    "per-Issue Standards/Spec code review",
+    "accept a future manual run without a separate maintainer acceptance decision",
+    "D2 credential creation or rotation",
+    "Railway or provider secret binding",
+    "GHCR deployment image publication",
+    "Railway runtime deployment or mutation",
+    "live provider validation or deployed-target acceptance",
+    "rollback",
+    "Issue #61 measurement or production claims"
+  ],
+  "implementation_authorized": true,
+  "guide_execution_authorized_before_implementation": false,
+  "d2_authorized": false
+}

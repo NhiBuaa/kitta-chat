@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "run_id": "k6-112-v3-local-b5d44f684cd74ff7b68ab1437967beb9-observation",
+  "guide_revision": "k6-112-edge-v3",
+  "guide_sha256": "7ff454c3654d6a2dad56ad6a39acb5fa5a5a920e605182d774ec6258aed5727f",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "head": "243347cff936f99ace18e5ed4b9a4acb9c473d60",
+  "full_index_tree": "1bcb2761722314e47e4198b9836ca44cf93a5f17",
+  "candidate_tree": "ab2ab0b18c8e133247135ab252ab002c3c0a1a39",
+  "command_results": [
+    { "name": "candidate-archive", "exit_code": 0 },
+    { "name": "candidate-root-npm-ci", "exit_code": 0 },
+    { "name": "candidate-client-npm-ci", "exit_code": 0 },
+    { "name": "candidate-server-npm-ci", "exit_code": 0 },
+    { "name": "focused", "exit_code": 0 },
+    { "name": "scenario-rest-origin", "exit_code": 0 },
+    { "name": "scenario-socket-reconnect", "exit_code": 0 },
+    { "name": "scenario-backend-down", "exit_code": 0 },
+    { "name": "scenario-route-matrix", "exit_code": 0 },
+    { "name": "scenario-spa-precedence", "exit_code": 0 },
+    { "name": "root-ci", "exit_code": 0 },
+    { "name": "ci-validate", "exit_code": 0 },
+    { "name": "lint", "exit_code": 0 },
+    { "name": "client-test", "exit_code": 0 },
+    { "name": "client-build", "exit_code": 0 },
+    { "name": "server-test", "exit_code": 0 },
+    { "name": "server-image", "exit_code": 0 },
+    { "name": "edge-image", "exit_code": 0 },
+    { "name": "gitleaks-image-inspect", "exit_code": 0 },
+    { "name": "candidate-secret-scan", "exit_code": 0 },
+    { "name": "candidate-diff-check", "exit_code": 0 }
+  ],
+  "scenario_digests": [
+    { "path": "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/rest-origin.json", "sha256": "a1c7ddef1288640e5c87dae0ba5242cd5053cdc1ad8a0cba54e5a7ab7e2f5c1f" },
+    { "path": "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/socket-reconnect.json", "sha256": "61c3632f4f3642b363ccf5bf75a0e84e06789ca09c98372c81bc84a2ad36deb3" },
+    { "path": "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/backend-down.json", "sha256": "6d9562767de14118042d49cc7e2c8d7d725f926816b5674ccb99e8d1f40aff27" },
+    { "path": "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/route-matrix.json", "sha256": "145899349529689c008a62490d7e1ebb2dcddc6073f91c5442fc0fbeb103f6d8" },
+    { "path": "issue-112-edge-v3-evidence/b5d44f684cd74ff7b68ab1437967beb9/spa-precedence.json", "sha256": "0e593e55904037c53f77fbeb3adc2ab2367db3f7833e01e79aba1c679c1ffb23" }
+  ],
+  "local_images": [
+    { "tag": "kittachat-k6-112-server:local", "id": "sha256:586eb31ad05a644f6023770392ffa2cd1d27e200d040c69324766bc82f6343ec" },
+    { "tag": "kittachat-k6-112-edge:local", "id": "sha256:388951e338f7679e2e9c19c402518fd39f2de33aa2a8af6bbddd716ca9a8ef41" }
+  ],
+  "secret_scan": {
+    "image": "ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f",
+    "result": "GITLEAKS_PASS"
+  },
+  "changed_file_inventory": [
+    "docker-compose.k4.yml",
+    "docker-compose.yml",
+    "nginx/Dockerfile",
+    "nginx/docker-entrypoint.d/10-render-k6-edge.sh",
+    "nginx/nginx.conf",
+    "package.json",
+    "scripts/ci/k3ObservabilityBoundaries.test.cjs",
+    "scripts/ci/opsExposureBoundary.test.cjs",
+    "scripts/k6/edge-fixture.compose.yml",
+    "scripts/k6/edgeAcceptanceContract.cjs",
+    "scripts/k6/edgeAcceptanceRunner.cjs",
+    "scripts/k6/edgeAcceptanceScenarios.cjs",
+    "scripts/k6/edgeDockerHarness.cjs",
+    "scripts/k6/edgeFixtureBackend.cjs",
+    "scripts/k6/issue111_candidate.py",
+    "scripts/record_evaluation.py",
+    "scripts/test/k6/edgeAcceptanceRunner.test.cjs",
+    "scripts/test/k6/edgeConfig.test.cjs",
+    "scripts/test/k6/test_issue111_candidate.py",
+    "scripts/test/manual_acceptance/test_record_evaluation.py"
+  ],
+  "external_provider_request_count": 0,
+  "provider_mutation_count": 0,
+  "cleanup": {
+    "port_released": true,
+    "container_count": 0,
+    "network_count": 0
+  },
+  "D2_MUTATIONS": 0
+}

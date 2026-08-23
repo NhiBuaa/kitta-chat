@@ -13,6 +13,8 @@
     "seed:demo": "docker compose exec -T backend npm run seed:demo",
     "demo": "node scripts/demo.js",
     "demo:observability": "node scripts/observabilityDemo.js",
+    "test:k6-edge": "node --test scripts/test/k6/edge*.test.cjs",
+    "accept:k6-edge": "node scripts/k6/edgeAcceptanceRunner.cjs",
     "k4": "node scripts/k4/cli.js",
     "prod:docker": "docker compose up --build"
   },

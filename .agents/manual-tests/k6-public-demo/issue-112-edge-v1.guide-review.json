@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 112,
+  "guide_revision": "k6-112-edge-v1",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-112-edge-v1.md",
+  "guide_sha256": "00d5cc0c0bc7741bd41cc307e73914a7c0e4ecbc2187581dc669aeae75d85dbc",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02cb5-ffde-7623-a6af-46e355103407"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 5,
+  "minor_count": 0,
+  "finding_titles": [
+    "Fixture lifecycle was not executable",
+    "Denied-route and SPA matrices were incomplete",
+    "Origin/header and Socket.IO oracles were insufficient",
+    "Candidate, scan, side-effect, and D2 procedures were not deterministic",
+    "Append-only Evaluation could not be executed"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

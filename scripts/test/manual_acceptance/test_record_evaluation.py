@@ -15,6 +15,7 @@ SPEC.loader.exec_module(record_evaluation)
 
 
 CASE_IDS = [f"MA-111-{index:02d}" for index in range(1, 9)]
+ISSUE_112_CASE_IDS = [f"MA-112-{index:02d}" for index in range(1, 9)]
 ISSUE_113_CASE_IDS = [f"MA-113-{index:02d}" for index in range(1, 9)]
 
 
@@ -211,6 +212,35 @@ class EvaluationRecorderTests(unittest.TestCase):
             ):
                 record_evaluation.append_evaluation(self.history, record, self.authority)
 
+    def test_issue_112_derives_all_eight_case_ids_from_the_locked_revision(self):
+        guide = self.repository / "issue-112-edge-v3.md"
+        guide.write_text("# K6 Issue #112 guide v3\n", encoding="utf-8")
+        git(self.repository, "add", guide.name)
+        authority = record_evaluation.EvaluationAuthority.create(
+            repository=self.repository,
+            guide_path=guide,
+            guide_revision="k6-112-edge-v3",
+            source_base=self.source_base,
+            candidate_tree=self.candidate_tree,
+        )
+        record = self.evaluation(
+            "k6-112-observation",
+            authority=authority,
+            case_ids=ISSUE_112_CASE_IDS,
+        )
+
+        record_evaluation.append_evaluation(self.history, record, authority)
+        self.assertEqual([record], record_evaluation.load_history(self.history, authority))
+
+        unknown = json.loads(json.dumps(record))
+        unknown["run_id"] = "k6-112-unknown-case"
+        unknown["test_results"][-1]["id"] = "MA-112-09"
+        with self.assertRaisesRegex(
+            record_evaluation.EvaluationError,
+            "MA-112-01 through MA-112-08",
+        ):
+            record_evaluation.append_evaluation(self.history, unknown, authority)
+
     def test_issue_113_derives_all_eight_case_ids_from_the_locked_revision(self):
         authority = record_evaluation.EvaluationAuthority.create(
             repository=self.repository,
@@ -238,19 +268,17 @@ class EvaluationRecorderTests(unittest.TestCase):
             record_evaluation.append_evaluation(self.history, unknown, authority)
 
     def test_rejects_guide_revisions_that_cannot_safely_define_case_identity(self):
-        authority = record_evaluation.EvaluationAuthority.create(
-            repository=self.repository,
-            guide_path=self.guide,
-            guide_revision="../../unsafe-guide",
-            source_base=self.source_base,
-            candidate_tree=self.candidate_tree,
-        )
-        record = self.evaluation(authority=authority)
         with self.assertRaisesRegex(
             record_evaluation.EvaluationError,
-            "guide_revision cannot define locked case IDs",
+            "guide_revision must match",
         ):
-            record_evaluation.append_evaluation(self.history, record, authority)
+            record_evaluation.EvaluationAuthority.create(
+                repository=self.repository,
+                guide_path=self.guide,
+                guide_revision="../../unsafe-guide",
+                source_base=self.source_base,
+                candidate_tree=self.candidate_tree,
+            )
 
     def test_existing_issue_111_histories_validate_without_byte_changes(self):
         repository = SCRIPT.parents[1]
