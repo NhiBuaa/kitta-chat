@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 112,
+  "review_type": "pre-implementation-ticket-spec",
+  "issue_url": "https://github.com/NhiBuaa/kitta-chat/issues/112",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "reviewed_at": "2026-08-23T10:36:45.1850508+07:00",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02ca5-82a3-7a01-ba76-f774e248c61f"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "REQUEST_CHANGES",
+      "critical_count": 0,
+      "major_count": 4,
+      "minor_count": 1,
+      "finding_titles": [
+        "BACKEND_UPSTREAM had no testable representation or validation contract",
+        "Origin forwarding did not cover REST, auth, Socket.IO, reconnect, and absent Origin",
+        "Optional public readiness had no selected disposition",
+        "Public route exclusions and SPA fallback lacked a deterministic matrix",
+        "Reviewed wording could imply a forbidden per-Issue code review"
+      ],
+      "remediation_comment": "https://github.com/NhiBuaa/kitta-chat/issues/112#issuecomment-5384021131"
+    },
+    {
+      "round": 2,
+      "verdict": "APPROVE",
+      "critical_count": 0,
+      "major_count": 0,
+      "minor_count": 0,
+      "findings": [],
+      "report": "The revised ticket locks upstream validation, present and absent Origin behavior across REST, auth, and Socket.IO, omitted public readiness, deterministic route and SPA precedence, and the single whole-K6 review policy. The revision remains inside ADR-016 and exposes no D2-only value."
+    }
+  ],
+  "final_verdict": "APPROVE",
+  "d2_authorized": false,
+  "per_issue_code_review": false
+}
