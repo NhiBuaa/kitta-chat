@@ -10,7 +10,7 @@ at integration head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The sole normati
 `docs/deployment/k6-d2-authorization-execution-contract.md`.
 
 - Canonical plan SHA-256: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`.
-- End-to-end execution plan SHA-256: `5827ab0a5c2d1a38f4bf4dc2270531daa9ba2d8fb31144529c586bada60955e2`.
+- End-to-end execution plan SHA-256: `6ea6a758a8ad5e95f5071af1936b709830dc38a639cb5583682a52342c5fd67e`.
 
 Issue #111 used branch `nhibuaa/k6-issue-111-target-config`, isolated worktree
 `D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`, and source base
@@ -18,9 +18,10 @@ Issue #111 used branch `nhibuaa/k6-issue-111-target-config`, isolated worktree
 `6f53a78d88137e0d8dd48aac91e0672d312c3d6f`.
 
 Two reviewer axes that had already been dispatched returned after the maintainer cancelled the
-per-Issue review. They were not aggregated, are not a final review, and do not change the rule that
-the single final whole-K6 review runs only after all Issues are integrated and required live
-acceptance completes. Their concrete findings were independently verified as remediation leads.
+per-Issue code review. They were not aggregated, are not final-review evidence, and do not change
+the rule that the single planned whole-K6 code review runs only after Issues #111–#118 are
+integrated and their required local/pre-D2 manual acceptance is `PASSED/approved`. Their concrete
+findings were independently verified as remediation leads.
 The implementation now rejects loopback public origins, non-boolean/inherited synthetic-test
 authority, missing required signup/seed capabilities, and `VITE_DEFAULT_AVATAR` build-time data;
 ordinary local targets use an explicit legacy adapter while public-demo remains fail-closed. The
@@ -55,7 +56,8 @@ post-merge tree equals the accepted child tree, so no v6 Test Case was invalidat
 closed; its clean child worktree and local/remote child branches were removed after reachability
 verification. The new frontier is Issues #112 and #113, which must start from the same exact
 integration checkpoint containing this docs-only lifecycle normalization. Do not run per-Issue
-final reviews. D2 remains unauthorized.
+code reviews. Ticket/guide reviews remain pre-implementation quality gates. D2 remains
+unauthorized.
 All lower sections are historical evidence unless this block explicitly incorporates them.
 
 ## Historical checkpoints — superseded by CURRENT AUTHORITY

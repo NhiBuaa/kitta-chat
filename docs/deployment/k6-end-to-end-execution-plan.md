@@ -8,6 +8,8 @@
 - Parent specification: GitHub Issue #110.
 - Delivery graph: GitHub Issues #111–#118.
 - Cadence: `high`, with external ticket and guide reviews, human acceptance, and final whole-scope review.
+- Code-review policy: no per-Issue post-implementation code review; one planned whole-K6 review
+  after #111–#118 are integrated and locally accepted.
 - D2 status: not authorized. The agent must stop at the D2 Authorization Request.
 
 This file is the durable execution authority for K6. The feature-delivery ledger records actual
@@ -20,9 +22,10 @@ without broadening this plan or crossing the D2 boundary.
 - `feature-delivery` owns the ledger, graph, frontier, integration, and completion.
 - `test-craft` and `manual-acceptance` own Test Cases, locked guides, and append-only Evaluations.
 - `implement` and `tdd` own RED → GREEN → cleanup within one approved ticket.
-- `code-review` owns the single final whole-K6 fixed-point review after all child Issues are
-  integrated and required live acceptance completes. Child Issues use the approved ticket review,
-  guide review, automated verification, and human acceptance gates.
+- `code-review` owns one planned whole-K6 fixed-point review after Issues #111–#118 are integrated
+  and their required local/pre-D2 manual acceptance is `PASSED/approved`. That same review is the
+  pre-D2 reviewed-source gate. Child Issues use ticket review, guide review, automated verification,
+  and human acceptance; they do not receive post-implementation code reviews.
 - `deployment` owns the D2 preflight, rollout, health, and rollback guardrails.
 - `session-continuity` and `handoff` own resumable checkpoints.
 - `resolving-merge-conflicts` is used only when reconciliation preserves approved behavior.
@@ -154,8 +157,11 @@ For each Issue:
 11. Push and open a PR to `nhibuaa/k6-public-demo`.
 12. Do not run a per-Issue Standards/Spec `code-review`. Preserve the exact child candidate for
     the single final whole-K6 review.
-13. Merge only when the ticket and guide reviews have no Critical/Major findings, acceptance is
-    valid, the PR is mergeable, and the latest integration head is reconciled.
+13. Treat the Issue implementation as accepted when automated verification and every required
+    locked-guide case are `PASSED/approved`. Merge only when that acceptance is valid, the ticket
+    and guide reviews have no Critical/Major findings, the PR is mergeable, and the latest
+    integration head is reconciled. Integration/reachability remains required to unlock downstream
+    Issues.
 
 ### Verification gates
 
@@ -198,7 +204,8 @@ the real ruleset.
 
 - TDD: at most three attempts for one acceptance criterion.
 - Design: at most two revisions per ticket.
-- Review remediation: at most two cycles per ticket and two final-feature cycles.
+- Ticket/guide review remediation: at most two cycles per ticket. The one whole-K6 code-review has
+  at most two final-feature remediation cycles.
 - Critical means `BLOCK`; Major means `REQUEST_CHANGES`.
 - Failed or blocked acceptance appends a new Evaluation; never rewrite history.
 - A changed behavior expectation requires a new guide revision and new guide approval.
@@ -215,7 +222,8 @@ After #118 merges:
 2. Run full integrated tests, Docker candidate builds, and security/license/baseline checks.
 3. Capture the initial base, merge-base, integration head, ordered child merge commits, exact diff
    command, and reviewed candidate SHA.
-4. Run the whole-scope pre-deployment review. Zero Critical/Major findings is required.
+4. Run the single whole-K6 Standards/Spec `code-review`. This is the only planned code-review and
+   the pre-deployment reviewed-source gate. Zero Critical/Major findings is required.
 5. Create the D2 Authorization Request as a secret-safe Issue #110 checkpoint and an environment-
    owned JSON copy with a hash.
 
@@ -266,10 +274,14 @@ protocol.
 2. If `main` advanced, create `nhibuaa/k6-main-reconcile` in `...\k6-main-reconcile`, merge-update
    latest `github/main`, stop on semantic conflict, rerun invalidated tests/acceptance, merge its PR
    into integration, and clean it.
-3. Capture the final integration fixed point.
-4. Run final whole-feature Standards/Spec review.
-5. Require cadence validator `ready`, zero Critical/Major findings, and live Evaluation `PASSED`
-   with human approval.
+3. Capture the final integration fixed point and verify that all runtime/source bytes still match
+   the single reviewed pre-D2 candidate. Redacted execution evidence and documentation may be added,
+   but no runtime/source drift is accepted silently.
+4. Do not run a routine second code-review. If post-review remediation changes runtime/source code,
+   invalidate the reviewed candidate and D2 authority, stop rollout, and return through remediation
+   to a replacement whole-K6 review before proceeding.
+5. Require cadence validator `ready`, the valid zero-Critical/Major whole-K6 review, and live
+   Evaluation `PASSED` with human approval.
 6. Open `nhibuaa/k6-public-demo` → `main`.
 7. Require the seven hosted checks: Server Tests, Client Tests, Client Build, Client Lint, Docker
    Build server/nginx, and CI Policy v1.
@@ -317,6 +329,8 @@ K6 is complete only when:
 - Every child has branch/worktree/PR/merge/reachability/cleanup records.
 - The dependency graph and wave order were followed.
 - All high-cadence guide, review, Evaluation, and cadence evidence is valid.
+- The single whole-K6 code-review remains bound to the deployed runtime/source fixed point; any
+  post-review code drift was remediated and reviewed again before rollout resumed.
 - The public URL and required auth/chat/group/sidebar/WebSocket/call/media/upload flows pass.
 - Recovery, Google login, `/ops`, `/metrics`, and Issue #61 measurement remain disabled or inert.
 - Live provider compatibility is proven, not inferred from S1 metadata.

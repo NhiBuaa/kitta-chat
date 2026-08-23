@@ -39,8 +39,9 @@ post-merge tree equals the accepted child tree, so selective acceptance invalida
 Issue #111 is closed; its clean child worktree and local/remote branch were removed after
 reachability verification. The active frontier is Issues #112 and #113 from the same exact
 integration head containing this lifecycle checkpoint. No per-Issue Standards/Spec `code-review`
-is pending; the one final whole-K6 review remains deferred. No D2 mutation occurred. D2 remains
-unauthorized.
+is pending; the one whole-K6 code review remains deferred until Issues #111–#118 are integrated and
+their required local/pre-D2 acceptance is `PASSED/approved`. Ticket/guide reviews remain
+pre-implementation gates and are not code reviews. No D2 mutation occurred. D2 remains unauthorized.
 
 ## Workflow identity
 
@@ -55,7 +56,7 @@ unauthorized.
 - Canonical K6 plan: `docs/deployment/k6-public-demo-plan.md`
 - Canonical K6 plan SHA-256 at this lifecycle fixed point: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`
 - Approved execution plan: `docs/deployment/k6-end-to-end-execution-plan.md`
-- Approved execution plan SHA-256 at this lifecycle fixed point: `5827ab0a5c2d1a38f4bf4dc2270531daa9ba2d8fb31144529c586bada60955e2`
+- Approved execution plan SHA-256 at this lifecycle fixed point: `6ea6a758a8ad5e95f5071af1936b709830dc38a639cb5583682a52342c5fd67e`
 - Pre-D2 delivery authority exists under the approved plan. Issue #111 implementation,
   ticket/guide/human gates, and child integration are complete; Wave 2 initialization is current.
 - D2 credential creation/binding, GHCR publication, Railway rollout, and live acceptance remain unauthorized.
@@ -89,7 +90,7 @@ unauthorized.
 | Phase 6 — manual acceptance preparation | pending | Pre-D2 may lock the guide and evidence schema; deployed-target execution is forbidden before D2 rollout |
 | Phase 7 — D2 Authorization Request/checkpoint | pending | Human approval is required before credential binding, GHCR publication, rollout, live provider validation, or deployed-target acceptance |
 | Phase 8 — D2 execution/rollout/live verification | pending | Post-approval only: capture actual digests/hostnames, bind credentials, deploy, validate providers, run manual acceptance, and record rollback evidence |
-| Phase 9 — final review/closeout | pending | Requires all prior evidence |
+| Phase 9 — final merge/closeout | pending | Reuses the valid single pre-D2 whole-K6 code review when runtime/source bytes have not drifted; requires all rollout and live-acceptance evidence |
 
 ## Issue #111 execution checkpoint
 
@@ -165,8 +166,9 @@ unauthorized.
   accepted; run `k6-111-v6-local-20260823T025857Z-approved` is `PASSED/approved`
 - Next valid transition: initialize Issues #112 and #113 from the same exact integration head, then
   prepare their ticket reviews, Test Cases, and locked guide candidates
-- Final-review sequencing: do not run a per-Issue Standards/Spec `code-review`; run one final
-  whole-K6 review only after Issues #111–#118 are integrated and required live acceptance completes
+- Code-review sequencing: do not run a per-Issue Standards/Spec `code-review`; run one whole-K6
+  review only after Issues #111–#118 are integrated and locally accepted, then use it as the D2
+  reviewed-source gate. Post-D2 runtime/source drift invalidates both review and D2 authority.
 - Forbidden at this checkpoint: per-Issue final review, D2 actions, provider/credential mutation, image
   publication, Railway deployment, rollback, or Issue #61 work
 

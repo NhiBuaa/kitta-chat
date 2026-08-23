@@ -9,7 +9,7 @@ normalization head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`, completed all tic
 and is now integrated and closed.
 
 - Canonical plan SHA-256: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`.
-- End-to-end execution plan SHA-256: `5827ab0a5c2d1a38f4bf4dc2270531daa9ba2d8fb31144529c586bada60955e2`.
+- End-to-end execution plan SHA-256: `6ea6a758a8ad5e95f5071af1936b709830dc38a639cb5583682a52342c5fd67e`.
 
 Issue #111 accepted implementation tree
 `6f53a78d88137e0d8dd48aac91e0672d312c3d6f` passed focused target-config/build verification
@@ -29,8 +29,10 @@ accepted case was invalidated. Issue #111 is closed and its clean child worktree
 branch are removed. Create isolated Issues #112 and #113 branches/worktrees from the same exact
 integration head containing this
 lifecycle checkpoint. Prepare their ticket/guide gates before implementation. No per-Issue
-Standards/Spec `code-review` runs; final whole-K6 review remains deferred. Do not cross D2. All
-lower sections are historical context unless this block explicitly incorporates them.
+Standards/Spec `code-review` runs; the one whole-K6 code review remains deferred until #111–#118
+are integrated and locally accepted. Ticket/guide reviews remain required preparation gates. Do
+not cross D2. All lower sections are historical context unless this block explicitly incorporates
+them.
 
 ## Historical next-session checkpoints — superseded by CURRENT NEXT ACTION
 
