@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 113,
+  "guide_revision": "k6-113-capability-gates-v4",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-113-capability-gates-v4.md",
+  "guide_sha256": "e7d1a43e5a291c15c2ab9a8c987a20f68310e55e6df2bd545280c2e3b9cded44",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "approved_at": "2026-08-23T11:21:43.9316407+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message approving the exact Issue #113 guide revision and SHA-256",
+  "human_approval": "approved",
+  "lock_status": "locked",
+  "authorized_actions": [
+    "commit and push the Issue #113 guide/state checkpoint",
+    "implement Issue #113 through the approved TDD seams"
+  ],
+  "not_authorized": [
+    "per-Issue Standards/Spec code review",
+    "accept a future manual run without a separate maintainer acceptance decision",
+    "D2 credential creation or rotation",
+    "Railway or provider secret binding",
+    "GHCR deployment image publication",
+    "Railway runtime deployment or mutation",
+    "live provider validation or deployed-target acceptance",
+    "rollback",
+    "Issue #61 measurement or production claims"
+  ],
+  "implementation_authorized": true,
+  "guide_execution_authorized_before_implementation": false,
+  "d2_authorized": false
+}

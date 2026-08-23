@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 113,
+  "guide_revision": "k6-113-capability-gates-v2",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-113-capability-gates-v2.md",
+  "guide_sha256": "cbf928f53fd05286fc6d5c4ecc5cdd91285a7e16a642f9c0ca3846acfece8bc9",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02cb6-0161-7302-81d6-fbd2aa0f76f1"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 5,
+  "minor_count": 0,
+  "finding_titles": [
+    "Edge-build recipient matrix conflicts with the accepted #111 seam",
+    "Synthetic-signup evidence cannot prove per-row pre-persistence isolation",
+    "Abuse-control preservation omits required policies and middleware membership",
+    "Enabled compatibility oracle is not immutably bound or fully observable",
+    "Provided execution procedure can miss native-command failures"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

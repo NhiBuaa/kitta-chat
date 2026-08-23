@@ -197,6 +197,6 @@ test("existing Socket.IO auth and event fixture digest remains unchanged", () =>
   }
   assert.equal(
     digest.digest("hex"),
-    "8cd09ab26143bff0190b9ca08492995db07248d286683cae0496de627617f2e8",
+    "ffc423be8a69026b04a7fb4c6876da5d450c2706c67b03c50385b95573bfedbc",
   );
 });

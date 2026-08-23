@@ -15,6 +15,8 @@ SPEC.loader.exec_module(record_evaluation)
 
 
 CASE_IDS = [f"MA-111-{index:02d}" for index in range(1, 9)]
+ISSUE_112_CASE_IDS = [f"MA-112-{index:02d}" for index in range(1, 9)]
+ISSUE_113_CASE_IDS = [f"MA-113-{index:02d}" for index in range(1, 9)]
 
 
 def git(repository, *args):
@@ -55,7 +57,16 @@ class EvaluationRecorderTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def evaluation(self, run_id="k6-111-run-1", verdict="BLOCKED"):
+    def evaluation(
+        self,
+        run_id="k6-111-run-1",
+        verdict="BLOCKED",
+        *,
+        authority=None,
+        case_ids=None,
+    ):
+        authority = authority or self.authority
+        case_ids = case_ids or CASE_IDS
         outcome = "FAIL" if verdict == "FAILED" else "PASS"
         return {
             "schema_version": 1,
@@ -63,10 +74,10 @@ class EvaluationRecorderTests(unittest.TestCase):
             "observed_at": "2026-08-22T12:00:00Z",
             "executor": "Codex",
             "artifact_binding": {
-                "guide_revision": self.authority.guide_revision,
-                "guide_sha256": self.authority.guide_sha256,
-                "source_base": self.authority.source_base,
-                "candidate_tree": self.authority.candidate_tree,
+                "guide_revision": authority.guide_revision,
+                "guide_sha256": authority.guide_sha256,
+                "source_base": authority.source_base,
+                "candidate_tree": authority.candidate_tree,
             },
             "test_results": [
                 {
@@ -75,7 +86,7 @@ class EvaluationRecorderTests(unittest.TestCase):
                     "observation": "The required local behavior matched the guide.",
                     "evidence": [f"{case_id} command exited 0"],
                 }
-                for case_id in CASE_IDS
+                for case_id in case_ids
             ],
             "verdict": verdict,
             "human_approval": "approved" if verdict == "PASSED" else "pending",
@@ -142,8 +153,10 @@ class EvaluationRecorderTests(unittest.TestCase):
             source_base=self.source_base,
             candidate_tree=git(self.repository, "write-tree"),
         )
-        second = self.evaluation("k6-111-remediated-candidate")
-        second["artifact_binding"]["candidate_tree"] = remediated_authority.candidate_tree
+        second = self.evaluation(
+            "k6-111-remediated-candidate",
+            authority=remediated_authority,
+        )
 
         record_evaluation.append_evaluation(
             self.history,
@@ -199,7 +212,7 @@ class EvaluationRecorderTests(unittest.TestCase):
             ):
                 record_evaluation.append_evaluation(self.history, record, self.authority)
 
-    def test_derives_issue_112_case_ids_from_the_locked_guide_revision(self):
+    def test_issue_112_derives_all_eight_case_ids_from_the_locked_revision(self):
         guide = self.repository / "issue-112-edge-v3.md"
         guide.write_text("# K6 Issue #112 guide v3\n", encoding="utf-8")
         git(self.repository, "add", guide.name)
@@ -210,15 +223,11 @@ class EvaluationRecorderTests(unittest.TestCase):
             source_base=self.source_base,
             candidate_tree=self.candidate_tree,
         )
-        record = self.evaluation("k6-112-observation")
-        record["artifact_binding"] = {
-            "guide_revision": authority.guide_revision,
-            "guide_sha256": authority.guide_sha256,
-            "source_base": authority.source_base,
-            "candidate_tree": authority.candidate_tree,
-        }
-        for index, result in enumerate(record["test_results"], 1):
-            result["id"] = f"MA-112-{index:02d}"
+        record = self.evaluation(
+            "k6-112-observation",
+            authority=authority,
+            case_ids=ISSUE_112_CASE_IDS,
+        )
 
         record_evaluation.append_evaluation(self.history, record, authority)
         self.assertEqual([record], record_evaluation.load_history(self.history, authority))
@@ -232,7 +241,33 @@ class EvaluationRecorderTests(unittest.TestCase):
         ):
             record_evaluation.append_evaluation(self.history, unknown, authority)
 
-    def test_rejects_guide_revisions_that_cannot_derive_a_case_namespace(self):
+    def test_issue_113_derives_all_eight_case_ids_from_the_locked_revision(self):
+        authority = record_evaluation.EvaluationAuthority.create(
+            repository=self.repository,
+            guide_path=self.guide,
+            guide_revision="k6-113-capability-gates-v4",
+            source_base=self.source_base,
+            candidate_tree=self.candidate_tree,
+        )
+        record = self.evaluation(
+            "k6-113-observation",
+            authority=authority,
+            case_ids=ISSUE_113_CASE_IDS,
+        )
+
+        record_evaluation.append_evaluation(self.history, record, authority)
+        self.assertEqual([record], record_evaluation.load_history(self.history, authority))
+
+        unknown = json.loads(json.dumps(record))
+        unknown["run_id"] = "k6-113-unknown-case"
+        unknown["test_results"][-1]["id"] = "MA-113-09"
+        with self.assertRaisesRegex(
+            record_evaluation.EvaluationError,
+            "MA-113-01 through MA-113-08",
+        ):
+            record_evaluation.append_evaluation(self.history, unknown, authority)
+
+    def test_rejects_guide_revisions_that_cannot_safely_define_case_identity(self):
         with self.assertRaisesRegex(
             record_evaluation.EvaluationError,
             "guide_revision must match",
@@ -240,7 +275,7 @@ class EvaluationRecorderTests(unittest.TestCase):
             record_evaluation.EvaluationAuthority.create(
                 repository=self.repository,
                 guide_path=self.guide,
-                guide_revision="k6-edge-v3",
+                guide_revision="../../unsafe-guide",
                 source_base=self.source_base,
                 candidate_tree=self.candidate_tree,
             )

@@ -25,6 +25,10 @@ const { sendError } = require("./utils/apiResponse");
 const saveMessageInBackground = require("./utils/saveMessageInBackground");
 const { setDefaultMetrics } = require("./observability/metrics/runtime");
 const { createBrowserOriginPolicy } = require("./config/browserOriginPolicy");
+const {
+  createCapabilityHttpGate,
+  normalizeCapabilities,
+} = require("./capabilities/capabilityHttpGate");
 
 const isMetricsEnabled = (value) => String(value).trim().toLowerCase() === "true";
 
@@ -38,8 +42,10 @@ const createApp = ({
   metricsModule: providedMetricsModule,
   metrics: providedSocketMetrics,
   browserOriginPolicy = createBrowserOriginPolicy([]),
+  capabilities: configuredCapabilities,
 } = {}) => {
   const app = express();
+  const capabilities = Object.freeze(normalizeCapabilities(configuredCapabilities));
   const metricsEnabled = isMetricsEnabled(configuredMetricsEnabled);
   const metricsModule = providedMetricsModule
     || providedSocketMetrics
@@ -56,11 +62,13 @@ const createApp = ({
   app.set("logger", logger);
   app.set("browserOriginPolicy", browserOriginPolicy);
   app.set("rateLimiter", rateLimiter);
+  app.set("capabilities", capabilities);
   if (metricsEnabled) {
     app.set("metricsModule", metricsModule);
     app.use(createHttpMetricsMiddleware({ metricsModule, logger }));
   }
   app.use(createRequestLoggingMiddleware({ logger }));
+  app.use(createCapabilityHttpGate({ capabilities }));
   app.use(express.json({ limit: "10kb" }));
 
   app.use(

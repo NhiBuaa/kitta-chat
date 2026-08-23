@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 113,
+  "review_type": "pre-implementation-ticket-spec",
+  "issue_url": "https://github.com/NhiBuaa/kitta-chat/issues/113",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "reviewed_at": "2026-08-23T10:36:45.1850508+07:00",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02ca5-8350-7173-a92b-bec1b3a8ea59"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "REQUEST_CHANGES",
+      "critical_count": 0,
+      "major_count": 4,
+      "minor_count": 0,
+      "finding_titles": [
+        "Service-specific environment wording conflicted with the canonical matrix",
+        "Synthetic identity normalization was not deterministic enough",
+        "Capability authority and disabled responses were underspecified",
+        "Existing rate-limit behavior was not acceptance-tested"
+      ],
+      "remediation_comment": "https://github.com/NhiBuaa/kitta-chat/issues/113#issuecomment-5384021139"
+    },
+    {
+      "round": 2,
+      "verdict": "APPROVE",
+      "critical_count": 0,
+      "major_count": 0,
+      "minor_count": 0,
+      "findings": [],
+      "report": "The revised ticket matches the canonical recipient matrix, fixes deterministic .test normalization, defines backend-authoritative HTTP and Socket.IO fail-closed behavior, preserves enabled payloads and rate limits, and stays outside Issues #114/#115 and D2."
+    }
+  ],
+  "final_verdict": "APPROVE",
+  "d2_authorized": false,
+  "per_issue_code_review": false
+}

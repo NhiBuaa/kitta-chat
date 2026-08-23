@@ -5,23 +5,38 @@
  *
  */
 
-require("./cleanup");
+const { registerDisabledCallHandlers } = require("./disabled");
 
-const { registerInitCall } = require("./handlers/initCall");
-const { registerCallUser } = require("./handlers/callUser");
-const { registerAnswerCall } = require("./handlers/answerCall");
-const { registerEndCall } = require("./handlers/endCall");
-const { registerRejectCall } = require("./handlers/rejectCall");
-const { registerToggleMedia } = require("./handlers/toggleMedia");
-const { finalizeCallFromDisconnect } = require("./disconnect");
+const initializeCallHandlers = ({ capabilities = { calls: true } } = {}) => {
+    if (capabilities.calls === true) require("./cleanup");
+};
 
 /**
  * @param {import("socket.io").Socket} socket
  * @param {import("socket.io").Server} io
  */
-const registerCallHandlers = (socket, io, { measurement, rateLimiter = io.rateLimiter } = {}) => {
-    registerInitCall(socket, io, { measurement, rateLimiter });
-    registerCallUser(socket, io, { measurement, rateLimiter });
+const registerCallHandlers = (socket, io, {
+    capabilities = { calls: true },
+    measurement,
+    rateLimiter,
+} = {}) => {
+    if (capabilities.calls !== true) {
+        registerDisabledCallHandlers(socket);
+        return;
+    }
+
+    initializeCallHandlers({ capabilities });
+    const { registerInitCall } = require("./handlers/initCall");
+    const { registerCallUser } = require("./handlers/callUser");
+    const { registerAnswerCall } = require("./handlers/answerCall");
+    const { registerEndCall } = require("./handlers/endCall");
+    const { registerRejectCall } = require("./handlers/rejectCall");
+    const { registerToggleMedia } = require("./handlers/toggleMedia");
+    const { finalizeCallFromDisconnect } = require("./disconnect");
+    const configuredRateLimiter = rateLimiter || io.rateLimiter;
+
+    registerInitCall(socket, io, { measurement, rateLimiter: configuredRateLimiter });
+    registerCallUser(socket, io, { measurement, rateLimiter: configuredRateLimiter });
     registerAnswerCall(socket, io);
     registerEndCall(socket, io);
     registerRejectCall(socket, io);
@@ -33,4 +48,4 @@ const registerCallHandlers = (socket, io, { measurement, rateLimiter = io.rateLi
     });
 };
 
-module.exports = { registerCallHandlers };
+module.exports = { initializeCallHandlers, registerCallHandlers };

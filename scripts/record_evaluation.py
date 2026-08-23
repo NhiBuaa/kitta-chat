@@ -17,7 +17,10 @@ from typing import Any, NamedTuple
 VERDICTS = {"PASSED", "FAILED", "BLOCKED"}
 TEST_OUTCOMES = {"PASS", "FAIL", "BLOCKED", "NOT_RUN"}
 APPROVAL_STATES = {"approved", "pending", "rejected"}
-GUIDE_REVISION_PATTERN = re.compile(r"k6-(?P<issue>\d{3})-[a-z0-9]+(?:-[a-z0-9]+)*-v\d+\Z")
+LOCKED_CASE_COUNT = 8
+GUIDE_REVISION_PATTERN = re.compile(
+    r"k6-(?P<issue>[0-9]{3})-[a-z0-9]+(?:-[a-z0-9]+)*-v[1-9][0-9]*\Z"
+)
 TOP_LEVEL_FIELDS = {
     "schema_version",
     "run_id",
@@ -217,7 +220,7 @@ def _required_case_ids(guide_revision: str) -> set[str]:
             "guide_revision must match k6-NNN-lowercase-slug-vN"
         )
     issue = match.group("issue")
-    return {f"MA-{issue}-{index:02d}" for index in range(1, 9)}
+    return {f"MA-{issue}-{index:02d}" for index in range(1, LOCKED_CASE_COUNT + 1)}
 
 
 def _validate_safe_text(value: str, field: str) -> None:

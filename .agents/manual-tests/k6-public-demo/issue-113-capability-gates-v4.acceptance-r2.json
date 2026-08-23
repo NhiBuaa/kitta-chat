@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "approval_type": "manual-acceptance-run",
+  "guide_revision": "k6-113-capability-gates-v4",
+  "guide_sha256": "e7d1a43e5a291c15c2ab9a8c987a20f68310e55e6df2bd545280c2e3b9cded44",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "candidate_tree": "d9de20b5fac1da34c143d96fa26ae22843df042c",
+  "accepted_run_id": "k6-113-v4-local-c1e9ef5e347b43dfa5cce5b86d3f5bca-observation",
+  "approved_at": "2026-08-23T16:37:13.9029587+07:00",
+  "approver": "maintainer",
+  "approval_reference": "Current Codex task user message accepting the exact reconciled pending run and all eight PASS observations",
+  "human_approval": "approved"
+}

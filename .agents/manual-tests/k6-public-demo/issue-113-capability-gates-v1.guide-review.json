@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 113,
+  "guide_revision": "k6-113-capability-gates-v1",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-113-capability-gates-v1.md",
+  "guide_sha256": "30c7b1c2e53cca8c1c240e657977deef04d0f7eba38c7ad488d9b984ca275a88",
+  "source_base": "1b70741b4512e5cc727224a788477d87fa1e67be",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02cb6-0161-7302-81d6-fbd2aa0f76f1"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 6,
+  "minor_count": 0,
+  "finding_titles": [
+    "Disabled HTTP envelope and gate ordering were not exact",
+    "Service-recipient oracle did not contain the canonical matrix",
+    "Fixture contract was not independently executable",
+    "Call, compatibility, and rate-limit oracles were underspecified",
+    "Synthetic identity rejection matrix was not reproducible",
+    "Evaluation and D2_MUTATIONS evidence procedure was incomplete"
+  ],
+  "human_approval": "not_requested",
+  "implementation_authorized": false,
+  "d2_authorized": false
+}

@@ -17,7 +17,10 @@ const rateLimitRedisClient = createRateLimitRedisClient();
 // =========================================================
 // EXPRESS APP SETUP
 // =========================================================
-const app = createApp({ browserOriginPolicy: serverConfig.browserOriginPolicy });
+const app = createApp({
+  browserOriginPolicy: serverConfig.browserOriginPolicy,
+  capabilities: serverConfig.capabilities,
+});
 
 // =========================================================
 // HTTP SERVER
