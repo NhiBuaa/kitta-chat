@@ -3,6 +3,7 @@ import { FaUsers, FaSync, FaArrowRight } from "react-icons/fa";
 import { getPanelResources } from "@/services/api/conversationPanelApi.js";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll.js";
 import { useExplorerFreshness } from "../hooks/useExplorerFreshness.js";
+import { resolveAvatarUrl } from "@/utils/avatarUrl.js";
 
 /**
  * CommonGroupsExplorer
@@ -113,9 +114,7 @@ export const CommonGroupsExplorer = ({
 
   // Helper hiển thị avatar (sử dụng fallback giống các explorer khác)
   const getAvatarUrl = (avatarPath) => {
-    if (!avatarPath) return "/default-avatar.png";
-    if (avatarPath.startsWith("http://") || avatarPath.startsWith("https://")) return avatarPath;
-    return `${import.meta.env.VITE_API_URL || ""}${avatarPath}`;
+    return resolveAvatarUrl(avatarPath, { defaultAvatar: "/default-avatar.png" });
   };
 
   return (

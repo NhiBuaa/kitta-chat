@@ -1,6 +1,7 @@
-import { axiosClient } from '@/services/api/axiosClient.js'
+import { PUBLIC_CLIENT_PATHS } from '../../config/publicClientPaths.js'
+import { axiosClient } from './axiosClient.js'
 
-const API_URL_MESSAGES = import.meta.env.VITE_API_URL_MESSAGES || '/api/messages'
+const API_URL_MESSAGES = PUBLIC_CLIENT_PATHS.messages
 
 export const getMessages = ({ activeChat, currentUser, cursor, signal }) => {
   const isGroup = Boolean(activeChat.members)

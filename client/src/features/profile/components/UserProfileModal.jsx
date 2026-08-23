@@ -16,6 +16,7 @@ const UserProfileModal = ({
   onClose,
   onCall,
   onUnfriend,
+  callsEnabled = false,
 }) => {
   if (!isOpen || !user || isGroupChat) return null;
 
@@ -78,7 +79,7 @@ const UserProfileModal = ({
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            {actions
+            {callsEnabled && actions
               .filter((action) => action.type === "call")
               .map((action) => (
                 <button

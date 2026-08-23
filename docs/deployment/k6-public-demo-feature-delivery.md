@@ -1,20 +1,40 @@
 # K6 Railway Public Demo — Feature Delivery Ledger
 
-## Current authority override — Issue #111 implementation authorized
+## Current authority override — Issue #111 accepted; child PR publication authorized
 
-`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
+`ISSUE_111_V6_ACCEPTED_CHILD_PR_AUTHORIZED_D2_UNAUTHORIZED`
 
 This block supersedes lower transition wording where it conflicts. The docs-only normalization
 fixed point passed external review and is pushed at integration head
 `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The canonical D2 matrix remains
 `docs/deployment/k6-d2-authorization-execution-contract.md`.
 
-Issue #111's revised ticket passed fresh external review. Guide `k6-111-target-config-v2` passed
-external review with zero findings at SHA-256
-`a5a97dca1df0fc020a14b835fdbd580cdd928eead4726b69175326ed731110ec`. The maintainer approved that
-exact revision/hash at `2026-08-22T14:47:09.2579798+07:00`. Issue #111 TDD is authorized after the
-locked guide/state checkpoint is committed and the clean baseline passes. Guide execution remains
-deferred until reviewed implementation. D2 remains unauthorized.
+Issue #111 remediation is staged on its isolated branch and remains uncommitted at execution tree
+`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`. Two already-dispatched reviewer axes returned after
+the per-Issue review was cancelled; they were not aggregated and are not final-review evidence.
+Their concrete findings were independently verified and remediated through TDD. Target/build tests
+pass `60/60`; Evaluation-recorder tests pass `14/14`; historical v5 JSONL still validates and is
+byte-preserved. The implementation now preserves ordinary local bootstrap, strengthens public-demo
+origin/test-authority/capability/build-secret boundaries, and binds future `PASSED` Evaluations to a
+prior observation plus immutable maintainer acceptance. Docker validation also forced the
+public-demo edge image to clear the legacy default-avatar input; its regression and image build
+pass.
+
+Guide v5 and its Evaluations are historical only because the candidate changed and the retained
+evidence did not satisfy the guide's direct-route/screenshots/digests/request-inventory contract.
+Guide v6 binds tree `6f53a78d...` and has SHA-256
+`f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b`. Fresh external manual-guide
+review returned `APPROVE` with zero findings. The maintainer approved this exact revision/hash/tree;
+the bound sidecar is
+`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.approval.json`. Locked run
+`k6-111-v6-local-20260823T022616Z-observation` completed with eight `PASS` observations and was
+appended as `BLOCKED/pending`. Its retained manifest digest is
+`3e882c5f2717752abf2e3fbe222a6115714e26c774f43c08d5e0a9a6d57ec6b1`. The maintainer accepted
+that exact run and all eight observations. Run
+`k6-111-v6-local-20260823T025857Z-approved` is appended as `PASSED/approved` and binds the prior
+observation through the immutable acceptance sidecar. Commit, push, and child PR creation are now
+the active transition. No per-Issue Standards/Spec `code-review` is pending; the one final
+whole-K6 review remains deferred. No D2 mutation occurred. D2 remains unauthorized.
 
 ## Workflow identity
 
@@ -26,11 +46,11 @@ deferred until reviewed implementation. D2 remains unauthorized.
 - Base and initial integration head: `72a9828579f34c0b88c9c8a1c51c2c4f8225c1ca`
 - Current integration head: `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`
 - Canonical K6 plan: `docs/deployment/k6-public-demo-plan.md`
-- Canonical K6 plan SHA-256 at this review fixed point: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`
+- Canonical K6 plan SHA-256 at this lifecycle fixed point: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`
 - Approved execution plan: `docs/deployment/k6-end-to-end-execution-plan.md`
-- Approved execution plan SHA-256 at this review fixed point: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`
-- Pre-D2 delivery authority exists under the approved plan, but Issue #111 runtime implementation is
-  inactive until Phase 2 review and the ticket/guide/human gates pass.
+- Approved execution plan SHA-256 at this lifecycle fixed point: `72753830ab70236ba1b269077472fdc15952097a265f30c692f11f4296a59cc5`
+- Pre-D2 delivery authority exists under the approved plan. Issue #111 implementation and its
+  ticket/guide/human gates are complete; child integration is the current transition.
 - D2 credential creation/binding, GHCR publication, Railway rollout, and live acceptance remain unauthorized.
 - `main` was unchanged and clean at initialization.
 
@@ -57,7 +77,7 @@ deferred until reviewed implementation. D2 remains unauthorized.
 | Phase 2 — specification/design/authorization | completed; maintainer approved | Phase 2 consistency revision approved by maintainer; ADR-016 accepted; D2 remains separately gated |
 | Phase 3 — decomposition/cadence | completed; maintainer approved and tickets published | Approved eight-ticket graph published as Issues #111–#118 with real blocking references; read-back passed; frontier is Issue #111; cadence is `high` |
 | Bootstrap B0 — execution baseline | completed | Unrelated root `mongoose` WIP preserved externally; full baseline passed; commit `74d5ed917c37a12b8ee88c767447f8fa23242af1` pushed; integration worktree created |
-| Phase 4 — implementation | Issue #111 authorized; baseline pending | Ticket, external guide, and maintainer guide approval gates pass; commit/push locked checkpoint and run baseline before TDD |
+| Phase 4 — implementation | Issue #111 accepted; child commit/PR pending | Execution tree `6f53a78d` is staged; focused target/build `60/60`, Evaluation recorder `14/14`, both local Docker builds pass, and v6 Evaluation is `PASSED/approved`; no child commit/PR exists yet |
 | Phase 5 — candidate artifacts/CI preparation | pending | Pre-D2 may build/test/validate images and prepare workflows/descriptors; no GHCR publication or deployment digest exists |
 | Phase 6 — manual acceptance preparation | pending | Pre-D2 may lock the guide and evidence schema; deployed-target execution is forbidden before D2 rollout |
 | Phase 7 — D2 Authorization Request/checkpoint | pending | Human approval is required before credential binding, GHCR publication, rollout, live provider validation, or deployed-target acceptance |
@@ -85,11 +105,56 @@ deferred until reviewed implementation. D2 remains unauthorized.
   `.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.guide-review.json`
 - Human guide approval: approved at `2026-08-22T14:47:09.2579798+07:00`; bound sidecar at
   `.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.approval.json`
-- Current frontier: Issue #111 only; #112 and #113 remain blocked until #111 is accepted and merged
-- Next valid transition: commit/push the locked guide/state checkpoint, run the clean baseline, and
-  begin Issue #111 TDD through the approved seams
-- Forbidden at this checkpoint: guide execution before reviewed implementation, D2 actions,
-  provider/credential mutation, image publication, Railway deployment, rollback, or Issue #61 work
+- Guide v2 applicability: immutable but superseded after the reviewed implementation changed its
+  build marker, fixed-disabled recovery semantics, fixture catalog, and staged-candidate authority
+- Guide v3: `.agents/manual-tests/k6-public-demo/issue-111-target-config-v3.md`; SHA-256
+  `45bc3bb23c9614469bedd38727f323580be1e3d24f0a42d4bf3d271aca0adf7c`; external review
+  `REQUEST_CHANGES` with zero Critical, eight Major, and zero Minor; never approved or executed
+- Guide v3 review evidence:
+  `.agents/manual-tests/k6-public-demo/issue-111-target-config-v3.guide-review.json`
+- Guide v4: `.agents/manual-tests/k6-public-demo/issue-111-target-config-v4.md`; SHA-256
+  `24512b346c5c99752728e2fdad241e0a203c1b23705beb7ac249ade90e202b56`; external review `BLOCK`
+  with zero Critical, seven Major, and zero Minor; never approved or executed
+- Guide v4 review evidence:
+  `.agents/manual-tests/k6-public-demo/issue-111-target-config-v4.guide-review.json`
+- Immutable local Issue #111 snapshot:
+  `.agents/manual-tests/k6-public-demo/issue-111-spec-snapshot.md`; SHA-256
+  `0d6127f8d166b0df3cd2177eb523932c4411128b7a208e58d8914b06e75dfbbb`
+- Guide v5 final candidate: `.agents/manual-tests/k6-public-demo/issue-111-target-config-v5.md`;
+  SHA-256 `96bbea03b314ef0eae039a6e4483552b03563874af8e111103956124e03a087d`;
+  approved execution tree `60edb5717b7dfc51b7be383b413eeef3f60c1264`; external review `APPROVE`
+  with zero findings; bound review sidecar:
+  `.agents/manual-tests/k6-public-demo/issue-111-target-config-v5.guide-review.json`
+- Guide v5 maintainer approval: approved for exact revision/hash/tree; bound sidecar:
+  `.agents/manual-tests/k6-public-demo/issue-111-target-config-v5.approval.json`
+- Guide v5 execution: complete from the approved tree; focused target config `55/55`, root CI
+  `133/133`, client `277/277`, server `490` pass and `5` skip, candidate helper `3/3`, Evaluation
+  recorder `7/7`, lint `0` errors and `13` warnings, CI validation, isolated build, both local Docker
+  builds, image environment exclusion, immutable diff, and no-pull scan passed; candidate temp
+  root/archive removed; `D2_MUTATIONS=0`
+- Pending Evaluation: run `k6-111-v5-local-20260823T005110Z-observation`, eight `PASS` outcomes,
+  verdict `BLOCKED`, `human_approval=pending`; append-only history:
+  `.agents/manual-tests/k6-public-demo/issue-111-target-config-v5.evaluations.jsonl`
+- Historical approved Evaluation: run `k6-111-v5-local-20260823T010318Z-approved`, eight `PASS`
+  outcomes, verdict `PASSED`, `human_approval=approved`; prior bytes are preserved, but changed
+  implementation plus incomplete retained evidence make it ineligible for the current candidate
+- Staged remediation fixed point: uncommitted execution tree
+  `6f53a78d88137e0d8dd48aac91e0672d312c3d6f`; v5 remains bound only to `60edb571...`
+- Focused remediation verification: target config/build `60/60`, Evaluation recorder `14/14`;
+  historical v5 history reload `2` records with `BLOCKED/PASSED`
+- Current frontier: Issue #111 only; #112 and #113 remain blocked until current-candidate acceptance
+  passes and #111 is merged
+- Guide v6: `.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.md`; SHA-256
+  `f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b`; execution tree
+  `6f53a78d88137e0d8dd48aac91e0672d312c3d6f`; external review `APPROVE`, zero findings
+- Guide v6 acceptance: pending run `k6-111-v6-local-20260823T022616Z-observation` was explicitly
+  accepted; run `k6-111-v6-local-20260823T025857Z-approved` is `PASSED/approved`
+- Next valid transition: commit the accepted exact candidate, push the child branch, and open its
+  PR to `nhibuaa/k6-public-demo`
+- Final-review sequencing: do not run a per-Issue Standards/Spec `code-review`; run one final
+  whole-K6 review only after Issues #111–#118 are integrated and required live acceptance completes
+- Forbidden at this checkpoint: per-Issue final review, D2 actions, provider/credential mutation, image
+  publication, Railway deployment, rollback, or Issue #61 work
 
 ## S1 target-binding checkpoint
 

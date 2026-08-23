@@ -103,6 +103,7 @@ const ChatWindow = ({
   showConversationPanel,
   setShowConversationPanel,
   isPanelEnabled,
+  callsEnabled = false,
 }) => {
   // STATE
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -329,24 +330,28 @@ const ChatWindow = ({
         </div>
 
         <div className="flex space-x-4 text-green-600">
-          <button
-            onClick={() => handleCall("audio")}
-            className="hover:bg-green-100 p-2 rounded-full transition-colors text-green-600"
-            title="Gọi Audio"
-            disabled={currentChatUser.members}
-          >
-            <FaPhone />
-          </button>
+          {callsEnabled && (
+            <>
+              <button
+                onClick={() => handleCall("audio")}
+                className="hover:bg-green-100 p-2 rounded-full transition-colors text-green-600"
+                title="Gọi Audio"
+                disabled={currentChatUser.members}
+              >
+                <FaPhone />
+              </button>
 
-          {/* Gọi video */}
-          <button
-            onClick={() => handleCall("video")}
-            className="hover:bg-green-100 p-2 rounded-full transition-colors text-green-600"
-            title="Gọi Video"
-            disabled={currentChatUser.members}
-          >
-            <FaVideo />
-          </button>
+              {/* Gọi video */}
+              <button
+                onClick={() => handleCall("video")}
+                className="hover:bg-green-100 p-2 rounded-full transition-colors text-green-600"
+                title="Gọi Video"
+                disabled={currentChatUser.members}
+              >
+                <FaVideo />
+              </button>
+            </>
+          )}
 
           {/* Chi tiết cuộc trò chuyện */}
           {isPanelEnabled && (
@@ -375,6 +380,7 @@ const ChatWindow = ({
         onClose={handleCloseUserProfileModal}
         onCall={handleCall}
         onUnfriend={handleProfileUnfriend}
+        callsEnabled={callsEnabled}
       />
 
       <ConfirmationModal
@@ -481,6 +487,7 @@ const ChatWindow = ({
                     currentUser={currentUser}
                     chatPartner={currentChatUser}
                     onRecall={(_, callType) => handleCall(callType)}
+                    callsEnabled={callsEnabled}
                   />
                   <div className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left ml-10"}`}>
                     {formatTimeAgo(message.createdAt)}

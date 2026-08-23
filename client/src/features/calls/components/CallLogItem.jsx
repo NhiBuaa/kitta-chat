@@ -2,7 +2,13 @@ import React from "react";
 import { FaPhone, FaPhoneAlt, FaPhoneVolume, FaVideo } from "react-icons/fa";
 import { formatDuration, formatCallTime } from "@/utils/formatTime.js";
 
-const CallLogItem = React.memo(({ log, currentUser, chatPartner, onRecall }) => {
+const CallLogItem = React.memo(({
+  log,
+  currentUser,
+  chatPartner,
+  onRecall,
+  callsEnabled = false,
+}) => {
   const { callData = {}, sender, receiver, createdAt, createAt } = log;
   const senderId = typeof sender === "object" ? sender?._id || sender?.id : sender;
   const currentUserId = currentUser?._id || currentUser?.id;
@@ -106,7 +112,7 @@ const CallLogItem = React.memo(({ log, currentUser, chatPartner, onRecall }) => 
           </p>
         </div>
 
-        <button
+        {callsEnabled && <button
           onClick={() => onRecall?.(partner, callData.type)}
           className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 transition-all duration-200 ${
             isMissedAlert
@@ -116,7 +122,7 @@ const CallLogItem = React.memo(({ log, currentUser, chatPartner, onRecall }) => 
           title="Gọi lại"
         >
           <FaPhoneVolume size={14} />
-        </button>
+        </button>}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { loginWithGoogleFirebase } from "@/services/firebase/firebaseClient.js";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 import { setAccessToken, setStoredUser } from "@/services/auth/authSession.js";
+import { RuntimeCapabilityGate } from "@/config/RuntimeCapabilityGate.js";
 
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 
@@ -77,7 +78,7 @@ const Login = () => {
             className="absolute top-0 left-0 w-full h-full bg-cover opacity-20"
             style={{
               backgroundImage:
-                'url("https://source.unsplash.com/random/800x600/?technology")',
+                'url("/demo-assets/media/architecture-preview.svg")',
             }}
           ></div>
         </div>
@@ -165,14 +166,16 @@ const Login = () => {
               <p className="text-red-500 text-xs min-h-[18px]">
                 {errors.password?.message}
               </p>
-              <div className="flex justify-between items-center mb-1">
-                <Link
-                  to="/forgot-password"
-                  className="text-xs mx-1 text-green-600 hover:underline"
-                >
-                  Quên mật khẩu?
-                </Link>
-              </div>
+              <RuntimeCapabilityGate capability="recovery">
+                <div className="flex justify-between items-center mb-1">
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs mx-1 text-green-600 hover:underline"
+                  >
+                    Quên mật khẩu?
+                  </Link>
+                </div>
+              </RuntimeCapabilityGate>
             </div>
 
             <button
@@ -183,34 +186,38 @@ const Login = () => {
               {isSubmitting ? "Đang xử lý..." : "Đăng Nhập"}
             </button>
           </form>
-          <div className="my-4 flex items-center">
-            <div className="flex-grow border-t"></div>
-            <span className="mx-2 text-gray-400 text-sm">hoặc</span>
-            <div className="flex-grow border-t"></div>
-          </div>
+          <RuntimeCapabilityGate capability="googleLogin">
+            <div className="my-4 flex items-center">
+              <div className="flex-grow border-t"></div>
+              <span className="mx-2 text-gray-400 text-sm">hoặc</span>
+              <div className="flex-grow border-t"></div>
+            </div>
 
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full border border-gray-300 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition"
-          >
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            Đăng nhập với Google
-          </button>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            Chưa có tài khoản?{" "}
-            <Link
-              to="/register"
-              className="font-semibold text-[#4CAF50] hover:text-[#388E3C] hover:opacity-80"
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full border border-gray-300 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition"
             >
-              Đăng ký ngay
-            </Link>
-          </div>
+              <img
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google"
+                className="w-5 h-5"
+              />
+              Đăng nhập với Google
+            </button>
+          </RuntimeCapabilityGate>
+
+          <RuntimeCapabilityGate capability="selfSignup">
+            <div className="mt-6 text-center text-sm text-gray-600">
+              Chưa có tài khoản?{" "}
+              <Link
+                to="/register"
+                className="font-semibold text-[#4CAF50] hover:text-[#388E3C] hover:opacity-80"
+              >
+                Đăng ký ngay
+              </Link>
+            </div>
+          </RuntimeCapabilityGate>
         </div>
       </div>
     </div>

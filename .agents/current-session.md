@@ -1,30 +1,57 @@
-# K6 Railway Public Demo — Current Authority (2026-08-22)
+# K6 Railway Public Demo — Current Authority (2026-08-23)
 
-## CURRENT AUTHORITY — Issue #111 implementation authorized
+## CURRENT AUTHORITY — Issue #111 guide v6 accepted; child publication authorized
 
-`PHASE_3_PUBLISHED_B0_COMPLETE_ISSUE_111_PRE_IMPLEMENTATION_GATED_D2_UNAUTHORIZED`
+`ISSUE_111_V6_ACCEPTED_CHILD_PR_AUTHORIZED_D2_UNAUTHORIZED`
 
 This block supersedes every lower transition/status paragraph in this file. The docs-only
 normalization review reached aggregate `APPROVE` with zero Critical or Major findings and was pushed
 at integration head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The sole normative D2 field matrix remains
 `docs/deployment/k6-d2-authorization-execution-contract.md`.
 
-- Canonical plan SHA-256: `b210860e658b3f8eb874dd8d970e137642ee740278865f04c20faec4622cb772`.
-- End-to-end execution plan SHA-256: `ad2c39918153bc7b3b6de742ec4285ced99ae72f7dada73784faaedd4479dc9c`.
+- Canonical plan SHA-256: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`.
+- End-to-end execution plan SHA-256: `72753830ab70236ba1b269077472fdc15952097a265f30c692f11f4296a59cc5`.
 
 Issue #111 uses branch `nhibuaa/k6-issue-111-target-config`, worktree
-`D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`, and exact source base
-`0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. Its revised GitHub ticket passed fresh external review.
-Manual guide `k6-111-target-config-v2` passed external review with zero findings at SHA-256
-`a5a97dca1df0fc020a14b835fdbd580cdd928eead4726b69175326ed731110ec`. The maintainer approved that
-exact revision/hash at `2026-08-22T14:47:09.2579798+07:00`; the locked authority is recorded in
-`.agents/manual-tests/k6-public-demo/issue-111-target-config-v2.approval.json`. No Issue #111 runtime
-implementation, Evaluation, implementation commit, push, or child PR has occurred yet.
+`D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`, and source base
+`0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The staged, uncommitted remediation execution tree is
+`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`.
 
-The next valid transition is commit/push of the locked guide/state checkpoint, followed by a clean
-baseline and Issue #111 TDD through the approved seams. The locked guide is not executed until the
-implementation reaches its reviewed local fixed point. D2 remains unauthorized. All lower sections
-are historical evidence unless this block explicitly incorporates them.
+Two reviewer axes that had already been dispatched returned after the maintainer cancelled the
+per-Issue review. They were not aggregated, are not a final review, and do not change the rule that
+the single final whole-K6 review runs only after all Issues are integrated and required live
+acceptance completes. Their concrete findings were independently verified as remediation leads.
+The implementation now rejects loopback public origins, non-boolean/inherited synthetic-test
+authority, missing required signup/seed capabilities, and `VITE_DEFAULT_AVATAR` build-time data;
+ordinary local targets use an explicit legacy adapter while public-demo remains fail-closed. The
+Evaluation recorder now constrains every top-level identity/time field and requires a prior pending
+observation plus an immutable maintainer-acceptance sidecar for any new `PASSED` append. Focused
+target-config/build verification passes `60/60`; Evaluation-recorder tests pass `14/14`; historical
+v5 JSONL still validates as `BLOCKED/PASSED` and remains byte-preserved.
+
+Docker validation also caught the legacy default-avatar input entering the explicit public-demo
+image. The Dockerfile now defaults that input to empty; its regression and image build pass. Guide
+v5 and its two Evaluation records are immutable historical evidence but no longer authorize
+the changed candidate. The late findings also established that v5 overclaimed one blocked direct
+browser route and did not retain the screenshots/digests/request inventories required by its own
+guide. Guide v6 is now fixed at SHA-256
+`f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b` and binds tree
+`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`. Its external manual-guide review is `APPROVE` with
+zero findings and is recorded at
+`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.guide-review.json`. The maintainer
+approved this exact guide/hash/tree; the bound sidecar is
+`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.approval.json`. Locked guide v6 was
+executed as run `k6-111-v6-local-20260823T022616Z-observation`. All eight observations are
+`PASS`; the append-only Evaluation is correctly `BLOCKED` with `human_approval=pending`. The
+retained manifest digest is
+`3e882c5f2717752abf2e3fbe222a6115714e26c774f43c08d5e0a9a6d57ec6b1`. The maintainer accepted
+that exact pending run and all eight observations. Run
+`k6-111-v6-local-20260823T025857Z-approved` is appended as `PASSED/approved` and binds the
+accepted observation through
+`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.acceptance.json`. The next valid
+transition is exact-candidate verification, commit, push, and child PR creation targeting
+`nhibuaa/k6-public-demo`. Do not run a per-Issue final review. D2 remains unauthorized.
+All lower sections are historical evidence unless this block explicitly incorporates them.
 
 ## Historical checkpoints — superseded by CURRENT AUTHORITY
 

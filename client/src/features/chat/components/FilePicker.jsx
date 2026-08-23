@@ -7,11 +7,16 @@ export const FilePicker = ({
     multiple = true,
     children,
     className = "",
-    disableClick = false
+    disableClick = false,
+    enabled = true,
 }) => {
     const fileInputRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const dragCounter = useRef(0);
+
+    if (!enabled) {
+        return <div className={className}>{children}</div>;
+    }
 
     // Xử lý khi chọn file bằng nút click
     const handleFileChange = (e) => {

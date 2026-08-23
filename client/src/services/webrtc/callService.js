@@ -1,6 +1,7 @@
 import { axiosClient } from '@/services/api/axiosClient.js';
+import { PUBLIC_CLIENT_PATHS } from '@/config/publicClientPaths.js';
 
-const API_URL_CALLS = import.meta.env.VITE_API_URL_CALLS;
+const API_URL_CALLS = PUBLIC_CLIENT_PATHS.calls;
 
 export const getCallHistory = (cursor) => {
     return axiosClient.get(`${API_URL_CALLS}/history`, {

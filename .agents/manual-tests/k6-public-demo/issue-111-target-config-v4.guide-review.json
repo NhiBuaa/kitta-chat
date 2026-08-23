@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 111,
+  "guide_revision": "k6-111-target-config-v4",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-111-target-config-v4.md",
+  "guide_sha256": "24512b346c5c99752728e2fdad241e0a203c1b23705beb7ac249ade90e202b56",
+  "source_base": "0a4e350dfd21d1dc979392f1bf2261ae66a4093e",
+  "reviewed_candidate_tree": "75d713074e6165f054eff45aba78bf54164b4f54",
+  "reviewed_at": "2026-08-22T19:50:51.1231906+07:00",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02972-45b8-7ed0-aff7-63bf89b35e68"
+  },
+  "verdict": "BLOCK",
+  "critical_count": 0,
+  "major_count": 7,
+  "minor_count": 0,
+  "findings": [
+    {
+      "severity": "Major",
+      "summary": "The guide did not pin an expected executable candidate tree or derive diff evidence from that tree."
+    },
+    {
+      "severity": "Major",
+      "summary": "The Evaluation recorder did not recompute exact guide/source/tree authority or prove Git object types."
+    },
+    {
+      "severity": "Major",
+      "summary": "The Evaluation recorder did not require exactly MA-111-01 through MA-111-08 or a complete verdict/approval matrix."
+    },
+    {
+      "severity": "Major",
+      "summary": "Evaluation evidence validation did not reject a broad enough set of secret-bearing fields and values."
+    },
+    {
+      "severity": "Major",
+      "summary": "The dist contract did not scan every generated artifact file."
+    },
+    {
+      "severity": "Major",
+      "summary": "Disabled-call coverage omitted Sidebar, ChatWindow, and UserProfileModal controls."
+    },
+    {
+      "severity": "Major",
+      "summary": "The reviewer lacked an immutable local export of the complete Issue #111 specification."
+    }
+  ],
+  "report": "The exact v4 hash was verified. Lifecycle state, cached no-pull scanning, clean index materialization, Docker environment exclusion, expected-failure Vite build, fixtures, routes, and authorization boundaries were consistent. Seven Major findings still allowed candidate/evidence mismatch or incomplete acceptance coverage. v4 was not approved or executed.",
+  "human_approval": "not_requested",
+  "execution_authorized": false,
+  "implementation_authorized": true,
+  "d2_authorized": false
+}

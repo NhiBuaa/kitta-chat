@@ -75,6 +75,8 @@ database/*.zip
 database/dump/
 database/mongo-data/
 database/__pycache__/
+__pycache__/
+*.py[cod]
 
 # =========================
 # Miscellaneous

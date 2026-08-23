@@ -1,9 +1,8 @@
 import axios from "axios";
-import { getAccessToken } from "@/services/auth/authSession.js";
+import { PUBLIC_CLIENT_PATHS } from "../../config/publicClientPaths.js";
+import { getAccessToken } from "../auth/authSession.js";
 
-const API_URL = import.meta.env.VITE_API_URL_AUTH;
-
-console.log("Check API URL:", API_URL);
+const API_URL = PUBLIC_CLIENT_PATHS.auth;
 
 const axiosInstance = axios.create({
   baseURL: API_URL,

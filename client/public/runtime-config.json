@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "target": "public-demo",
+  "capabilities": {
+    "directChat": false,
+    "groupChat": false,
+    "realtimeSidebar": false,
+    "calls": false,
+    "selfSignup": false,
+    "seededDemoAccounts": false,
+    "upload": false,
+    "recovery": false,
+    "googleLogin": false,
+    "metricsExport": false,
+    "issue61Measurement": false
+  },
+  "webrtc": {
+    "iceServers": []
+  }
+}

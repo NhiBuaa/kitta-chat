@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { createElement, lazy, Suspense } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "@/services/auth/useAuth.js";
@@ -9,11 +10,16 @@ import Register from "@/features/auth/pages/Register.jsx";
 import ForgotPassword from "@/features/auth/pages/ForgotPassword.jsx";
 import ResetPassword from "@/features/auth/pages/ResetPassword.jsx";
 import ChangePassword from "@/features/auth/pages/ChangePassword.jsx";
-import Home from "@/features/chat/pages/ChatPage.jsx";
-import VideoCallPage from '@/features/calls/pages/CallPage.jsx';
+const Home = lazy(() => import("@/features/chat/pages/ChatPage.jsx"));
+const VideoCallPage = lazy(() => import("@/features/calls/pages/CallPage.jsx"));
 
 // Components
-import CallNotification from '@/features/calls/components/CallNotification.jsx';
+const CallNotification = lazy(() => import("@/features/calls/components/CallNotification.jsx"));
+import LoopbackAuthenticatedChatFixture from '@/config/LoopbackAuthenticatedChatFixture.jsx';
+import {
+  RuntimeCapabilityGate,
+  RuntimeCapabilityRoute,
+} from '@/config/RuntimeCapabilityGate.js';
 
 // Component bảo vệ Route (Kiểm tra xem đã login chưa)
 const ProtectedRoute = ({ children }) => {
@@ -33,27 +39,40 @@ const PublicRoute = ({ children }) => {
   return isAuthenticated ? <Navigate to="/" /> : children;
 };
 
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-        <Route path="/reset-password/:id" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+function App({
+  Notifications = ToastContainer,
+  Router = BrowserRouter,
+  routerProps = {},
+} = {}) {
+  return createElement(
+    Router,
+    routerProps,
+    <>
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<RuntimeCapabilityRoute capability="selfSignup"><PublicRoute><Register /></PublicRoute></RuntimeCapabilityRoute>} />
+          <Route path="/forgot-password" element={<RuntimeCapabilityRoute capability="recovery"><PublicRoute><ForgotPassword /></PublicRoute></RuntimeCapabilityRoute>} />
+          <Route path="/reset-password/:id" element={<RuntimeCapabilityRoute capability="recovery"><PublicRoute><ResetPassword /></PublicRoute></RuntimeCapabilityRoute>} />
 
-        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
-        <Route path="/call/:partnerId" element={<VideoCallPage />} />
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+          <Route path="/call/:partnerId" element={<RuntimeCapabilityRoute capability="calls"><VideoCallPage /></RuntimeCapabilityRoute>} />
+          <Route path="/__k6-test__/authenticated-chat" element={<LoopbackAuthenticatedChatFixture />} />
 
-        {/* Route không tồn tại thì về trang chủ */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          {/* Route không tồn tại thì về trang chủ */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
 
-      <CallNotification />
+      <Suspense fallback={null}>
+        <RuntimeCapabilityGate capability="calls">
+          <CallNotification />
+        </RuntimeCapabilityGate>
+      </Suspense>
 
-      <ToastContainer position="top-right" autoClose={3000} />
-    </BrowserRouter>
+      {createElement(Notifications, { position: "top-right", autoClose: 3000 })}
+    </>,
   );
 }
 

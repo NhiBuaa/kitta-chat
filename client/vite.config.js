@@ -4,9 +4,19 @@ import tailwindcss from '@tailwindcss/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'node:path'
 import process from 'node:process'
+import {
+  hasK6SameOriginBuildInput,
+  validateK6SameOriginBuildConfig,
+} from './src/config/sameOriginBuildContract.js'
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  if (command === 'build' && hasK6SameOriginBuildInput(env)) {
+    const result = validateK6SameOriginBuildConfig(env)
+    if (!result.valid) {
+      throw new Error(`K6 same-origin build configuration is invalid: ${result.issues.join('; ')}`)
+    }
+  }
 
   // VITE_PROXY_TARGET:
   // - Local dev (npm run dev):  http://localhost:3000

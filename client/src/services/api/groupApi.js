@@ -1,6 +1,7 @@
-import { axiosClient } from '@/services/api/axiosClient.js'
+import { PUBLIC_CLIENT_PATHS } from '../../config/publicClientPaths.js'
+import { axiosClient } from './axiosClient.js'
 
-const API_URL_GROUPS = import.meta.env.VITE_API_URL_GROUPS || '/api/groups'
+const API_URL_GROUPS = PUBLIC_CLIENT_PATHS.groups
 
 export const getGroups = () => axiosClient.get(API_URL_GROUPS)
 

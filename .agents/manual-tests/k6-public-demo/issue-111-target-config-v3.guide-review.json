@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "feature": "K6 Railway Public Demo",
+  "issue": 111,
+  "guide_revision": "k6-111-target-config-v3",
+  "guide_path": ".agents/manual-tests/k6-public-demo/issue-111-target-config-v3.md",
+  "guide_sha256": "45bc3bb23c9614469bedd38727f323580be1e3d24f0a42d4bf3d271aca0adf7c",
+  "source_base": "0a4e350dfd21d1dc979392f1bf2261ae66a4093e",
+  "reviewed_at": "2026-08-22T19:17:28.1151340+07:00",
+  "reviewer": {
+    "kind": "external-subagent",
+    "id": "01a02954-111b-73f0-98b3-356d6806e552"
+  },
+  "verdict": "REQUEST_CHANGES",
+  "critical_count": 0,
+  "major_count": 8,
+  "minor_count": 0,
+  "findings": [
+    {
+      "severity": "Major",
+      "summary": "Commands executed working-tree bytes instead of an isolated materialization of the staged candidate."
+    },
+    {
+      "severity": "Major",
+      "summary": "The whitespace check did not target the staged candidate."
+    },
+    {
+      "severity": "Major",
+      "summary": "An ignored server .env could affect tests and enter the server Docker context."
+    },
+    {
+      "severity": "Major",
+      "summary": "The scanner command could contact GHCR when its pinned image was not cached."
+    },
+    {
+      "severity": "Major",
+      "summary": "The focused runner did not execute an actual rejected public-demo Vite build."
+    },
+    {
+      "severity": "Major",
+      "summary": "The required append-only Evaluation recorder was absent."
+    },
+    {
+      "severity": "Major",
+      "summary": "Durable workflow state still selected v2 and did not record the staged implementation or v3 review."
+    },
+    {
+      "severity": "Major",
+      "summary": "The unchanged-lint-warning requirement had no deterministic comparison authority."
+    }
+  ],
+  "report": "The exact v3 hash was verified. The guide traced the approved target, capability, route, and D2 boundaries, but eight Major findings could select different bytes, violate secret/network constraints, omit required evidence, or produce a false PASS. v3 was not executed and is superseded for applicability by the next reviewed revision.",
+  "human_approval": "not_requested",
+  "execution_authorized": false,
+  "implementation_authorized": true,
+  "d2_authorized": false
+}

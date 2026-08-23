@@ -38,6 +38,8 @@ import { useGroupSocket } from "@/features/groups/socket/useGroupSocket.js";
 import { useMessageSocket } from "@/features/chat/socket/useMessageSocket.js";
 import { usePresence } from "@/features/profile/hooks/usePresence.js";
 import { useSidebarState } from "@/features/chat/hooks/useSidebarState.js";
+import { useRuntimeConfig } from "@/config/RuntimeConfigProvider.js";
+import { PUBLIC_CLIENT_PATHS } from "@/config/publicClientPaths.js";
 
 const Home = () => {
   // Core state
@@ -78,9 +80,12 @@ const Home = () => {
   // Context / global hooks
   const { onlineUsers, socket } = useSocket();
   const { token, isChecking, isAuthenticated, logout } = useAuth();
+  const { capabilities } = useRuntimeConfig();
   const { uploadQueue, addFiles, clearUploads, removeUploadItem } = useUploader();
+  const callsEnabled = capabilities.calls;
+  const uploadEnabled = capabilities.upload;
 
-  const API_URL_USERS = import.meta.env.VITE_API_URL_USERS || '/api/users';
+  const API_URL_USERS = PUBLIC_CLIENT_PATHS.users;
 
   // Computed values
   const currentChatUser = activeChat
@@ -453,6 +458,7 @@ const Home = () => {
   };
 
   const handleCall = (type = "video") => {
+    if (!callsEnabled) return;
     if (!currentChatUser) return;
     if (currentChatUser.members || currentChatUser.isGroup) {
       toast.warning("Chưa hỗ trợ gọi nhóm!");
@@ -600,6 +606,7 @@ const Home = () => {
           checkIsOnline={checkIsOnline}
           handleAddFriend={handleAddFriend}
           setShowCallHistoryModal={setShowCallHistoryModal}
+          callsEnabled={callsEnabled}
           onLoadMore={sidebarState.onLoadMore}
           hasMore={sidebarState.hasMore}
           isFetching={sidebarState.isFetching}
@@ -615,6 +622,7 @@ const Home = () => {
             key={activeChatKey || "empty-chat-picker"}
             onFilesSelected={addFiles}
             disableClick={true}
+            enabled={uploadEnabled}
             className="flex-1 flex flex-col h-full overflow-hidden"
           >
             <ChatWindow
@@ -646,6 +654,7 @@ const Home = () => {
               showConversationPanel={showConversationPanel}
               setShowConversationPanel={setShowConversationPanel}
               isPanelEnabled={isPanelEnabled}
+              callsEnabled={callsEnabled}
             />
             <ChatInput
               showEmoji={showEmoji}
@@ -657,6 +666,7 @@ const Home = () => {
               uploadQueue={uploadQueue}
               addFiles={addFiles}
               removeUploadItem={removeUploadItem}
+              uploadEnabled={uploadEnabled}
             />
           </FilePicker>
         ) : (
@@ -704,6 +714,7 @@ const Home = () => {
           user={{ ...currentUser, avatar: getAvatarUrl(currentUser?.avatar) }}
           onClose={() => setShowProfile(false)}
           onUpdateSuccess={handleUpdateSuccess}
+          uploadEnabled={uploadEnabled}
         />
       )}
 
@@ -736,11 +747,13 @@ const Home = () => {
         />
       )}
 
-      <CallHistoryModal
-        isOpen={showCallHistoryModal}
-        onClose={() => setShowCallHistoryModal(false)}
-        currentUser={currentUser}
-      />
+      {callsEnabled && (
+        <CallHistoryModal
+          isOpen={showCallHistoryModal}
+          onClose={() => setShowCallHistoryModal(false)}
+          currentUser={currentUser}
+        />
+      )}
     </div>
   );
 };

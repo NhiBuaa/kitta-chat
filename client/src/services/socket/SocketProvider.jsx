@@ -7,10 +7,11 @@ import { SocketContext } from "@/services/socket/SocketContext.js";
 import { dispatchCallHistoryRefresh } from "@/features/calls/context/callHistoryBadgeState.js";
 import { useAuth } from "@/services/auth/useAuth.js";
 import { getSocketAuthState } from "@/services/socket/socketAuthState.js";
+import { PUBLIC_CLIENT_PATHS } from "@/config/publicClientPaths.js";
+import { createSocketConnection } from "@/services/socket/socketConnection.js";
 
 // Event để sync tin nhắn bị miss giữa các React component
 const SYNC_MESSAGE_EVENT = "sync-message-recovered";
-const SERVER_URL = import.meta.env.VITE_API_URL || "";
 
 export const SocketProvider = ({ children }) => {
     const { token, user: authUser, isChecking, isAuthenticated } = useAuth();
@@ -141,25 +142,10 @@ export const SocketProvider = ({ children }) => {
         }
 
         // Tạo socket mới
-        const newSocket = io(SERVER_URL || undefined, {
-            // Chỉ dùng WebSocket - không long-polling
-            // -> Không cần sticky session trên Nginx
-            // -> WebSocket stateful, tự gắn với 1 container
-            transports: ["websocket"],
-
-            // Dùng auth object - server verify JWT để lấy userId
-            auth: { token: socketAuthState.token },
-
-            reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 30000,
-            randomizationFactor: 0.5,
-
-            // Timeouts
-            connectTimeout: 10000,
-            pingTimeout: 20000,
-            pingInterval: 25000,
+        const newSocket = createSocketConnection({
+            authToken: socketAuthState.token,
+            configuredBase: PUBLIC_CLIENT_PATHS.socketBase,
+            ioClient: io,
         });
 
         socketRef.current = newSocket;
