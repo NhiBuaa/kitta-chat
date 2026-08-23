@@ -1,8 +1,8 @@
-# Next Session — K6 Wave 2 Closeout
+# Next Session — K6 Wave 3 Frontier
 
-## CURRENT NEXT ACTION — close #112/#113, cleanup, then initialize Wave 3
+## CURRENT NEXT ACTION — initialize #114/#115/#116 from one exact base
 
-`WAVE_2_INTEGRATED_WAVE_3_PENDING_CLEANUP_D2_UNAUTHORIZED`
+`WAVE_2_COMPLETE_WAVE_3_FRONTIER_D2_UNAUTHORIZED`
 
 This block supersedes every lower next-transition paragraph. PR #120 merged #112 at
 `ebfbcabbbf361c477c96b6fbebe14133d8530be2`; PR #121 merged reconciled #113 at
@@ -16,12 +16,12 @@ config `60/60`, helper `5/5`, root CI `134/134`, client `280/280`, server `511` 
 skips, CI/lint/build/Docker/diff/Gitleaks gates. Selective invalidation for the changed #112
 Socket.IO fixture is covered by the reconciled #113 oracle and full accepted guide.
 
-Next: publish evidence comments and close Issues #112/#113; verify clean reachable child worktrees;
-remove those worktrees; delete their local and remote branches safely; prune; then commit/push the
-closeout state. The resulting integration head becomes the one shared source base for isolated
-Issues #114, #115, and #116. Do not create any Wave 3 child before that exact base is recorded. No
-per-Issue code review runs. D2 remains unauthorized and `D2_MUTATIONS=0`. All lower sections are
-historical context unless this block explicitly incorporates them.
+Issues #112/#113 are closed with evidence. Their clean worktrees were removed without force; local
+and remote branches were deleted after reachability and remote refs were pruned. Initialize isolated
+Issues #114, #115, and #116 branches/worktrees from the same exact integration head containing this
+checkpoint. Record that SHA as each child `source_base` before preparing the ticket and manual-guide
+gates. Do not run per-Issue code review. D2 remains unauthorized and `D2_MUTATIONS=0`. All lower
+sections are historical context unless this block explicitly incorporates them.
 
 ## Historical next-session checkpoints — superseded by CURRENT NEXT ACTION
 

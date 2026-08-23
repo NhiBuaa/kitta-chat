@@ -1,8 +1,8 @@
 # K6 Railway Public Demo — Feature Delivery Ledger
 
-## Current authority override — Wave 2 integrated; Wave 3 lifecycle checkpoint
+## Current authority override — Wave 2 complete; Wave 3 frontier active
 
-`WAVE_2_INTEGRATED_WAVE_3_PENDING_CLEANUP_D2_UNAUTHORIZED`
+`WAVE_2_COMPLETE_WAVE_3_FRONTIER_D2_UNAUTHORIZED`
 
 This block supersedes lower transition wording where it conflicts. The canonical D2 matrix remains
 `docs/deployment/k6-d2-authorization-execution-contract.md`. Issues #111, #112, and #113 are
@@ -32,9 +32,11 @@ Selective invalidation is resolved: #113 changed the #112 Socket.IO fixture dige
 required reconciliation, so that #112 observation was not silently reused. The reconciled #113
 source-base oracle, enabled-call contract tests, Socket.IO wire checks, full guide, and final Wave 2
 barrier all passed. All other #112 inputs remained unchanged. Issue closure and child cleanup are
-the next transition; only after that transition is durably recorded may Issues #114, #115, and
-#116 start together from one exact post-cleanup integration head. No D2 mutation occurred. D2
-remains unauthorized.
+complete: Issues #112/#113 are closed with evidence comments; both clean child worktrees were
+removed without force; both local and remote child branches were deleted after reachability; remote
+refs were pruned. Issues #114, #115, and #116 are now the parallel frontier and must start together
+from the exact integration head containing this checkpoint. No D2 mutation occurred. D2 remains
+unauthorized.
 
 ## Workflow identity
 
@@ -78,12 +80,53 @@ remains unauthorized.
 | Phase 2 — specification/design/authorization | completed; maintainer approved | Phase 2 consistency revision approved by maintainer; ADR-016 accepted; D2 remains separately gated |
 | Phase 3 — decomposition/cadence | completed; maintainer approved and tickets published | Approved eight-ticket graph published as Issues #111–#118 with real blocking references; Wave 2 is integrated; after closeout the frontier becomes Issues #114, #115, and #116; cadence is `high` |
 | Bootstrap B0 — execution baseline | completed | Unrelated root `mongoose` WIP preserved externally; full baseline passed; commit `74d5ed917c37a12b8ee88c767447f8fa23242af1` pushed; integration worktree created |
-| Phase 4 — implementation | Issues #111–#113 integrated; Wave 2 closeout active | PR #120 merged #112 at `ebfbcab`; PR #121 merged reconciled #113 at `aca7c83`; accepted Evaluations and full Wave 2 barrier are green; closure/cleanup precedes Wave 3 |
+| Phase 4 — implementation | Issues #111–#113 complete; Wave 3 frontier active | PR #120 merged #112 at `ebfbcab`; PR #121 merged reconciled #113 at `aca7c83`; accepted Evaluations and full Wave 2 barrier are green; Issues closed and child resources cleaned; frontier is #114/#115/#116 |
 | Phase 5 — candidate artifacts/CI preparation | pending | Pre-D2 may build/test/validate images and prepare workflows/descriptors; no GHCR publication or deployment digest exists |
 | Phase 6 — manual acceptance preparation | pending | Pre-D2 may lock the guide and evidence schema; deployed-target execution is forbidden before D2 rollout |
 | Phase 7 — D2 Authorization Request/checkpoint | pending | Human approval is required before credential binding, GHCR publication, rollout, live provider validation, or deployed-target acceptance |
 | Phase 8 — D2 execution/rollout/live verification | pending | Post-approval only: capture actual digests/hostnames, bind credentials, deploy, validate providers, run manual acceptance, and record rollback evidence |
 | Phase 9 — final merge/closeout | pending | Reuses the valid single pre-D2 whole-K6 code review when runtime/source bytes have not drifted; requires all rollout and live-acceptance evidence |
+
+## Wave 2 execution checkpoint
+
+### Issue #112
+
+- Branch: `nhibuaa/k6-issue-112-edge`; worktree:
+  `D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-112`.
+- Accepted candidate tree: `ab2ab0b18c8e133247135ab252ab002c3c0a1a39`.
+- Accepted Evaluation: `k6-112-v3-local-20260823T083214Z-approved`, `PASSED/approved`, eight
+  `PASS` observations.
+- Child commit: `f064736eb4238518771a59e5269c8a76a9be476d`; PR #120 merge:
+  `ebfbcabbbf361c477c96b6fbebe14133d8530be2`.
+- Reachability: child and merge commits are ancestors of the integration head.
+- Selective invalidation: the later #113 Socket.IO fixture digest change was revalidated by the
+  reconciled #113 oracle, enabled-call checks, locked guide, and Wave 2 barrier. Other #112 inputs
+  remained valid.
+- Issue state: closed `COMPLETED` with evidence comment. Worktree removed cleanly without force;
+  local/remote branch deleted; remote ref pruned.
+
+### Issue #113
+
+- Branch: `nhibuaa/k6-issue-113-capability-gates`; worktree:
+  `D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-113`.
+- Reconciled accepted execution tree: `d9de20b5fac1da34c143d96fa26ae22843df042c`.
+- Accepted Evaluation: `k6-113-v4-local-20260823T093713Z-approved`, `PASSED/approved`, eight
+  `PASS` observations.
+- Reconciled child head: `fb25a47e7ced97031b45dcbc1a55fa69ff7a409e`; PR #121 merge:
+  `aca7c8346853f65e4b7906a3f665eccf1243f413`.
+- Reachability and acceptance impact: child and merge commits are ancestors; integrated execution
+  projection equals the exact accepted tree, so no further accepted case is invalidated.
+- Issue state: closed `COMPLETED` with evidence comment. Worktree removed cleanly without force;
+  local/remote branch deleted; remote ref pruned.
+
+### Wave 2 barrier and frontier
+
+- Green gates: edge `34/34`; capability `24/24`; recorder `19/19`; target config `60/60`;
+  helper `5/5`; root CI `134/134`; client `280/280`; server `511` pass/`5` expected skips;
+  CI validation, lint, client build, server/edge Docker builds, diff check, and Gitleaks.
+- Current frontier: Issues #114, #115, and #116. Create all three isolated branches/worktrees from
+  the same exact integration head containing this checkpoint.
+- Whole-K6 code review remains deferred. `D2_MUTATIONS=0`; D2 remains unauthorized.
 
 ## Issue #111 execution checkpoint
 

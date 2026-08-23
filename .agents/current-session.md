@@ -1,8 +1,8 @@
 # K6 Railway Public Demo — Current Authority (2026-08-23)
 
-## CURRENT AUTHORITY — Wave 2 integrated; closeout before Wave 3
+## CURRENT AUTHORITY — Wave 2 complete; Wave 3 frontier active
 
-`WAVE_2_INTEGRATED_WAVE_3_PENDING_CLEANUP_D2_UNAUTHORIZED`
+`WAVE_2_COMPLETE_WAVE_3_FRONTIER_D2_UNAUTHORIZED`
 
 This block supersedes every lower transition/status paragraph in this file. Issues #111–#113 are
 implemented, locally accepted, and integrated into `nhibuaa/k6-public-demo`. PR #120 merged #112
@@ -22,10 +22,11 @@ exact rerun without source changes.
 
 Selective invalidation is resolved. #113 changed the #112 Socket.IO fixture digest, so the affected
 wire behavior was revalidated by the reconciled #113 source-base oracle, enabled-call tests, full
-locked guide, and final Wave 2 barrier. No per-Issue code review ran. Close Issues #112/#113 and
-clean their reachable child resources before creating Wave 3 branches. After closeout, Issues
-#114, #115, and #116 are the parallel frontier and must share one exact post-cleanup integration
-base. D2 remains unauthorized and `D2_MUTATIONS=0`.
+locked guide, and final Wave 2 barrier. Issues #112/#113 are closed with evidence. Their clean
+worktrees were removed without force; local and remote branches were deleted after reachability and
+remote refs were pruned. No per-Issue code review ran. Issues #114, #115, and #116 are now the
+parallel frontier and must share the exact integration head containing this checkpoint. D2 remains
+unauthorized and `D2_MUTATIONS=0`.
 All lower sections are historical evidence unless this block explicitly incorporates them.
 
 ## Historical checkpoints — superseded by CURRENT AUTHORITY
