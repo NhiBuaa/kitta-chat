@@ -1,38 +1,27 @@
-# Next Session — K6 Wave 2 Frontier
+# Next Session — K6 Wave 2 Closeout
 
-## CURRENT NEXT ACTION — initialize Issues #112 and #113 from one exact base
+## CURRENT NEXT ACTION — close #112/#113, cleanup, then initialize Wave 3
 
-`ISSUE_111_INTEGRATED_WAVE_2_FRONTIER_D2_UNAUTHORIZED`
+`WAVE_2_INTEGRATED_WAVE_3_PENDING_CLEANUP_D2_UNAUTHORIZED`
 
-This block supersedes every lower next-transition paragraph. Issue #111 started from the approved
-normalization head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`, completed all ticket/guide/TDD/manual gates,
-and is now integrated and closed.
+This block supersedes every lower next-transition paragraph. PR #120 merged #112 at
+`ebfbcabbbf361c477c96b6fbebe14133d8530be2`; PR #121 merged reconciled #113 at
+`aca7c8346853f65e4b7906a3f665eccf1243f413`. Child heads
+`f064736eb4238518771a59e5269c8a76a9be476d` and
+`fb25a47e7ced97031b45dcbc1a55fa69ff7a409e` are reachable. The exact integrated execution tree
+`d9de20b5fac1da34c143d96fa26ae22843df042c` remains accepted.
 
-- Canonical plan SHA-256: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`.
-- End-to-end execution plan SHA-256: `6ea6a758a8ad5e95f5071af1936b709830dc38a639cb5583682a52342c5fd67e`.
+The complete Wave 2 barrier is green: edge `34/34`, capability `24/24`, recorder `19/19`, target
+config `60/60`, helper `5/5`, root CI `134/134`, client `280/280`, server `511` pass/`5` expected
+skips, CI/lint/build/Docker/diff/Gitleaks gates. Selective invalidation for the changed #112
+Socket.IO fixture is covered by the reconciled #113 oracle and full accepted guide.
 
-Issue #111 accepted implementation tree
-`6f53a78d88137e0d8dd48aac91e0672d312c3d6f` passed focused target-config/build verification
-`60/60`; Evaluation-recorder tests passed `14/14`; v5 history remains immutable historical
-evidence and was not rewritten.
-
-Guide v6 is fixed at SHA-256
-`f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b` and binds exact tree
-`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`. External manual-guide review returned `APPROVE` with
-zero findings, and the maintainer approved this exact revision/hash/tree. Locked execution run
-`k6-111-v6-local-20260823T022616Z-observation` completed with eight `PASS` observations. The
-maintainer accepted that exact run; append-only run
-`k6-111-v6-local-20260823T025857Z-approved` is `PASSED/approved`. PR #119 merged child commit
-`7ab8f2515d117af69be318ffcc8a03515bb1918d` into integration at
-`4d135b911d90c8cf6ea8eb04e00e8a8399998f22`; reachability and exact tree equality passed, so no
-accepted case was invalidated. Issue #111 is closed and its clean child worktree/local/remote
-branch are removed. Create isolated Issues #112 and #113 branches/worktrees from the same exact
-integration head containing this
-lifecycle checkpoint. Prepare their ticket/guide gates before implementation. No per-Issue
-Standards/Spec `code-review` runs; the one whole-K6 code review remains deferred until #111–#118
-are integrated and locally accepted. Ticket/guide reviews remain required preparation gates. Do
-not cross D2. All lower sections are historical context unless this block explicitly incorporates
-them.
+Next: publish evidence comments and close Issues #112/#113; verify clean reachable child worktrees;
+remove those worktrees; delete their local and remote branches safely; prune; then commit/push the
+closeout state. The resulting integration head becomes the one shared source base for isolated
+Issues #114, #115, and #116. Do not create any Wave 3 child before that exact base is recorded. No
+per-Issue code review runs. D2 remains unauthorized and `D2_MUTATIONS=0`. All lower sections are
+historical context unless this block explicitly incorporates them.
 
 ## Historical next-session checkpoints — superseded by CURRENT NEXT ACTION
 

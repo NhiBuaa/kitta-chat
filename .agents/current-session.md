@@ -1,63 +1,31 @@
 # K6 Railway Public Demo — Current Authority (2026-08-23)
 
-## CURRENT AUTHORITY — Issue #111 integrated; Wave 2 frontier active
+## CURRENT AUTHORITY — Wave 2 integrated; closeout before Wave 3
 
-`ISSUE_111_INTEGRATED_WAVE_2_FRONTIER_D2_UNAUTHORIZED`
+`WAVE_2_INTEGRATED_WAVE_3_PENDING_CLEANUP_D2_UNAUTHORIZED`
 
-This block supersedes every lower transition/status paragraph in this file. The docs-only
-normalization review reached aggregate `APPROVE` with zero Critical or Major findings and was pushed
-at integration head `0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. The sole normative D2 field matrix remains
-`docs/deployment/k6-d2-authorization-execution-contract.md`.
+This block supersedes every lower transition/status paragraph in this file. Issues #111–#113 are
+implemented, locally accepted, and integrated into `nhibuaa/k6-public-demo`. PR #120 merged #112
+child `f064736eb4238518771a59e5269c8a76a9be476d` at
+`ebfbcabbbf361c477c96b6fbebe14133d8530be2`. PR #121 merged reconciled #113 child
+`fb25a47e7ced97031b45dcbc1a55fa69ff7a409e` at
+`aca7c8346853f65e4b7906a3f665eccf1243f413`. Both child and merge commits are reachable.
 
-- Canonical plan SHA-256: `c17b0be7a8c6323895e27c7e7e076936267754b7fd6352bdeb2999c975369426`.
-- End-to-end execution plan SHA-256: `6ea6a758a8ad5e95f5071af1936b709830dc38a639cb5583682a52342c5fd67e`.
+The integration execution projection remains the accepted #113 tree
+`d9de20b5fac1da34c143d96fa26ae22843df042c`, which includes #112 reconciliation. Wave 2
+post-merge verification passed edge `34/34`, capability `24/24`, recorder `19/19`, inherited
+target config `60/60`, helper `5/5`, root CI `134/134`, CI validation, lint `0` errors/`13`
+allowed warnings, client `280/280`, client build, server `511` pass/`5` expected skips, both Docker
+builds, exact diff checking, and pinned Gitleaks. A setup-only missing-dependency failure was
+resolved with `npm ci`; one resource-pressure oracle timeout passed in isolation and in the full
+exact rerun without source changes.
 
-Issue #111 used branch `nhibuaa/k6-issue-111-target-config`, isolated worktree
-`D:\Developer\Projects\shotter\shot-chat-worktrees\k6-issue-111`, and source base
-`0a4e350dfd21d1dc979392f1bf2261ae66a4093e`. Its accepted implementation tree is
-`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`.
-
-Two reviewer axes that had already been dispatched returned after the maintainer cancelled the
-per-Issue code review. They were not aggregated, are not final-review evidence, and do not change
-the rule that the single planned whole-K6 code review runs only after Issues #111–#118 are
-integrated and their required local/pre-D2 manual acceptance is `PASSED/approved`. Their concrete
-findings were independently verified as remediation leads.
-The implementation now rejects loopback public origins, non-boolean/inherited synthetic-test
-authority, missing required signup/seed capabilities, and `VITE_DEFAULT_AVATAR` build-time data;
-ordinary local targets use an explicit legacy adapter while public-demo remains fail-closed. The
-Evaluation recorder now constrains every top-level identity/time field and requires a prior pending
-observation plus an immutable maintainer-acceptance sidecar for any new `PASSED` append. Focused
-target-config/build verification passes `60/60`; Evaluation-recorder tests pass `14/14`; historical
-v5 JSONL still validates as `BLOCKED/PASSED` and remains byte-preserved.
-
-Docker validation also caught the legacy default-avatar input entering the explicit public-demo
-image. The Dockerfile now defaults that input to empty; its regression and image build pass. Guide
-v5 and its two Evaluation records are immutable historical evidence but no longer authorize
-the changed candidate. The late findings also established that v5 overclaimed one blocked direct
-browser route and did not retain the screenshots/digests/request inventories required by its own
-guide. Guide v6 is now fixed at SHA-256
-`f44bde57491df67a1f322467ed62a8f2596ba00dc3a628c99b2266598eb5d82b` and binds tree
-`6f53a78d88137e0d8dd48aac91e0672d312c3d6f`. Its external manual-guide review is `APPROVE` with
-zero findings and is recorded at
-`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.guide-review.json`. The maintainer
-approved this exact guide/hash/tree; the bound sidecar is
-`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.approval.json`. Locked guide v6 was
-executed as run `k6-111-v6-local-20260823T022616Z-observation`. All eight observations are
-`PASS`; the append-only Evaluation is correctly `BLOCKED` with `human_approval=pending`. The
-retained manifest digest is
-`3e882c5f2717752abf2e3fbe222a6115714e26c774f43c08d5e0a9a6d57ec6b1`. The maintainer accepted
-that exact pending run and all eight observations. Run
-`k6-111-v6-local-20260823T025857Z-approved` is appended as `PASSED/approved` and binds the
-accepted observation through
-`.agents/manual-tests/k6-public-demo/issue-111-target-config-v6.acceptance.json`. Child commit
-`7ab8f2515d117af69be318ffcc8a03515bb1918d` was merged by PR #119 at
-`4d135b911d90c8cf6ea8eb04e00e8a8399998f22`. Both commits are reachable from integration; the
-post-merge tree equals the accepted child tree, so no v6 Test Case was invalidated. Issue #111 is
-closed; its clean child worktree and local/remote child branches were removed after reachability
-verification. The new frontier is Issues #112 and #113, which must start from the same exact
-integration checkpoint containing this docs-only lifecycle normalization. Do not run per-Issue
-code reviews. Ticket/guide reviews remain pre-implementation quality gates. D2 remains
-unauthorized.
+Selective invalidation is resolved. #113 changed the #112 Socket.IO fixture digest, so the affected
+wire behavior was revalidated by the reconciled #113 source-base oracle, enabled-call tests, full
+locked guide, and final Wave 2 barrier. No per-Issue code review ran. Close Issues #112/#113 and
+clean their reachable child resources before creating Wave 3 branches. After closeout, Issues
+#114, #115, and #116 are the parallel frontier and must share one exact post-cleanup integration
+base. D2 remains unauthorized and `D2_MUTATIONS=0`.
 All lower sections are historical evidence unless this block explicitly incorporates them.
 
 ## Historical checkpoints — superseded by CURRENT AUTHORITY
