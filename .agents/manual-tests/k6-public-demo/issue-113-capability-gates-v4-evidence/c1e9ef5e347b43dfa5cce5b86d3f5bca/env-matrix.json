@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "scenario": "env-matrix",
+  "candidateTree": "d9de20b5fac1da34c143d96fa26ae22843df042c",
+  "commands": [
+    {
+      "name": "scenario-env-matrix",
+      "exitCode": 0
+    }
+  ],
+  "recipientChecks": [
+    {
+      "service": "backend",
+      "actualKeyNames": [
+        "AUTH_COOKIE_SECURE",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_REGION",
+        "AWS_S3_BUCKET_NAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "CALL_DISTRIBUTED_TIMEOUT_ENABLED",
+        "CALL_DISTRIBUTED_TIMEOUT_POLL_MS",
+        "CONVERSATION_DUAL_WRITE_ENABLED",
+        "CONVERSATION_PANEL_ENABLED",
+        "CONVERSATION_PANEL_RATE_LIMIT",
+        "CONVERSATION_PANEL_RESOURCES_ENABLED",
+        "CONVERSATION_SHADOW_COMPARE_ENABLED",
+        "CONVERSATION_SIDEBAR_READ_MODEL_ENABLED",
+        "CORS_ALLOWED_ORIGINS",
+        "DEFAULT_AVATAR",
+        "JWT_SECRET",
+        "K6_CAPABILITY_CALLS",
+        "K6_CAPABILITY_GOOGLE_LOGIN",
+        "K6_CAPABILITY_ISSUE61_MEASUREMENT",
+        "K6_CAPABILITY_RECOVERY",
+        "K6_CAPABILITY_UPLOAD",
+        "K6_SYNTHETIC_SIGNUP_ONLY",
+        "K6_TARGET",
+        "METRICS_ENABLED",
+        "MONGO_URI",
+        "NODE_ENV",
+        "NODE_NAME",
+        "PORT",
+        "RABBITMQ_MAX_ATTEMPTS",
+        "RABBITMQ_RETRY_DELAY_MS",
+        "RABBITMQ_URL",
+        "RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS",
+        "RABBITMQ_WORKER_RECONNECT_DELAY_MS",
+        "REDIS_RATE_LIMIT_CLUSTER_ROOT_NODES",
+        "REDIS_URL",
+        "REFRESH_TOKEN_SECRET",
+        "URL_FRONTEND"
+      ],
+      "expectedKeyNames": [
+        "AUTH_COOKIE_SECURE",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_REGION",
+        "AWS_S3_BUCKET_NAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "CALL_DISTRIBUTED_TIMEOUT_ENABLED",
+        "CALL_DISTRIBUTED_TIMEOUT_POLL_MS",
+        "CONVERSATION_DUAL_WRITE_ENABLED",
+        "CONVERSATION_PANEL_ENABLED",
+        "CONVERSATION_PANEL_RATE_LIMIT",
+        "CONVERSATION_PANEL_RESOURCES_ENABLED",
+        "CONVERSATION_SHADOW_COMPARE_ENABLED",
+        "CONVERSATION_SIDEBAR_READ_MODEL_ENABLED",
+        "CORS_ALLOWED_ORIGINS",
+        "DEFAULT_AVATAR",
+        "JWT_SECRET",
+        "K6_CAPABILITY_CALLS",
+        "K6_CAPABILITY_GOOGLE_LOGIN",
+        "K6_CAPABILITY_ISSUE61_MEASUREMENT",
+        "K6_CAPABILITY_RECOVERY",
+        "K6_CAPABILITY_UPLOAD",
+        "K6_SYNTHETIC_SIGNUP_ONLY",
+        "K6_TARGET",
+        "METRICS_ENABLED",
+        "MONGO_URI",
+        "NODE_ENV",
+        "NODE_NAME",
+        "PORT",
+        "RABBITMQ_MAX_ATTEMPTS",
+        "RABBITMQ_RETRY_DELAY_MS",
+        "RABBITMQ_URL",
+        "RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS",
+        "RABBITMQ_WORKER_RECONNECT_DELAY_MS",
+        "REDIS_RATE_LIMIT_CLUSTER_ROOT_NODES",
+        "REDIS_URL",
+        "REFRESH_TOKEN_SECRET",
+        "URL_FRONTEND"
+      ],
+      "exactMatch": true
+    },
+    {
+      "service": "imageWorker",
+      "actualKeyNames": [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_REGION",
+        "AWS_S3_BUCKET_NAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "IMAGE_WORKER_CONCURRENCY",
+        "MONGO_URI",
+        "NODE_ENV",
+        "NODE_NAME",
+        "RABBITMQ_MAX_ATTEMPTS",
+        "RABBITMQ_RETRY_DELAY_MS",
+        "RABBITMQ_URL",
+        "RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS",
+        "RABBITMQ_WORKER_RECONNECT_DELAY_MS",
+        "REDIS_URL"
+      ],
+      "expectedKeyNames": [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_REGION",
+        "AWS_S3_BUCKET_NAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "IMAGE_WORKER_CONCURRENCY",
+        "MONGO_URI",
+        "NODE_ENV",
+        "NODE_NAME",
+        "RABBITMQ_MAX_ATTEMPTS",
+        "RABBITMQ_RETRY_DELAY_MS",
+        "RABBITMQ_URL",
+        "RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS",
+        "RABBITMQ_WORKER_RECONNECT_DELAY_MS",
+        "REDIS_URL"
+      ],
+      "exactMatch": true
+    },
+    {
+      "service": "auditWorker",
+      "actualKeyNames": [
+        "AUDIT_WORKER_CONCURRENCY",
+        "NODE_ENV",
+        "NODE_NAME",
+        "RABBITMQ_MAX_ATTEMPTS",
+        "RABBITMQ_RETRY_DELAY_MS",
+        "RABBITMQ_URL",
+        "RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS",
+        "RABBITMQ_WORKER_RECONNECT_DELAY_MS"
+      ],
+      "expectedKeyNames": [
+        "AUDIT_WORKER_CONCURRENCY",
+        "NODE_ENV",
+        "NODE_NAME",
+        "RABBITMQ_MAX_ATTEMPTS",
+        "RABBITMQ_RETRY_DELAY_MS",
+        "RABBITMQ_URL",
+        "RABBITMQ_WORKER_MAX_RECONNECT_DELAY_MS",
+        "RABBITMQ_WORKER_RECONNECT_DELAY_MS"
+      ],
+      "exactMatch": true
+    },
+    {
+      "service": "edgeRuntime",
+      "actualKeyNames": [
+        "BACKEND_UPSTREAM",
+        "K6_CAPABILITY_CALLS",
+        "K6_CAPABILITY_GOOGLE_LOGIN",
+        "K6_CAPABILITY_ISSUE61_MEASUREMENT",
+        "K6_CAPABILITY_RECOVERY",
+        "K6_CAPABILITY_UPLOAD",
+        "K6_RUNTIME_CONFIG_FILE",
+        "K6_TARGET"
+      ],
+      "expectedKeyNames": [
+        "BACKEND_UPSTREAM",
+        "K6_CAPABILITY_CALLS",
+        "K6_CAPABILITY_GOOGLE_LOGIN",
+        "K6_CAPABILITY_ISSUE61_MEASUREMENT",
+        "K6_CAPABILITY_RECOVERY",
+        "K6_CAPABILITY_UPLOAD",
+        "K6_RUNTIME_CONFIG_FILE",
+        "K6_TARGET"
+      ],
+      "exactMatch": true
+    },
+    {
+      "service": "edgeBuild",
+      "actualKeyNames": [
+        "VITE_API_URL",
+        "VITE_API_URL_AUTH",
+        "VITE_API_URL_CALLS",
+        "VITE_API_URL_FILES",
+        "VITE_API_URL_GROUPS",
+        "VITE_API_URL_MESSAGES",
+        "VITE_API_URL_USERS",
+        "VITE_TARGET"
+      ],
+      "expectedKeyNames": [
+        "VITE_API_URL",
+        "VITE_API_URL_AUTH",
+        "VITE_API_URL_CALLS",
+        "VITE_API_URL_FILES",
+        "VITE_API_URL_GROUPS",
+        "VITE_API_URL_MESSAGES",
+        "VITE_API_URL_USERS",
+        "VITE_TARGET"
+      ],
+      "exactMatch": true
+    },
+    {
+      "service": "notificationWorker",
+      "actualKeyNames": [],
+      "expectedKeyNames": [],
+      "exactMatch": true
+    },
+    {
+      "service": "oneOffSeed",
+      "actualKeyNames": [
+        "ALLOW_REMOTE_DEMO_SEED",
+        "DEMO_SEED_PASSWORD",
+        "MONGO_URI"
+      ],
+      "expectedKeyNames": [
+        "ALLOW_REMOTE_DEMO_SEED",
+        "DEMO_SEED_PASSWORD",
+        "MONGO_URI"
+      ],
+      "exactMatch": true
+    }
+  ],
+  "sideEffects": {
+    "limiter": 0,
+    "controller": 0,
+    "provider": 0,
+    "database": 0,
+    "queue": 0,
+    "s3": 0,
+    "bodyProcessing": 0,
+    "signaling": 0,
+    "history": 0,
+    "session": 0
+  },
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "processCount": 0
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "scenario": "legacy-contract",
+  "candidateTree": "d9de20b5fac1da34c143d96fa26ae22843df042c",
+  "commands": [
+    {
+      "name": "scenario-legacy-contract",
+      "exitCode": 0
+    }
+  ],
+  "contractChecks": [
+    {
+      "seam": "auth.register.response-keys",
+      "actualShape": [
+        "message",
+        "success",
+        "token",
+        "user"
+      ],
+      "expectedShape": [
+        "message",
+        "success",
+        "token",
+        "user"
+      ],
+      "exactMatch": true
+    }
+  ],
+  "sideEffects": {
+    "limiter": 1,
+    "controller": 0,
+    "provider": 0,
+    "database": 1,
+    "queue": 0,
+    "s3": 0,
+    "bodyProcessing": 1,
+    "signaling": 0,
+    "history": 0,
+    "session": 1
+  },
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "processCount": 0
+  }
+}

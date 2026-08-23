@@ -1,0 +1,536 @@
+{
+  "schemaVersion": 1,
+  "scenario": "contract-oracle",
+  "candidateTree": "d9de20b5fac1da34c143d96fa26ae22843df042c",
+  "contractChecks": [
+    {
+      "seam": "auth.login.response-keys",
+      "actualShape": [
+        "message",
+        "success",
+        "token",
+        "user"
+      ],
+      "expectedShape": [
+        "message",
+        "success",
+        "token",
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "seam": "auth.refresh.cookie-presence-attributes",
+      "actualShape": [
+        {
+          "attributes": [
+            "httpOnly",
+            "maxAge",
+            "path",
+            "sameSite",
+            "secure"
+          ],
+          "httpOnly": true,
+          "sameSite": "lax",
+          "secure": true
+        }
+      ],
+      "expectedShape": [
+        {
+          "attributes": [
+            "httpOnly",
+            "maxAge",
+            "path",
+            "sameSite",
+            "secure"
+          ],
+          "httpOnly": true,
+          "sameSite": "lax",
+          "secure": true
+        }
+      ],
+      "exactMatch": true
+    },
+    {
+      "seam": "auth.register.response-keys",
+      "actualShape": [
+        "message",
+        "success",
+        "token",
+        "user"
+      ],
+      "expectedShape": [
+        "message",
+        "success",
+        "token",
+        "user"
+      ],
+      "exactMatch": true
+    },
+    {
+      "seam": "auth.request-id-field",
+      "actualShape": {
+        "key": "requestId",
+        "present": true
+      },
+      "expectedShape": {
+        "key": "requestId",
+        "present": true
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "call.history.response-identifiers",
+      "actualShape": {
+        "routeInventory": [
+          {
+            "method": "GET",
+            "path": "/api/calls/history",
+            "policyIds": [
+              "read_expensive.aggregate",
+              "read_expensive.call_history"
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/calls/missed",
+            "policyIds": [
+              "read_expensive.aggregate",
+              "read_expensive.call_history"
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/calls/:id/read",
+            "policyIds": [
+              "state_mutation.aggregate",
+              "state_mutation.call_history"
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/calls/read-all",
+            "policyIds": [
+              "state_mutation.aggregate",
+              "state_mutation.call_history"
+            ]
+          }
+        ],
+        "publicKeys": [
+          "calls",
+          "hasMore",
+          "isReadByCurrentUser",
+          "modifiedCount",
+          "nextCursor"
+        ]
+      },
+      "expectedShape": {
+        "routeInventory": [
+          {
+            "method": "GET",
+            "path": "/api/calls/history",
+            "policyIds": [
+              "read_expensive.aggregate",
+              "read_expensive.call_history"
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/calls/missed",
+            "policyIds": [
+              "read_expensive.aggregate",
+              "read_expensive.call_history"
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/calls/:id/read",
+            "policyIds": [
+              "state_mutation.aggregate",
+              "state_mutation.call_history"
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/calls/read-all",
+            "policyIds": [
+              "state_mutation.aggregate",
+              "state_mutation.call_history"
+            ]
+          }
+        ],
+        "publicKeys": [
+          "calls",
+          "hasMore",
+          "isReadByCurrentUser",
+          "modifiedCount",
+          "nextCursor"
+        ]
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "call.socket.answerCall",
+      "actualShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "mediaStatus",
+          "signal",
+          "to"
+        ],
+        "outputEvents": [
+          "callAccepted"
+        ],
+        "outputPayloadKeys": [
+          "answeredAt",
+          "mediaStatus",
+          "signal"
+        ],
+        "ackKeys": [
+          "answeredAt"
+        ],
+        "publicIdentifierKeys": [
+          "callId"
+        ],
+        "targetRoomClass": "authenticated-user-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "answerCall"
+      },
+      "expectedShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "mediaStatus",
+          "signal",
+          "to"
+        ],
+        "outputEvents": [
+          "callAccepted"
+        ],
+        "outputPayloadKeys": [
+          "answeredAt",
+          "mediaStatus",
+          "signal"
+        ],
+        "ackKeys": [
+          "answeredAt"
+        ],
+        "publicIdentifierKeys": [
+          "callId"
+        ],
+        "targetRoomClass": "authenticated-user-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "answerCall"
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "call.socket.callUser",
+      "actualShape": {
+        "inputPayloadKeys": [
+          "avatar",
+          "callId",
+          "from",
+          "mediaStatus",
+          "name",
+          "signalData",
+          "typeCall",
+          "userToCall"
+        ],
+        "outputEvents": [
+          "RATE_LIMITED",
+          "RATE_LIMIT_UNAVAILABLE",
+          "callRejected",
+          "callUser",
+          "outgoingCallCreated"
+        ],
+        "outputPayloadKeys": [
+          "avatar",
+          "callId",
+          "callerDbId",
+          "conversationId",
+          "from",
+          "mediaStatus",
+          "name",
+          "signal",
+          "type",
+          "typeCall",
+          "userToCall"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId",
+          "conversationId",
+          "callerDbId"
+        ],
+        "targetRoomClass": "authenticated-user-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "callUser"
+      },
+      "expectedShape": {
+        "inputPayloadKeys": [
+          "avatar",
+          "callId",
+          "from",
+          "mediaStatus",
+          "name",
+          "signalData",
+          "typeCall",
+          "userToCall"
+        ],
+        "outputEvents": [
+          "RATE_LIMITED",
+          "RATE_LIMIT_UNAVAILABLE",
+          "callRejected",
+          "callUser",
+          "outgoingCallCreated"
+        ],
+        "outputPayloadKeys": [
+          "avatar",
+          "callId",
+          "callerDbId",
+          "conversationId",
+          "from",
+          "mediaStatus",
+          "name",
+          "signal",
+          "type",
+          "typeCall",
+          "userToCall"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId",
+          "conversationId",
+          "callerDbId"
+        ],
+        "targetRoomClass": "authenticated-user-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "callUser"
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "call.socket.endCall",
+      "actualShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "to"
+        ],
+        "outputEvents": [
+          "callEnded",
+          "callHistorySync"
+        ],
+        "outputPayloadKeys": [],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId"
+        ],
+        "targetRoomClass": "participant-rooms",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "endCall"
+      },
+      "expectedShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "to"
+        ],
+        "outputEvents": [
+          "callEnded",
+          "callHistorySync"
+        ],
+        "outputPayloadKeys": [],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId"
+        ],
+        "targetRoomClass": "participant-rooms",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "endCall"
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "call.socket.initCall",
+      "actualShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "from",
+          "typeCall",
+          "userToCall"
+        ],
+        "outputEvents": [
+          "RATE_LIMITED",
+          "RATE_LIMIT_UNAVAILABLE",
+          "callTimeout"
+        ],
+        "outputPayloadKeys": [
+          "callId",
+          "code",
+          "retryAfterSeconds"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId",
+          "conversationId"
+        ],
+        "targetRoomClass": "authenticated-participant-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "initCall"
+      },
+      "expectedShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "from",
+          "typeCall",
+          "userToCall"
+        ],
+        "outputEvents": [
+          "RATE_LIMITED",
+          "RATE_LIMIT_UNAVAILABLE",
+          "callTimeout"
+        ],
+        "outputPayloadKeys": [
+          "callId",
+          "code",
+          "retryAfterSeconds"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId",
+          "conversationId"
+        ],
+        "targetRoomClass": "authenticated-participant-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "initCall"
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "call.socket.rejectCall",
+      "actualShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "reason",
+          "to"
+        ],
+        "outputEvents": [
+          "callCancelled",
+          "callEnded",
+          "callRejected",
+          "callHistorySync"
+        ],
+        "outputPayloadKeys": [
+          "callId",
+          "reason"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId"
+        ],
+        "targetRoomClass": "participant-rooms",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "rejectCall"
+      },
+      "expectedShape": {
+        "inputPayloadKeys": [
+          "callId",
+          "reason",
+          "to"
+        ],
+        "outputEvents": [
+          "callCancelled",
+          "callEnded",
+          "callRejected",
+          "callHistorySync"
+        ],
+        "outputPayloadKeys": [
+          "callId",
+          "reason"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [
+          "callId"
+        ],
+        "targetRoomClass": "participant-rooms",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "rejectCall"
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "call.socket.toggleMedia",
+      "actualShape": {
+        "inputPayloadKeys": [
+          "cam",
+          "mic",
+          "to"
+        ],
+        "outputEvents": [
+          "updateMediaStatus"
+        ],
+        "outputPayloadKeys": [
+          "cam",
+          "mic"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [],
+        "targetRoomClass": "authenticated-user-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "toggleMedia"
+      },
+      "expectedShape": {
+        "inputPayloadKeys": [
+          "cam",
+          "mic",
+          "to"
+        ],
+        "outputEvents": [
+          "updateMediaStatus"
+        ],
+        "outputPayloadKeys": [
+          "cam",
+          "mic"
+        ],
+        "ackKeys": [],
+        "publicIdentifierKeys": [],
+        "targetRoomClass": "authenticated-user-room",
+        "authorizationOutcomeClass": "authenticated-socket-principal",
+        "inputEvent": "toggleMedia"
+      },
+      "exactMatch": true
+    },
+    {
+      "seam": "file.private-download.delegation",
+      "actualShape": {
+        "method": "POST",
+        "path": "/api/files/:fileId/download-url",
+        "policyIds": [
+          "file_resource.aggregate",
+          "file_resource.download_signing"
+        ]
+      },
+      "expectedShape": {
+        "method": "POST",
+        "path": "/api/files/:fileId/download-url",
+        "policyIds": [
+          "file_resource.aggregate",
+          "file_resource.download_signing"
+        ]
+      },
+      "exactMatch": true
+    }
+  ],
+  "sourceBaseOracle": {
+    "sourceBase": "1b70741b4512e5cc727224a788477d87fa1e67be",
+    "sourceBaseTree": "820600cd72283a048d154c98ad4b40bf62de898f",
+    "sourceObservationSha256": "5906909bac2eb7889c6543b3580986dff30b6144773f8804f2be27d75edd9936",
+    "candidateObservationSha256": "5906909bac2eb7889c6543b3580986dff30b6144773f8804f2be27d75edd9936",
+    "exactMatch": true
+  },
+  "externalProviderRequestCount": 0,
+  "providerMutationCount": 0,
+  "cleanup": {
+    "portReleased": true,
+    "processCount": 0
+  }
+}
