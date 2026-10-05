@@ -21,7 +21,7 @@ Do not create a second root `CONTEXT.md`; it would duplicate the canonical gloss
 
 ## Vocabulary
 
-Use the terms defined in `.agents/CONTEXT.md` in issue titles, acceptance criteria, tests, and design discussions. If a required concept is missing or conflicts with existing language, resolve it through the domain-modeling workflow rather than inventing an undocumented synonym.
+Use the terms defined in `.agents/CONTEXT.md` in issue titles, acceptance criteria, tests, and design discussions. If a required concept is missing or conflicts with existing language, resolve its meaning with the user and update the canonical documentation. Select any supporting design skill through the policy in `.agents/AGENTS.md`.
 
 ## Conflicts
 

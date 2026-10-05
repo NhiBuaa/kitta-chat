@@ -29,54 +29,40 @@ Do not rely only on chat history when these files exist.
 
 ## Skill Policy
 
-Use the global/user skill set from `~/.agents/skills` as the canonical skill set. Do not use old repo-local skills as the default workflow.
+The canonical skill source is `$CODEX_HOME/skills`, falling back to `~/.codex/skills` when
+`CODEX_HOME` is unset. On this workstation, the selected source is
+`C:/Users/NhiBuaa/.codex/skills`.
+Select skills from the current session's catalog and read their `SKILL.md` before use.
+Verify that the selected skill exists under this source; discover the current inventory rather
+than assuming a skill is installed because an older document mentions it.
 
-If the user explicitly invokes a skill, read that skill's `SKILL.md` and follow it for the current turn. If no skill is requested, select the most appropriate workflow below.
+Do not install or activate additional skills without explicit user authorization.
 
 ### Workflow Router
 
-- Use `ask-matt` when unsure which workflow fits the request.
-- Use `setup-matt-pocock-skills` only when the repo has not yet been configured for the engineering skills or expected issue/domain configuration is missing.
+- Use `using-superpowers` to select the appropriate workflow at the start of work.
+- Use `brainstorming` for requirements, architecture, migration design and unresolved domain decisions.
+- Use `writing-plans` to turn approved scope into an implementation plan.
+- Use `executing-plans` to execute an approved plan with checkpoints.
+- Use `systematic-debugging` to diagnose broken behavior, test failures and performance issues.
+- Use `test-driven-development` for behavior changes and regression repairs.
+- Use `using-git-worktrees` for isolation when branch/worktree creation is authorized under this repository's Git rules.
+- Use `subagent-driven-development` for delegated implementation and `dispatching-parallel-agents` for independent work when authorized.
+- Use `requesting-code-review` for review and `receiving-code-review` to assess and handle findings.
+- Use `verification-before-completion` before claiming a result is complete or passing.
+- Use `finishing-a-development-branch` for the user's integration choice, subject to this repository's Git rules.
+- Use `research` for primary-source investigation saved as cited Markdown.
+- Use `diagram-design` for standalone diagrams and `writing-skills` for authorized skill authoring.
 
-### Planning, Product, And Architecture
+### Repository Tasks
 
-- Use `grill-with-docs` for architecture planning, migrations, database changes, API design, or unclear feature plans that need decisions recorded.
-- Use `grilling` or `grill-me` when the user wants a plan stress-tested through questions before implementation.
-- Use `domain-modeling` when the task changes or clarifies domain vocabulary, business concepts, or ubiquitous language.
-- Use `codebase-design` when designing module seams, deep modules, interfaces, boundaries, or testable architecture.
-- Use `improve-codebase-architecture` when scanning the codebase for architectural friction or refactoring opportunities.
-- Use `prototype` when the best next step is throwaway code to answer a design, state-machine, business-logic, or UI direction question.
+- Record confirmed domain vocabulary in `.agents/CONTEXT.md` and architectural decisions in `docs/adr/`.
+- Prepare and triage issues using `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`.
+- Record durable progress and next steps in `.agents/current-session.md` and `.agents/next-session.md`.
+- Follow the repository's approved playbooks, runtime invariants and manual acceptance requirements.
 
-### Implementation And Validation
-
-- Use `test-craft` to systematically predict edge-case matrices, boundary conditions, and author exhaustive RED test suites before coding or for manual testing guides.
-- Use `tdd` for feature implementation, bug fixes requiring regression coverage, or any request that asks for tests first.
-- Use `diagnosing-bugs` for broken behavior, failing flows, crashes, exceptions, regressions, or performance issues.
-- Use `code-check` for code review, audit, pre-merge review, or finding defects in existing changes.
-
-### Issue And Delivery Workflow
-
-- Use `to-prd` to synthesize the current conversation/context into a PRD.
-- Use `to-issues` to split an approved plan/PRD into independently grabbable implementation issues.
-- Use `triage` to classify, reproduce, sharpen, or prepare issues for implementation.
-- Use `handoff` to compact durable progress, current state, constraints, and next steps for another session.
-
-### Teaching And Skills
-
-- Use `teach` when the user wants to learn a concept or skill over one or more sessions.
-- Use `writing-great-skills` when creating or improving skills and their instructions.
-
-### Google ADK Workflows
-
-Use these only for Google ADK / agents-cli work:
-
-- `google-agents-cli-workflow` for the full ADK development lifecycle.
-- `google-agents-cli-scaffold` for creating/enhancing/upgrading ADK projects.
-- `google-agents-cli-adk-code` for writing ADK agent code, tools, callbacks, orchestration, or state management.
-- `google-agents-cli-eval` for evaluation datasets, eval runs, quality analysis, or optimization loops.
-- `google-agents-cli-deploy` for Agent Runtime, Cloud Run, GKE, CI/CD, secrets, or deployment troubleshooting.
-- `google-agents-cli-observability` for tracing, monitoring, logging, and production traffic debugging.
-- `google-agents-cli-publish` for publishing/registering agents with Gemini Enterprise.
+These tasks use repository guidance directly; a separate skill is not required. Skill use does
+not grant permission to create branches, commit, push, publish issues or deploy.
 
 ### Fallback
 
@@ -298,7 +284,7 @@ Trước khi thực thi bất kỳ lệnh nào có khả năng xóa hoặc ghi �
 
 ## 5. QUY TẮC AN TOÀN SECRETS (LOẠI TRỪ KHỎI MỤC 2)
 
-Quy tắc Anti-Shortening ở Mục 2 **KHÔNG áp dụng** cho nội dung bị cấm bởi các quy định Secrets Handling đã được thiết lập trong Skill deployment. Cụ thể:
+Quy tắc Anti-Shortening ở Mục 2 **KHÔNG áp dụng** cho nội dung bị cấm bởi các quy định Secrets Handling của dự án dưới đây. Cụ thể:
 
 - Không bao giờ in toàn bộ nội dung hoặc giá trị thực tế của file `.env` ra output/log/chat, kể cả khi đang "giải thích tường minh" một lỗi hay đang debug.
 - Khi kiểm tra tính đầy đủ của `.env`, chỉ được in TÊN các key bị thiếu, không in giá trị của bất kỳ key nào đã tồn tại.
