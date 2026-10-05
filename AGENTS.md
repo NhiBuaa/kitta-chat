@@ -3,7 +3,12 @@
 Before meaningful work, read and follow `.agents/AGENTS.md`.
 That file remains the canonical working agreement for this repository.
 
-## Agent skills
+## Skill source
+
+Use the installed skills in `C:/Users/NhiBuaa/.codex/skills` according to the skill policy
+and workflow routing in `.agents/AGENTS.md`.
+
+## Repository guidance
 
 ### Issue tracker
 

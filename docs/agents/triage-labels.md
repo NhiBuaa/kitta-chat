@@ -1,6 +1,6 @@
 # Triage Labels
 
-The engineering skills use five canonical triage roles. This table maps each role to the GitHub label configured for this repository.
+Issue triage uses five canonical roles. This table maps each role to the GitHub label configured for this repository.
 
 | Canonical role | GitHub label | Meaning |
 | --- | --- | --- |
@@ -10,4 +10,4 @@ The engineering skills use five canonical triage roles. This table maps each rol
 | `ready-for-human` | `ready-for-human` | Requires human implementation or intervention |
 | `wontfix` | `wontfix` | Will not be actioned |
 
-When a skill names a canonical role, apply the corresponding GitHub label from this table.
+When triaging an issue, apply the corresponding GitHub label from this table under the repository's issue-tracker rules.
