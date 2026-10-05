@@ -5,8 +5,9 @@ That file remains the canonical working agreement for this repository.
 
 ## Skill source
 
-Use the installed skills in `C:/Users/NhiBuaa/.codex/skills` according to the skill policy
-and workflow routing in `.agents/AGENTS.md`.
+Use the installed skills in `$CODEX_HOME/skills` (default: `~/.codex/skills`) according to
+the skill policy and workflow routing in `.agents/AGENTS.md`. On this workstation, that
+source is `C:/Users/NhiBuaa/.codex/skills`.
 
 ## Repository guidance
 

@@ -29,7 +29,9 @@ Do not rely only on chat history when these files exist.
 
 ## Skill Policy
 
-The canonical skill source is `C:/Users/NhiBuaa/.codex/skills`.
+The canonical skill source is `$CODEX_HOME/skills`, falling back to `~/.codex/skills` when
+`CODEX_HOME` is unset. On this workstation, the selected source is
+`C:/Users/NhiBuaa/.codex/skills`.
 Select skills from the current session's catalog and read their `SKILL.md` before use.
 Verify that the selected skill exists under this source; discover the current inventory rather
 than assuming a skill is installed because an older document mentions it.
