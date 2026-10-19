@@ -2,6 +2,9 @@
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [ADR-004](004-message-shared-links-optimization.md) | Message Shared Links Optimization | Accepted |
+| [ADR-005](005-conversation-panel-two-stage-loading.md) | Conversation Panel Two-Stage Loading & Architecture Invariants | Accepted |
+| [ADR-006](006-unified-sidebar-conversations.md) | Unified Sidebar Conversations | Accepted |
 | [ADR-007](007-workflow-governance-and-ruleset-activation.md) | Workflow decomposition & Ruleset activation | Accepted |
 | [ADR-008](008-ci-policy-validation-model.md) | CI Policy validation model | Accepted |
 | [ADR-009](009-security-scanning-strategy.md) | Security scanning strategy | Accepted |
