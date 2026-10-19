@@ -1,3 +1,8 @@
+> **Historical checkpoint — not current work state (2026-10-19).**
+> Content below is preserved verbatim as evidence. Start with [the working agreement](AGENTS.md#source-of-truth-for-work-state)
+> and the relevant live Issue/PR, including latest approval comments. Do not resume this old
+> slice or replay its approval gates without reconciling current scope and evidence.
+
 # Next Session — K5 Post-Acceptance Checkpoint
 
 ## K5 package has human approval

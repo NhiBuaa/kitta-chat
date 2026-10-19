@@ -240,8 +240,8 @@ or replica-count difference. Both contracts retain source/bundle provenance and 
 condition changes.
 
 _Normative K4 boundary_: [ADR-015](../docs/adr/015-k4-performance-evidence-boundary.md) and the
-locked Issue #85 acceptance guide define the validation and evidence rules; workflow status lives
-in `.agents/current-session.md` and `.agents/next-session.md`.
+locked Issue #85 acceptance guide define the validation and evidence rules; workflow status and
+approval amendments live in the relevant GitHub Issue/PR. Session files are historical checkpoints.
 
 
 

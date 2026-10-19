@@ -4,6 +4,8 @@ Memory là nơi lưu lại bài học và vấn đề đã biết để không l
 
 Quy tắc cập nhật:
 
+- Áp dụng phạm vi tự cập nhật và phê duyệt tại `docs/agents/issue-tracker.md#selective-closeout`; đối chiếu bài học cũ với code/test hiện tại trước khi dùng.
+
 - Ghi ngay sau khi fix bug khó hoặc rút ra bài học quan trọng.
 - Ghi ngắn gọn: symptom, root cause, fix, prevention.
 - Không dùng file này thay cho specs, rules, hoặc decisions.
@@ -255,6 +257,10 @@ ConfigValidationError: server configuration is invalid: CONVERSATION_DUAL_WRITE_
 
 ## Session roadmap lives in `.agents/current-session.md` and `.agents/next-session.md`
 
+> **Superseded workflow (2026-10-19).** The entry below is preserved history, not current instructions.
+> Use the relevant GitHub Issue/PR and latest approval comments per [the working agreement](../AGENTS.md#source-of-truth-for-work-state).
+> Keep progress there; do not update or resume these old session files as the current roadmap.
+
 **Symptom**: AI có thể dựa vào chat history hoặc handoff cũ để xác định migration state, dẫn đến lặp slice đã xong hoặc nhảy sang slice chưa được duyệt.
 
 **Root cause**: Conversation context dài và thay đổi qua nhiều session; chat history không phải source of truth bền vững.
@@ -278,6 +284,10 @@ ConfigValidationError: server configuration is invalid: CONVERSATION_DUAL_WRITE_
 - `.agents/playbooks/conversation-read-model-slice.md`
 
 ## `docs/handoff/NEXT_SESSION_BOOTSTRAP.md` is obsolete for current workflow
+
+> **Superseded replacement advice (2026-10-19).** The entry below records an earlier migration.
+> Neither the old bootstrap nor current/next-session snapshots are current authority. Follow
+> [the working agreement](../AGENTS.md#source-of-truth-for-work-state) and the live Issue/PR; preserve historical evidence.
 
 **Symptom**: AI có thể đọc `docs/handoff/NEXT_SESSION_BOOTSTRAP.md` và dùng thông tin cũ làm context chính, gây nhầm lẫn với `.agents/current-session.md` và `.agents/next-session.md`.
 

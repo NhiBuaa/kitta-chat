@@ -1,3 +1,12 @@
+> **Historical reference — not active agent instructions (2026-10-19).**
+> This snapshot is retained as evidence, not as a skill or current authority. Its copied
+> workflow, shortcut names, priority claims and implementation summaries may be obsolete.
+> Start at [AGENTS.md](AGENTS.md) and [.agents/AGENTS.md](.agents/AGENTS.md); use the current
+> session's skill catalog and verify facts against the relevant Issue/PR and code/tests.
+> Do not execute the historical instructions below.
+
+## Preserved historical snapshot
+
 ---
 name: using-superpowers
 description: Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions

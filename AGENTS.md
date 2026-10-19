@@ -5,9 +5,9 @@ That file remains the canonical working agreement for this repository.
 
 ## Skill source
 
-Use the installed skills in `$CODEX_HOME/skills` (default: `~/.codex/skills`) according to
-the skill policy and workflow routing in `.agents/AGENTS.md`. On this workstation, that
-source is `C:/Users/NhiBuaa/.codex/skills`.
+Discover skills and their exact locations from the current session's catalog, including
+installed-plugin skills. Follow the skill policy and workflow routing in `.agents/AGENTS.md`;
+do not restrict discovery to one directory.
 
 ## Repository guidance
 

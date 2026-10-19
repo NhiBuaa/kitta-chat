@@ -7,17 +7,20 @@ This repository uses a single shared domain context.
 - `.agents/CONTEXT.md` — canonical glossary and domain language.
 - `.agents/rules/` — system and domain invariants that implementation must preserve.
 - `docs/adr/` — accepted architectural decisions and their trade-offs.
-- `.agents/current-session.md` — current roadmap and overall invariants.
-- `.agents/next-session.md` — next approved target slice and session guardrails.
+- Relevant GitHub Issues and their latest comments — scope, progress and approval amendments.
+- Related PRs — implementation, review and verification evidence.
 
-Do not create a second root `CONTEXT.md`; it would duplicate the canonical glossary in `.agents/CONTEXT.md`.
+Do not create a second root `CONTEXT.md` or `GLOSSARY.md`; reuse `.agents/CONTEXT.md`.
+These repository-owned paths take precedence over generic skill output-path defaults.
+Session snapshots and `PROJECT-CONTEXT.md` are historical references, not current authority.
 
 ## Before Exploring Or Writing Issues
 
 1. Read `.agents/CONTEXT.md`.
 2. Read the rules relevant to the area being changed.
 3. Read ADRs that touch the proposed behavior.
-4. Read the current and next session files when the work is part of an approved implementation slice.
+4. Read the relevant Issue, its latest comments and PRs. Consult old checkpoints only when
+   relevant, and reconcile their claims with current evidence before acting.
 
 ## Vocabulary
 

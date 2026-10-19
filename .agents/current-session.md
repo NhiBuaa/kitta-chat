@@ -1,3 +1,8 @@
+> **Historical checkpoint — not current work state (2026-10-19).**
+> Content below is preserved verbatim as evidence. Start with [the working agreement](AGENTS.md#source-of-truth-for-work-state)
+> and the relevant live Issue/PR, including latest approval comments. Do not resume this old
+> slice or replay its approval gates without reconciling current scope and evidence.
+
 # K5 Security-Readiness Package — Current Checkpoint (2026-08-19)
 
 K4 is complete and published at `4388ed842498fa85d90a95d06944e7c9db936e25`. The approved next
