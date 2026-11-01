@@ -24,9 +24,10 @@ At normal Issue/PR closeout, consider only verified, reusable findings; none is 
 
 - Check code/tests or an accepted decision and link the source Issue/PR/comment or commit.
   Keep proposed, implemented, accepted, merged and deployed states distinct.
-- Reuse the existing owner: `.agents/CONTEXT.md` for vocabulary, `docs/adr/` for architecture,
-  `.agents/rules/` for invariants, the relevant runbook/playbook for operations, and
-  `.agents/AGENTS.md` for routing. For recurring bugs, use `.agents/memory/known-issues.md`
+- Reuse the existing owner: `docs/03-product/glossary.md` for vocabulary, `docs/adr/` for architecture,
+  `docs/04-standards/` for invariants, the relevant runbook/playbook for operations, and
+  `AGENTS.md` for routing. Agent-only workflow belongs in `.agents/rules/working-agreement.md`.
+  For recurring bugs, use `.agents/memory/known-issues.md`
   with symptom, cause, fix and prevention; prefer a regression test for executable behavior.
   Link existing knowledge rather than copying it; no new skill, hook or knowledge store is needed.
 - Apply small, safe corrections within the already approved scope without asking again.
