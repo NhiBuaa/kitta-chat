@@ -280,6 +280,7 @@ The badges in the Hero read directly from their workflows; no passing state or t
 
 ## Technical Documentation
 
+- [Documentation Map](docs/README.md) — project foundation, domain vocabulary, standards and task-specific reading routes.
 - [Architecture Decision Records](docs/adr/README.md) — stable index for architectural decisions and their lifecycle status.
 - [CI Policy Governance](docs/CI_POLICY.md) — Required check names, policy upgrades, trust boundaries and contributor-mode controls.
 - [Architecture Overview](docs/ARCHITECTURE.md) — ownership boundaries for MongoDB, Redis, RabbitMQ and Socket.IO.

@@ -109,3 +109,13 @@ skills-lock.json
 !/.agents/rules/
 /.agents/rules/*
 !/.agents/rules/security-findings.md
+
+# Shared agent entrypoints and scoped workflow; keep local task/evidence files ignored.
+!/.agents/README.md
+!/.agents/AGENTS.md
+!/.agents/CONTEXT.md
+!/.agents/rules/README.md
+!/.agents/rules/working-agreement.md
+!/.agents/references/
+/.agents/references/*
+!/.agents/references/README.md
