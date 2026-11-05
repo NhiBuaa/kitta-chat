@@ -18,6 +18,7 @@ Built as a production-oriented engineering project focused on scalable realtime 
 
 ## Contents
 
+- [Live Demo](#live-demo)
 - [Watch the Demo](#watch-the-demo)
 - [Product Tour](#product-tour)
 - [Engineering Highlights](#engineering-highlights)
@@ -30,6 +31,26 @@ Built as a production-oriented engineering project focused on scalable realtime 
 - [Known Limitations](#known-limitations)
 - [Technical Documentation](#technical-documentation)
 
+## Live Demo
+
+Experience KittaChat live in production:
+
+<p align="center">
+  <a href="https://kitta.nhibuaa.space"><strong>🚀 Visit Live Demo: kitta.nhibuaa.space</strong></a>
+</p>
+
+### Demo Accounts
+
+Open two browser windows (or an Incognito window) to test realtime messaging, group collaboration, and WebRTC audio/video calls:
+
+| Account | Email | Password | Suggested Use |
+| --- | --- | --- | --- |
+| **Alice** | `alice@kittachat.test` | `KittaChatDemo!2026` | Primary window: explore sidebars, groups, panel resources, and outbound calls. |
+| **Bob** | `bob@kittachat.test` | `KittaChatDemo!2026` | Secondary window: receive realtime messages, accept calls, and participate in groups. |
+
+> [!NOTE]
+> The backend runs on a free-tier Render web service and automatically sleeps after 15 minutes of inactivity. If the service is waking up from a cold start, please allow ~30–50 seconds for the initial connection.
+
 ## Watch the Demo
 
 <p align="center">
@@ -40,7 +61,7 @@ Built as a production-oriented engineering project focused on scalable realtime 
   <sub>English narration and captions · Recorded July 24, 2026 · Demonstrated commit <a href="https://github.com/NhiBuaa/kitta-chat/commit/05916acb6c6191a7924491d5189c562a2ffde017"><code>05916acb</code></a></sub>
 </p>
 
-KittaChat does not currently advertise a hosted public environment. The video provides the fastest product overview, while the verified Docker Compose workflow below reproduces the complete local experience.
+A live public deployment is available at [kitta.nhibuaa.space](https://kitta.nhibuaa.space). The video below provides a recorded product walkthrough, and the verified Docker Compose workflow reproduces the complete local environment.
 
 ## Product Tour
 
