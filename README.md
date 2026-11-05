@@ -16,8 +16,17 @@ KittaChat is a full-stack realtime communication platform for direct messaging, 
 
 Built as a production-oriented engineering project focused on scalable realtime systems, event-driven architecture, and distributed backend design.
 
+## At a glance
+
+- **Focus:** reliable realtime delivery, cross-replica coordination and event-driven background work.
+- **Stack:** React, Node.js, Express, Socket.IO, MongoDB, Redis, RabbitMQ and Docker.
+- **Demo:** [2:44 product walkthrough](https://drive.google.com/file/d/1qqE7t2oZpm36_EXk7Y98evX5B2TUkoW0/view?usp=drive_link).
+- **Local run:** `npm run demo` starts the reviewer-safe Docker Compose environment.
+- **Hosting:** no public hosted environment is advertised; the local workflow reproduces the complete experience.
+
 ## Contents
 
+- [At a glance](#at-a-glance)
 - [Watch the Demo](#watch-the-demo)
 - [Product Tour](#product-tour)
 - [Engineering Highlights](#engineering-highlights)
@@ -225,6 +234,8 @@ coverage must not be presented as a publishable end-to-end or cross-replica perf
 ## Demo Accounts
 
 The default seed creates neutral identities under the reserved `.test` namespace:
+
+These credentials are for the local demo dataset only. Never reuse them in a deployed environment.
 
 | User | Email | Password | Suggested use |
 | --- | --- | --- | --- |
