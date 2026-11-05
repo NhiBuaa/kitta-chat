@@ -61,8 +61,9 @@ const createFileController = ({
 
       const baseUrl =
         process.env.CLOUDFRONT_URL ||
-        `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`;
-      const fileUrl = `${baseUrl}/${key}`;
+        process.env.AWS_PUBLIC_URL ||
+        `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || "auto"}.amazonaws.com`;
+      const fileUrl = `${baseUrl.replace(/\/+$/, "")}/${key}`;
 
       const userId = req.user?._id || req.user?.id || req.userId;
       if (!userId) {
