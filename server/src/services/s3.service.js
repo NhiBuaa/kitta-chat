@@ -12,7 +12,8 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 require("dotenv").config();
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: process.env.AWS_REGION || "auto",
+  ...(process.env.AWS_ENDPOINT ? { endpoint: process.env.AWS_ENDPOINT } : {}),
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -43,8 +44,13 @@ const validateFile = (mimeType) => {
   }
 };
 
-const buildObjectUrl = (key) =>
-  `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+const buildObjectUrl = (key) => {
+  const publicBase = process.env.CLOUDFRONT_URL || process.env.AWS_PUBLIC_URL;
+  if (publicBase) {
+    return `${publicBase.replace(/\/+$/, "")}/${key}`;
+  }
+  return `https://${BUCKET}.s3.${process.env.AWS_REGION || "auto"}.amazonaws.com/${key}`;
+};
 
 const encodeRfc5987Value = (value) =>
   encodeURIComponent(value).replace(/[!'()*]/g, (character) =>

@@ -93,6 +93,25 @@ test("S3 service signs downloads and preserves streamed object bytes", async () 
   assert.equal(sentCommands[0].input.Key, "uploads/file.txt");
 });
 
+test("S3 service uses AWS_PUBLIC_URL when configured for public CDN/R2 endpoint", async () => {
+  const previousPublicUrl = process.env.AWS_PUBLIC_URL;
+  try {
+    process.env.AWS_PUBLIC_URL = "https://pub-myhash.r2.dev";
+    const result = await s3Service.uploadObject(
+      Buffer.from("upload-bytes"),
+      "avatar.png",
+      "image/png",
+    );
+    assert.match(result.url, /^https:\/\/pub-myhash\.r2\.dev\/uploads\//);
+  } finally {
+    if (previousPublicUrl === undefined) {
+      delete process.env.AWS_PUBLIC_URL;
+    } else {
+      process.env.AWS_PUBLIC_URL = previousPublicUrl;
+    }
+  }
+});
+
 test("S3 service propagates SDK failures without rewriting AWS errors", async () => {
   failureMode = "AWS XML response rejected";
 
