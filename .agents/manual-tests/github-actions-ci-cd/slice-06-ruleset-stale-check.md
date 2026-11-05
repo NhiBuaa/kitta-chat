@@ -4,7 +4,7 @@
 
 - **Feature:** GitHub Actions CI/CD Quality Gates
 - **Slice:** Slice 6 — Ruleset stale-branch verification (Issue #19/#20)
-- **Nguồn đặc tả:** [`specs/active/github-actions-ci-cd.md`](../../../specs/active/github-actions-ci-cd.md)
+- **Nguồn đặc tả:** [`specs/done/github-actions-ci-cd.md`](../../../specs/done/github-actions-ci-cd.md)
 - **GitHub Issue:** https://github.com/NhiBuaa/kitta-chat/issues/19
 - **Trạng thái mới nhất:** PASSED
 - **Phê duyệt:** Developer authorized stale-check execution on `2026-08-05`.

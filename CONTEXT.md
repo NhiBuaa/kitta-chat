@@ -1,15 +1,19 @@
 ---
 status: current
-last_verified: 2026-11-01
+last_verified: 2026-11-05
+has_ui_surface: true
 ---
 
 # Current Project Context
 
-## Product Boundary
+## Boundary & Surface
 
 KittaChat contains direct/group messaging, friendships, presence, file/avatar sharing,
-and WebRTC audio/video calls. The foundation is [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md);
-the [documentation map](docs/README.md) routes to detailed owners.
+and WebRTC audio/video calls.
+- **Has UI Surface:** True (React 19 + Tailwind CSS v4 web client in `client/`).
+- **Foundation:** [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md).
+- **Design System:** [DESIGN.md](DESIGN.md).
+- **Documentation Map:** [docs/README.md](docs/README.md).
 
 ## Current State
 
@@ -29,6 +33,7 @@ orientation rather than reproducing task status or granting implementation autho
 
 - Documentation now separates foundation, orientation, glossary, software standards
   and agent-only instructions. Older entry paths remain compatibility pointers.
+- UI implementations are governed by root [DESIGN.md](DESIGN.md), [docs/04-standards/ui-quality.md](docs/04-standards/ui-quality.md), and [.agents/rules/ui-skill-routing.md](.agents/rules/ui-skill-routing.md).
 - Migration-era statements in the glossary, standards and older specs coexist with
   [ADR-006](docs/adr/006-unified-sidebar-conversations.md), which describes a unified
   read-model sidebar. Before changing read authority, flags or identity behavior,
@@ -42,6 +47,8 @@ orientation rather than reproducing task status or granting implementation autho
 
 ## Canonical References
 
+- Project foundation: [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md).
+- Design system: [DESIGN.md](DESIGN.md).
 - Agent entrypoint: [AGENTS.md](AGENTS.md).
 - Vocabulary: [glossary](docs/03-product/glossary.md).
 - Implementation rules: [standards](docs/04-standards/README.md).

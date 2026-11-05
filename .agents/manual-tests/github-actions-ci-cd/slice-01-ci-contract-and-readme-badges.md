@@ -4,7 +4,7 @@
 
 - **Feature:** GitHub Actions CI/CD Quality Gates
 - **Slice:** Slice 1 — Shared Node Setup and Tests/Build Readiness
-- **Nguồn đặc tả:** [`specs/active/github-actions-ci-cd.md`](../../../specs/active/github-actions-ci-cd.md)
+- **Nguồn đặc tả:** [`specs/done/github-actions-ci-cd.md`](../../../specs/done/github-actions-ci-cd.md)
 - **GitHub Issue:** https://github.com/NhiBuaa/kitta-chat/issues/14
 - **Trạng thái mới nhất:** PASSED
 - **Phê duyệt `[KHÓA]`:** APPROVED — Developer xác nhận TC-01 đến TC-11 ngày `2026-07-27`.
