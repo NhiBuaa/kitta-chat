@@ -25,5 +25,5 @@ Nếu thực hiện quét Regex (ví dụ: `https?://...`) trực tiếp trên t
 * Không gây ra regression cho luồng gửi tin nhắn hiện tại nhờ cơ chế catch-and-ignore các lỗi phân tích URL lỗi.
 
 ## References
-* [PRD: Conversation Information Panel](file:///d:/Developer/Projects/shotter/shot-chat/specs/active/conversation-information-panel.md)
-* [Implementation Plan](file:///C:/Users/Nhi/.gemini/antigravity/brain/1cae5bf1-75e0-4d6c-a299-137bc6b489d3/implementation_plan.md)
+* [PRD: Conversation Information Panel](../../specs/done/conversation-information-panel.md)
+* Implementation Plan (Historical Artifact 1cae5bf1)

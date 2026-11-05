@@ -3,7 +3,7 @@
 ## Metadata
 - **Feature:** Unified Sidebar Conversations
 - **Slice:** Slice 4 (Real-time Socket events, Debounced UI Sorting, and Unread Sync)
-- **Nguồn đặc tả:** [specs/active/unified-sidebar-conversations.md](file:///d:/Developer/Projects/shotter/shot-chat/specs/active/unified-sidebar-conversations.md)
+- **Nguồn đặc tả:** [specs/done/unified-sidebar-conversations.md](../../../specs/done/unified-sidebar-conversations.md)
 - **Trạng thái mới nhất:** PASSED
 
 ---

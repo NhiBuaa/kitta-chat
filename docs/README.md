@@ -1,6 +1,7 @@
 # Documentation Map
 
 [PROJECT-OVERVIEW.md](../PROJECT-OVERVIEW.md) owns the project foundation.
+[DESIGN.md](../DESIGN.md) defines visual identity and design tokens for the UI surface.
 [CONTEXT.md](../CONTEXT.md) gives dated orientation; [AGENTS.md](../AGENTS.md) routes
 agent work. Numbering organizes discovery, not precedence between sources.
 

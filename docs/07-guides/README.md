@@ -1,5 +1,12 @@
 # Guides
 
+Guides explain normal, repeatable procedures.
+
+## Core Developer Playbooks
+- [Playbook 1 — Project from zero](project-start-playbook.md) — human-led discovery, requirements, architecture and the first tested vertical slice.
+- [Playbook 2 — Feature development](feature-development-playbook.md) — human-led impact analysis, just-enough design, implementation, tests and PR review.
+
+## Project Procedures
 Normal development and operation procedures retain their existing owners:
 
 - [Local setup and demo](../../README.md#quick-start).

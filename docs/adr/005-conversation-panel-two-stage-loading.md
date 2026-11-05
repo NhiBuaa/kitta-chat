@@ -52,5 +52,5 @@ Các nguyên tắc bất biến sau đây bắt buộc phải được duy trì 
 * Khả năng giám sát hệ thống (observability) được nâng lên mức Enterprise.
 
 ## References
-* [PRD: Conversation Information Panel](file:///d:/Developer/Projects/shotter/shot-chat/specs/active/conversation-information-panel.md)
-* [Implementation Plan](file:///C:/Users/Nhi/.gemini/antigravity/brain/1cae5bf1-75e0-4d6c-a299-137bc6b489d3/implementation_plan.md)
+* [PRD: Conversation Information Panel](../../specs/done/conversation-information-panel.md)
+* Implementation Plan (Historical Artifact 1cae5bf1)

@@ -1,4 +1,4 @@
-﻿# =========================
+# =========================
 # General
 # =========================
 .DS_Store
@@ -116,6 +116,7 @@ skills-lock.json
 !/.agents/CONTEXT.md
 !/.agents/rules/README.md
 !/.agents/rules/working-agreement.md
+!/.agents/rules/ui-skill-routing.md
 !/.agents/references/
 /.agents/references/*
 !/.agents/references/README.md
