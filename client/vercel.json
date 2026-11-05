@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://api-kitta.nhibuaa.space/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }
