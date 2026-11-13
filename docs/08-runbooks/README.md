@@ -3,6 +3,8 @@
 - [RabbitMQ dead-letter alert](../observability/runbooks/k3-queue-dead-lettered.md).
 - [Deployment and smoke guide](../DEPLOYMENT_AND_SMOKE_TESTS.md): existing startup,
   troubleshooting and recovery instructions; it remains a mixed guide at its current path.
+- [Cloud production incident and recovery](../07-guides/cloud-deployment-and-maintenance.md#6-sổ-tay-xử-lý-sự-cố-thường-gặp-troubleshooting-runbook):
+  incident recovery procedures for the live cloud deployment.
 
 Use this category for abnormal-state recovery procedures. Preserve exact resource
 ownership, secret handling and approval requirements; a runbook does not authorize
