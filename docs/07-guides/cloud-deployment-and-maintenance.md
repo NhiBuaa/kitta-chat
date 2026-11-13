@@ -68,10 +68,10 @@ KittaChat được thiết kế theo kiến trúc Micro-Cloud Serverless & Conta
   - **Trạng thái Proxy:** `Proxied` (đám mây cam) hoặc `DNS only`.
 
 ### 3.3. Object Storage (Cloudflare R2)
-- **Account ID:** `0815469773bb9f83177a1303be9a90f3`
+- **Account ID:** `<account-id>`
 - **Bucket Name:** `kittachat`
 - **Vị trí (Location):** Asia-Pacific (APAC)
-- **S3 API Endpoint:** `https://0815469773bb9f83177a1303be9a90f3.r2.cloudflarestorage.com`
+- **S3 API Endpoint:** `https://<account-id>.r2.cloudflarestorage.com`
 - **Cấu hình CORS Policy:** Cần thiết lập trong *Settings* của bucket để trình duyệt có thể upload trực tiếp:
   ```json
   [
@@ -116,7 +116,7 @@ Dưới đây là danh sách toàn bộ các biến môi trường cần cấu h
 | `CONVERSATION_DUAL_WRITE_ENABLED` | **Rất quan trọng** | `true` (Kích hoạt ghi đồng bộ tin nhắn mới vào danh sách Sidebar; nếu thiếu biến này, khi F5 sẽ bị mất tin nhắn mới trên sidebar) |
 | `AWS_S3_BUCKET_NAME` | Có | `kittachat` |
 | `AWS_REGION` | Có | `auto` |
-| `AWS_ENDPOINT` | Có | `https://0815469773bb9f83177a1303be9a90f3.r2.cloudflarestorage.com` |
+| `AWS_ENDPOINT` | Có | `https://<account-id>.r2.cloudflarestorage.com` |
 | `AWS_ACCESS_KEY_ID` | Có | Cloudflare R2 Access Key ID |
 | `AWS_SECRET_ACCESS_KEY` | Có | Cloudflare R2 Secret Access Key |
 | `AWS_PUBLIC_URL` | Có | Đường link `https://pub-<id>.r2.dev` của Cloudflare R2 |
