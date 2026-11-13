@@ -11,6 +11,7 @@ Normal development and operation procedures retain their existing owners:
 
 - [Local setup and demo](../../README.md#quick-start).
 - [Deployment and smoke checks](../DEPLOYMENT_AND_SMOKE_TESTS.md).
+- [Cloud deployment and maintenance](cloud-deployment-and-maintenance.md).
 - [Local observability demo](../observability/k3-local-demo.md).
 - [Operator validation](../observability/k3-operator-validation.md).
 - [Issue workflow and closeout](../agents/issue-tracker.md).

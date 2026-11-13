@@ -1,8 +1,10 @@
-﻿# Deployment And Smoke Verification
+# Deployment And Smoke Verification
 
 This guide is for local reviewer demos and maintenance checks. It documents the current Docker Compose workflow and the backend reliability signals that were added for interview-ready verification.
 
 This is not a production runbook. The stack is a local Docker Compose deployment with nginx, backend replicas, MongoDB, Redis, RabbitMQ, and background workers.
+
+For the live hosted production cloud deployment (Vercel, Render, Cloudflare R2, MongoDB Atlas), see the [Cloud Deployment & Maintenance Guide](07-guides/cloud-deployment-and-maintenance.md).
 
 ## Architecture Boundaries To Verify
 

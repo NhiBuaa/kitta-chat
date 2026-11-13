@@ -293,7 +293,7 @@ The badges in the Hero read directly from their workflows; no passing state or t
 
 ## Known Limitations
 
-1. **No hosted public environment** — The recorded walkthrough above provides the fastest product tour; the complete product is available through the reproducible local Docker Compose setup.
+1. **Hosted public environment uses free-tier infrastructure** — The live demo is deployed on Vercel and Render free tiers; initial cold-start may take a few moments if idle. See [Cloud Deployment Guide](docs/07-guides/cloud-deployment-and-maintenance.md).
 2. **Deployment focuses on local reproducibility** — The project demonstrates horizontal scaling with Docker Compose. Production orchestration, for example Kubernetes, is intentionally outside the current scope.
 3. **Optional providers require configuration** — AWS S3/CloudFront, SMTP and Firebase integrations require reviewer-provided credentials to run end-to-end.
 4. **Production observability has a focused scope** — K3 provides bounded Prometheus metrics, a Grafana dashboard, scrape and queue-alert contracts, and correlation-aware logs. K3.1 makes the dashboard reproducible locally. Hosted monitoring, outbound alert delivery, centralized logs and distributed tracing remain outside the current scope.
@@ -315,6 +315,7 @@ The badges in the Hero read directly from their workflows; no passing state or t
 - [Socket.IO Multi-Replica Scaling](docs/SOCKET_IO_SCALING.md) — rooms, Redis Adapter fan-out, reconnect behavior and operational proof.
 - [RabbitMQ Worker Flows](docs/RABBITMQ_WORKER_FLOWS.md) — queue topology, retry, DLQ, poison-message and correlation behavior.
 - [Deployment and Smoke Tests](docs/DEPLOYMENT_AND_SMOKE_TESTS.md) — Compose startup, health checks and multi-client verification.
+- [Cloud Deployment & Maintenance Guide](docs/07-guides/cloud-deployment-and-maintenance.md) — production hosting topology, environment variables, demo data, and troubleshooting.
 - [Recruiter README PRD](specs/active/recruiter-facing-readme.md) — approved narrative, claim boundaries and delivery plan.
 - [ADR-005: Conversation Panel Two-Stage Loading](docs/adr/005-conversation-panel-two-stage-loading.md) — metadata-first loading and resource explorers.
 - [ADR-006: Unified Sidebar Conversations](docs/adr/006-unified-sidebar-conversations.md) — cursor pagination, filtering, enrichment and realtime state.
